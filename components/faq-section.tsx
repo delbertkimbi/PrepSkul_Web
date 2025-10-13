@@ -4,54 +4,44 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 const faqs = [
   {
+    question: "What is PrepSkul?",
+    answer:
+      "PrepSkul is a learning platform that connects learners across Cameroon and beyong with trusted home and online tutors. Whether it is school subjects or practical skills, we help every learner grow through personal guidance, flexible learning, and caring mentorship, all in one place.We are currently active across Cameroon and soon expanding across Africa.",
+  },
+  {
     question: "How does PrepSkul work?",
     answer:
-      "PrepSkul connects you with qualified tutors for personalized learning. Simply tell us what you need, we'll match you with the right tutor, you schedule your sessions, and start learning. It's that simple!",
+      "We match each learner with a tutor or trainer who best fits their goals, schedule, and location. You can choose to learn online or have one-on-one or group sessions at home. Our team ensures that every learning experience is tailored, simple, and effective.",
   },
   {
-    question: "What subjects do you offer?",
+    question: " ⁠What do you charge?",
     answer:
-      "We offer tutoring in all major academic subjects including Mathematics, Sciences, English, Languages, and more. We also provide skill development in areas like Coding, Art, Music, and Life Skills. If you need help with something specific, just ask!",
+      "Our sessions range between 2,500 XAF and 5,000 XAF, depending on the subject, skill, and duration. Fees are transparent and discussed before lessons begin, and payments are done upfront to confirm your sessions.",
   },
   {
-    question: "How much does tutoring cost?",
+    question: "⁠Are your tutors qualified?",
     answer:
-      "Our pricing varies based on the subject, tutor experience, and session type (online, home, or group). We offer competitive rates and flexible payment options. Contact us for a personalized quote based on your needs.",
+      "Yes. Every tutor and trainer at PrepSkul goes through a careful selection process and regular training through the PrepSkul Academy. This ensures high teaching standards, professionalism, and a genuine passion for helping learners grow.",
   },
   {
-    question: "Are your tutors qualified?",
+    question: "⁠What subjects or skills can I learn?",
     answer:
-      "All PrepSkul tutors are carefully vetted and background-checked. They have relevant qualifications, teaching experience, and a genuine passion for helping students succeed. We only work with the best.",
+      "From core school subjects like Mathematics, English, and Sciences to practical skills like Computer Literacy, Coding, and Creative Arts, PrepSkul gives every learner the chance to grow academically and beyond the classroom.",
   },
   {
-    question: "Can I choose my own tutor?",
+    question: "⁠What curriculum do you use?",
     answer:
-      "Yes! We'll match you with tutors based on your needs, and you can review their profiles before making a decision. If you're not satisfied with your match, we'll find you another tutor at no extra cost.",
+      "We follow the official national and international curricula recognized by Cameroon’s Ministry of Education. This ensures that every learner stays on track with their school or exam requirements.",
   },
   {
-    question: "Do you offer online or in-person tutoring?",
+    question: "Can I become a tutor on PrepSkul?",
     answer:
-      "We offer both! You can choose online sessions via video call, in-person home tutoring, or group sessions. Pick the option that works best for your schedule and learning style.",
-  },
-  {
-    question: "How do I get started?",
-    answer:
-      "Getting started is easy! Click the 'Get Started' button, tell us about your learning needs, and we'll match you with a qualified tutor. You can also contact us via WhatsApp for immediate assistance.",
+      "Yes. If you love teaching or sharing your skills, you can apply to join our growing network of tutors. We provide the training, support, and visibility you need to reach more learners and grow as an educator.",
   },
   {
     question: "What if I need to reschedule a session?",
     answer:
       "We understand that schedules change. You can reschedule sessions with at least 24 hours notice at no charge. Just contact your tutor or our support team to arrange a new time.",
-  },
-  {
-    question: "Do you offer group sessions?",
-    answer:
-      "Yes! Group sessions are a great way to learn with peers at a more affordable rate. We keep groups small (typically 3-5 students) to ensure everyone gets attention and support.",
-  },
-  {
-    question: "How do I track my progress?",
-    answer:
-      "Your tutor will provide regular feedback and progress updates. We also encourage open communication between tutors, students, and parents to ensure everyone is on the same page about learning goals and achievements.",
   },
 ]
 

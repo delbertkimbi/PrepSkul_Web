@@ -213,32 +213,33 @@ export function Footer() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">Coming Soon!</DialogTitle>
             <DialogDescription className="text-center pt-4">
-              <div className="space-y-4">
-                <div className="text-base">Our mobile app is launching in</div>
-                <div className="flex justify-center gap-4">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{countdown.days}</div>
-                    <div className="text-xs text-muted-foreground">Days</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{countdown.hours}</div>
-                    <div className="text-xs text-muted-foreground">Hours</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{countdown.minutes}</div>
-                    <div className="text-xs text-muted-foreground">Minutes</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-3xl font-bold text-primary">{countdown.seconds}</div>
-                    <div className="text-xs text-muted-foreground">Seconds</div>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground pt-2">
-                  Get ready to learn on the go with PrepSkul mobile app!
-                </div>
-              </div>
+              Our mobile app is launching soon
             </DialogDescription>
           </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex justify-center gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.days}</div>
+                <div className="text-xs text-muted-foreground">Days</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.hours}</div>
+                <div className="text-xs text-muted-foreground">Hours</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.minutes}</div>
+                <div className="text-xs text-muted-foreground">Minutes</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.seconds}</div>
+                <div className="text-xs text-muted-foreground">Seconds</div>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground pt-2 text-center">
+              Get ready to learn on the go with PrepSkul mobile app!
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>
