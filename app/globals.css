@@ -1,0 +1,270 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Using Poppins font instead of Geist */
+@theme {
+  --font-sans: "Poppins", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+
+  --color-background: oklch(0.99 0.005 106);
+  --color-foreground: oklch(0.25 0.02 264);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.25 0.02 264);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.25 0.02 264);
+  --color-primary: oklch(0.32 0.08 264);
+  --color-primary-foreground: oklch(0.99 0.005 106);
+  --color-secondary: oklch(0.45 0.08 264);
+  --color-secondary-foreground: oklch(0.99 0.005 106);
+  --color-muted: oklch(0.96 0.005 106);
+  --color-muted-foreground: oklch(0.52 0.02 264);
+  --color-accent: oklch(0.45 0.08 264);
+  --color-accent-foreground: oklch(0.99 0.005 106);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(0.99 0.005 106);
+  --color-border: oklch(0.92 0.005 106);
+  --color-input: oklch(0.92 0.005 106);
+  --color-ring: oklch(0.32 0.08 264);
+  --color-chart-1: oklch(0.32 0.08 264);
+  --color-chart-2: oklch(0.45 0.08 264);
+  --color-chart-3: oklch(0.55 0.15 180);
+  --color-chart-4: oklch(0.65 0.12 140);
+  --color-chart-5: oklch(0.45 0.1 300);
+  --color-sidebar: oklch(0.985 0 0);
+  --color-sidebar-foreground: oklch(0.145 0 0);
+  --color-sidebar-primary: oklch(0.205 0 0);
+  --color-sidebar-primary-foreground: oklch(0.985 0 0);
+  --color-sidebar-accent: oklch(0.97 0 0);
+  --color-sidebar-accent-foreground: oklch(0.205 0 0);
+  --color-sidebar-border: oklch(0.922 0 0);
+  --color-sidebar-ring: oklch(0.708 0 0);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.875rem;
+}
+
+@layer base {
+  :root {
+    --background: oklch(0.99 0.005 106);
+    --foreground: oklch(0.25 0.02 264);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.25 0.02 264);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.25 0.02 264);
+    --primary: oklch(0.32 0.08 264);
+    --primary-foreground: oklch(0.99 0.005 106);
+    --secondary: oklch(0.45 0.08 264);
+    --secondary-foreground: oklch(0.99 0.005 106);
+    --muted: oklch(0.96 0.005 106);
+    --muted-foreground: oklch(0.52 0.02 264);
+    --accent: oklch(0.45 0.08 264);
+    --accent-foreground: oklch(0.99 0.005 106);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.99 0.005 106);
+    --border: oklch(0.92 0.005 106);
+    --input: oklch(0.92 0.005 106);
+    --ring: oklch(0.32 0.08 264);
+    --radius: 0.75rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+  }
+
+  .dark {
+    --background: oklch(0.15 0.02 264);
+    --foreground: oklch(0.99 0.005 106);
+    --card: oklch(0.18 0.02 264);
+    --card-foreground: oklch(0.99 0.005 106);
+    --popover: oklch(0.18 0.02 264);
+    --popover-foreground: oklch(0.99 0.005 106);
+    --primary: oklch(0.45 0.08 264);
+    --primary-foreground: oklch(0.99 0.005 106);
+    --secondary: oklch(0.32 0.08 264);
+    --secondary-foreground: oklch(0.99 0.005 106);
+    --muted: oklch(0.22 0.02 264);
+    --muted-foreground: oklch(0.65 0.02 264);
+    --accent: oklch(0.45 0.08 264);
+    --accent-foreground: oklch(0.99 0.005 106);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.99 0.005 106);
+    --border: oklch(0.25 0.02 264);
+    --input: oklch(0.25 0.02 264);
+    --ring: oklch(0.45 0.08 264);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: oklch(0.439 0 0);
+  }
+
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .btn-normal {
+    @apply h-9 px-5 text-sm; /* Slightly reduced button height for better proportions */
+  }
+
+  /* Hero section with no vertical margins, starts from navbar */
+  .hero-slant {
+    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
+    background: linear-gradient(135deg, oklch(0.32 0.08 264) 0%, oklch(0.28 0.08 264) 100%);
+  }
+
+  .hero-circular-blur {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(
+      circle,
+      oklch(0.32 0.08 264 / 0.15) 0%,
+      oklch(0.32 0.08 264 / 0.05) 50%,
+      transparent 70%
+    );
+    border-radius: 50%;
+    filter: blur(60px);
+    animation: float 6s ease-in-out infinite;
+  }
+
+  /* Creating visible circular deep blue background shape behind phone */
+  .hero-circular-shape {
+    position: absolute;
+    width: 450px;
+    height: 450px;
+    background: radial-gradient(
+      circle,
+      oklch(0.32 0.08 264 / 0.4) 0%,
+      oklch(0.32 0.08 264 / 0.25) 40%,
+      oklch(0.32 0.08 264 / 0.1) 70%,
+      transparent 100%
+    );
+    border-radius: 50%;
+    filter: blur(40px);
+    animation: pulse-float 8s ease-in-out infinite;
+    z-index: 0;
+  }
+
+  /* More visible circular deep blue gradient behind phone */
+  .hero-circular-shape-large {
+    position: absolute;
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(
+      circle,
+      oklch(0.32 0.08 264 / 0.7) 0%,
+      oklch(0.32 0.08 264 / 0.5) 30%,
+      oklch(0.32 0.08 264 / 0.3) 55%,
+      oklch(0.32 0.08 264 / 0.15) 75%,
+      transparent 100%
+    );
+    border-radius: 50%;
+    filter: blur(30px);
+    animation: pulse-float 8s ease-in-out infinite;
+    z-index: 0;
+  }
+
+  @keyframes pulse-float {
+    0%,
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  /* Subtle ash/gray decorative circles for finishing touches */
+  .decorative-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, oklch(0.85 0.005 106 / 0.3) 0%, transparent 70%);
+    filter: blur(30px);
+  }
+
+  .hero-section-full {
+    min-height: calc(100vh - 4rem);
+    display: flex;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  /* Reduced phone size further */
+  .phone-3d {
+    transform-style: preserve-3d;
+    transform: rotateY(-12deg) rotateX(3deg) scale(0.6);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 25px 50px rgba(27, 44, 79, 0.25));
+  }
+
+  .phone-3d:hover {
+    transform: rotateY(-8deg) rotateX(1deg) translateY(-5px) scale(0.6);
+    filter: drop-shadow(0 30px 60px rgba(27, 44, 79, 0.3));
+  }
+
+  .rotate-y-5 {
+    transform: rotateY(5deg);
+  }
+
+  /* Soft, curved phone mockup container */
+  .phone-mockup-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  /* Liquid fill effect for student image bottom edge */
+  .liquid-fill-bottom {
+    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  }
+}
+
+/* Adding typewriter animation */
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes blink {
+  50% {
+    border-color: transparent;
+  }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  border-right: 3px solid;
+  white-space: nowrap;
+  animation: typewriter 2s steps(20) 1s forwards, blink 0.75s step-end infinite;
+}

@@ -1,0 +1,236 @@
+"use client"
+
+import type React from "react"
+
+import Link from "next/link"
+import Image from "next/image"
+import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react"
+import { TikTokIcon } from "./tiktok-icon"
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+
+export function Footer() {
+  const [showComingSoon, setShowComingSoon] = useState(false)
+
+  const calculateTimeLeft = () => {
+    const launchDate = new Date()
+    launchDate.setDate(launchDate.getDate() + 30)
+
+    const difference = launchDate.getTime() - new Date().getTime()
+
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+    }
+  }
+
+  const [countdown, setCountdown] = useState(calculateTimeLeft())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(calculateTimeLeft())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  const handleAppClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setShowComingSoon(true)
+  }
+
+  return (
+    <>
+      <footer className="bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
+            {/* Brand */}
+            <div className="space-y-3">
+              <h3 className="text-2xl font-bold">PrepSkul</h3>
+              <p className="text-primary-foreground/80 leading-relaxed text-sm">
+                Guiding every learner to their full potential across Cameroon and Africa.
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-lg">Quick Links</h4>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                  >
+                    Home
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/about"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                  >
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/programs"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                  >
+                    Programs
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/contact"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                  >
+                    Contact
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/tutors"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                  >
+                    Become a Tutor
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Us */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-lg">Contact Us</h4>
+              <ul className="space-y-2">
+                <li className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <Phone className="h-4 w-4 flex-shrink-0" />
+                  <span>+237 6 74 08 90 66</span>
+                </li>
+                <li className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <span>info@prepskul.com</span>
+                </li>
+                <li className="flex items-center gap-2 text-primary-foreground/80 text-sm">
+                  <MapPin className="h-4 w-4 flex-shrink-0" />
+                  <span>Buea, Cameroon</span>
+                </li>
+              </ul>
+              <div className="flex gap-3 pt-2">
+                <a
+                  href="https://web.facebook.com/profile.php?id=61581614327200"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  aria-label="Facebook"
+                >
+                  <Facebook className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://www.instagram.com/prep.skul/?utm_source=ig_web_button_share_sheet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  aria-label="Instagram"
+                >
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://www.tiktok.com/@prepskul?_t=ZM-90NYHgY4n60&_r=1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  aria-label="TikTok"
+                >
+                  <TikTokIcon className="h-5 w-5" />
+                </a>
+                <a
+                  href="https://www.linkedin.com/company/109176407/admin/dashboard/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                  aria-label="LinkedIn"
+                >
+                  <Linkedin className="h-5 w-5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Download App */}
+            <div className="space-y-3">
+              <h4 className="font-bold text-lg">Download App</h4>
+              <div className="space-y-1.5">
+                <button
+                  onClick={handleAppClick}
+                  className="block w-full hover:opacity-80 transition-opacity"
+                  aria-label="Download on Google Play - Coming Soon"
+                >
+                  <Image
+                    src="/google-play-badge.png"
+                    alt="Get it on Google Play"
+                    width={135}
+                    height={40}
+                    className="w-full max-w-[135px]"
+                  />
+                </button>
+                <button
+                  onClick={handleAppClick}
+                  className="block w-full hover:opacity-80 transition-opacity"
+                  aria-label="Download on App Store - Coming Soon"
+                >
+                  <Image
+                    src="/app-store-badge.png"
+                    alt="Download on the App Store"
+                    width={135}
+                    height={40}
+                    className="w-full max-w-[135px]"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-primary-foreground/20 text-center text-primary-foreground/80 text-sm">
+            <p>&copy; {new Date().getFullYear()} PrepSkul. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">Coming Soon!</DialogTitle>
+            <DialogDescription className="text-center pt-4">
+              <div className="space-y-4">
+                <div className="text-base">Our mobile app is launching in</div>
+                <div className="flex justify-center gap-4">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">{countdown.days}</div>
+                    <div className="text-xs text-muted-foreground">Days</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">{countdown.hours}</div>
+                    <div className="text-xs text-muted-foreground">Hours</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">{countdown.minutes}</div>
+                    <div className="text-xs text-muted-foreground">Minutes</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-primary">{countdown.seconds}</div>
+                    <div className="text-xs text-muted-foreground">Seconds</div>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground pt-2">
+                  Get ready to learn on the go with PrepSkul mobile app!
+                </div>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
