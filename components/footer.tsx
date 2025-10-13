@@ -12,11 +12,21 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 export function Footer() {
   const [showComingSoon, setShowComingSoon] = useState(false)
 
-  const calculateTimeLeft = () => {
-    const launchDate = new Date()
-    launchDate.setDate(launchDate.getDate() + 30)
+  const LAUNCH_DATE = new Date("2025-11-12T00:00:00")
 
-    const difference = launchDate.getTime() - new Date().getTime()
+  const calculateTimeLeft = () => {
+    const now = new Date().getTime()
+    const difference = LAUNCH_DATE.getTime() - now
+
+    // Stop at zero when countdown reaches launch date
+    if (difference <= 0) {
+      return {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+      }
+    }
 
     return {
       days: Math.floor(difference / (1000 * 60 * 60 * 24)),

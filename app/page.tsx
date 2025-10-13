@@ -118,7 +118,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid sm:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <Card className="border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
+            <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
               <div className="relative h-56 w-full overflow-hidden">
                 <Image
                   src="/african-student-learning-online-via-video-call-wit.jpg"
@@ -136,7 +136,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
+            <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
               <div className="relative h-56 w-full overflow-hidden">
                 <Image
                   src="/african-tutor-teaching-student-at-home-with-books-.jpg"
@@ -154,10 +154,10 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
+            <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
               <div className="relative h-56 w-full overflow-hidden">
                 <Image
-                  src="/group-of-african-students-learning-together-with-t.jpg"
+                  src="/group-class-prepskul.png"
                   alt="Group of students learning together collaboratively"
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -186,7 +186,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-            <Card className="overflow-hidden border-2 hover:border-primary transition-all hover:shadow-xl group">
+            <Card className="p-0 overflow-hidden border-2 hover:border-primary transition-all hover:shadow-xl group">
               <div className="relative h-64 w-full overflow-hidden">
                 <Image
                   src="/african-student-studying-mathematics-and-science-w.jpg"
@@ -232,7 +232,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            <Card className="overflow-hidden border-2 hover:border-primary transition-all hover:shadow-xl group">
+            <Card className="p-0 overflow-hidden border-2 hover:border-primary transition-all hover:shadow-xl group">
               <div className="relative h-64 w-full overflow-hidden">
                 <Image
                   src="/african-young-person-learning-coding-on-laptop-wit.jpg"

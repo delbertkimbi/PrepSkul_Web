@@ -4,7 +4,6 @@ import type React from "react"
 
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { WhatsAppButton } from "@/components/whatsapp-button"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -221,7 +220,6 @@ export default function ContactPage() {
       </section>
 
       <Footer />
-      <WhatsAppButton />
     </div>
   )
 }

@@ -1,8 +1,8 @@
+import { CardContent } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { WhatsAppButton } from "@/components/whatsapp-button"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { DollarSign, Users, BookOpen, TrendingUp, Calendar, Award, Heart, Sparkles } from "lucide-react"
 
@@ -269,7 +269,6 @@ export default function TutorsPage() {
       </section>
 
       <Footer />
-      <WhatsAppButton />
     </div>
   )
 }

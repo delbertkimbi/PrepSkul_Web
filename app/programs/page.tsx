@@ -92,7 +92,7 @@ export default function ProgramsPage() {
             className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
           >
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden bg-gray-100">
                   <Image
                     src="/mathematics-illustration.png"
@@ -114,7 +114,7 @@ export default function ProgramsPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden bg-gray-100">
                   <Image
                     src="/science-illustration.png"
@@ -136,7 +136,7 @@ export default function ProgramsPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden bg-gray-100">
                   <Image
                     src="/english-illustration.png"
@@ -158,7 +158,7 @@ export default function ProgramsPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden bg-gray-100">
                   <Image
                     src="/languages-illustration.png"
@@ -217,7 +217,7 @@ export default function ProgramsPage() {
             className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
           >
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden">
                   <Image
                     src="/african-young-person-learning-coding-on-laptop-wit.jpg"
@@ -239,7 +239,7 @@ export default function ProgramsPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden">
                   <Image
                     src="/african-student-creating-digital-art-design.jpg"
@@ -261,7 +261,7 @@ export default function ProgramsPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden">
                   <Image
                     src="/african-student-learning-music-instrument.jpg"
@@ -283,7 +283,7 @@ export default function ProgramsPage() {
             </motion.div>
 
             <motion.div variants={itemVariants}>
-              <Card className="border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
+              <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl h-full group overflow-hidden">
                 <div className="relative h-40 w-full overflow-hidden">
                   <Image
                     src="/african-students-public-speaking-leadership.jpg"

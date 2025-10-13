@@ -1,6 +1,5 @@
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { WhatsAppButton } from "@/components/whatsapp-button"
 import { TestimonialsSection } from "@/components/testimonials-section"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -156,7 +155,6 @@ export default function TestimonialsPage() {
       </section>
 
       <Footer />
-      <WhatsAppButton />
     </div>
   )
 }
