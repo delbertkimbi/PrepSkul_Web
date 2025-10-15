@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center h-full max-w-7xl mx-auto">
             {/* Left side - Content */}
-            <div className="space-y-7 z-10 lg:pr-8">
+            <div className="space-y-7 z-10 lg:pr-8 text-left lg:text-left">
               <div className="space-y-5">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
                   Find Your Perfect{" "}
@@ -37,13 +37,13 @@ export default function HomePage() {
                     <Typewriter words={["Tutor", "Mentor", "Guide"]} />
                   </span>
                 </h1>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
                   Connect with experienced, qualified tutors across Cameroon for personalized learning. Whether online
                   or at home, one-on-one or in groups, we help you achieve academic excellence.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Button size="lg" asChild className="text-base font-semibold h-12 px-8">
                   <Link href="/contact">Get Started</Link>
                 </Button>
@@ -68,7 +68,7 @@ export default function HomePage() {
                 }}
               ></div>
 
-              <div className="relative z-10">
+              <div className="relative z-10 flex justify-center">
                 <PhoneMockup />
               </div>
             </div>
@@ -99,9 +99,9 @@ export default function HomePage() {
             </div>
             <div className="text-center space-y-2">
               <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={95} suffix="%" />
+                <AnimatedCounter end={7} suffix="+" />
               </div>
-              <p className="text-sm text-muted-foreground font-medium">Success Rate</p>
+              <p className="text-sm text-muted-foreground font-medium">Cities covered</p>
             </div>
           </div>
         </div>

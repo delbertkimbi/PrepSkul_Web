@@ -60,10 +60,10 @@ export function PhoneMockup() {
                   <div className="bg-white rounded-3xl p-5 space-y-4 shadow-lg border border-gray-100">
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                        JD
+                        sc
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-base">John Doe</h3>
+                        <h3 className="font-bold text-base">Sir Carl</h3>
                         <p className="text-xs text-gray-600">Mathematics & Physics</p>
                       </div>
                       <div className="flex items-center gap-1 bg-yellow-50 rounded-full px-2.5 py-1">
@@ -72,14 +72,20 @@ export function PhoneMockup() {
                       </div>
                     </div>
 
-                    <div className="flex gap-4 text-xs text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>50+ sessions</span>
+                    <div className="flex gap-3 text-xs">
+                      <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5 flex-1">
+                        <Clock className="w-3.5 h-3.5 text-gray-500" />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900">50+</span>
+                          <span className="text-gray-600">sessions</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Online & Home</span>
+                      <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5 flex-1">
+                        <Video className="w-3.5 h-3.5 text-gray-500" />
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-gray-900">Online</span>
+                          <span className="text-gray-600">& Home</span>
+                        </div>
                       </div>
                     </div>
 

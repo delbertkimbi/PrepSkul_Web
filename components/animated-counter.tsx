@@ -15,6 +15,8 @@ export function AnimatedCounter({ end, duration = 2000, suffix = "", prefix = ""
   const counterRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !isVisible) {
@@ -24,17 +26,25 @@ export function AnimatedCounter({ end, duration = 2000, suffix = "", prefix = ""
       { threshold: 0.3 },
     )
 
-    if (counterRef.current) {
-      observer.observe(counterRef.current)
+    const currentRef = counterRef.current
+    if (currentRef) {
+      observer.observe(currentRef)
     }
 
-    return () => observer.disconnect()
+    return () => {
+      if (currentRef) {
+        observer.unobserve(currentRef)
+      }
+      observer.disconnect()
+    }
   }, [isVisible])
 
   useEffect(() => {
-    if (!isVisible) return
+    if (!isVisible || typeof window === 'undefined') return
 
     let startTime: number | null = null
+    let animationId: number | null = null
+
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime
       const progress = Math.min((currentTime - startTime) / duration, 1)
@@ -42,11 +52,17 @@ export function AnimatedCounter({ end, duration = 2000, suffix = "", prefix = ""
       setCount(Math.floor(progress * end))
 
       if (progress < 1) {
-        requestAnimationFrame(animate)
+        animationId = requestAnimationFrame(animate)
       }
     }
 
-    requestAnimationFrame(animate)
+    animationId = requestAnimationFrame(animate)
+
+    return () => {
+      if (animationId) {
+        cancelAnimationFrame(animationId)
+      }
+    }
   }, [isVisible, end, duration])
 
   return (

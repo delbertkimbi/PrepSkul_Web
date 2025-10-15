@@ -16,7 +16,7 @@ const testimonials = [
     role: "Parent",
     image: "/african-mother-professional.jpg",
     content:
-      "As a parent, I'm so grateful for PrepSkul. My daughter's confidence has grown tremendously, and her grades have improved across all subjects. The tutors truly care.",
+      "As a parent, I'm so grateful for PrepSkul. My son's confidence has grown tremendously, and her grades have improved across all his class 5 subjects. The tutors truly care.",
     rating: 5,
   },
   {

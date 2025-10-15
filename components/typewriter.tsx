@@ -13,6 +13,8 @@ export function Typewriter({ words, className = "" }: TypewriterProps) {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !words.length) return
+
     const word = words[currentWordIndex]
     const timeout = setTimeout(
       () => {
