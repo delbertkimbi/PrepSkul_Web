@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center h-full max-w-7xl mx-auto">
             {/* Left side - Content */}
-            <div className="space-y-7 z-10 lg:pr-8 text-center lg:text-left">
+            <div className="space-y-7 z-10 lg:pr-8 text-left lg:text-left">
               <div className="space-y-5">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
                   Find Your Perfect{" "}
@@ -37,7 +37,7 @@ export default function HomePage() {
                     <Typewriter words={["Tutor", "Mentor", "Guide"]} />
                   </span>
                 </h1>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0">
+                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
                   Connect with experienced, qualified tutors across Cameroon for personalized learning. Whether online
                   or at home, one-on-one or in groups, we help you achieve academic excellence.
                 </p>
