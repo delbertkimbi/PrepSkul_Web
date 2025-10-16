@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center h-full max-w-7xl mx-auto">
             {/* Left side - Content */}
-            <div className="space-y-7 z-10 lg:pr-8 text-left lg:text-left">
+            <div className="space-y-7 z-10 lg:pr-8 text-center lg:text-left">
               <div className="space-y-5">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
                   Find Your Perfect{" "}
@@ -44,14 +44,14 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button size="lg" asChild className="text-base font-semibold h-12 px-8">
+                <Button size="lg" asChild className="w-full sm:w-auto text-base font-semibold h-12 px-8">
                   <Link href="/contact">Get Started</Link>
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   asChild
-                  className="text-base font-semibold h-12 px-8 bg-transparent"
+                  className="w-full sm:w-auto text-base font-semibold h-12 px-8 bg-transparent"
                 >
                   <Link href="/programs">View Subjects</Link>
                 </Button>
