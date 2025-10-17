@@ -81,7 +81,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center space-y-2">
               <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={500} suffix="+" />
+                <AnimatedCounter end={100} suffix="+" />
               </div>
               <p className="text-sm text-muted-foreground font-medium">Learners Guided</p>
             </div>
