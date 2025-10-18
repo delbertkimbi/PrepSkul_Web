@@ -471,6 +471,61 @@ export const translations = {
         flexibleScheduling: "Flexible scheduling",
         affordableRates: "Affordable rates"
       }
+    },
+
+    // About page
+    about: {
+      hero: {
+        title: "We Believe",
+        titleAccent: "Guidance",
+        titlePrimary: "Builds",
+        titlePrimaryEnd: "Greatness",
+        subtitle: "PrepSkul is more than a tutoring platform. We're a movement dedicated to unlocking the potential of every learner across Cameroon and Africa."
+      },
+      story: {
+        title: "Our Story",
+        paragraph1: "PrepSkul was born from a simple observation: every learner has unique potential waiting to be discovered. But too often, traditional education systems fail to provide the personalized guidance needed to unlock that potential.",
+        paragraph2: "We created PrepSkul to bridge this gap. By connecting learners with qualified tutors and mentors who truly care, we're building a community where every student can thrive academically and personally.",
+        paragraph3: "Our platform goes beyond just academic tutoring. We focus on mentorship, mindset building, and personal growth, helping learners not only perform better in school but also discover who they can become."
+      },
+      mission: {
+        title: "Our Mission",
+        description: "To be part of the world's revolution in learning by helping every learner discover their potential through mentorship, guidance, and skill development."
+      },
+      values: {
+        title: "Our Core Values",
+        subtitle: "These principles guide everything we do at PrepSkul",
+        growth: {
+          title: "Growth",
+          description: "We believe in continuous improvement and helping every learner reach new heights through dedicated support and encouragement."
+        },
+        trust: {
+          title: "Trust",
+          description: "We build lasting relationships based on trust, transparency, and genuine care for each learner's success and well-being."
+        },
+        accountability: {
+          title: "Accountability",
+          description: "We hold ourselves and our tutors to the highest standards, ensuring quality education and measurable results."
+        },
+        accessibility: {
+          title: "Accessibility",
+          description: "Quality education should be available to everyone. We make learning affordable and accessible across Cameroon and Africa."
+        },
+        community: {
+          title: "Community",
+          description: "We're building a supportive learning community where students, tutors, and families grow together."
+        },
+        excellence: {
+          title: "Excellence",
+          description: "We strive for excellence in everything we do, from tutor selection to learning experiences and student outcomes."
+        }
+      },
+      cta: {
+        title: "Join Our Growing Community",
+        subtitle: "Whether you're a learner seeking guidance or a tutor ready to make an impact, there's a place for you at PrepSkul",
+        startLearning: "Start Learning",
+        becomeTutor: "Become a Tutor"
+      }
     }
   },
   
@@ -941,6 +996,61 @@ export const translations = {
         verifiedTutors: "Tuteurs experts vérifiés",
         flexibleScheduling: "Planification flexible",
         affordableRates: "Tarifs abordables"
+      }
+    },
+
+    // About page
+    about: {
+      hero: {
+        title: "Nous Croyons que",
+        titleAccent: "l'Orientation",
+        titlePrimary: "Construit la",
+        titlePrimaryEnd: "Grandeur",
+        subtitle: "PrepSkul est plus qu'une plateforme de tutorat. Nous sommes un mouvement dédié à libérer le potentiel de chaque apprenant à travers le Cameroun et l'Afrique."
+      },
+      story: {
+        title: "Notre Histoire",
+        paragraph1: "PrepSkul est né d'une simple observation : chaque apprenant a un potentiel unique qui attend d'être découvert. Mais trop souvent, les systèmes éducatifs traditionnels ne parviennent pas à fournir l'orientation personnalisée nécessaire pour libérer ce potentiel.",
+        paragraph2: "Nous avons créé PrepSkul pour combler cette lacune. En connectant les apprenants avec des tuteurs et mentors qualifiés qui se soucient vraiment, nous construisons une communauté où chaque étudiant peut s'épanouir académiquement et personnellement.",
+        paragraph3: "Notre plateforme va au-delà du simple tutorat académique. Nous nous concentrons sur le mentorat, le développement de l'état d'esprit et la croissance personnelle, aidant les apprenants non seulement à mieux performer à l'école mais aussi à découvrir qui ils peuvent devenir."
+      },
+      mission: {
+        title: "Notre Mission",
+        description: "Faire partie de la révolution mondiale de l'apprentissage en aidant chaque apprenant à découvrir son potentiel à travers le mentorat, l'orientation et le développement de compétences."
+      },
+      values: {
+        title: "Nos Valeurs Fondamentales",
+        subtitle: "Ces principes guident tout ce que nous faisons chez PrepSkul",
+        growth: {
+          title: "Croissance",
+          description: "Nous croyons en l'amélioration continue et en aidant chaque apprenant à atteindre de nouveaux sommets grâce à un soutien et des encouragements dédiés."
+        },
+        trust: {
+          title: "Confiance",
+          description: "Nous construisons des relations durables basées sur la confiance, la transparence et l'attention sincère portée au succès et au bien-être de chaque apprenant."
+        },
+        accountability: {
+          title: "Responsabilité",
+          description: "Nous nous tenons, ainsi que nos tuteurs, aux normes les plus élevées, garantissant une éducation de qualité et des résultats mesurables."
+        },
+        accessibility: {
+          title: "Accessibilité",
+          description: "Une éducation de qualité devrait être accessible à tous. Nous rendons l'apprentissage abordable et accessible à travers le Cameroun et l'Afrique."
+        },
+        community: {
+          title: "Communauté",
+          description: "Nous construisons une communauté d'apprentissage solidaire où les étudiants, les tuteurs et les familles grandissent ensemble."
+        },
+        excellence: {
+          title: "Excellence",
+          description: "Nous visons l'excellence dans tout ce que nous faisons, de la sélection des tuteurs aux expériences d'apprentissage et aux résultats des étudiants."
+        }
+      },
+      cta: {
+        title: "Rejoignez Notre Communauté Grandissante",
+        subtitle: "Que vous soyez un apprenant en quête d'orientation ou un tuteur prêt à avoir un impact, il y a une place pour vous chez PrepSkul",
+        startLearning: "Commencer à Apprendre",
+        becomeTutor: "Devenir Tuteur"
       }
     }
   }

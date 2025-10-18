@@ -132,8 +132,8 @@ export default function HomePage() {
             <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
               <div className="relative h-56 w-full overflow-hidden">
                 <Image
-                  src="/african-student-learning-online-via-video-call-wit.jpg"
-                  alt="Student learning online via video call with tutor"
+                  src="/young-african-girl-online-learning-session.jpg"
+                  alt="Young African girl engaged in online learning session with tutor on laptop"
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
