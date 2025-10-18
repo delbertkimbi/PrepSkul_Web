@@ -293,12 +293,12 @@ export const translations = {
             description: "Physics, Chemistry, Biology. Hands-on learning with practical applications."
           },
           english: {
-            title: "English",
-            description: "Reading, writing, grammar, literature. Build strong communication skills."
+            title: "Social Science",
+            description: "Economics, Geography, History, Literature, Psychology. Hands-on learning through analyzing society, culture, and history."
           },
           languages: {
             title: "Languages",
-            description: "French, Spanish, and more. Conversational and academic language learning."
+            description: "English, French, Spanish, and more. Conversational and academic language learning."
           }
         }
       },
