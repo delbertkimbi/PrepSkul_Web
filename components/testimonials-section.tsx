@@ -1,50 +1,23 @@
+"use client"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Star, Quote } from "lucide-react"
 import Image from "next/image"
-
-const testimonials = [
-  {
-    name: "Amina Njoya",
-    role: "Student, Form 5",
-    image: "/young-african-female-student-smiling.jpg",
-    content:
-      "PrepSkul changed my life! My math tutor helped me go from failing to getting an A. More than that, they believed in me when I didn't believe in myself.",
-    rating: 5,
-  },
-  {
-    name: "Marie Fotso",
-    role: "Parent",
-    image: "/african-mother-professional.jpg",
-    content:
-      "As a parent, I'm so grateful for PrepSkul. My son's confidence has grown tremendously, and her grades have improved across all his class 5 subjects. The tutors truly care.",
-    rating: 5,
-  },
-  {
-    name: "Emmanuel Tabi",
-    role: "Student, Upper Sixth",
-    image: "/young-african-male-student-confident.jpg",
-    content:
-      "The exam preparation was incredible. My tutor gave me strategies that worked, and I passed my A-levels with flying colors. Now I'm heading to university!",
-    rating: 5,
-  },
-  {
-    name: "Grace Mbah",
-    role: "Coding Student",
-    image: "/young-african-female-tech-student.jpg",
-    content:
-      "I never thought I could learn to code, but my PrepSkul tutor made it fun and easy to understand. Now I'm building my own websites!",
-    rating: 5,
-  },
-]
+import { useLocale } from "@/lib/locale-context"
+import { getTranslations } from "@/lib/translations"
 
 export function TestimonialsSection() {
+  const { locale } = useLocale()
+  const t = getTranslations(locale)
+  const testimonials = [...t.testimonials.items]
+
   return (
     <section className="py-16 bg-muted/30">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">What Our Learners Say</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t.testimonials.title}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Real stories from students and parents who have experienced the PrepSkul difference
+            {t.testimonials.subtitle}
           </p>
         </div>
 

@@ -1,9 +1,6 @@
 import type React from "react"
-import type { Metadata } from "next"
 import { Poppins } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
-import { Suspense } from "react"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -12,24 +9,15 @@ const poppins = Poppins({
   display: "swap",
 })
 
-export const metadata: Metadata = {
-  title: "PrepSkul - Guiding Every Learner to Their Full Potential",
-  description:
-    "Connect with qualified tutors and trainers for academic subjects and practical skills. Learn online or onsite, one-on-one or in groups across Cameroon and Africa.",
-  keywords: "tutoring Cameroon, home tutoring, online learning, skill training, academic tutoring, mentorship",
-  generator: "v0.app",
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html>
       <body className={`${poppins.variable} font-sans antialiased`}>
-        <Suspense fallback={null}>{children}</Suspense>
-        <Analytics />
+        {children}
       </body>
     </html>
   )

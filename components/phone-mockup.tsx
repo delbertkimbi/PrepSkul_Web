@@ -1,7 +1,16 @@
 import Image from "next/image"
 import { Star, Clock, Video, BookOpen, Laptop, Globe } from "lucide-react"
+import { getTranslations } from "@/lib/translations"
+import { type Locale } from "@/lib/i18n"
 
-export function PhoneMockup() {
+interface PhoneMockupProps {
+  locale: Locale
+}
+
+export function PhoneMockup({ locale }: PhoneMockupProps) {
+  const t = getTranslations(locale)
+  const isFrench = locale === 'fr'
+  
   return (
     <div className="phone-mockup-container">
       <div className="relative w-[320px] h-[650px] perspective-1000">
@@ -41,17 +50,17 @@ export function PhoneMockup() {
                 <div className="px-6 -mt-8 relative z-10 space-y-6 pb-8">
                   {/* Welcome card with softer design and smaller learning option buttons */}
                   <div className="bg-gradient-to-br from-primary to-primary/90 rounded-3xl p-5 text-white shadow-xl">
-                    <h2 className="text-xl font-bold mb-1.5">Find Your Tutor</h2>
-                    <p className="text-xs opacity-90 mb-3">Connect with expert tutors across Cameroon</p>
-                    <div className="flex gap-2">
-                      <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium">
-                        Online
+                    <h2 className={`font-bold mb-1.5 ${isFrench ? 'text-lg' : 'text-xl'}`}>{t.mobile.findTutor.title}</h2>
+                    <p className="text-xs opacity-90 mb-3">{t.mobile.findTutor.subtitle}</p>
+                    <div className="flex gap-1.5">
+                      <div className={`bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1.5 font-medium ${isFrench ? 'text-[9px]' : 'text-xs'}`}>
+                        {t.mobile.learningOptions.online}
                       </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium">
-                        Home
+                      <div className={`bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1.5 font-medium ${isFrench ? 'text-[9px]' : 'text-xs'}`}>
+                        {t.mobile.learningOptions.home}
                       </div>
-                      <div className="bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium">
-                        Groups
+                      <div className={`bg-white/20 backdrop-blur-sm rounded-full px-2.5 py-1.5 font-medium ${isFrench ? 'text-[9px]' : 'text-xs'}`}>
+                        {t.mobile.learningOptions.groups}
                       </div>
                     </div>
                   </div>
@@ -59,47 +68,47 @@ export function PhoneMockup() {
                   {/* Featured tutor card with softer shadows */}
                   <div className="bg-white rounded-3xl p-5 space-y-4 shadow-lg border border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                      <div className={`rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center text-primary font-bold ${isFrench ? 'w-12 h-12 text-sm' : 'w-14 h-14 text-lg'}`}>
                         sc
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-base">Sir Carl</h3>
-                        <p className="text-xs text-gray-600">Mathematics & Physics</p>
+                        <h3 className={`font-bold ${isFrench ? 'text-sm' : 'text-base'}`}>{t.mobile.tutor.name}</h3>
+                        <p className={`text-gray-600 ${isFrench ? 'text-[10px]' : 'text-xs'}`}>{t.mobile.tutor.subjects}</p>
                       </div>
                       <div className="flex items-center gap-1 bg-yellow-50 rounded-full px-2.5 py-1">
                         <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
-                        <span className="text-xs font-bold text-yellow-700">4.9</span>
+                        <span className="text-xs font-bold text-yellow-700">{t.mobile.tutor.rating}</span>
                       </div>
                     </div>
 
-                    <div className="flex gap-3 text-xs">
-                      <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5 flex-1">
+                    <div className="flex gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2 py-1.5 flex-1">
                         <Clock className="w-3.5 h-3.5 text-gray-500" />
                         <div className="flex flex-col">
-                          <span className="font-semibold text-gray-900">50+</span>
-                          <span className="text-gray-600">sessions</span>
+                          <span className={`font-semibold text-gray-900 ${isFrench ? 'text-[10px]' : 'text-xs'}`}>{t.mobile.tutor.sessions}</span>
+                          <span className={`text-gray-600 ${isFrench ? 'text-[9px]' : 'text-xs'}`}>{t.mobile.tutor.sessionsLabel}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-1.5 flex-1">
+                      <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2 py-1.5 flex-1">
                         <Video className="w-3.5 h-3.5 text-gray-500" />
                         <div className="flex flex-col">
-                          <span className="font-semibold text-gray-900">Online</span>
-                          <span className="text-gray-600">& Home</span>
+                          <span className={`font-semibold text-gray-900 ${isFrench ? 'text-[10px]' : 'text-xs'}`}>{t.mobile.tutor.availability}</span>
+                          <span className={`text-gray-600 ${isFrench ? 'text-[9px]' : 'text-xs'}`}>{t.mobile.tutor.availabilityLabel}</span>
                         </div>
                       </div>
                     </div>
 
                     <button className="w-full bg-primary text-white rounded-xl py-3 text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
-                      Book Session
+                      {t.mobile.tutor.bookButton}
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    <h3 className="font-bold text-sm text-gray-900">Popular Subjects</h3>
+                    <h3 className="font-bold text-sm text-gray-900">{t.mobile.subjects.title}</h3>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-4 text-center shadow-sm">
                         <BookOpen className="w-6 h-6 mx-auto mb-1.5 text-blue-600" />
-                        <div className="text-xs font-semibold text-gray-900">Mathematics</div>
+                        <div className="text-xs font-semibold text-gray-900">{t.mobile.subjects.mathematics}</div>
                       </div>
                       <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-2xl p-4 text-center shadow-sm">
                         <svg
@@ -115,34 +124,34 @@ export function PhoneMockup() {
                             d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
                           />
                         </svg>
-                        <div className="text-xs font-semibold text-gray-900">Sciences</div>
+                        <div className="text-xs font-semibold text-gray-900">{t.mobile.subjects.sciences}</div>
                       </div>
                       <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl p-4 text-center shadow-sm">
                         <Laptop className="w-6 h-6 mx-auto mb-1.5 text-purple-600" />
-                        <div className="text-xs font-semibold text-gray-900">Coding</div>
+                        <div className="text-xs font-semibold text-gray-900">{t.mobile.subjects.coding}</div>
                       </div>
                       <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-2xl p-4 text-center shadow-sm">
                         <Globe className="w-6 h-6 mx-auto mb-1.5 text-orange-600" />
-                        <div className="text-xs font-semibold text-gray-900">Languages</div>
+                        <div className="text-xs font-semibold text-gray-900">{t.mobile.subjects.languages}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Additional scrollable content to show it's scrollable */}
                   <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-2xl p-5 shadow-sm">
-                    <h3 className="font-bold text-sm mb-2">Why PrepSkul?</h3>
+                    <h3 className="font-bold text-sm mb-2">{t.mobile.whyPrepSkul.title}</h3>
                     <ul className="space-y-2 text-xs text-gray-700">
                       <li className="flex items-start gap-2">
                         <span className="text-primary">✓</span>
-                        <span>Verified expert tutors</span>
+                        <span>{t.mobile.whyPrepSkul.verifiedTutors}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-primary">✓</span>
-                        <span>Flexible scheduling</span>
+                        <span>{t.mobile.whyPrepSkul.flexibleScheduling}</span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-primary">✓</span>
-                        <span>Affordable rates</span>
+                        <span>{t.mobile.whyPrepSkul.affordableRates}</span>
                       </li>
                     </ul>
                   </div>

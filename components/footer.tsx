@@ -8,9 +8,13 @@ import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react
 import { TikTokIcon } from "./tiktok-icon"
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { useLocale } from "@/lib/locale-context"
+import { getTranslations } from "@/lib/translations"
 
 export function Footer() {
   const [showComingSoon, setShowComingSoon] = useState(false)
+  const { locale } = useLocale()
+  const t = getTranslations(locale)
 
   const LAUNCH_DATE = new Date("2025-11-12T00:00:00")
 
@@ -60,52 +64,52 @@ export function Footer() {
             <div className="space-y-3">
               <h3 className="text-2xl font-bold">PrepSkul</h3>
               <p className="text-primary-foreground/80 leading-relaxed text-sm">
-                Guiding every learner to their full potential across Cameroon and Africa.
+                {t.footer.description}
               </p>
             </div>
 
             {/* Quick Links */}
             <div className="space-y-3">
-              <h4 className="font-bold text-lg">Quick Links</h4>
+              <h4 className="font-bold text-lg">{t.footer.quickLinks}</h4>
               <ul className="space-y-2">
                 <li>
                   <Link
-                    href="/"
+                    href={`/${locale}`}
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    Home
+                    {t.nav.home}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/about"
+                    href={`/${locale}/about`}
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    About
+                    {t.nav.about}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/programs"
+                    href={`/${locale}/programs`}
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    Programs
+                    {t.nav.programs}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/contact"
+                    href={`/${locale}/contact`}
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    Contact
+                    {t.nav.contact}
                   </Link>
                 </li>
                 <li>
                   <Link
-                    href="/tutors"
+                    href={`/${locale}/tutors`}
                     className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                   >
-                    Become a Tutor
+                    {t.tutors.hero.title}
                   </Link>
                 </li>
               </ul>
@@ -113,7 +117,7 @@ export function Footer() {
 
             {/* Contact Us */}
             <div className="space-y-3">
-              <h4 className="font-bold text-lg">Contact Us</h4>
+              <h4 className="font-bold text-lg">{t.footer.contactUs}</h4>
               <ul className="space-y-2">
                 <li className="flex items-center gap-2 text-primary-foreground/80 text-sm">
                   <Phone className="h-4 w-4 flex-shrink-0" />
@@ -170,8 +174,8 @@ export function Footer() {
 
             {/* Download App */}
             <div className="space-y-3">
-              <h4 className="font-bold text-lg">Download App</h4>
-              <div className="space-y-1.5">
+              <h4 className="font-bold text-lg">{t.footer.downloadApp}</h4>
+              <div className="space-y-1">
                 <button
                   onClick={handleAppClick}
                   className="block w-full hover:opacity-80 transition-opacity"
@@ -203,7 +207,7 @@ export function Footer() {
           </div>
 
           <div className="pt-6 border-t border-primary-foreground/20 text-center text-primary-foreground/80 text-sm">
-            <p>&copy; {new Date().getFullYear()} PrepSkul. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} PrepSkul. {t.footer.allRightsReserved}</p>
           </div>
         </div>
       </footer>
@@ -211,9 +215,9 @@ export function Footer() {
       <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-center">Coming Soon!</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-center">{t.footer.comingSoon}</DialogTitle>
             <DialogDescription className="text-center pt-4">
-              Our mobile app is launching soon
+              {t.footer.comingSoonDescription}
             </DialogDescription>
           </DialogHeader>
 
@@ -221,23 +225,23 @@ export function Footer() {
             <div className="flex justify-center gap-4">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">{countdown.days}</div>
-                <div className="text-xs text-muted-foreground">Days</div>
+                <div className="text-xs text-muted-foreground">{t.footer.days}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">{countdown.hours}</div>
-                <div className="text-xs text-muted-foreground">Hours</div>
+                <div className="text-xs text-muted-foreground">{t.footer.hours}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">{countdown.minutes}</div>
-                <div className="text-xs text-muted-foreground">Minutes</div>
+                <div className="text-xs text-muted-foreground">{t.footer.minutes}</div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary">{countdown.seconds}</div>
-                <div className="text-xs text-muted-foreground">Seconds</div>
+                <div className="text-xs text-muted-foreground">{t.footer.seconds}</div>
               </div>
             </div>
             <div className="text-sm text-muted-foreground pt-2 text-center">
-              Get ready to learn on the go with PrepSkul mobile app!
+              {t.footer.getReady}
             </div>
           </div>
         </DialogContent>

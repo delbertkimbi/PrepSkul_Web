@@ -2,11 +2,16 @@
 
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
+import { useLocale } from "@/lib/locale-context"
+import { getTranslations } from "@/lib/translations"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { locale } = useLocale()
+  const t = getTranslations(locale)
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -18,32 +23,33 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="/" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-              Home
+            <Link href={`/${locale}`} className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+              {t.nav.home}
             </Link>
             <Link
-              href="/about"
+              href={`/${locale}/about`}
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
-              About
+              {t.nav.about}
             </Link>
             <Link
-              href="/programs"
+              href={`/${locale}/programs`}
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
-              Programs
+              {t.nav.programs}
             </Link>
             <Link
-              href="/contact"
+              href={`/${locale}/contact`}
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
-              Contact
+              {t.nav.contact}
             </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher currentLocale={locale} />
             <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link href="/contact">Get Started</Link>
+              <Link href={`/${locale}/contact`}>{t.nav.getStarted}</Link>
             </Button>
           </div>
 
@@ -57,30 +63,31 @@ export function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/40">
             <nav className="flex flex-col gap-4">
-              <Link href="/" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                Home
+              <Link href={`/${locale}`} className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+                {t.nav.home}
               </Link>
               <Link
-                href="/about"
+                href={`/${locale}/about`}
                 className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               >
-                About
+                {t.nav.about}
               </Link>
               <Link
-                href="/programs"
+                href={`/${locale}/programs`}
                 className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               >
-                Programs
+                {t.nav.programs}
               </Link>
               <Link
-                href="/contact"
+                href={`/${locale}/contact`}
                 className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
               >
-                Contact
+                {t.nav.contact}
               </Link>
-              <div className="pt-2">
-                <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Link href="/contact">Get Started</Link>
+              <div className="flex items-center gap-2 pt-2">
+                <LanguageSwitcher currentLocale={locale} />
+                <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
+                  <Link href={`/${locale}/contact`}>{t.nav.getStarted}</Link>
                 </Button>
               </div>
             </nav>

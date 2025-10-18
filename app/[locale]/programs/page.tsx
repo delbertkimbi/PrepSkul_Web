@@ -22,6 +22,8 @@ import {
   Sparkles,
   Lightbulb,
 } from "lucide-react"
+import { useLocale } from "@/lib/locale-context"
+import { getTranslations } from "@/lib/translations"
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -45,6 +47,9 @@ const itemVariants = {
 }
 
 export default function ProgramsPage() {
+  const { locale } = useLocale()
+  const t = getTranslations(locale)
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -59,11 +64,10 @@ export default function ProgramsPage() {
             className="max-w-3xl mx-auto text-center space-y-5"
           >
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-balance">
-              Our <span className="text-primary">Programs</span>
+              {t.programs.hero.title}
             </h1>
             <p className="text-base sm:text-lg text-muted-foreground text-pretty">
-              From academic excellence to skill mastery, we offer comprehensive programs designed to help every learner
-              reach their full potential.
+              {t.programs.hero.subtitle}
             </p>
           </motion.div>
         </div>
@@ -78,9 +82,9 @@ export default function ProgramsPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3">Academic Tutoring</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">{t.programs.academic.title}</h2>
             <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              Master your subjects with personalized guidance from expert tutors
+              {t.programs.academic.subtitle}
             </p>
           </motion.div>
 
@@ -104,10 +108,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Calculator className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Mathematics</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.academic.subjects.mathematics.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Algebra, Geometry, Calculus, Statistics. All levels from primary to university.
+                    {t.programs.academic.subjects.mathematics.description}
                   </p>
                 </CardContent>
               </Card>
@@ -126,10 +130,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Beaker className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Sciences</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.academic.subjects.sciences.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Physics, Chemistry, Biology. Hands-on learning with practical applications.
+                    {t.programs.academic.subjects.sciences.description}
                   </p>
                 </CardContent>
               </Card>
@@ -148,10 +152,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">English</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.academic.subjects.english.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Reading, writing, grammar, literature. Build strong communication skills.
+                    {t.programs.academic.subjects.english.description}
                   </p>
                 </CardContent>
               </Card>
@@ -170,10 +174,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Globe className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Languages</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.academic.subjects.languages.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    French, Spanish, and more. Conversational and academic language learning.
+                    {t.programs.academic.subjects.languages.description}
                   </p>
                 </CardContent>
               </Card>
@@ -188,7 +192,7 @@ export default function ProgramsPage() {
             className="text-center mt-8"
           >
             <Button size="lg" asChild className="text-sm font-semibold">
-              <Link href="/contact">Get Academic Support</Link>
+              <Link href={`/${locale}/contact`}>{t.programs.academic.button}</Link>
             </Button>
           </motion.div>
         </div>
@@ -203,9 +207,9 @@ export default function ProgramsPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3">Skill Development</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">{t.programs.skills.title}</h2>
             <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              Learn practical skills that prepare you for the future
+              {t.programs.skills.subtitle}
             </p>
           </motion.div>
 
@@ -229,10 +233,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Code className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Coding & Tech</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.skills.subjects.coding.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Programming, web development, and digital literacy for the modern world.
+                    {t.programs.skills.subjects.coding.description}
                   </p>
                 </CardContent>
               </Card>
@@ -251,10 +255,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Palette className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Art & Design</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.skills.subjects.art.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Explore creativity through drawing, painting, graphic design, and more.
+                    {t.programs.skills.subjects.art.description}
                   </p>
                 </CardContent>
               </Card>
@@ -273,10 +277,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Music className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Music</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.skills.subjects.music.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Learn instruments, music theory, and develop your musical talents.
+                    {t.programs.skills.subjects.music.description}
                   </p>
                 </CardContent>
               </Card>
@@ -295,10 +299,10 @@ export default function ProgramsPage() {
                 <CardContent className="p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <Lightbulb className="h-5 w-5 text-primary" />
-                    <h3 className="font-semibold text-lg">Life Skills</h3>
+                    <h3 className="font-semibold text-lg">{t.programs.skills.subjects.lifeSkills.title}</h3>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Build leadership, communication, and personal development skills.
+                    {t.programs.skills.subjects.lifeSkills.description}
                   </p>
                 </CardContent>
               </Card>
@@ -313,7 +317,7 @@ export default function ProgramsPage() {
             className="text-center mt-8"
           >
             <Button size="lg" asChild className="text-sm font-semibold">
-              <Link href="/contact">Start Skill Development</Link>
+              <Link href={`/${locale}/contact`}>{t.programs.skills.button}</Link>
             </Button>
           </motion.div>
         </div>
@@ -333,35 +337,35 @@ export default function ProgramsPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
-                <h2 className="text-3xl sm:text-4xl font-bold">Exam Preparation</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold">{t.programs.examPrep.title}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Get ready for your most important exams with focused preparation and proven strategies.
+                  {t.programs.examPrep.subtitle}
                 </p>
                 <ul className="space-y-4">
                   <li className="flex items-start gap-3">
                     <Award className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-semibold text-base">GCE O/A Level</div>
-                      <div className="text-sm text-muted-foreground">Comprehensive exam preparation</div>
+                      <div className="font-semibold text-base">{t.programs.examPrep.exams.gce.title}</div>
+                      <div className="text-sm text-muted-foreground">{t.programs.examPrep.exams.gce.description}</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
                     <Award className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-semibold text-base">BEPC & Baccalauréat</div>
-                      <div className="text-sm text-muted-foreground">Targeted practice and review</div>
+                      <div className="font-semibold text-base">{t.programs.examPrep.exams.bepc.title}</div>
+                      <div className="text-sm text-muted-foreground">{t.programs.examPrep.exams.bepc.description}</div>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
                     <Award className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-semibold text-base">University Entrance</div>
-                      <div className="text-sm text-muted-foreground">Prepare for competitive admissions</div>
+                      <div className="font-semibold text-base">{t.programs.examPrep.exams.university.title}</div>
+                      <div className="text-sm text-muted-foreground">{t.programs.examPrep.exams.university.description}</div>
                     </div>
                   </li>
                 </ul>
                 <Button size="lg" asChild className="text-sm font-semibold">
-                  <Link href="/contact">Prepare for Your Exam</Link>
+                  <Link href={`/${locale}/contact`}>{t.programs.examPrep.button}</Link>
                 </Button>
               </div>
 
@@ -374,10 +378,10 @@ export default function ProgramsPage() {
                 <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-0 shadow-2xl">
                   <CardContent className="pt-8 pb-8 space-y-6 text-center">
                     <Sparkles className="h-12 w-12 text-primary-foreground mx-auto" />
-                    <h3 className="text-2xl font-bold">Success Rate</h3>
-                    <div className="text-6xl font-bold">95%</div>
+                    <h3 className="text-2xl font-bold">{t.programs.examPrep.successRate.title}</h3>
+                    <div className="text-6xl font-bold">{t.programs.examPrep.successRate.percentage}</div>
                     <p className="text-sm text-primary-foreground/90 leading-relaxed">
-                      of our students pass their exams with improved grades after working with PrepSkul tutors
+                      {t.programs.examPrep.successRate.description}
                     </p>
                   </CardContent>
                 </Card>
@@ -396,9 +400,9 @@ export default function ProgramsPage() {
             transition={{ duration: 0.5 }}
             className="text-center mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3">What's Included</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3">{t.programs.included.title}</h2>
             <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              Every program comes with comprehensive support
+              {t.programs.included.subtitle}
             </p>
           </motion.div>
 
@@ -413,32 +417,32 @@ export default function ProgramsPage() {
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <Users className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-base">Qualified Tutors</h3>
-              <p className="text-sm text-muted-foreground">Expert educators in their fields</p>
+              <h3 className="font-semibold text-base">{t.programs.included.features.tutors.title}</h3>
+              <p className="text-sm text-muted-foreground">{t.programs.included.features.tutors.description}</p>
             </motion.div>
 
             <motion.div variants={itemVariants} className="text-center space-y-3">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <Target className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-base">Personalized Plans</h3>
-              <p className="text-sm text-muted-foreground">Tailored to your learning needs</p>
+              <h3 className="font-semibold text-base">{t.programs.included.features.plans.title}</h3>
+              <p className="text-sm text-muted-foreground">{t.programs.included.features.plans.description}</p>
             </motion.div>
 
             <motion.div variants={itemVariants} className="text-center space-y-3">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <TrendingUp className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-base">Progress Tracking</h3>
-              <p className="text-sm text-muted-foreground">Regular feedback and updates</p>
+              <h3 className="font-semibold text-base">{t.programs.included.features.tracking.title}</h3>
+              <p className="text-sm text-muted-foreground">{t.programs.included.features.tracking.description}</p>
             </motion.div>
 
             <motion.div variants={itemVariants} className="text-center space-y-3">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-base">Flexible Learning</h3>
-              <p className="text-sm text-muted-foreground">Online, home, or group options</p>
+              <h3 className="font-semibold text-base">{t.programs.included.features.flexible.title}</h3>
+              <p className="text-sm text-muted-foreground">{t.programs.included.features.flexible.description}</p>
             </motion.div>
           </motion.div>
         </div>
@@ -454,13 +458,13 @@ export default function ProgramsPage() {
             transition={{ duration: 0.6 }}
             className="space-y-6"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-balance">Ready to Start Your Program?</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-balance">{t.programs.cta.title}</h2>
             <p className="text-base text-primary-foreground/90 max-w-2xl mx-auto text-pretty">
-              Choose the program that fits your goals and start learning today
+              {t.programs.cta.subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" variant="secondary" asChild className="text-sm font-semibold">
-                <Link href="/contact">Get Started</Link>
+                <Link href={`/${locale}/contact`}>{t.programs.cta.getStarted}</Link>
               </Button>
               <Button
                 size="lg"
@@ -468,7 +472,7 @@ export default function ProgramsPage() {
                 asChild
                 className="text-sm font-semibold bg-transparent border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
               >
-                <Link href="/how-it-works">Learn How It Works</Link>
+                <Link href={`/${locale}/how-it-works`}>{t.programs.cta.learnMore}</Link>
               </Button>
             </div>
           </motion.div>

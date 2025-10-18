@@ -12,8 +12,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MessageCircle, Phone, MapPin, Send } from "lucide-react"
 import { useState } from "react"
+import { useLocale } from "@/lib/locale-context"
+import { getTranslations } from "@/lib/translations"
 
 export default function ContactPage() {
+  const { locale } = useLocale()
+  const t = getTranslations(locale)
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -41,17 +46,15 @@ export default function ContactPage() {
       window.open(`https://wa.me/237674089066?text=${whatsappMessage}`, "_blank")
 
       if (emailResponse.ok) {
-        alert(
-          "Thank you for contacting PrepSkul! We've received your message via email and WhatsApp. We'll get back to you within 24 hours.",
-        )
+        alert(t.contact.form.success.email)
       } else {
-        alert("Your message was sent to WhatsApp. We'll get back to you soon!")
+        alert(t.contact.form.success.whatsapp)
       }
 
       setFormData({ name: "", email: "", phone: "", subject: "", message: "" })
     } catch (error) {
       console.error("[v0] Error submitting form:", error)
-      alert("There was an issue sending your message. Please try contacting us via WhatsApp directly.")
+      alert(t.contact.form.success.error)
     } finally {
       setIsSubmitting(false)
     }
@@ -71,11 +74,9 @@ export default function ContactPage() {
       <section className="py-16 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl mx-auto text-center space-y-4">
-            <h1 className="text-4xl sm:text-5xl font-bold">Get in Touch</h1>
+            <h1 className="text-4xl sm:text-5xl font-bold">{t.contact.hero.title}</h1>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              Whether you're a student looking to excel in your studies or a parent seeking the best educational support
-              for your child, we're here to help you find the perfect tutor. Reach out today and let's start your
-              learning journey together.
+              {t.contact.hero.subtitle}
             </p>
           </div>
         </div>
@@ -92,8 +93,8 @@ export default function ContactPage() {
                 <div className="w-12 h-12 bg-[#25D366]/10 rounded-xl flex items-center justify-center mx-auto">
                   <MessageCircle className="h-6 w-6 text-[#25D366]" />
                 </div>
-                <h3 className="font-bold text-base">WhatsApp</h3>
-                <p className="text-sm text-muted-foreground">Chat instantly</p>
+                <h3 className="font-bold text-base">{t.contact.methods.whatsapp.title}</h3>
+                <p className="text-sm text-muted-foreground">{t.contact.methods.whatsapp.description}</p>
               </CardContent>
             </Card>
 
@@ -102,8 +103,8 @@ export default function ContactPage() {
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto">
                   <Phone className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-base">Phone</h3>
-                <p className="text-sm text-muted-foreground">+237 6 74 08 90 66</p>
+                <h3 className="font-bold text-base">{t.contact.methods.phone.title}</h3>
+                <p className="text-sm text-muted-foreground">{t.contact.methods.phone.description}</p>
               </CardContent>
             </Card>
 
@@ -112,8 +113,8 @@ export default function ContactPage() {
                 <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto">
                   <MapPin className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-base">Location</h3>
-                <p className="text-sm text-muted-foreground">Buea, Cameroon</p>
+                <h3 className="font-bold text-base">{t.contact.methods.location.title}</h3>
+                <p className="text-sm text-muted-foreground">{t.contact.methods.location.description}</p>
               </CardContent>
             </Card>
           </div>
@@ -122,15 +123,15 @@ export default function ContactPage() {
           <div className="max-w-2xl mx-auto">
             <Card>
               <CardContent className="pt-6">
-                <h2 className="text-2xl font-bold mb-6 text-center">Send Us a Message</h2>
+                <h2 className="text-2xl font-bold mb-6 text-center">{t.contact.form.title}</h2>
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-sm font-semibold">
-                      Full Name *
+                      {t.contact.form.fields.name.label} *
                     </Label>
                     <Input
                       id="name"
-                      placeholder="Enter your full name"
+                      placeholder={t.contact.form.fields.name.placeholder}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
@@ -140,12 +141,12 @@ export default function ContactPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm font-semibold">
-                      Email Address *
+                      {t.contact.form.fields.email.label} *
                     </Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="your.email@example.com"
+                      placeholder={t.contact.form.fields.email.placeholder}
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
@@ -155,12 +156,12 @@ export default function ContactPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="phone" className="text-sm font-semibold">
-                      Phone Number
+                      {t.contact.form.fields.phone.label}
                     </Label>
                     <Input
                       id="phone"
                       type="tel"
-                      placeholder="+237 XXX XXX XXX"
+                      placeholder={t.contact.form.fields.phone.placeholder}
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="h-11"
@@ -169,7 +170,7 @@ export default function ContactPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="subject" className="text-sm font-semibold">
-                      I'm interested in *
+                      {t.contact.form.fields.subject.label} *
                     </Label>
                     <Select
                       value={formData.subject}
@@ -177,24 +178,24 @@ export default function ContactPage() {
                       required
                     >
                       <SelectTrigger id="subject" className="h-11">
-                        <SelectValue placeholder="Select a subject" />
+                        <SelectValue placeholder={t.contact.form.fields.subject.placeholder} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="academic">Academic Tutoring</SelectItem>
-                        <SelectItem value="skills">Skill Development</SelectItem>
-                        <SelectItem value="exam">Exam Preparation</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
+                        <SelectItem value="academic">{t.contact.form.fields.subject.options.academic}</SelectItem>
+                        <SelectItem value="skills">{t.contact.form.fields.subject.options.skills}</SelectItem>
+                        <SelectItem value="exam">{t.contact.form.fields.subject.options.exam}</SelectItem>
+                        <SelectItem value="other">{t.contact.form.fields.subject.options.other}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="message" className="text-sm font-semibold">
-                      Message *
+                      {t.contact.form.fields.message.label} *
                     </Label>
                     <Textarea
                       id="message"
-                      placeholder="Tell us about your learning goals..."
+                      placeholder={t.contact.form.fields.message.placeholder}
                       rows={5}
                       value={formData.message}
                       onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -204,11 +205,11 @@ export default function ContactPage() {
 
                   <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isSubmitting}>
                     {isSubmitting ? (
-                      "Sending..."
+                      t.contact.form.submit.sending
                     ) : (
                       <>
                         <Send className="h-4 w-4 mr-2" />
-                        Send Message
+                        {t.contact.form.submit.send}
                       </>
                     )}
                   </Button>
