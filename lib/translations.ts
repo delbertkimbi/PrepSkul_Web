@@ -293,7 +293,7 @@ export const translations = {
             description: "Physics, Chemistry, Biology. Hands-on learning with practical applications."
           },
           english: {
-            title: "Social Science",
+            title: "Social Sciences",
             description: "Economics, Geography, History, Literature, Psychology. Hands-on learning through analyzing society, culture, and history."
           },
           languages: {
