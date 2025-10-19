@@ -173,7 +173,7 @@ export function Footer() {
             </div>
 
             {/* Download App */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <h4 className="font-bold text-lg">{t.footer.downloadApp}</h4>
               <div className="space-y-1">
                 <button

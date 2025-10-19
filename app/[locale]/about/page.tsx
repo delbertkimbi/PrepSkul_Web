@@ -19,9 +19,9 @@ export default function AboutPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
+      <section className="py-12 sm:py-16 bg-gradient-to-b from-muted/30 to-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
+          <div className="max-w-3xl mx-auto text-center space-y-4 sm:space-y-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-balance">
               {t.about.hero.title} <span className="text-accent">{t.about.hero.titleAccent}</span> {t.about.hero.titlePrimary}{" "}
               <span className="text-primary">{t.about.hero.titlePrimaryEnd}</span>
@@ -34,7 +34,7 @@ export default function AboutPage() {
       </section>
 
       {/* Our Story */}
-      <section className="py-16">
+      <section className="py-8 sm:py-12">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 items-center">

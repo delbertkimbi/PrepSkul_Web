@@ -54,7 +54,7 @@ export default function ProgramsPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <section className="relative py-20 lg:py-28 overflow-hidden">
+      <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div

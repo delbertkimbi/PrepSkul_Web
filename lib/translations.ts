@@ -381,60 +381,117 @@ export const translations = {
     contact: {
       hero: {
         title: "Get in Touch",
-        subtitle: "Whether you're a student looking to excel in your studies or a parent seeking the best educational support for your child, we're here to help you find the perfect tutor. Reach out today and let's start your learning journey together."
-      },
-      methods: {
-        whatsapp: {
-          title: "WhatsApp",
-          description: "Chat instantly"
-        },
-        phone: {
-          title: "Phone",
-          description: "+237 6 74 08 90 66"
-        },
-        location: {
-          title: "Location",
-          description: "Buea, Cameroon"
-        }
+        subtitle: "Whether you're a student looking to excel in your studies, a parent seeking the best educational support for your child, or a tutor wanting to join our team, we're here to help. Fill out the form below and we'll connect you with the right solution."
       },
       form: {
-        title: "Send Us a Message",
+        title: "Tell Us About Yourself",
         fields: {
           name: {
             label: "Full Name",
             placeholder: "Enter your full name"
           },
-          email: {
-            label: "Email Address",
-            placeholder: "your.email@example.com"
-          },
           phone: {
             label: "Phone Number",
             placeholder: "+237 XXX XXX XXX"
           },
-          subject: {
-            label: "I'm interested in",
-            placeholder: "Select a subject",
+          role: {
+            label: "I am a",
+            placeholder: "Select your role",
+            options: {
+              student: "Student",
+              parent: "Parent",
+              tutor: "Tutor"
+            }
+          },
+          program: {
+            label: "Program of Interest",
+            placeholder: "Select program",
             options: {
               academic: "Academic Tutoring",
               skills: "Skill Development",
-              exam: "Exam Preparation",
+              exam: "Exam Preparation"
+            }
+          },
+          academicSubjects: {
+            label: "Subjects",
+            placeholder: "Select subjects you need help with",
+            options: {
+              mathematics: "Mathematics",
+              english: "English",
+              french: "French",
+              physics: "Physics",
+              chemistry: "Chemistry",
+              biology: "Biology",
+              history: "History",
+              geography: "Geography",
+              computer_science: "Computer Science",
+              literature: "Literature",
+              economics: "Economics",
+              accounting: "Accounting",
               other: "Other"
             }
           },
-          message: {
-            label: "Message",
-            placeholder: "Tell us about your learning goals..."
+          examTypes: {
+            label: "Exam Type",
+            placeholder: "Select exam type",
+            options: {
+              common_entrance: "Common Entrance",
+              concours_6eme: "Concours 6ème",
+              bepc: "BEPC",
+              gce_ol: "GCE O-Level",
+              probatoire: "Probatoire",
+              baccalaureat: "Baccalauréat",
+              gce_al: "GCE A-Level",
+              sat: "SAT",
+              ielts: "IELTS",
+              toefl: "TOEFL",
+              concours_ens: "Concours ENS",
+              concours_polytechnique: "Concours Polytechnique",
+              concours_medecine: "Concours Médecine",
+              other: "Other"
+            }
+          },
+          skills: {
+            label: "Skills",
+            placeholder: "Select skills you want to develop",
+            options: {
+              programming: "Programming",
+              web_development: "Web Development",
+              app_development: "Mobile App Development",
+              data_science: "Data Science",
+              music: "Music",
+              art: "Art & Design",
+              photography: "Photography",
+              public_speaking: "Public Speaking",
+              english_conversation: "English Conversation",
+              french_conversation: "French Conversation",
+              digital_marketing: "Digital Marketing",
+              graphic_design: "Graphic Design",
+              other: "Other"
+            }
+          },
+          comment: {
+            label: "Additional Comments",
+            placeholder: "Tell us more about your needs (optional)"
           }
         },
         submit: {
           sending: "Sending...",
-          send: "Send Message"
+          send: "Submit & Continue to WhatsApp"
         },
         success: {
-          email: "Thank you for contacting PrepSkul! We've received your message via email and WhatsApp. We'll get back to you within 24 hours.",
-          whatsapp: "Your message was sent to WhatsApp. We'll get back to you soon!",
-          error: "There was an issue sending your message. Please try contacting us via WhatsApp directly."
+          message: "Thank you! Redirecting you to WhatsApp..."
+        }
+      },
+      contactInfo: {
+        title: "Other Ways to Reach Us",
+        phone: {
+          title: "Phone",
+          description: "+237 6 74 20 85 73"
+        },
+        location: {
+          title: "Location",
+          description: "Buea, Cameroon"
         }
       }
     },
@@ -907,60 +964,117 @@ export const translations = {
     contact: {
       hero: {
         title: "Contactez-Nous",
-        subtitle: "Que vous soyez un étudiant cherchant à exceller dans vos études ou un parent recherchant le meilleur soutien éducatif pour votre enfant, nous sommes là pour vous aider à trouver le tuteur parfait. Contactez-nous dès aujourd'hui et commençons votre parcours d'apprentissage ensemble."
-      },
-      methods: {
-        whatsapp: {
-          title: "WhatsApp",
-          description: "Chattez instantanément"
-        },
-        phone: {
-          title: "Téléphone",
-          description: "+237 6 74 08 90 66"
-        },
-        location: {
-          title: "Localisation",
-          description: "Buea, Cameroun"
-        }
+        subtitle: "Que vous soyez un étudiant cherchant à exceller dans vos études, un parent recherchant le meilleur soutien éducatif pour votre enfant, ou un tuteur souhaitant rejoindre notre équipe, nous sommes là pour vous aider. Remplissez le formulaire ci-dessous et nous vous connecterons à la bonne solution."
       },
       form: {
-        title: "Envoyez-Nous un Message",
+        title: "Parlez-Nous de Vous",
         fields: {
           name: {
             label: "Nom Complet",
             placeholder: "Entrez votre nom complet"
           },
-          email: {
-            label: "Adresse Email",
-            placeholder: "votre.email@exemple.com"
-          },
           phone: {
             label: "Numéro de Téléphone",
             placeholder: "+237 XXX XXX XXX"
           },
-          subject: {
-            label: "Je suis intéressé par",
-            placeholder: "Sélectionnez un sujet",
+          role: {
+            label: "Je suis",
+            placeholder: "Sélectionnez votre rôle",
+            options: {
+              student: "Étudiant",
+              parent: "Parent",
+              tutor: "Tuteur"
+            }
+          },
+          program: {
+            label: "Programme d'Intérêt",
+            placeholder: "Sélectionnez le programme",
             options: {
               academic: "Cours Particuliers Académiques",
               skills: "Développement de Compétences",
-              exam: "Préparation aux Examens",
+              exam: "Préparation aux Examens"
+            }
+          },
+          academicSubjects: {
+            label: "Matières",
+            placeholder: "Sélectionnez les matières pour lesquelles vous avez besoin d'aide",
+            options: {
+              mathematics: "Mathématiques",
+              english: "Anglais",
+              french: "Français",
+              physics: "Physique",
+              chemistry: "Chimie",
+              biology: "Biologie",
+              history: "Histoire",
+              geography: "Géographie",
+              computer_science: "Informatique",
+              literature: "Littérature",
+              economics: "Économie",
+              accounting: "Comptabilité",
               other: "Autre"
             }
           },
-          message: {
-            label: "Message",
-            placeholder: "Parlez-nous de vos objectifs d'apprentissage..."
+          examTypes: {
+            label: "Type d'Examen",
+            placeholder: "Sélectionnez le type d'examen",
+            options: {
+              common_entrance: "Common Entrance",
+              concours_6eme: "Concours 6ème",
+              bepc: "BEPC",
+              gce_ol: "GCE O-Level",
+              probatoire: "Probatoire",
+              baccalaureat: "Baccalauréat",
+              gce_al: "GCE A-Level",
+              sat: "SAT",
+              ielts: "IELTS",
+              toefl: "TOEFL",
+              concours_ens: "Concours ENS",
+              concours_polytechnique: "Concours Polytechnique",
+              concours_medecine: "Concours Médecine",
+              other: "Autre"
+            }
+          },
+          skills: {
+            label: "Compétences",
+            placeholder: "Sélectionnez les compétences que vous voulez développer",
+            options: {
+              programming: "Programmation",
+              web_development: "Développement Web",
+              app_development: "Applications Mobiles",
+              data_science: "Science des Données",
+              music: "Musique",
+              art: "Art et Design",
+              photography: "Photographie",
+              public_speaking: "Prise de Parole",
+              english_conversation: "Conversation Anglais",
+              french_conversation: "Conversation Français",
+              digital_marketing: "Marketing Numérique",
+              graphic_design: "Design Graphique",
+              other: "Autre"
+            }
+          },
+          comment: {
+            label: "Commentaires Supplémentaires",
+            placeholder: "Dites-nous plus sur vos besoins (optionnel)"
           }
         },
         submit: {
           sending: "Envoi en cours...",
-          send: "Envoyer le Message"
+          send: "Soumettre et Continuer vers WhatsApp"
         },
         success: {
-          email: "Merci d'avoir contacté PrepSkul ! Nous avons reçu votre message par email et WhatsApp. Nous vous répondrons dans les 24 heures.",
-          whatsapp: "Votre message a été envoyé sur WhatsApp. Nous vous répondrons bientôt !",
-          error: "Il y a eu un problème lors de l'envoi de votre message. Veuillez essayer de nous contacter directement via WhatsApp."
+          message: "Merci ! Redirection vers WhatsApp..."
+        }
+      },
+      contactInfo: {
+        title: "Autres Moyens de Nous Contacter",
+        phone: {
+          title: "Téléphone",
+          description: "+237 6 74 20 85 73"
+        },
+        location: {
+          title: "Localisation",
+          description: "Buea, Cameroun"
         }
       }
     },
