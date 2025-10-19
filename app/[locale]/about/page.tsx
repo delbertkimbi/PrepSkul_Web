@@ -48,7 +48,7 @@ export default function AboutPage() {
               </div>
 
               <div className="relative">
-                <div className="relative aspect-square rounded-2xl overflow-hidden">
+                <div className="relative aspect-[6/5.4] rounded-2xl overflow-hidden">
                   <Image
                     src="/images/prepskul-student-presenting.png"
                     alt="PrepSkul student confidently presenting"
