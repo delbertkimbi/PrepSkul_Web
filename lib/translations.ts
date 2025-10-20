@@ -446,8 +446,8 @@ export const translations = {
               ielts: "IELTS",
               toefl: "TOEFL",
               concours_ens: "Concours ENS",
-              concours_polytechnique: "Concours Polytechnique",
-              concours_medecine: "Concours Médecine",
+              concours_polytechnique: "Engineering Concours",
+              concours_medecine: "Medical Concours",
               other: "Other"
             }
           },
@@ -1029,8 +1029,8 @@ export const translations = {
               ielts: "IELTS",
               toefl: "TOEFL",
               concours_ens: "Concours ENS",
-              concours_polytechnique: "Concours Polytechnique",
-              concours_medecine: "Concours Médecine",
+              concours_polytechnique: "Engineering Concours",
+              concours_medecine: "Medical Concours",
               other: "Autre"
             }
           },
