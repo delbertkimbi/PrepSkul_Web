@@ -42,7 +42,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center h-full max-w-7xl mx-auto">
             {/* Left side - Content */}
-            <div className="space-y-7 z-10 lg:pr-8 text-left lg:text-left">
+            <div className="space-y-7 z-10 lg:pr-8 text-left">
               <div className="space-y-5">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
                   {t.home.hero.title}{" "}
@@ -80,7 +80,7 @@ export default function HomePage() {
                 }}
               ></div>
 
-              <div className="relative z-10 flex justify-center">
+              <div className="relative z-10 flex justify-center items-center w-full">
                 <PhoneMockup locale={locale} />
               </div>
             </div>
