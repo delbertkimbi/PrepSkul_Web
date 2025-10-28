@@ -1,0 +1,14 @@
+# PrepSkul Main Site
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/admin/
+
+# Sitemap
+Sitemap: https://www.prepskul.com/sitemap.xml
+
+# Admin Subdomain - Block Everything
+User-agent: *
+Disallow: /
+Host: admin.prepskul.com
+

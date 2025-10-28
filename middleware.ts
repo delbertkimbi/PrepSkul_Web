@@ -6,6 +6,18 @@ const defaultLocale = 'en'
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
+  const hostname = request.headers.get('host') || ''
+  
+  // Detect if request is from admin subdomain
+  const isAdminSubdomain = hostname.startsWith('admin.')
+  
+  // If accessing admin subdomain but not on /admin path, redirect to /admin
+  if (isAdminSubdomain && !pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/admin', request.url))
+  }
+  
+  // If accessing /admin from main domain, allow it (or you can block it)
+  // To block: if (!isAdminSubdomain && pathname.startsWith('/admin')) { return NextResponse.redirect('/') }
   
   // Skip locale handling for admin routes
   if (pathname.startsWith('/admin')) {
