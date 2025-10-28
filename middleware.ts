@@ -11,18 +11,19 @@ export function middleware(request: NextRequest) {
   // Detect if request is from admin subdomain
   const isAdminSubdomain = hostname.startsWith('admin.')
   
+  // Skip locale handling for admin routes FIRST
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+  
   // If accessing admin subdomain but not on /admin path, redirect to /admin
+  // This must come AFTER the admin route check
   if (isAdminSubdomain && !pathname.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/admin', request.url))
+    return NextResponse.redirect(new URL('/admin/login', request.url))
   }
   
   // If accessing /admin from main domain, allow it (or you can block it)
   // To block: if (!isAdminSubdomain && pathname.startsWith('/admin')) { return NextResponse.redirect('/') }
-  
-  // Skip locale handling for admin routes
-  if (pathname.startsWith('/admin')) {
-    return NextResponse.next()
-  }
   
   // Check if there is any supported locale in the pathname
   const pathnameIsMissingLocale = locales.every(
