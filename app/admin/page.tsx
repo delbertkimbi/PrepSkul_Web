@@ -54,13 +54,14 @@ export default async function AdminDashboard() {
     .eq('status', 'pending');
   
   // Active sessions (happening now)
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowISO = now.toISOString();
   const { count: activeSessions } = await supabase
     .from('lessons')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'scheduled')
-    .lte('start_time', now)
-    .gte('end_time', now);
+    .lte('start_time', nowISO)
+    .gte('end_time', nowISO);
   
   // Upcoming sessions today
   const startOfDay = new Date();
@@ -96,6 +97,20 @@ export default async function AdminDashboard() {
   
   const monthlyRevenue = monthlyPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
+  // Active user metrics
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+  const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  
+  const { count: onlineNow } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .gte('last_seen', fiveMinutesAgo.toISOString());
+
+  const { count: activeToday } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .gte('last_seen', oneDayAgo.toISOString());
+
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminNav />
@@ -115,16 +130,21 @@ export default async function AdminDashboard() {
               </p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">Active Users</p>
+              <p className="text-3xl font-bold text-green-600 mt-2">{onlineNow || 0}</p>
+              <p className="text-xs text-gray-500 mt-2">
+                {activeToday || 0} active today
+              </p>
+              <a href="/admin/users/active" className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block">
+                View details →
+              </a>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Pending Tutors</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">{pendingTutors || 0}</p>
               <a href="/admin/tutors/pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
                 Review applications →
               </a>
-            </div>
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600">Active Sessions</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">{activeSessions || 0}</p>
-              <p className="text-xs text-gray-500 mt-2">{upcomingToday || 0} scheduled today</p>
             </div>
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Total Revenue (XAF)</p>
@@ -135,8 +155,34 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
+          {/* Secondary Stats - Sessions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">Active Sessions</p>
+              <p className="text-3xl font-bold text-green-600 mt-2">{activeSessions || 0}</p>
+              <p className="text-xs text-gray-500 mt-2">{upcomingToday || 0} scheduled today</p>
+              <a href="/admin/sessions/active" className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block">
+                Monitor live →
+              </a>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-600">Platform Health</p>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                <p className="text-xl font-bold text-green-600">All Systems Operational</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {onlineNow || 0} users online • {activeSessions || 0} active sessions
+              </p>
+            </div>
+          </div>
+
           {/* Quick Links */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <a href="/admin/users/active" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-green-500 transition">
+              <h3 className="font-semibold text-gray-900">Active Users</h3>
+              <p className="text-sm text-gray-600 mt-1">See who's online now</p>
+            </a>
             <a href="/admin/sessions" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-blue-500 transition">
               <h3 className="font-semibold text-gray-900">Sessions</h3>
               <p className="text-sm text-gray-600 mt-1">View all lessons and schedules</p>

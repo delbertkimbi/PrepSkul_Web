@@ -8,10 +8,10 @@ export default function AdminNav() {
 
   const navItems = [
     { name: 'Dashboard', href: '/admin' },
+    { name: 'Active Users', href: '/admin/users/active' },
     { name: 'Tutors', href: '/admin/tutors/pending' },
     { name: 'Sessions', href: '/admin/sessions' },
     { name: 'Revenue', href: '/admin/revenue' },
-    { name: 'Users', href: '/admin/users' },
   ];
 
   const isActive = (href: string) => {

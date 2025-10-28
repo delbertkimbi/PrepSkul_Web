@@ -31,11 +31,18 @@ export default function AdminLogin() {
       }
 
       // Check if user is admin
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('is_admin')
         .eq('id', data.user.id)
         .single();
+
+      console.log('Profile query result:', { profile, profileError, userId: data.user.id });
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        throw new Error(`Profile error: ${profileError.message}`);
+      }
 
       if (!profile?.is_admin) {
         await supabase.auth.signOut();
