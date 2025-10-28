@@ -5,8 +5,14 @@ const locales = ['en', 'fr']
 const defaultLocale = 'en'
 
 export function middleware(request: NextRequest) {
-  // Check if there is any supported locale in the pathname
   const pathname = request.nextUrl.pathname
+  
+  // Skip locale handling for admin routes
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+  
+  // Check if there is any supported locale in the pathname
   const pathnameIsMissingLocale = locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
   )
@@ -38,6 +44,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Matcher ignoring `/_next/`, `/api/`, and static assets
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:jpg|jpeg|png|gif|svg|ico|webp|pdf|css|js)$).*)']
+  // Matcher ignoring `/_next/`, `/api/`, `/admin`, and static assets
+  matcher: ['/((?!api|admin|_next/static|_next/image|favicon.ico|.*\\.(?:jpg|jpeg|png|gif|svg|ico|webp|pdf|css|js)$).*)']
 }
