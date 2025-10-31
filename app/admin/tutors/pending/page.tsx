@@ -30,15 +30,15 @@ export default async function PendingTutors() {
   // Fetch profiles separately for each tutor
   let tutorsWithProfiles = [];
   if (tutors) {
-    tutorsWithProfiles = await Promise.all(
+      tutorsWithProfiles = await Promise.all(
       tutors.map(async (tutor) => {
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, phone, email')
           .eq('id', tutor.user_id)
-          .single();
+          .maybeSingle();
         
-        return { ...tutor, profiles: profile };
+        return { ...tutor, profiles: profile || {} };
       })
     );
   }
