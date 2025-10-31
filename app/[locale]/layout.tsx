@@ -21,11 +21,11 @@ export async function generateMetadata({
   params: Promise<{ locale: Locale }> 
 }): Promise<Metadata> {
   const { locale } = await params
-  const metadata = localeMetadata[locale]
+  const metadata = localeMetadata[locale] || localeMetadata[defaultLocale]
 
   return {
     ...metadata,
-    keywords: [...metadata.keywords],
+    keywords: metadata.keywords ? [...metadata.keywords] : [],
     authors: [{ name: "PrepSkul Team" }],
     creator: "PrepSkul",
     publisher: "PrepSkul",
@@ -43,12 +43,12 @@ export async function generateMetadata({
       }
     },
     openGraph: {
-      ...metadata.openGraph,
+      ...(metadata.openGraph || {}),
       url: `https://prepskul.com/${locale}`,
       locale: locale === 'fr' ? 'fr_CM' : 'en_CM',
     },
     twitter: {
-      ...metadata.twitter,
+      ...(metadata.twitter || {}),
     },
     robots: {
       index: true,
