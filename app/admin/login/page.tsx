@@ -35,7 +35,7 @@ export default function AdminLogin() {
         .from('profiles')
         .select('is_admin')
         .eq('id', data.user.id)
-        .single();
+        .maybeSingle();
 
       console.log('Profile query result:', { profile, profileError, userId: data.user.id });
 
@@ -44,7 +44,12 @@ export default function AdminLogin() {
         throw new Error(`Profile error: ${profileError.message}`);
       }
 
-      if (!profile?.is_admin) {
+      if (!profile) {
+        await supabase.auth.signOut();
+        throw new Error('Profile not found. Please contact support.');
+      }
+
+      if (!profile.is_admin) {
         await supabase.auth.signOut();
         throw new Error('You do not have admin permissions');
       }
