@@ -4,7 +4,7 @@ import { Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { PerformanceOptimizer } from "@/components/performance-optimizer"
 import { LocaleProvider } from "@/lib/locale-context"
-import { localeMetadata, type Locale } from "@/lib/i18n"
+import { localeMetadata, defaultLocale, type Locale } from "@/lib/i18n"
 import "../globals.css"
 import { Suspense } from "react"
 
