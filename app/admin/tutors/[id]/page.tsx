@@ -3,6 +3,7 @@ import { getServerSession, isAdmin, createServerSupabaseClient } from '@/lib/sup
 import AdminNav from '../../components/AdminNav';
 import Link from 'next/link';
 import { Phone, Mail, MessageCircle, Download, ExternalLink } from 'lucide-react';
+import EmailEditor from './email-editor';
 
 export default async function TutorDetailPage({ params }: { params: { id: string } }) {
   const user = await getServerSession();
@@ -303,6 +304,13 @@ export default async function TutorDetailPage({ params }: { params: { id: string
               </div>
             </div>
           )}
+
+          {/* Custom Email Editor */}
+          <EmailEditor 
+            tutorEmail={profile?.email || ''} 
+            tutorName={profile?.full_name || 'Tutor'}
+            tutorId={tutor.id}
+          />
         </div>
       </main>
     </div>

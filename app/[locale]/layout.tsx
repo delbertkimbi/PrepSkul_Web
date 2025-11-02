@@ -29,6 +29,14 @@ export async function generateMetadata({
     authors: [{ name: "PrepSkul Team" }],
     creator: "PrepSkul",
     publisher: "PrepSkul",
+    icons: {
+      icon: [
+        { url: '/logo-blue.png', type: 'image/png' },
+        { url: '/logo-blue.png', type: 'image/png', sizes: 'any' }
+      ],
+      shortcut: '/logo-blue.png',
+      apple: '/logo-blue.png',
+    },
     formatDetection: {
       email: false,
       address: false,

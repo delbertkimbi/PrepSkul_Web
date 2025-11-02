@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
+import { notifyTutorRejection } from '@/lib/notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,8 +29,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Rejection reason is required' }, { status: 400 });
     }
 
-    // Update tutor status to rejected with reason
+    // Get supabase client
     const supabase = await createServerSupabaseClient();
+
+    // First, fetch tutor profile to get contact info
+    const { data: tutorProfile, error: fetchError } = await supabase
+      .from('tutor_profiles')
+      .select('user_id, full_name')
+      .eq('id', tutorId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+    if (!tutorProfile) {
+      return NextResponse.json({ error: 'Tutor profile not found' }, { status: 404 });
+    }
+
+    // Get user profile for email/phone
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email, phone_number, full_name')
+      .eq('id', tutorProfile.user_id)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+
+    // Update tutor status to rejected with reason
     const { error } = await supabase
       .from('tutor_profiles')
       .update({
@@ -42,7 +66,16 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    // TODO: Send notification to tutor (email/SMS)
+    // Send notification to tutor (email/SMS)
+    const tutorName = userProfile?.full_name || tutorProfile.full_name || 'Tutor';
+    const notificationResult = await notifyTutorRejection(
+      userProfile?.email || null,
+      userProfile?.phone_number || null,
+      tutorName,
+      notes
+    );
+
+    console.log('📧 Notification results:', notificationResult);
 
     // Redirect back to pending tutors page
     return NextResponse.redirect(new URL('/admin/tutors/pending', request.url));
