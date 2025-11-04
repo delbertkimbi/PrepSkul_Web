@@ -32,10 +32,12 @@ export default async function PendingTutors() {
   if (tutors) {
       tutorsWithProfiles = await Promise.all(
       tutors.map(async (tutor) => {
+        // Try using tutor.id first (id is FK to profiles.id), fallback to user_id
+        const profileId = tutor.id || tutor.user_id;
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, phone_number, email')
-          .eq('id', tutor.user_id)
+          .eq('id', profileId)
           .maybeSingle();
         
         return { ...tutor, profiles: profile || {} };

@@ -24,11 +24,12 @@ export default async function TutorDetailPage({ params }: { params: { id: string
     return <div>Tutor not found</div>;
   }
 
-  // Fetch profile data
+  // Fetch profile data (tutor.id is FK to profiles.id, or use user_id as fallback)
+  const profileId = tutor.id || tutor.user_id;
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, phone_number, email')
-    .eq('id', tutor.user_id)
+    .eq('id', profileId)
     .single();
 
   const phoneNumber = profile?.phone_number || '';
