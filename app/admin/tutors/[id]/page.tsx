@@ -27,11 +27,11 @@ export default async function TutorDetailPage({ params }: { params: { id: string
   // Fetch profile data
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, phone, email')
+    .select('full_name, phone_number, email')
     .eq('id', tutor.user_id)
     .single();
 
-  const phoneNumber = profile?.phone || '';
+  const phoneNumber = profile?.phone_number || '';
   const whatsappLink = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}`;
   const emailLink = `mailto:${profile?.email}`;
   const callLink = `tel:${phoneNumber}`;
@@ -104,7 +104,7 @@ export default async function TutorDetailPage({ params }: { params: { id: string
               </div>
               <div>
                 <p className="text-sm text-gray-600">Phone</p>
-                <p className="font-medium text-gray-900">{profile?.phone || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{profile?.phone_number || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">City</p>
@@ -116,7 +116,7 @@ export default async function TutorDetailPage({ params }: { params: { id: string
               </div>
               <div>
                 <p className="text-sm text-gray-600">Years of Experience</p>
-                <p className="font-medium text-gray-900">{tutor.years_of_experience || 0} years</p>
+                <p className="font-medium text-gray-900">{tutor.teaching_duration || 'Less than 1 year'}</p>
               </div>
             </div>
           </div>
@@ -127,11 +127,7 @@ export default async function TutorDetailPage({ params }: { params: { id: string
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-gray-600">Education Level</p>
-                <p className="font-medium text-gray-900">{tutor.education_level || 'N/A'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Current Level</p>
-                <p className="font-medium text-gray-900">{tutor.current_level || 'N/A'}</p>
+                <p className="font-medium text-gray-900">{tutor.highest_education || 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Field of Study</p>
@@ -170,7 +166,7 @@ export default async function TutorDetailPage({ params }: { params: { id: string
               </div>
               <div>
                 <p className="text-sm text-gray-600">About / Motivation</p>
-                <p className="font-medium text-gray-900 mt-1">{tutor.about_me || 'N/A'}</p>
+                <p className="font-medium text-gray-900 mt-1">{tutor.bio || tutor.motivation || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -316,4 +312,5 @@ export default async function TutorDetailPage({ params }: { params: { id: string
     </div>
   );
 }
+
 

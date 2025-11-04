@@ -34,7 +34,7 @@ export default async function PendingTutors() {
       tutors.map(async (tutor) => {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, phone, email')
+          .select('full_name, phone_number, email')
           .eq('id', tutor.user_id)
           .maybeSingle();
         
@@ -100,24 +100,32 @@ export default async function PendingTutors() {
           <div key={tutor.id} className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-start justify-between">
               <div className="flex gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {tutor.profiles?.full_name?.charAt(0) || 'T'}
-                  </span>
-                </div>
+                {tutor.profile_photo_url ? (
+                  <img 
+                    src={tutor.profile_photo_url} 
+                    alt={tutor.profiles?.full_name || 'Tutor'} 
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                  />
+                ) : (
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">
+                      {tutor.profiles?.full_name?.charAt(0) || 'T'}
+                    </span>
+                  </div>
+                )}
                 <div>
                   <h3 className="font-semibold text-gray-900">{tutor.profiles?.full_name || 'Unknown'}</h3>
                   <p className="text-sm text-gray-600">
                     {Array.isArray(tutor.tutoring_areas) ? tutor.tutoring_areas.join(', ') : 'No subjects'}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {tutor.city || 'Location not specified'} • {tutor.years_of_experience || 0} years experience
+                    {tutor.city || 'Location not specified'} • {tutor.teaching_duration || 'Less than 1 year'} experience
                   </p>
                   <p className="text-sm text-gray-500">
                     Applied: {new Date(tutor.created_at).toLocaleDateString()}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Phone: {tutor.profiles?.phone || 'N/A'}
+                    Phone: {tutor.profiles?.phone_number || 'N/A'}
                   </p>
                 </div>
               </div>
