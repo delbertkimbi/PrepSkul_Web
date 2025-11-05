@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Poppins } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PerformanceOptimizer } from "@/components/performance-optimizer"
 import { LocaleProvider } from "@/lib/locale-context"
 import { localeMetadata, defaultLocale, type Locale } from "@/lib/i18n"
@@ -93,6 +94,7 @@ export default async function LocaleLayout({
           <Suspense fallback={null}>{children}</Suspense>
         </LocaleProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )

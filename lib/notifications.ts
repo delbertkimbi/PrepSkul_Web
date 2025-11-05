@@ -274,10 +274,7 @@ export async function notifyTutorRejection(
   return results;
 }
 
-
-
 // Email notification templates
-}
 
 /**
  * Send a custom email to a tutor
