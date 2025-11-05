@@ -82,8 +82,8 @@ export default async function TutorDetailPage({
     .eq('id', profileId)
     .maybeSingle();
 
-  // Use profile data with fallbacks from tutor_profiles
-  const fullName = profile?.full_name || tutor.full_name || 'Tutor';
+  // Use profile data with fallbacks from tutor_profiles - prioritize profile.full_name
+  const fullName = profile?.full_name || tutor.full_name || 'N/A';
   const email = profile?.email || tutor.email || '';
   const phoneNumber = profile?.phone_number || tutor.phone_number || '';
   const whatsappLink = phoneNumber ? `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}` : '#';
@@ -361,6 +361,102 @@ export default async function TutorDetailPage({
             </div>
           </div>
 
+          {/* Availability */}
+          {(tutor.tutoring_availability || tutor.test_session_availability || tutor.availability_schedule) && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Availability</h2>
+              <div className="space-y-4">
+                {/* Normal Tutoring Sessions */}
+                {(tutor.tutoring_availability || (tutor.availability_schedule && typeof tutor.availability_schedule === 'object')) && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-2">Normal Tutoring Sessions</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        let availability: any = tutor.tutoring_availability;
+                        if (!availability && tutor.availability_schedule && typeof tutor.availability_schedule === 'object') {
+                          availability = tutor.availability_schedule;
+                        }
+                        if (!availability) return <p className="text-gray-500 text-sm italic">Not specified</p>;
+                        
+                        if (typeof availability === 'string') {
+                          try {
+                            availability = JSON.parse(availability);
+                          } catch {
+                            return <p className="text-gray-500 text-sm">{availability}</p>;
+                          }
+                        }
+                        
+                        if (typeof availability === 'object' && availability !== null) {
+                          const days = Object.keys(availability);
+                          if (days.length === 0) return <p className="text-gray-500 text-sm italic">Not specified</p>;
+                          
+                          return days.map((day: string) => {
+                            const slots = availability[day];
+                            if (!slots || (Array.isArray(slots) && slots.length === 0)) return null;
+                            return (
+                              <div key={day} className="flex items-start gap-2">
+                                <span className="text-sm font-medium text-gray-700 min-w-[100px]">{day}:</span>
+                                <span className="text-sm text-gray-600">
+                                  {Array.isArray(slots) ? slots.join(', ') : String(slots)}
+                                </span>
+                              </div>
+                            );
+                          });
+                        }
+                        return <p className="text-gray-500 text-sm italic">Not specified</p>;
+                      })()}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Test Sessions */}
+                {tutor.test_session_availability && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 mb-2">Test Sessions</p>
+                    <div className="space-y-2">
+                      {(() => {
+                        let availability: any = tutor.test_session_availability;
+                        if (typeof availability === 'string') {
+                          try {
+                            availability = JSON.parse(availability);
+                          } catch {
+                            return <p className="text-gray-500 text-sm">{availability}</p>;
+                          }
+                        }
+                        
+                        if (typeof availability === 'object' && availability !== null) {
+                          const days = Object.keys(availability);
+                          if (days.length === 0) return <p className="text-gray-500 text-sm italic">Not specified</p>;
+                          
+                          return days.map((day: string) => {
+                            const slots = availability[day];
+                            if (!slots || (Array.isArray(slots) && slots.length === 0)) return null;
+                            return (
+                              <div key={day} className="flex items-start gap-2">
+                                <span className="text-sm font-medium text-gray-700 min-w-[100px]">{day}:</span>
+                                <span className="text-sm text-gray-600">
+                                  {Array.isArray(slots) ? slots.join(', ') : String(slots)}
+                                </span>
+                              </div>
+                            );
+                          });
+                        }
+                        return <p className="text-gray-500 text-sm italic">Not specified</p>;
+                      })()}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Show message if no availability specified */}
+                {!tutor.tutoring_availability && 
+                 !tutor.test_session_availability && 
+                 !tutor.availability_schedule && (
+                  <p className="text-gray-500 text-sm italic">No availability information provided</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Documents */}
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Documents</h2>
@@ -390,15 +486,22 @@ export default async function TutorDetailPage({
                 certificates.map((url: string, index: number) => (
                   <DocumentDisplay key={index} url={url} title={`Certificate ${index + 1}`} />
                 ))
-              ) : null}
+              ) : (
+                // Check if tutor has teaching certificates field
+                tutor.has_training === false ? (
+                  <p className="text-gray-500 text-sm italic">No teaching certificates (tutor indicated no training)</p>
+                ) : (
+                  <p className="text-gray-500 text-sm italic">No certificates uploaded</p>
+                )
+              )}
               
-              {/* Show message if no documents */}
+              {/* Show message if no documents at all */}
               {!tutor.profile_photo_url && 
                !tutor.id_card_front_url && 
                !tutor.id_card_back_url && 
                !tutor.id_card_url && 
                certificates.length === 0 && (
-                <p className="text-gray-500 text-sm italic">No documents uploaded</p>
+                <p className="text-gray-500 text-sm italic mt-2">No documents uploaded</p>
               )}
             </div>
           </div>
