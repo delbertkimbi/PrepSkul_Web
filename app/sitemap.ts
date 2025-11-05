@@ -1,43 +1,86 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://prepskul.com'
-  const locales = ['en', 'fr']
-  const pages = ['', 'about', 'programs', 'tutors', 'how-it-works', 'testimonials', 'contact']
-  const cities = ['douala', 'yaounde', 'buea', 'bamenda', 'garoua', 'maroua', 'limbe']
+  const baseUrl = 'https://www.prepskul.com'
   
-  const sitemap: MetadataRoute.Sitemap = []
-  
-  // Add root redirect
-  sitemap.push({
-    url: baseUrl,
-    lastModified: new Date(),
-    changeFrequency: 'weekly',
-    priority: 1,
-  })
-  
-  // Add localized pages
-  locales.forEach(locale => {
-    pages.forEach(page => {
-      const url = page ? `${baseUrl}/${locale}/${page}` : `${baseUrl}/${locale}`
-      sitemap.push({
-        url,
-        lastModified: new Date(),
-        changeFrequency: page === '' || page === 'programs' || page === 'tutors' ? 'weekly' : 'monthly',
-        priority: page === '' ? 1 : page === 'programs' || page === 'tutors' ? 0.9 : 0.8,
-      })
-    })
-    
-    // Add city-specific pages
-    cities.forEach(city => {
-      sitemap.push({
-        url: `${baseUrl}/${locale}/tutors/${city}`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: city === 'douala' || city === 'yaounde' ? 0.9 : 0.8,
-      })
-    })
-  })
-  
-  return sitemap
+  return [
+    {
+      url: baseUrl,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/en`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/fr`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 1,
+    },
+    {
+      url: `${baseUrl}/en/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/fr/about`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/en/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/fr/contact`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/en/programs`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/fr/programs`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/en/tutors`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/fr/tutors`,
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/en/how-it-works`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
+      url: `${baseUrl}/fr/how-it-works`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+  ]
 }
