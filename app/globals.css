@@ -47,6 +47,14 @@
   --radius-xl: 0.875rem;
 }
 
+/* Rounded corners for favicons and logos */
+img[src*="logo"], 
+img[src*="favicon"],
+img[alt*="logo"],
+img[alt*="favicon"] {
+  border-radius: 8px;
+}
+
 @layer base {
   :root {
     --background: oklch(0.99 0.005 106);

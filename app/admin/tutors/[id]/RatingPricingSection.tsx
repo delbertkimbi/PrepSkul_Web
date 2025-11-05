@@ -29,6 +29,10 @@ interface TutorData {
   price_3_sessions_weekly?: number;
   price_4_sessions_weekly?: number;
   pricing_tier?: PricingTier;
+  expected_rate?: number;
+  hourly_rate?: number;
+  payment_method?: string;
+  payment_details?: any;
 }
 
 interface RatingPricingSectionProps {
@@ -96,9 +100,12 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
   const showWarning = ratingDeviation > 0.3 || priceDeviation > 2000;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Rating & Pricing</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Set Rating & Pricing</h2>
+          <p className="text-sm text-gray-500 mt-1">Review algorithm suggestions and set final values</p>
+        </div>
         <button
           onClick={() => setShowPreview(!showPreview)}
           className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
@@ -241,6 +248,37 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
         </div>
       </div>
 
+      {/* Tutor's Desired Payment Range */}
+      {(tutor.expected_rate || tutor.hourly_rate) && (
+        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Tutor's Desired Payment Range</h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600">Expected Rate (from application):</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {formatPrice(tutor.expected_rate || tutor.hourly_rate || 0)}
+              </span>
+            </div>
+            {tutor.payment_method && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">Payment Method:</span>
+                <span className="text-sm font-medium text-gray-900">{tutor.payment_method}</span>
+              </div>
+            )}
+            <div className="mt-3 pt-3 border-t border-yellow-300">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">Admin Set Price:</span>
+                <span className="text-sm font-bold text-blue-900">{formatPrice(adminPrice)}</span>
+              </div>
+              <div className="mt-1 text-xs text-gray-600">
+                Difference: {formatPrice(Math.abs(adminPrice - (tutor.expected_rate || tutor.hourly_rate || 0)))}
+                {adminPrice > (tutor.expected_rate || tutor.hourly_rate || 0) ? ' higher' : adminPrice < (tutor.expected_rate || tutor.hourly_rate || 0) ? ' lower' : ' (same)'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Monthly Pricing Preview */}
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
         <h3 className="text-sm font-medium text-gray-700 mb-3">Monthly Pricing (Auto-calculated)</h3>
@@ -283,10 +321,10 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
       )}
 
       {/* Save Button */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-6 pt-6 border-t border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {saveSuccess && (
-            <div className="flex items-center gap-2 text-green-600 text-sm">
+            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
               <CheckCircle className="w-4 h-4" />
               <span>Saved successfully!</span>
             </div>
@@ -295,7 +333,7 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
         <button
           onClick={handleSave}
           disabled={isSaving || adminRating < 3.0 || adminRating > 4.5 || adminPrice < 3000 || adminPrice > 15000}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+          className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium text-sm"
         >
           {isSaving ? 'Saving...' : 'Save Rating & Pricing'}
         </button>

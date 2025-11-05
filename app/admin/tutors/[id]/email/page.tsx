@@ -23,22 +23,46 @@ export default function CustomEmailPage({ params }: CustomEmailPageProps) {
   useEffect(() => {
     params.then(({ id }) => {
       setTutorId(id);
-      // Fetch tutor data
-      fetch(`/api/admin/tutors/${id}/approval-data`)
-        .then(res => res.json())
+      
+      // Determine email type from URL search params or referrer
+      const searchParams = new URLSearchParams(window.location.search);
+      let emailType = searchParams.get('type') || 'normal';
+      
+      // If no type in URL, try to infer from referrer
+      if (emailType === 'normal' && document.referrer) {
+        const referrer = document.referrer;
+        if (referrer.includes('/approve/')) {
+          emailType = 'approval';
+        } else if (referrer.includes('/reject/')) {
+          emailType = 'rejection';
+        } else if (referrer.includes('/improve/')) {
+          emailType = 'improvement';
+        }
+      }
+      
+      // Fetch tutor data with context
+      fetch(`/api/admin/tutors/${id}/approval-data?type=${emailType}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
         .then(data => {
           if (data.success) {
             setTutorName(data.tutorName || 'Tutor');
             setTutorEmail(data.tutorEmail || '');
-            setSubject(`Update from PrepSkul - ${data.tutorName || 'Tutor'}`);
-            setBody(`Hi ${data.tutorName || 'Tutor'},
+            setSubject(data.subject || `Update from PrepSkul - ${data.tutorName || 'Tutor'}`);
+            setBody(data.body || `Hi ${data.tutorName || 'Tutor'},
 
 `);
+          } else {
+            setError(data.error || 'Failed to load tutor information');
           }
         })
         .catch(err => {
           console.error('Error fetching tutor data:', err);
-          setError('Failed to load tutor information');
+          setError('Failed to load tutor information. Please try again.');
         });
     });
   }, [params]);

@@ -6,6 +6,7 @@ import { Phone, Mail, MessageCircle, Download, ExternalLink, Play, Globe, Linked
 import ProfileImage from './ProfileImage';
 import RatingPricingSection from './RatingPricingSection';
 import VideoPlayer from './VideoPlayer';
+import DocumentDisplay from './DocumentDisplay';
 
 export default async function TutorDetailPage({ 
   params 
@@ -20,31 +21,77 @@ export default async function TutorDetailPage({
 
   const supabase = await createServerSupabaseClient();
   
-  // Fetch tutor data with all fields
-  const { data: tutor } = await supabase
+  // Fetch tutor data - try both id and user_id since id might be the user_id UUID
+  let tutor = null;
+  let queryError = null;
+  
+  // First try: query by id (primary key)
+  const { data: tutorById, error: errorById } = await supabase
     .from('tutor_profiles')
     .select('*')
     .eq('id', id)
-    .single();
-
+    .maybeSingle();
+  
+  if (tutorById) {
+    tutor = tutorById;
+  } else if (errorById) {
+    queryError = errorById;
+  }
+  
+  // Second try: query by user_id if first query failed
   if (!tutor) {
-    return <div>Tutor not found</div>;
+    const { data: tutorByUserId, error: errorByUserId } = await supabase
+      .from('tutor_profiles')
+      .select('*')
+      .eq('user_id', id)
+      .maybeSingle();
+    
+    if (tutorByUserId) {
+      tutor = tutorByUserId;
+    } else if (errorByUserId) {
+      queryError = errorByUserId;
+    }
   }
 
-  // Fetch profile data (tutor.id is FK to profiles.id, or use user_id as fallback)
-  const profileId = tutor.id || tutor.user_id;
+  if (!tutor) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <AdminNav />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-red-900 mb-2">Tutor not found</h2>
+            <p className="text-red-700">No tutor found with ID: {id}</p>
+            {queryError && (
+              <p className="text-red-600 text-sm mt-2">Error: {queryError.message}</p>
+            )}
+            <Link href="/admin/tutors" className="mt-4 inline-block text-blue-600 hover:text-blue-800">
+              ← Back to Tutors
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Fetch profile data using user_id (tutor.user_id is FK to profiles.id)
+  // Also try tutor.id in case it's the same as user_id
+  const profileId = tutor.user_id || tutor.id;
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, phone_number, email, date_of_birth')
     .eq('id', profileId)
-    .single();
+    .maybeSingle();
 
-  const phoneNumber = profile?.phone_number || '';
+  // Use profile data with fallbacks from tutor_profiles
+  const fullName = profile?.full_name || tutor.full_name || 'Tutor';
+  const email = profile?.email || tutor.email || '';
+  const phoneNumber = profile?.phone_number || tutor.phone_number || '';
   const whatsappLink = phoneNumber ? `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}` : '#';
   const callLink = phoneNumber ? `tel:${phoneNumber}` : '#';
 
-  // Check if video exists (handle both URL strings and objects)
-  const videoUrl = typeof tutor.video_intro === 'string' ? tutor.video_intro : tutor.video_intro?.url || tutor.video_intro?.link || null;
+  // Check if video exists (handle video_link, video_url, or video_intro)
+  const videoUrl = tutor.video_link || tutor.video_url || 
+    (typeof tutor.video_intro === 'string' ? tutor.video_intro : tutor.video_intro?.url || tutor.video_intro?.link || null);
 
   // Handle certificates (can be array, string, or JSONB)
   let certificates: string[] = [];
@@ -58,8 +105,12 @@ export default async function TutorDetailPage({
       } catch {
         certificates = [tutor.certificates_urls];
       }
+    } else if (typeof tutor.certificates_urls === 'object') {
+      // Handle JSONB object
+      certificates = Object.values(tutor.certificates_urls).filter((url): url is string => typeof url === 'string');
     }
   }
+
 
   // Determine which action buttons to show
   const showApproveButton = tutor.status === 'pending' || tutor.status === 'needs_improvement' || tutor.status === 'rejected';
@@ -72,178 +123,85 @@ export default async function TutorDetailPage({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <Link href="/admin/tutors" className="text-sm text-blue-600 hover:text-blue-800 mb-2 inline-block">
                 ← Back to Tutors
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">{profile?.full_name || 'Tutor Profile'}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{fullName}</h1>
             </div>
-            <div className="flex gap-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                tutor.status === 'pending' ? 'bg-orange-100 text-orange-800' :
-                tutor.status === 'approved' ? 'bg-green-100 text-green-800' :
-                tutor.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                tutor.status === 'needs_improvement' ? 'bg-yellow-100 text-yellow-800' :
-                tutor.status === 'suspended' ? 'bg-gray-100 text-gray-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {tutor.status?.charAt(0).toUpperCase() + tutor.status?.slice(1) || 'Pending'}
-              </span>
-              {tutor.is_hidden && (
-                <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                  Hidden
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Actions - Contact Only */}
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {/* Contact Actions */}
-              <a
-                href={callLink}
-                className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-              >
-                <Phone size={20} />
-                <span className="text-sm font-medium">Call</span>
-              </a>
-              <Link
-                href={`/admin/tutors/${id}/email`}
-                className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-              >
-                <Mail size={20} />
-                <span className="text-sm font-medium">Email</span>
-              </Link>
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-              >
-                <MessageCircle size={20} />
-                <span className="text-sm font-medium">WhatsApp</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Application Action Buttons - Separate Section Below Quick Actions */}
-          {(tutor.status === 'pending' || tutor.status === 'needs_improvement' || tutor.status === 'approved' || tutor.status === 'rejected') && (
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Application Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {tutor.status === 'pending' && (
-                <>
-                  <Link
-                    href={`/admin/tutors/${id}/approve/rating-pricing`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                  >
-                    <CheckCircle size={20} />
-                    <span className="text-sm font-medium">Approve Tutor</span>
-                  </Link>
-                  <Link
-                    href={`/admin/tutors/${id}/improve/reasons`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
-                  >
-                    <AlertCircle size={20} />
-                    <span className="text-sm font-medium">Request Improvements</span>
-                  </Link>
-                  <Link
-                    href={`/admin/tutors/${id}/reject/reasons`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                  >
-                    <XCircle size={20} />
-                    <span className="text-sm font-medium">Reject Application</span>
-                  </Link>
-                </>
-              )}
-              {tutor.status === 'needs_improvement' && (
-                <>
-                  <Link
-                    href={`/admin/tutors/${id}/approve/rating-pricing`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                  >
-                    <CheckCircle size={20} />
-                    <span className="text-sm font-medium">Approve Tutor</span>
-                  </Link>
-                  <Link
-                    href={`/admin/tutors/${id}/improve/reasons`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
-                  >
-                    <AlertCircle size={20} />
-                    <span className="text-sm font-medium">Request Improvements</span>
-                  </Link>
-                  <Link
-                    href={`/admin/tutors/${id}/reject/reasons`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                  >
-                    <XCircle size={20} />
-                    <span className="text-sm font-medium">Reject Application</span>
-                  </Link>
-                </>
-              )}
-              {tutor.status === 'approved' && (
-                <>
-                  {!tutor.is_hidden ? (
-                    <Link
-                      href={`/admin/tutors/${id}/hide`}
-                      className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-                    >
-                      <Edit size={20} />
-                      <span className="text-sm font-medium">Hide Profile</span>
-                    </Link>
-                  ) : (
-                    <Link
-                      href={`/admin/tutors/${id}/unhide`}
-                      className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                    >
-                      <CheckCircle size={20} />
-                      <span className="text-sm font-medium">Unhide Profile</span>
-                    </Link>
-                  )}
-                  <Link
-                    href={`/admin/tutors/${id}/block`}
-                    className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-                  >
-                    <XCircle size={20} />
-                    <span className="text-sm font-medium">Block Tutor</span>
-                  </Link>
-                </>
-              )}
-              {tutor.status === 'rejected' && (
-                <Link
-                  href={`/admin/tutors/${id}/approve/rating-pricing`}
-                  className="flex flex-col items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Contact Buttons - Top Right */}
+              <div className="flex items-center gap-2">
+                <a
+                  href={callLink}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs"
+                  title="Call"
                 >
-                  <CheckCircle size={20} />
-                  <span className="text-sm font-medium">Approve Tutor</span>
+                  <Phone size={16} />
+                  <span className="hidden sm:inline">Call</span>
+                </a>
+                <Link
+                  href={`/admin/tutors/${id}/email`}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition text-xs"
+                  title="Email"
+                >
+                  <Mail size={16} />
+                  <span className="hidden sm:inline">Email</span>
                 </Link>
-              )}              </div>
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs"
+                  title="WhatsApp"
+                >
+                  <MessageCircle size={16} />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                </a>
+              </div>
+              {/* Status Badges */}
+              <div className="flex gap-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  tutor.status === 'pending' ? 'bg-orange-100 text-orange-800' :
+                  tutor.status === 'approved' ? 'bg-green-100 text-green-800' :
+                  tutor.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                  tutor.status === 'needs_improvement' ? 'bg-yellow-100 text-yellow-800' :
+                  tutor.status === 'suspended' ? 'bg-gray-100 text-gray-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {tutor.status?.charAt(0).toUpperCase() + tutor.status?.slice(1) || 'Pending'}
+                </span>
+                {tutor.is_hidden && (
+                  <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                    Hidden
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Video | Photo - At Top */}
+          {(videoUrl || tutor.profile_photo_url) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Video Introduction */}
+              {videoUrl && (
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Video Introduction</h2>
+                  <VideoPlayer videoUrl={videoUrl} />
+                </div>
+              )}
+              
+              {/* Profile Photo */}
+              {tutor.profile_photo_url && (
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Photo</h2>
+                  <ProfileImage src={tutor.profile_photo_url} alt={fullName} fallbackInitial={fullName.charAt(0).toUpperCase()} />
+                </div>
+              )}
             </div>
           )}
-            </div>
-          </div>
 
-          {/* Video | Pic */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Video Introduction */}
-            {videoUrl && (
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Video Introduction</h2>
-                <VideoPlayer videoUrl={videoUrl} />
-              </div>
-            )}
-            
-            {/* Profile Photo */}
-            {tutor.profile_photo_url && (
-              <div className="bg-white p-6 rounded-lg border border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Photo</h2>
-                <ProfileImage src={tutor.profile_photo_url} alt={profile?.full_name || 'Tutor'} />
-              </div>
-            )}
-          </div>
 
           {/* Rating & Pricing Section - Only for approved tutors */}
           {tutor.status === 'approved' && (
@@ -256,16 +214,20 @@ export default async function TutorDetailPage({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-gray-600">Full Name</p>
-                <p className="font-medium text-gray-900">{profile?.full_name || tutor.full_name || "N/A"}</p>
+                <p className="font-medium text-gray-900">{fullName}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium text-gray-900">{profile?.email || tutor.email || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Phone</p>
-                <p className="font-medium text-gray-900">{phoneNumber || 'N/A'}</p>
-              </div>
+              {email && (
+                <div>
+                  <p className="text-sm text-gray-600">Email</p>
+                  <p className="font-medium text-gray-900">{email}</p>
+                </div>
+              )}
+              {phoneNumber && (
+                <div>
+                  <p className="text-sm text-gray-600">Phone</p>
+                  <p className="font-medium text-gray-900">{phoneNumber}</p>
+                </div>
+              )}
               {profile?.date_of_birth && (
                 <div>
                   <p className="text-sm text-gray-600">Date of Birth</p>
@@ -403,50 +365,39 @@ export default async function TutorDetailPage({
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Documents</h2>
             <div className="space-y-3">
-              {/* ID Card */}
-              {tutor.id_card_url && (
-                <a
-                  href={tutor.id_card_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-                >
-                  <FileText className="text-blue-600" size={20} />
-                  <span className="flex-1 font-medium text-gray-900">ID Card</span>
-                  <Download className="text-gray-400" size={18} />
-                </a>
+              {/* Profile Photo */}
+              {tutor.profile_photo_url && (
+                <DocumentDisplay url={tutor.profile_photo_url} title="Profile Photo" />
+              )}
+              
+              {/* ID Card Front */}
+              {tutor.id_card_front_url && (
+                <DocumentDisplay url={tutor.id_card_front_url} title="ID Card Front" />
+              )}
+              
+              {/* ID Card Back */}
+              {tutor.id_card_back_url && (
+                <DocumentDisplay url={tutor.id_card_back_url} title="ID Card Back" />
+              )}
+              
+              {/* Legacy ID Card URL */}
+              {tutor.id_card_url && !tutor.id_card_front_url && !tutor.id_card_back_url && (
+                <DocumentDisplay url={tutor.id_card_url} title="ID Card" />
               )}
               
               {/* Certificates */}
-              {tutor.certificates_urls && Array.isArray(tutor.certificates_urls) && tutor.certificates_urls.length > 0 ? (
-                tutor.certificates_urls.map((url: string, index: number) => (
-                  <a
-                    key={index}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-                  >
-                    <FileText className="text-blue-600" size={20} />
-                    <span className="flex-1 font-medium text-gray-900">Certificate {index + 1}</span>
-                    <Download className="text-gray-400" size={18} />
-                  </a>
+              {certificates.length > 0 ? (
+                certificates.map((url: string, index: number) => (
+                  <DocumentDisplay key={index} url={url} title={`Certificate ${index + 1}`} />
                 ))
-              ) : tutor.certificates_urls && typeof tutor.certificates_urls === 'string' ? (
-                <a
-                  href={tutor.certificates_urls}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
-                >
-                  <FileText className="text-blue-600" size={20} />
-                  <span className="flex-1 font-medium text-gray-900">Certificate</span>
-                  <Download className="text-gray-400" size={18} />
-                </a>
               ) : null}
               
               {/* Show message if no documents */}
-              {!tutor.id_card_url && (!tutor.certificates_urls || (Array.isArray(tutor.certificates_urls) && tutor.certificates_urls.length === 0)) && (
+              {!tutor.profile_photo_url && 
+               !tutor.id_card_front_url && 
+               !tutor.id_card_back_url && 
+               !tutor.id_card_url && 
+               certificates.length === 0 && (
                 <p className="text-gray-500 text-sm italic">No documents uploaded</p>
               )}
             </div>
@@ -456,33 +407,57 @@ export default async function TutorDetailPage({
           {tutor.payment_details && (
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Details</h2>
-              <pre className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg overflow-auto">
-                {JSON.stringify(tutor.payment_details, null, 2)}
-              </pre>
+              <div className="space-y-3">
+                {typeof tutor.payment_details === 'object' && tutor.payment_details !== null ? (
+                  <>
+                    {tutor.payment_details.name && (
+                      <div>
+                        <p className="text-sm text-gray-600">Account Name</p>
+                        <p className="font-medium text-gray-900">{tutor.payment_details.name}</p>
+                      </div>
+                    )}
+                    {tutor.payment_details.phone && (
+                      <div>
+                        <p className="text-sm text-gray-600">Phone Number</p>
+                        <p className="font-medium text-gray-900">{tutor.payment_details.phone}</p>
+                      </div>
+                    )}
+                    {tutor.payment_details.account_type && (
+                      <div>
+                        <p className="text-sm text-gray-600">Payment Method</p>
+                        <p className="font-medium text-gray-900">{tutor.payment_details.account_type}</p>
+                      </div>
+                    )}
+                    {tutor.payment_details.account_number && (
+                      <div>
+                        <p className="text-sm text-gray-600">Account Number</p>
+                        <p className="font-medium text-gray-900">{tutor.payment_details.account_number}</p>
+                      </div>
+                    )}
+                    {tutor.payment_details.bank_name && (
+                      <div>
+                        <p className="text-sm text-gray-600">Bank Name</p>
+                        <p className="font-medium text-gray-900">{tutor.payment_details.bank_name}</p>
+                      </div>
+                    )}
+                    {/* Show any other fields that might exist */}
+                    {Object.entries(tutor.payment_details).map(([key, value]) => {
+                      const displayKeys = ['name', 'phone', 'account_type', 'account_number', 'bank_name'];
+                      if (displayKeys.includes(key) || !value) return null;
+                      return (
+                        <div key={key}>
+                          <p className="text-sm text-gray-600 capitalize">{key.replace(/_/g, ' ')}</p>
+                          <p className="font-medium text-gray-900">{String(value)}</p>
+                        </div>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-600">No payment details available</p>
+                )}
+              </div>
             </div>
           )}
-
-          )}
-              {tutor.expected_rate && (
-                <div>
-                  <p className="text-sm text-gray-600">Expected Rate</p>
-                  <p className="font-medium text-gray-900">{tutor.expected_rate}</p>
-                </div>
-              )}
-              {tutor.payment_method && (
-                <div>
-                  <p className="text-sm text-gray-600">Payment Method</p>
-                  <p className="font-medium text-gray-900">{tutor.payment_method}</p>
-                </div>
-              )}
-              {tutor.handles_multiple_learners !== undefined && (
-                <div>
-                  <p className="text-sm text-gray-600">Handles Multiple Learners</p>
-                  <p className="font-medium text-gray-900">{tutor.handles_multiple_learners ? 'Yes' : 'No'}</p>
-                </div>
-              )}
-            </div>
-          </div>
 
           {/* Social Links */}
           {(tutor.facebook_url || tutor.linkedin_url || tutor.twitter_url || tutor.instagram_url || tutor.youtube_url) && (
@@ -556,6 +531,102 @@ export default async function TutorDetailPage({
               {tutor.hidden_at && (
                 <p className="text-sm text-gray-600">Hidden on: {new Date(tutor.hidden_at).toLocaleString()}</p>
               )}
+            </div>
+          )}
+
+          {/* Application Action Buttons - At Bottom */}
+          {(tutor.status === 'pending' || tutor.status === 'needs_improvement' || tutor.status === 'approved' || tutor.status === 'rejected') && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200 border-t-4 border-t-blue-600">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Application Actions</h2>
+              <div className="flex flex-wrap gap-3">
+              {tutor.status === 'pending' && (
+                <>
+                  <Link
+                    href={`/admin/tutors/${id}/approve/rating-pricing`}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                  >
+                    <CheckCircle size={18} />
+                    <span>Approve Tutor</span>
+                  </Link>
+                  <Link
+                    href={`/admin/tutors/${id}/improve/reasons`}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm font-medium"
+                  >
+                    <AlertCircle size={18} />
+                    <span>Request Improvements</span>
+                  </Link>
+                  <Link
+                    href={`/admin/tutors/${id}/reject/reasons`}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
+                  >
+                    <XCircle size={18} />
+                    <span>Reject Application</span>
+                  </Link>
+                </>
+              )}
+              {tutor.status === 'needs_improvement' && (
+                <>
+                  <Link
+                    href={`/admin/tutors/${id}/approve/rating-pricing`}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                  >
+                    <CheckCircle size={18} />
+                    <span>Approve Tutor</span>
+                  </Link>
+                  <Link
+                    href={`/admin/tutors/${id}/improve/reasons`}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition text-sm font-medium"
+                  >
+                    <AlertCircle size={18} />
+                    <span>Request Improvements</span>
+                  </Link>
+                  <Link
+                    href={`/admin/tutors/${id}/reject/reasons`}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
+                  >
+                    <XCircle size={18} />
+                    <span>Reject Application</span>
+                  </Link>
+                </>
+              )}
+              {tutor.status === 'approved' && (
+                <>
+                  {!tutor.is_hidden ? (
+                    <Link
+                      href={`/admin/tutors/${id}/hide`}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm font-medium"
+                    >
+                      <Edit size={18} />
+                      <span>Hide Profile</span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/admin/tutors/${id}/unhide`}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                    >
+                      <CheckCircle size={18} />
+                      <span>Unhide Profile</span>
+                    </Link>
+                  )}
+                  <Link
+                    href={`/admin/tutors/${id}/block`}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
+                  >
+                    <XCircle size={18} />
+                    <span>Block Tutor</span>
+                  </Link>
+                </>
+              )}
+              {tutor.status === 'rejected' && (
+                <Link
+                  href={`/admin/tutors/${id}/approve/rating-pricing`}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm font-medium"
+                >
+                  <CheckCircle size={18} />
+                  <span>Approve Tutor</span>
+                </Link>
+              )}
+              </div>
             </div>
           )}
         </div>

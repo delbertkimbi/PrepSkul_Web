@@ -41,11 +41,10 @@ export default async function RatingPricingPage({
   }
 
   // Fetch profile for name display
-  const profileId = tutor.id || tutor.user_id;
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name, email')
-    .eq('id', profileId)
+    .eq('id', tutor.user_id)
     .maybeSingle();
 
   return (
@@ -62,8 +61,37 @@ export default async function RatingPricingPage({
             <p className="text-sm text-gray-500 mt-1">Step 1 of 2: Set Initial Rating & Pricing</p>
           </div>
 
+          {/* Tutor's Desired Rate Range */}
+          {tutor.expected_rate && (
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    <p className="text-sm font-semibold text-blue-900 uppercase tracking-wide">Tutor's Desired Rate Range</p>
+                  </div>
+                  <p className="text-3xl font-bold text-blue-700 mt-2">
+                    {typeof tutor.expected_rate === 'number' 
+                      ? `${tutor.expected_rate.toLocaleString()} XAF/hour` 
+                      : tutor.expected_rate}
+                  </p>
+                  <p className="text-sm text-blue-600 mt-2">
+                    This is the price range the tutor selected during onboarding. Use this as a reference when setting the final pricing.
+                  </p>
+                </div>
+                <div className="text-right bg-white rounded-lg p-3 border border-blue-200">
+                  <p className="text-xs font-medium text-blue-600 uppercase mb-1">Reference</p>
+                  <p className="text-xs text-gray-600">Consider when setting</p>
+                  <p className="text-xs text-gray-600">final pricing</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Rating & Pricing Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <RatingPricingSection tutor={tutor} tutorId={tutor.id} />
           </div>
 
