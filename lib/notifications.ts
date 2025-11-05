@@ -5,10 +5,7 @@
  * Uses Resend for emails and Twilio for SMS (when configured)
  */
 
-import { Resend } from 'resend';
 
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email notification templates
 export async function sendTutorApprovalEmail(
@@ -277,3 +274,51 @@ export async function notifyTutorRejection(
   return results;
 }
 
+
+
+// Email notification templates
+}
+
+/**
+ * Send a custom email to a tutor
+ * @param tutorEmail - Recipient email address
+ * @param tutorName - Recipient name
+ * @param subject - Email subject
+ * @param body - Email body (HTML supported)
+ */
+export async function sendCustomEmail(
+  tutorEmail: string,
+  tutorName: string,
+  subject: string,
+  body: string
+): Promise<{ success: boolean; error?: string }> {
+  console.log('📧 Sending custom email to:', tutorEmail);
+  
+  try {
+    // For now, log to console
+    // TODO: Integrate with Resend or Supabase email service
+    console.log('Email Details:');
+    console.log('  To:', tutorEmail);
+    console.log('  Name:', tutorName);
+    console.log('  Subject:', subject);
+    console.log('  Body:', body);
+
+    // TODO: Replace with actual email sending
+    // Example with Resend:
+    // const resend = new Resend(process.env.RESEND_API_KEY);
+    // await resend.emails.send({
+    //   from: 'PrepSkul <info@prepskul.com>',
+    //   to: tutorEmail,
+    //   subject: subject,
+    //   html: body,
+    // });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('❌ Error sending custom email:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to send email',
+    };
+  }
+}

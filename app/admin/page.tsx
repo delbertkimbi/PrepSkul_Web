@@ -142,7 +142,7 @@ export default async function AdminDashboard() {
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Pending Tutors</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">{pendingTutors || 0}</p>
-              <a href="/admin/tutors/pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
+              <a href="/admin/tutors?tab=pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
                 Review applications →
               </a>
             </div>
@@ -191,7 +191,7 @@ export default async function AdminDashboard() {
               <h3 className="font-semibold text-gray-900">Active Now</h3>
               <p className="text-sm text-gray-600 mt-1">Monitor ongoing sessions</p>
             </a>
-            <a href="/admin/tutors/pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
+            <a href="/admin/tutors?tab=pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
               <h3 className="font-semibold text-gray-900">Pending Tutors</h3>
               <p className="text-sm text-gray-600 mt-1">Review tutor applications</p>
             </a>

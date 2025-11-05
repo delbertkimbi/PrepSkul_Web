@@ -14,7 +14,7 @@ type EmailTemplate = 'approval' | 'rejection' | 'enhancement';
 const emailTemplates = {
   approval: {
     subject: 'Your PrepSkul Tutor Profile Has Been Approved! 🎉',
-    content: `Hi ${tutorName},
+    content: `Hi {{tutorName}},
 
 Great news! Your PrepSkul tutor profile has been reviewed and approved by our admin team.
 
@@ -30,7 +30,7 @@ The PrepSkul Team`,
   },
   rejection: {
     subject: 'Your PrepSkul Tutor Profile Needs Updates',
-    content: `Hi ${tutorName},
+    content: `Hi {{tutorName}},
 
 Thank you for your interest in becoming a PrepSkul tutor. After reviewing your application, we need some additional information or clarifications.
 
@@ -49,7 +49,7 @@ The PrepSkul Team`,
   },
   enhancement: {
     subject: 'Enhancement Opportunity for Your PrepSkul Profile',
-    content: `Hi ${tutorName},
+    content: `Hi {{tutorName}},
 
 We noticed some great potential in your tutor profile! Here are some suggestions to help you stand out:
 
@@ -70,8 +70,9 @@ The PrepSkul Team`,
 
 export default function EmailEditor({ tutorEmail, tutorName, tutorId }: EmailEditorProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate>('approval');
-  const [subject, setSubject] = useState('');
-  const [content, setContent] = useState('');
+  const templateData = emailTemplates['approval'];
+  const [subject, setSubject] = useState(templateData.subject);
+  const [content, setContent] = useState(templateData.content.replace(/\{\{tutorName\}\}/g, tutorName));
   const [recipientEmail, setRecipientEmail] = useState(tutorEmail);
   const [isSending, setIsSending] = useState(false);
 
@@ -80,7 +81,8 @@ export default function EmailEditor({ tutorEmail, tutorName, tutorId }: EmailEdi
     setSelectedTemplate(template);
     const templateData = emailTemplates[template];
     setSubject(templateData.subject);
-    setContent(templateData.content);
+    // Replace placeholder with actual tutor name
+    setContent(templateData.content.replace(/\{\{tutorName\}\}/g, tutorName));
   };
 
   // Convert plain text to HTML for email
@@ -285,6 +287,3 @@ export default function EmailEditor({ tutorEmail, tutorName, tutorId }: EmailEdi
     </div>
   );
 }
-
-
-

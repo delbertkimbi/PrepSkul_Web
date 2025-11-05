@@ -1,0 +1,271 @@
+import { redirect } from 'next/navigation';
+import { getServerSession, isAdmin, createServerSupabaseClient } from '@/lib/supabase-server';
+import AdminNav from '../../components/AdminNav';
+import Link from 'next/link';
+import { Phone, Mail, MessageCircle, Download, ExternalLink, Play, Globe, Linkedin, Youtube, Instagram, Twitter, Facebook, FileText, CheckCircle, XCircle } from 'lucide-react';
+import ProfileImage from './ProfileImage';
+import RatingPricingSection from './RatingPricingSection';
+import VideoPlayer from './VideoPlayer';
+import ActionButtons from './ActionButtons';
+
+export default async function TutorDetailPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params;
+  const user = await getServerSession();
+  if (!user) redirect('/admin/login');
+  const adminStatus = await isAdmin(user.id);
+  if (!adminStatus) redirect('/admin/login');
+
+  const supabase = await createServerSupabaseClient();
+  
+  // Fetch tutor data
+  const { data: tutor } = await supabase
+    .from('tutor_profiles')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (!tutor) {
+    return <div>Tutor not found</div>;
+  }
+
+  // Fetch profile data (tutor.id is FK to profiles.id, or use user_id as fallback)
+  const profileId = tutor.id || tutor.user_id;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, phone_number, email')
+    .eq('id', profileId)
+    .single();
+
+  const phoneNumber = profile?.phone_number || '';
+  const whatsappLink = `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}`;
+  const callLink = `tel:${phoneNumber}`;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <AdminNav />
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <Link href="/admin/tutors" className="text-sm text-blue-600 hover:text-blue-800 mb-2 inline-block">
+                ← Back to Tutors
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-900">{profile?.full_name || 'Tutor Profile'}</h1>
+            </div>
+            <div className="flex gap-2">
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                tutor.status === 'pending' ? 'bg-orange-100 text-orange-800' :
+                tutor.status === 'approved' ? 'bg-green-100 text-green-800' :
+                tutor.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                tutor.status === 'needs_improvement' ? 'bg-yellow-100 text-yellow-800' :
+                tutor.status === 'suspended' ? 'bg-gray-100 text-gray-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {tutor.status?.charAt(0).toUpperCase() + tutor.status?.slice(1) || 'Pending'}
+              </span>
+              {tutor.is_hidden && (
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                  Hidden
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Contact Buttons */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div className="flex gap-3">
+              <a
+                href={callLink}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+              >
+                <Phone size={18} />
+                Call
+              </a>
+              <Link
+                href={`/admin/tutors/${id}/email`}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              >
+                <Mail size={18} />
+                Email
+              </Link>
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+              >
+                <MessageCircle size={18} />
+                WhatsApp
+              </a>
+            </div>
+          </div>
+
+          {/* Video Introduction */}
+          {tutor.video_intro && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Video Introduction</h2>
+              <VideoPlayer videoUrl={tutor.video_intro} />
+            </div>
+          )}
+
+          {/* Action Buttons - Approve, Reject, Request Improvements */}
+          <ActionButtons tutorId={id} status={tutor.status} isHidden={tutor.is_hidden} />
+
+          {/* Rating & Pricing Section - Only for approved tutors */}
+          {tutor.status === 'approved' && (
+            <RatingPricingSection tutor={tutor} tutorId={id} />
+          )}
+
+          {/* Profile Information */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Personal Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Full Name</p>
+                <p className="font-medium text-gray-900">{profile?.full_name || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Email</p>
+                <p className="font-medium text-gray-900">{profile?.email || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Phone</p>
+                <p className="font-medium text-gray-900">{phoneNumber || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">City</p>
+                <p className="font-medium text-gray-900">{tutor.city || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Teaching Duration</p>
+                <p className="font-medium text-gray-900">{tutor.teaching_duration || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Highest Education</p>
+                <p className="font-medium text-gray-900">{tutor.highest_education || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Profile Photo */}
+          {tutor.profile_photo_url && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile Photo</h2>
+              <ProfileImage src={tutor.profile_photo_url} alt={profile?.full_name || 'Tutor'} />
+            </div>
+          )}
+
+          {/* Bio/Motivation */}
+          {(tutor.bio || tutor.motivation) && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Bio / Motivation</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">{tutor.bio || tutor.motivation}</p>
+            </div>
+          )}
+
+          {/* Tutoring Areas */}
+          {tutor.tutoring_areas && tutor.tutoring_areas.length > 0 && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Subjects</h2>
+              <div className="flex flex-wrap gap-2">
+                {tutor.tutoring_areas.map((area: string, index: number) => (
+                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                    {area}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Documents */}
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Documents</h2>
+            <div className="space-y-3">
+              {tutor.id_card_url && (
+                <a
+                  href={tutor.id_card_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                >
+                  <FileText className="text-blue-600" size={20} />
+                  <span className="flex-1 font-medium text-gray-900">ID Card</span>
+                  <Download className="text-gray-400" size={18} />
+                </a>
+              )}
+              {tutor.certificates_urls && Array.isArray(tutor.certificates_urls) && tutor.certificates_urls.length > 0 && (
+                <>
+                  {tutor.certificates_urls.map((url: string, index: number) => (
+                    <a
+                      key={index}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+                    >
+                      <FileText className="text-blue-600" size={20} />
+                      <span className="flex-1 font-medium text-gray-900">Certificate {index + 1}</span>
+                      <Download className="text-gray-400" size={18} />
+                    </a>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Payment Details */}
+          {tutor.payment_details && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Details</h2>
+              <pre className="text-sm text-gray-700 bg-gray-50 p-4 rounded-lg overflow-auto">
+                {JSON.stringify(tutor.payment_details, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {/* Admin Review Notes */}
+          {tutor.admin_review_notes && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Admin Notes</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">{tutor.admin_review_notes}</p>
+            </div>
+          )}
+
+          {/* Improvement Requests */}
+          {tutor.improvement_requests && Array.isArray(tutor.improvement_requests) && tutor.improvement_requests.length > 0 && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Improvement Requests</h2>
+              <ul className="space-y-2">
+                {tutor.improvement_requests.map((request: any, index: number) => (
+                  <li key={index} className="flex items-start gap-2">
+                    <span className="text-yellow-600 mt-1">•</span>
+                    <span className="text-gray-700">{typeof request === 'string' ? request : JSON.stringify(request)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Hidden Information */}
+          {tutor.is_hidden && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200 border-purple-300">
+              <h2 className="text-lg font-semibold text-purple-900 mb-4">Hidden Status</h2>
+              {tutor.hidden_reason && (
+                <p className="text-gray-700 mb-2"><strong>Reason:</strong> {tutor.hidden_reason}</p>
+              )}
+              {tutor.hidden_at && (
+                <p className="text-sm text-gray-600">Hidden on: {new Date(tutor.hidden_at).toLocaleString()}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
