@@ -31,11 +31,12 @@ export async function generateMetadata({
     publisher: "PrepSkul",
     icons: {
       icon: [
-        { url: '/logo-blue.png', type: 'image/png' },
-        { url: '/logo-blue.png', type: 'image/png', sizes: 'any' }
+        { url: '/logo-blue.png?v=2', type: 'image/png', sizes: '32x32' },
+        { url: '/logo-blue.png?v=2', type: 'image/png', sizes: '16x16' },
+        { url: '/logo-blue.png?v=2', type: 'image/png', sizes: 'any' }
       ],
-      shortcut: '/logo-blue.png',
-      apple: '/logo-blue.png',
+      shortcut: '/logo-blue.png?v=2',
+      apple: '/logo-blue.png?v=2',
     },
     formatDetection: {
       email: false,

@@ -16,8 +16,8 @@ export const localeFlags = {
 // Language-specific metadata
 export const localeMetadata = {
   en: {
-    title: "PrepSkul - #1 Home & Online Tutoring in Cameroon | Expert Tutors",
-    description: "Find the best online and home tutors in Cameroon. Expert tutoring for GCE, BEPC, Baccalauréat, Math, English, Science. 500+ students guided, 50+ expert tutors, 7+ cities covered. Start learning today!",
+    title: "PrepSkul: Find Trusted Home and Online Tutors in Cameroon",
+    description: "Get connected with verified home and online tutors who don't just teach, but mentor and inspire — offering personalized support for academics, skill development, and exam preparation in Cameroon and beyond.",
     keywords: [
       "online tutor Cameroon",
       "home tutor Cameroon", 
