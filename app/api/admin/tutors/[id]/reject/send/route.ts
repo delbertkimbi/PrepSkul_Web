@@ -20,14 +20,29 @@ export async function POST(
 
     const { data: profile } = await supabase.from('profiles').select('email').eq('id', tutor.user_id).maybeSingle();
 
-    const { Resend } = await import('resend');
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: 'PrepSkul <info@prepskul.com>',
-      to: profile?.email || '',
-      subject: subject,
-      html: body.replace(/\n/g, '<br />'),
-    });
+    // Send email if email address exists and API key is configured
+    if (profile?.email) {
+      try {
+        const { Resend } = await import('resend');
+        if (!process.env.RESEND_API_KEY) {
+          console.warn('⚠️ RESEND_API_KEY not set - email not sent, but status updated');
+        } else {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          await resend.emails.send({
+            from: 'PrepSkul <info@prepskul.com>',
+            to: profile.email,
+            subject: subject,
+            html: body.replace(/\n/g, '<br />'),
+          });
+          console.log('📧 Rejection email sent');
+        }
+      } catch (emailError: any) {
+        console.error('❌ Error sending email:', emailError);
+        // Continue with status update even if email fails
+      }
+    } else {
+      console.warn('⚠️ No email address found for tutor - email not sent');
+    }
 
     await supabase.from('tutor_profiles').update({
       status: 'rejected',

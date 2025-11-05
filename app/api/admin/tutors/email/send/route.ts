@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,6 +24,18 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Initialize Resend only at runtime (not during build)
+    const { Resend } = await import('resend');
+    if (!process.env.RESEND_API_KEY) {
+      console.warn('⚠️ RESEND_API_KEY not set - email not sent');
+      return NextResponse.json({ 
+        error: 'Email service not configured. Please set RESEND_API_KEY in environment variables.',
+        success: false 
+      }, { status: 500 });
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Send email via Resend
     const { data, error } = await resend.emails.send({
