@@ -40,7 +40,20 @@ export async function POST(
             subject: subject,
             html: body.replace(/\n/g, '<br />'),
           });
-          console.log('📧 Improvement email sent:', emailResult);
+          
+          // Check if Resend actually succeeded
+          if (emailResult.error) {
+            console.error('❌ Resend API error sending improvement email:', emailResult.error);
+            console.error('Error details:', JSON.stringify(emailResult.error, null, 2));
+          } else if (emailResult.data?.id) {
+            console.log('📧 Improvement email sent successfully:', {
+              emailId: emailResult.data.id,
+              to: profile.email,
+              subject: subject
+            });
+          } else {
+            console.warn('⚠️ Resend returned unexpected response:', emailResult);
+          }
         }
       } catch (emailError: any) {
         console.error('❌ Error sending email:', emailError);

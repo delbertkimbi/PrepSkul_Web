@@ -61,12 +61,36 @@ export async function POST(
         html: body.replace(/\n/g, '<br />'),
       });
 
-      console.log('📧 Custom email sent:', emailResult);
+      // Check if Resend actually succeeded
+      if (emailResult.error) {
+        console.error('❌ Resend API error:', emailResult.error);
+        return NextResponse.json({ 
+          success: false,
+          error: emailResult.error.message || 'Failed to send email',
+          details: emailResult.error
+        }, { status: 500 });
+      }
+
+      if (!emailResult.data || !emailResult.data.id) {
+        console.error('❌ Resend returned no data:', emailResult);
+        return NextResponse.json({ 
+          success: false,
+          error: 'Email service returned no confirmation',
+          details: emailResult
+        }, { status: 500 });
+      }
+
+      console.log('📧 Custom email sent successfully:', {
+        emailId: emailResult.data.id,
+        to: profile.email,
+        subject: subject
+      });
 
       return NextResponse.json({ 
         success: true,
         message: 'Email sent successfully',
-        emailId: emailResult.id 
+        emailId: emailResult.data.id,
+        to: profile.email
       });
     } catch (emailError: any) {
       console.error('❌ Error sending email:', emailError);

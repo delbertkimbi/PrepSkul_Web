@@ -38,27 +38,49 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     // Send email via Resend
-    const { data, error } = await resend.emails.send({
+    const emailResult = await resend.emails.send({
       from: 'PrepSkul <info@prepskul.com>',
       to,
       subject,
       html,
     });
 
-    if (error) {
-      console.error('❌ Resend error:', error);
+    // Check if Resend actually succeeded
+    if (emailResult.error) {
+      console.error('❌ Resend API error:', emailResult.error);
       return NextResponse.json(
-        { error: 'Failed to send email', details: error },
+        { 
+          success: false,
+          error: emailResult.error.message || 'Failed to send email', 
+          details: emailResult.error 
+        },
         { status: 500 }
       );
     }
 
-    console.log('✅ Custom email sent successfully:', data);
+    if (!emailResult.data || !emailResult.data.id) {
+      console.error('❌ Resend returned no data:', emailResult);
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Email service returned no confirmation',
+          details: emailResult
+        },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ Custom email sent successfully:', {
+      emailId: emailResult.data.id,
+      to: to,
+      subject: subject
+    });
 
     // Return success
     return NextResponse.json({
       success: true,
-      messageId: data?.id,
+      messageId: emailResult.data.id,
+      to: to
     });
   } catch (error: any) {
     console.error('Error sending email:', error);

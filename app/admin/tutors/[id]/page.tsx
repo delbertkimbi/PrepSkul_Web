@@ -25,10 +25,18 @@ export default async function TutorDetailPage({
   let tutor = null;
   let queryError = null;
   
-  // First try: query by id (primary key)
+  // First try: query by id (primary key) with profile join
   const { data: tutorById, error: errorById } = await supabase
     .from('tutor_profiles')
-    .select('*')
+    .select(`
+      *,
+      profiles:user_id (
+        full_name,
+        phone_number,
+        email,
+        date_of_birth
+      )
+    `)
     .eq('id', id)
     .maybeSingle();
   
@@ -42,7 +50,15 @@ export default async function TutorDetailPage({
   if (!tutor) {
     const { data: tutorByUserId, error: errorByUserId } = await supabase
       .from('tutor_profiles')
-      .select('*')
+      .select(`
+        *,
+        profiles:user_id (
+          full_name,
+          phone_number,
+          email,
+          date_of_birth
+        )
+      `)
       .eq('user_id', id)
       .maybeSingle();
     
@@ -73,19 +89,16 @@ export default async function TutorDetailPage({
     );
   }
 
-  // Fetch profile data using user_id (tutor.user_id is FK to profiles.id)
-  // Also try tutor.id in case it's the same as user_id
-  const profileId = tutor.user_id || tutor.id;
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, phone_number, email, date_of_birth')
-    .eq('id', profileId)
-    .maybeSingle();
+  // Extract profile data from the joined query result
+  // The profile data is nested as tutor.profiles (or tutor.profiles[0] if array)
+  const profileData = Array.isArray(tutor.profiles) 
+    ? tutor.profiles[0] 
+    : tutor.profiles;
 
   // Use profile data with fallbacks from tutor_profiles - prioritize profile.full_name
-  const fullName = profile?.full_name || tutor.full_name || 'N/A';
-  const email = profile?.email || tutor.email || '';
-  const phoneNumber = profile?.phone_number || tutor.phone_number || '';
+  const fullName = profileData?.full_name || tutor.full_name || 'N/A';
+  const email = profileData?.email || tutor.email || '';
+  const phoneNumber = profileData?.phone_number || tutor.phone_number || '';
   const whatsappLink = phoneNumber ? `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}` : '#';
   const callLink = phoneNumber ? `tel:${phoneNumber}` : '#';
 
@@ -228,10 +241,10 @@ export default async function TutorDetailPage({
                   <p className="font-medium text-gray-900">{phoneNumber}</p>
                 </div>
               )}
-              {profile?.date_of_birth && (
+              {profileData?.date_of_birth && (
                 <div>
                   <p className="text-sm text-gray-600">Date of Birth</p>
-                  <p className="font-medium text-gray-900">{new Date(profile.date_of_birth).toLocaleDateString()}</p>
+                  <p className="font-medium text-gray-900">{new Date(profileData.date_of_birth).toLocaleDateString()}</p>
                 </div>
               )}
               <div>

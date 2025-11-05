@@ -28,13 +28,26 @@ export async function POST(
           console.warn('⚠️ RESEND_API_KEY not set - email not sent, but status updated');
         } else {
           const resend = new Resend(process.env.RESEND_API_KEY);
-          await resend.emails.send({
+          const emailResult = await resend.emails.send({
             from: 'PrepSkul <info@prepskul.com>',
             to: profile.email,
             subject: subject,
             html: body.replace(/\n/g, '<br />'),
           });
-          console.log('📧 Rejection email sent');
+          
+          // Check if Resend actually succeeded
+          if (emailResult.error) {
+            console.error('❌ Resend API error sending rejection email:', emailResult.error);
+            console.error('Error details:', JSON.stringify(emailResult.error, null, 2));
+          } else if (emailResult.data?.id) {
+            console.log('📧 Rejection email sent successfully:', {
+              emailId: emailResult.data.id,
+              to: profile.email,
+              subject: subject
+            });
+          } else {
+            console.warn('⚠️ Resend returned unexpected response:', emailResult);
+          }
         }
       } catch (emailError: any) {
         console.error('❌ Error sending email:', emailError);
