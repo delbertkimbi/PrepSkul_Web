@@ -226,39 +226,3 @@ export default async function AdminDashboard() {
   );
 }
 
-
-            <a href="/admin/tutors?tab=pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
-              <h3 className="font-semibold text-gray-900">Pending Tutors</h3>
-              <p className="text-sm text-gray-600 mt-1">Review tutor applications</p>
-            </a>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-            <p className="text-gray-500 text-sm">No recent activity</p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-
-            <a href="/admin/tutors?tab=pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
-              <h3 className="font-semibold text-gray-900">Pending Tutors</h3>
-              <p className="text-sm text-gray-600 mt-1">Review tutor applications</p>
-            </a>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-            <p className="text-gray-500 text-sm">No recent activity</p>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-

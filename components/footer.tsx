@@ -18,7 +18,17 @@ export function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
             {/* Brand */}
             <div className="space-y-3">
-              <h3 className="text-2xl font-bold">PrepSkul</h3>
+              <Link href="/" className="flex items-center gap-0.5">
+                <Image
+                  src="/logo-white.png"
+                  alt="PrepSkul Logo"
+                  width={32}
+                  height={32}
+                  className="h-9 w-9 object-contain"
+                  priority
+                />
+                <div className="text-2xl font-black text-primary-foreground font-lato">PrepSkul</div>
+              </Link>
               <p className="text-primary-foreground/80 leading-relaxed text-sm">
                 {t.footer.description}
               </p>

@@ -224,33 +224,3 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 </html>
   `.trim();
 }
-
-        <a href="https://app.prepskul.com">Visit App</a> |
-        <a href="https://prepskul.com">Website</a> |
-        <a href="mailto:info@prepskul.com">Contact Support</a>
-      </p>
-      <p style="margin-top: 20px; font-size: 12px; color: #999999;">
-        © ${new Date().getFullYear()} PrepSkul. All rights reserved.<br>
-        This is an automated email. Please do not reply directly to this email.
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
-}
-
-        <a href="https://app.prepskul.com">Visit App</a> |
-        <a href="https://prepskul.com">Website</a> |
-        <a href="mailto:info@prepskul.com">Contact Support</a>
-      </p>
-      <p style="margin-top: 20px; font-size: 12px; color: #999999;">
-        © ${new Date().getFullYear()} PrepSkul. All rights reserved.<br>
-        This is an automated email. Please do not reply directly to this email.
-      </p>
-    </div>
-  </div>
-</body>
-</html>
-  `.trim();
-}
