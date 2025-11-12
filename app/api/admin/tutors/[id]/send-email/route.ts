@@ -54,9 +54,19 @@ export async function POST(
       }
 
       const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      // Use Resend's default sender for testing, or verified domain
+      // For production, you need to verify prepskul.com domain at https://resend.com/domains
+      // For now, use onboarding@resend.dev (Resend's test domain) or your verified domain
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+      
+      // Set reply-to to business email so replies go to info@prepskul.com
+      const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
+      
       const emailResult = await resend.emails.send({
-        from: 'PrepSkul <info@prepskul.com>',
+        from: fromEmail.includes('@') ? `PrepSkul <${fromEmail}>` : fromEmail,
         to: profile.email,
+        replyTo: replyTo,
         subject: subject,
         html: body.replace(/\n/g, '<br />'),
       });
@@ -104,4 +114,8 @@ export async function POST(
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
+
+
+
+
 

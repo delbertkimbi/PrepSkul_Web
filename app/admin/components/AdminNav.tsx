@@ -17,6 +17,7 @@ export default function AdminNav() {
     { name: 'Tutors', href: '/admin/tutors' },
     { name: 'Sessions', href: '/admin/sessions' },
     { name: 'Revenue', href: '/admin/revenue' },
+    { name: 'Notifications', href: '/admin/notifications/send' },
   ];
 
   const isActive = (href: string) => {

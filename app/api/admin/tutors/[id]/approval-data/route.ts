@@ -17,10 +17,10 @@ export async function GET(
 
     const supabase = await createServerSupabaseClient();
     
-    // Fetch tutor profile
+    // Fetch tutor profile with rating and pricing data
     const { data: tutor } = await supabase
       .from('tutor_profiles')
-      .select('*')
+      .select('*, admin_approved_rating, base_session_price, pricing_tier, initial_rating_suggested, rating_justification')
       .eq('id', id)
       .single();
 
@@ -44,26 +44,48 @@ export async function GET(
 
     switch (emailType) {
       case 'approval':
-        subject = `Congratulations! Your PrepSkul Tutor Application Has Been Approved`;
+        // Format rating, price, and tier for email body
+        const approvalRating = tutor.admin_approved_rating || tutor.initial_rating_suggested;
+        const approvalPrice = tutor.base_session_price;
+        const approvalTier = tutor.pricing_tier;
+        
+        const formatRatingForBody = (rating: number | null | undefined): string => {
+          if (!rating) return 'N/A';
+          return rating.toFixed(1);
+        };
+
+        const formatPriceForBody = (price: number | null | undefined): string => {
+          if (!price) return 'N/A';
+          return `${price.toLocaleString('en-US')} XAF`;
+        };
+
+        const formatTierForBody = (tier: string | null | undefined): string => {
+          if (!tier) return 'N/A';
+          const tierMap: Record<string, string> = {
+            'entry': 'Entry Level',
+            'intermediate': 'Intermediate',
+            'advanced': 'Advanced',
+            'expert': 'Expert',
+          };
+          return tierMap[tier] || tier;
+        };
+
+        subject = `Your PrepSkul Tutor Profile Has Been Approved! 🎉`;
         body = `Hi ${tutorName},
 
-We're thrilled to inform you that your tutor application has been approved! 
+Great news! Your PrepSkul tutor profile has been reviewed and approved by our admin team.
 
-Your profile is now live on PrepSkul and students can start booking sessions with you.
+Your Initial Rating: ${formatRatingForBody(approvalRating)} ⭐
+Your Session Price: ${formatPriceForBody(approvalPrice)}
+Pricing Tier: ${formatTierForBody(approvalTier)}
 
-Next Steps:
-1. Log in to your PrepSkul account
-2. Complete your profile setup
-3. Set your availability schedule
-4. Start receiving booking requests!
+Important Note: This is your initial rating based on your credentials and qualifications. Starting from your 3rd student review onwards, your rating will be dynamically updated based on actual student feedback and reviews.
 
-Your Profile Details:
-- Rating: ${tutor.admin_approved_rating || tutor.initial_rating_suggested || 'Pending'}
-- Base Session Price: ${tutor.base_session_price ? `${tutor.base_session_price.toLocaleString()} XAF` : 'To be set'}
+Your profile is now live and visible to students. You can start receiving booking requests!
 
-If you have any questions, feel free to reach out to our support team.
+Log in to your dashboard to manage your profile and view your bookings.
 
-Welcome to PrepSkul!
+Welcome to the PrepSkul community! 🎓
 
 Best regards,
 The PrepSkul Team`;
@@ -121,10 +143,40 @@ The PrepSkul Team`;
         break;
     }
 
+    // Format rating, price, and tier for email
+    const formatRating = (rating: number | null | undefined): string => {
+      if (!rating) return 'N/A';
+      return rating.toFixed(1);
+    };
+
+    const formatPrice = (price: number | null | undefined): string => {
+      if (!price) return 'N/A';
+      return price.toLocaleString('en-US');
+    };
+
+    const formatTier = (tier: string | null | undefined): string => {
+      if (!tier) return 'N/A';
+      // Convert tier to readable format
+      const tierMap: Record<string, string> = {
+        'entry': 'Entry Level',
+        'intermediate': 'Intermediate',
+        'advanced': 'Advanced',
+        'expert': 'Expert',
+      };
+      return tierMap[tier] || tier;
+    };
+
+    const rating = formatRating(tutor.admin_approved_rating || tutor.initial_rating_suggested);
+    const sessionPrice = formatPrice(tutor.base_session_price);
+    const pricingTier = formatTier(tutor.pricing_tier);
+
     return NextResponse.json({
       success: true,
       tutorName,
       tutorEmail,
+      rating,
+      sessionPrice,
+      pricingTier,
       subject,
       body,
       tutorStatus: tutor.status,
@@ -134,4 +186,5 @@ The PrepSkul Team`;
     return NextResponse.json({ error: error.message || 'Failed to fetch tutor data' }, { status: 500 });
   }
 }
+
 

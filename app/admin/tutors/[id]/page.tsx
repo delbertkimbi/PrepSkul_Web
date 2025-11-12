@@ -25,18 +25,10 @@ export default async function TutorDetailPage({
   let tutor = null;
   let queryError = null;
   
-  // First try: query by id (primary key) with profile join
+  // First try: query by id (primary key)
   const { data: tutorById, error: errorById } = await supabase
     .from('tutor_profiles')
-    .select(`
-      *,
-      profiles:user_id (
-        full_name,
-        phone_number,
-        email,
-        date_of_birth
-      )
-    `)
+    .select('*')
     .eq('id', id)
     .maybeSingle();
   
@@ -50,15 +42,7 @@ export default async function TutorDetailPage({
   if (!tutor) {
     const { data: tutorByUserId, error: errorByUserId } = await supabase
       .from('tutor_profiles')
-      .select(`
-        *,
-        profiles:user_id (
-          full_name,
-          phone_number,
-          email,
-          date_of_birth
-        )
-      `)
+      .select('*')
       .eq('user_id', id)
       .maybeSingle();
     
@@ -89,16 +73,63 @@ export default async function TutorDetailPage({
     );
   }
 
-  // Extract profile data from the joined query result
-  // The profile data is nested as tutor.profiles (or tutor.profiles[0] if array)
-  const profileData = Array.isArray(tutor.profiles) 
-    ? tutor.profiles[0] 
-    : tutor.profiles;
+  // Fetch profile data using user_id (tutor.user_id is FK to profiles.id)
+  // IMPORTANT: Name, email, phone are stored in profiles table, not tutor_profiles
+  // tutor.id is the tutor_profiles primary key, NOT profiles.id
+  // We MUST use tutor.user_id to get the profile
+  let profile = null;
+  
+  // Debug: Log tutor data to understand structure
+  console.log('Tutor data:', {
+    tutor_id: tutor.id,
+    user_id: tutor.user_id,
+    has_user_id: !!tutor.user_id
+  });
+  
+  if (tutor.user_id) {
+    const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('full_name, phone_number, email')
+    .eq('id', tutor.user_id)
+    .maybeSingle();
 
-  // Use profile data with fallbacks from tutor_profiles - prioritize profile.full_name
-  const fullName = profileData?.full_name || tutor.full_name || 'N/A';
-  const email = profileData?.email || tutor.email || '';
-  const phoneNumber = profileData?.phone_number || tutor.phone_number || '';
+    if (profileError) {
+      console.error('Error fetching profile:', profileError);
+    } else if (!profileData) {
+      console.warn('No profile found for user_id:', tutor.user_id);
+    } else {
+      console.log('Profile found:', { full_name: profileData.full_name });
+    }
+    profile = profileData;
+  } else {
+    console.warn('Tutor has no user_id! Tutor ID:', tutor.id);
+  }
+  
+  // If still no profile and tutor.id exists, try it as a fallback (in case id === user_id)
+  if (!profile && tutor.id) {
+    const { data: profileData, error: profileError2 } = await supabase
+      .from('profiles')
+      .select('full_name, phone_number, email')
+      .eq('id', tutor.id)
+      .maybeSingle();
+    
+    if (profileError2) {
+      console.error('Error fetching profile (fallback):', profileError2);
+    }
+    if (profileData) {
+      console.log('Profile found via fallback (id === user_id):', { full_name: profileData.full_name });
+      profile = profileData;
+    }
+  }
+  
+  // Use profile data - name comes from profiles table during signup/onboarding
+  // If profile doesn't exist, there's a data integrity issue
+  const fullName = profile?.full_name || 'Name not found';
+  
+  // Debug: Log final name result
+  console.log('Final fullName:', fullName, 'Profile exists:', !!profile);
+  const email = profile?.email || tutor.email || '';
+  const phoneNumber = profile?.phone_number || tutor.phone_number || '';
   const whatsappLink = phoneNumber ? `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}` : '#';
   const callLink = phoneNumber ? `tel:${phoneNumber}` : '#';
 
@@ -107,22 +138,58 @@ export default async function TutorDetailPage({
     (typeof tutor.video_intro === 'string' ? tutor.video_intro : tutor.video_intro?.url || tutor.video_intro?.link || null);
 
   // Handle certificates (can be array, string, or JSONB)
+  // Also check for last_certificate_url, last_official_certificate_url, and uploaded_documents
   let certificates: string[] = [];
+  
+  // Check certificates_urls field
   if (tutor.certificates_urls) {
     if (Array.isArray(tutor.certificates_urls)) {
-      certificates = tutor.certificates_urls;
+      certificates = [...certificates, ...tutor.certificates_urls];
     } else if (typeof tutor.certificates_urls === 'string') {
       try {
         const parsed = JSON.parse(tutor.certificates_urls);
-        certificates = Array.isArray(parsed) ? parsed : [tutor.certificates_urls];
+        if (Array.isArray(parsed)) {
+          certificates = [...certificates, ...parsed];
+        } else {
+          certificates.push(tutor.certificates_urls);
+        }
       } catch {
-        certificates = [tutor.certificates_urls];
+        certificates.push(tutor.certificates_urls);
       }
     } else if (typeof tutor.certificates_urls === 'object') {
       // Handle JSONB object
-      certificates = Object.values(tutor.certificates_urls).filter((url): url is string => typeof url === 'string');
+      const urls = Object.values(tutor.certificates_urls).filter((url): url is string => typeof url === 'string');
+      certificates = [...certificates, ...urls];
     }
   }
+  
+  // Check last_certificate_url or last_official_certificate_url
+  if ((tutor as any).last_certificate_url && !certificates.includes((tutor as any).last_certificate_url)) {
+    certificates.push((tutor as any).last_certificate_url);
+  }
+  if ((tutor as any).last_official_certificate_url && !certificates.includes((tutor as any).last_official_certificate_url)) {
+    certificates.push((tutor as any).last_official_certificate_url);
+  }
+  
+  // Check uploaded_documents JSONB field
+  if ((tutor as any).uploaded_documents && typeof (tutor as any).uploaded_documents === 'object') {
+    const uploadedDocs = (tutor as any).uploaded_documents;
+    // Check for last_certificate key
+    if (uploadedDocs.last_certificate && typeof uploadedDocs.last_certificate === 'string') {
+      if (!certificates.includes(uploadedDocs.last_certificate)) {
+        certificates.push(uploadedDocs.last_certificate);
+      }
+    }
+    // Also check for any certificate URLs in the object
+    Object.values(uploadedDocs).forEach((url: any) => {
+      if (typeof url === 'string' && url.includes('certificate') && !certificates.includes(url)) {
+        certificates.push(url);
+      }
+    });
+  }
+  
+  // Remove duplicates
+  certificates = [...new Set(certificates)];
 
 
   // Determine which action buttons to show
@@ -141,7 +208,7 @@ export default async function TutorDetailPage({
               <Link href="/admin/tutors" className="text-sm text-blue-600 hover:text-blue-800 mb-2 inline-block">
                 ← Back to Tutors
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900">{fullName}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{fullName !== 'Name not found' ? fullName : (profile ? 'Loading...' : 'Name not found')}</h1>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
               {/* Contact Buttons - Top Right */}
@@ -227,7 +294,7 @@ export default async function TutorDetailPage({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-gray-600">Full Name</p>
-                <p className="font-medium text-gray-900">{fullName}</p>
+                <p className="font-medium text-gray-900">{profile?.full_name || fullName || 'Name not found'}</p>
               </div>
               {email && (
                 <div>
@@ -239,12 +306,6 @@ export default async function TutorDetailPage({
                 <div>
                   <p className="text-sm text-gray-600">Phone</p>
                   <p className="font-medium text-gray-900">{phoneNumber}</p>
-                </div>
-              )}
-              {profileData?.date_of_birth && (
-                <div>
-                  <p className="text-sm text-gray-600">Date of Birth</p>
-                  <p className="font-medium text-gray-900">{new Date(profileData.date_of_birth).toLocaleDateString()}</p>
                 </div>
               )}
               <div>
@@ -304,11 +365,115 @@ export default async function TutorDetailPage({
             </div>
           </div>
 
+          {/* Personal Statement */}
+          {tutor.personal_statement && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Personal Statement</h2>
+              <p className="text-gray-700 whitespace-pre-wrap">{tutor.personal_statement}</p>
+            </div>
+          )}
+
           {/* Motivation */}
           {(tutor.bio || tutor.motivation) && (
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Motivation</h2>
               <p className="text-gray-700 whitespace-pre-wrap">{tutor.bio || tutor.motivation}</p>
+            </div>
+          )}
+
+          {/* Payment Expectations */}
+          {(tutor.expected_rate || tutor.pricing_factors) && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Payment Expectations</h2>
+              <div className="space-y-3">
+                {tutor.expected_rate && (
+                  <div>
+                    <p className="text-sm text-gray-600">Expected Rate</p>
+                    <p className="font-medium text-gray-900">{tutor.expected_rate}</p>
+                  </div>
+                )}
+                {tutor.pricing_factors && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Pricing Factors</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.isArray(tutor.pricing_factors) ? (
+                        tutor.pricing_factors.map((factor: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                            {factor}
+                          </span>
+                        ))
+                      ) : typeof tutor.pricing_factors === 'string' ? (
+                        <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                          {tutor.pricing_factors}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Digital Readiness */}
+          {(tutor.devices || tutor.has_internet !== undefined || tutor.teaching_tools || tutor.has_materials !== undefined || tutor.wants_training !== undefined) && (
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Digital Readiness</h2>
+              <div className="space-y-3">
+                {tutor.devices && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Devices</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.isArray(tutor.devices) ? (
+                        tutor.devices.map((device: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            {device}
+                          </span>
+                        ))
+                      ) : typeof tutor.devices === 'string' ? (
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                          {tutor.devices}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+                {tutor.has_internet !== undefined && (
+                  <div>
+                    <p className="text-sm text-gray-600">Reliable Internet Connection</p>
+                    <p className="font-medium text-gray-900">{tutor.has_internet ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {tutor.teaching_tools && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">Teaching Tools</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Array.isArray(tutor.teaching_tools) ? (
+                        tutor.teaching_tools.map((tool: string, index: number) => (
+                          <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                            {tool}
+                          </span>
+                        ))
+                      ) : typeof tutor.teaching_tools === 'string' ? (
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                          {tutor.teaching_tools}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+                {tutor.has_materials !== undefined && (
+                  <div>
+                    <p className="text-sm text-gray-600">Access to Teaching Materials</p>
+                    <p className="font-medium text-gray-900">{tutor.has_materials ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+                {tutor.wants_training !== undefined && (
+                  <div>
+                    <p className="text-sm text-gray-600">Interested in Free Digital Training</p>
+                    <p className="font-medium text-gray-900">{tutor.wants_training ? 'Yes' : 'No'}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -375,10 +540,9 @@ export default async function TutorDetailPage({
           </div>
 
           {/* Availability */}
-          {(tutor.tutoring_availability || tutor.test_session_availability || tutor.availability_schedule) && (
-            <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Availability</h2>
-              <div className="space-y-4">
+          <div className="bg-white p-6 rounded-lg border border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Availability</h2>
+            <div className="space-y-4">
                 {/* Normal Tutoring Sessions */}
                 {(tutor.tutoring_availability || (tutor.availability_schedule && typeof tutor.availability_schedule === 'object')) && (
                   <div>
@@ -460,15 +624,14 @@ export default async function TutorDetailPage({
                   </div>
                 )}
                 
-                {/* Show message if no availability specified */}
-                {!tutor.tutoring_availability && 
-                 !tutor.test_session_availability && 
-                 !tutor.availability_schedule && (
-                  <p className="text-gray-500 text-sm italic">No availability information provided</p>
-                )}
-              </div>
+              {/* Show message if no availability specified */}
+              {!tutor.tutoring_availability && 
+               !tutor.test_session_availability && 
+               !tutor.availability_schedule && (
+                <p className="text-gray-500 text-sm italic">No availability information provided</p>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Documents */}
           <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -576,10 +739,61 @@ export default async function TutorDetailPage({
           )}
 
           {/* Social Links */}
-          {(tutor.facebook_url || tutor.linkedin_url || tutor.twitter_url || tutor.instagram_url || tutor.youtube_url) && (
+          {(() => {
+            // Parse social_media_links from JSON if it exists
+            let socialLinks: any = null;
+            if (tutor.social_media_links) {
+              try {
+                socialLinks = typeof tutor.social_media_links === 'string' 
+                  ? JSON.parse(tutor.social_media_links) 
+                  : tutor.social_media_links;
+              } catch (e) {
+                console.error('Error parsing social_media_links:', e);
+              }
+            }
+            
+            // Also check legacy individual fields
+            const hasLegacyLinks = tutor.facebook_url || tutor.linkedin_url || tutor.twitter_url || tutor.instagram_url || tutor.youtube_url;
+            const hasSocialLinks = socialLinks && typeof socialLinks === 'object' && Object.keys(socialLinks).length > 0;
+            
+            if (hasSocialLinks || hasLegacyLinks) {
+              return (
             <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Social Media Links</h2>
               <div className="flex flex-wrap gap-3">
+                    {/* Display from social_media_links JSON */}
+                    {hasSocialLinks && Object.entries(socialLinks).map(([platform, url]: [string, any]) => {
+                      if (!url || typeof url !== 'string') return null;
+                      const platformLower = platform.toLowerCase();
+                      const iconMap: any = {
+                        linkedin: <Linkedin size={18} />,
+                        youtube: <Youtube size={18} />,
+                        facebook: <Facebook size={18} />,
+                        instagram: <Instagram size={18} />,
+                        twitter: <Twitter size={18} />,
+                      };
+                      const colorMap: any = {
+                        linkedin: 'bg-blue-700 hover:bg-blue-800',
+                        youtube: 'bg-red-600 hover:bg-red-700',
+                        facebook: 'bg-blue-600 hover:bg-blue-700',
+                        instagram: 'bg-pink-600 hover:bg-pink-700',
+                        twitter: 'bg-black hover:bg-gray-800',
+                      };
+                      return (
+                        <a 
+                          key={platform}
+                          href={url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className={`flex items-center gap-2 px-4 py-2 ${colorMap[platformLower] || 'bg-gray-600 hover:bg-gray-700'} text-white rounded-lg transition`}
+                        >
+                          {iconMap[platformLower] || <Globe size={18} />}
+                          {platform}
+                        </a>
+                      );
+                    })}
+                    
+                    {/* Legacy individual fields */}
                 {tutor.facebook_url && (
                   <a href={tutor.facebook_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                     <Facebook size={18} />
@@ -612,7 +826,10 @@ export default async function TutorDetailPage({
                 )}
               </div>
             </div>
-          )}
+              );
+            }
+            return null;
+          })()}
 
           {/* Admin Review Notes */}
           {tutor.admin_review_notes && (

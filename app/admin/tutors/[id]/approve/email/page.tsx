@@ -26,22 +26,20 @@ export default function ApprovalEmailPage({ params }: ApprovalEmailPageProps) {
   useEffect(() => {
     params.then(({ id }) => {
       setTutorId(id);
-      // Fetch tutor data
-      fetch(`/api/admin/tutors/${id}/approval-data`)
+      // Fetch tutor data with approval type
+      fetch(`/api/admin/tutors/${id}/approval-data?type=approval`)
         .then(res => res.json())
         .then(data => {
           if (data.success) {
             setTutorName(data.tutorName || 'Tutor');
             setTutorEmail(data.tutorEmail || '');
-            setRating(data.rating || '');
-            setSessionPrice(data.sessionPrice || '');
-            setPricingTier(data.pricingTier || '');
+            setRating(data.rating || 'N/A');
+            setSessionPrice(data.sessionPrice ? `${data.sessionPrice} XAF` : 'N/A');
+            setPricingTier(data.pricingTier || 'N/A');
             
-            // Set default subject
-            setSubject(`Your PrepSkul Tutor Profile Has Been Approved! 🎉`);
-            
-            // Set default body with rating and pricing info
-            const defaultBody = `Hi ${data.tutorName || 'Tutor'},
+            // Use the subject and body from the API (already formatted with rating/pricing)
+            setSubject(data.subject || `Your PrepSkul Tutor Profile Has Been Approved! 🎉`);
+            setBody(data.body || `Hi ${data.tutorName || 'Tutor'},
 
 Great news! Your PrepSkul tutor profile has been reviewed and approved by our admin team.
 
@@ -58,9 +56,7 @@ Log in to your dashboard to manage your profile and view your bookings.
 Welcome to the PrepSkul community! 🎓
 
 Best regards,
-The PrepSkul Team`;
-
-            setBody(defaultBody);
+The PrepSkul Team`);
           }
         })
         .catch(err => {
@@ -93,6 +89,20 @@ The PrepSkul Team`;
 
       const data = await response.json();
 
+      if (!response.ok) {
+        // Handle domain verification error
+        if (data.requiresDomainVerification) {
+          setError(
+            data.message || 
+            `Resend's default email can only send to the account owner's email. To send to other recipients, please verify a domain at resend.com/domains.`
+          );
+        } else {
+          setError(data.message || data.error || 'Failed to send approval email');
+        }
+        setLoading(false);
+        return;
+      }
+
       if (data.success) {
         router.push(`/admin/tutors?success=approved&tutor=${tutorId}`);
       } else {
@@ -120,8 +130,26 @@ The PrepSkul Team`;
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
-              {error}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-red-800 mb-1">Failed to send email</h3>
+                  <p className="text-sm text-red-700">{error}</p>
+                  {error.includes('verify a domain') && (
+                    <div className="mt-3 pt-3 border-t border-red-200">
+                      <p className="text-xs text-red-600 mb-2">To fix this issue:</p>
+                      <ol className="text-xs text-red-600 list-decimal list-inside space-y-1">
+                        <li>Go to <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer" className="underline font-medium">resend.com/domains</a> and verify your domain</li>
+                        <li>Update <code className="bg-red-100 px-1 rounded">RESEND_FROM_EMAIL</code> in your environment variables to use your verified domain</li>
+                        <li>Restart your Next.js server</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -161,7 +189,9 @@ The PrepSkul Team`;
             </div>
 
             {/* Preview */}
-            <EmailPreview subject={subject} body={body} tutorName={tutorName} />
+            <div>
+              <EmailPreview subject={subject} body={body} tutorName={tutorName} />
+            </div>
           </div>
 
           {/* Actions */}

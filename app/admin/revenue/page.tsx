@@ -11,16 +11,16 @@ export default async function RevenuePage() {
 
   const supabase = await createServerSupabaseClient();
 
-  // Fetch all payments
+  // Fetch all session payments
   const { data: allPayments } = await supabase
-    .from('payments')
+    .from('session_payments')
     .select('*')
     .order('created_at', { ascending: false });
 
   // Calculate totals
-  const completedPayments = allPayments?.filter(p => p.status === 'completed') || [];
-  const pendingPayments = allPayments?.filter(p => p.status === 'pending') || [];
-  const failedPayments = allPayments?.filter(p => p.status === 'failed') || [];
+  const completedPayments = allPayments?.filter(p => p.payment_status === 'paid') || [];
+  const pendingPayments = allPayments?.filter(p => p.payment_status === 'pending') || [];
+  const failedPayments = allPayments?.filter(p => p.payment_status === 'failed') || [];
 
   const totalRevenue = completedPayments.reduce((sum, p) => sum + Number(p.amount), 0);
   const pendingRevenue = pendingPayments.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -65,20 +65,34 @@ export default async function RevenuePage() {
           .eq('id', payment.payer_id)
           .single();
 
-        let lessonInfo = null;
-        if (payment.lesson_id) {
-          const { data: lesson } = await supabase
-            .from('lessons')
-            .select('subject, start_time')
-            .eq('id', payment.lesson_id)
-            .single();
-          lessonInfo = lesson;
+        let sessionInfo = null;
+        if (payment.session_id) {
+          // Try individual_sessions first
+          const { data: individualSession } = await supabase
+            .from('individual_sessions')
+            .select('scheduled_date, scheduled_time')
+            .eq('id', payment.session_id)
+            .maybeSingle();
+          
+          if (individualSession) {
+            sessionInfo = { ...individualSession, session_type: 'recurring' };
+          } else {
+            // Try trial_sessions
+            const { data: trialSession } = await supabase
+              .from('trial_sessions')
+              .select('scheduled_date, scheduled_time')
+              .eq('id', payment.session_id)
+              .maybeSingle();
+            if (trialSession) {
+              sessionInfo = { ...trialSession, session_type: 'trial' };
+            }
+          }
         }
 
         return {
           ...payment,
           payer,
-          lesson: lessonInfo,
+          session: sessionInfo,
         };
       })
     );
@@ -87,16 +101,31 @@ export default async function RevenuePage() {
   // Top tutors by earnings
   const tutorEarnings = new Map();
   for (const payment of completedPayments) {
-    if (payment.lesson_id) {
-      const { data: lesson } = await supabase
-        .from('lessons')
+    if (payment.session_id) {
+      // Try individual_sessions first
+      const { data: individualSession } = await supabase
+        .from('individual_sessions')
         .select('tutor_id')
-        .eq('id', payment.lesson_id)
-        .single();
+        .eq('id', payment.session_id)
+        .maybeSingle();
+      
+      let tutorId = individualSession?.tutor_id;
+      
+      if (!tutorId) {
+        // Try trial_sessions
+        const { data: trialSession } = await supabase
+          .from('trial_sessions')
+          .select('tutor_id')
+          .eq('id', payment.session_id)
+          .maybeSingle();
+        tutorId = trialSession?.tutor_id;
+      }
 
-      if (lesson?.tutor_id) {
-        const current = tutorEarnings.get(lesson.tutor_id) || 0;
-        tutorEarnings.set(lesson.tutor_id, current + Number(payment.amount));
+      if (tutorId) {
+        const current = tutorEarnings.get(tutorId) || 0;
+        // Calculate 85% of payment amount (tutor earnings)
+        const tutorEarning = Number(payment.amount || 0) * 0.85;
+        tutorEarnings.set(tutorId, current + tutorEarning);
       }
     }
   }
@@ -131,7 +160,7 @@ export default async function RevenuePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'paid':
         return 'bg-green-100 text-green-800';
       case 'pending':
         return 'bg-orange-100 text-orange-800';
@@ -144,7 +173,7 @@ export default async function RevenuePage() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'paid':
         return <CheckCircle size={16} />;
       case 'pending':
         return <AlertCircle size={16} />;
@@ -241,12 +270,76 @@ export default async function RevenuePage() {
                   <div key={payment.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(payment.status)}`}>
-                          {getStatusIcon(payment.status)}
-                          {payment.status?.charAt(0).toUpperCase() + payment.status?.slice(1)}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(payment.payment_status)}`}>
+                          {getStatusIcon(payment.payment_status)}
+                          {payment.payment_status?.charAt(0).toUpperCase() + payment.payment_status?.slice(1)}
                         </span>
-                        {payment.lesson?.subject && (
-                          <span className="text-sm text-gray-600">{payment.lesson.subject}</span>
+                        {payment.session && (
+                          <span className="text-sm text-gray-600">
+                            {payment.session.session_type === 'trial' ? 'Trial' : 'Recurring'} Session
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-900">
+                        {payment.payer?.full_name || 'Unknown'} • {payment.payer?.email}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{formatDate(payment.created_at)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-gray-900">{Number(payment.amount).toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">XAF</p>
+                      {payment.payment_method && (
+                        <p className="text-xs text-gray-500 mt-1">{payment.payment_method}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+
+                        </span>
+                        {payment.session && (
+                          <span className="text-sm text-gray-600">
+                            {payment.session.session_type === 'trial' ? 'Trial' : 'Recurring'} Session
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-900">
+                        {payment.payer?.full_name || 'Unknown'} • {payment.payer?.email}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">{formatDate(payment.created_at)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold text-gray-900">{Number(payment.amount).toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">XAF</p>
+                      {payment.payment_method && (
+                        <p className="text-xs text-gray-500 mt-1">{payment.payment_method}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+
+                        </span>
+                        {payment.session && (
+                          <span className="text-sm text-gray-600">
+                            {payment.session.session_type === 'trial' ? 'Trial' : 'Recurring'} Session
+                          </span>
                         )}
                       </div>
                       <p className="text-sm text-gray-900">

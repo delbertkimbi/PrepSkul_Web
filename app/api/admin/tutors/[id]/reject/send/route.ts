@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
+import { profileRejectedEmail } from '@/lib/email_templates/tutor_profile_templates';
+import { sendCustomEmail } from '@/lib/notifications';
 
 export async function POST(
   request: NextRequest,
@@ -18,36 +20,43 @@ export async function POST(
     const { data: tutor } = await supabase.from('tutor_profiles').select('user_id').eq('id', id).maybeSingle();
     if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 404 });
 
-    const { data: profile } = await supabase.from('profiles').select('email').eq('id', tutor.user_id).maybeSingle();
+    const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', tutor.user_id).maybeSingle();
 
     // Send email if email address exists and API key is configured
     if (profile?.email) {
       try {
-        const { Resend } = await import('resend');
-        if (!process.env.RESEND_API_KEY) {
-          console.warn('⚠️ RESEND_API_KEY not set - email not sent, but status updated');
+        // Format rejection reasons from the body or reasons parameter
+        let rejectionReason: string;
+        if (reasons) {
+          // Format comma-separated reasons into a numbered list
+          const reasonsList = reasons.split(', ').filter(r => r.trim());
+          rejectionReason = reasonsList.length > 0
+            ? reasonsList.map((r, i) => `${i + 1}. ${r}`).join('<br>')
+            : 'Your application did not meet our current requirements.';
+        } else if (body) {
+          rejectionReason = body.replace(/\n/g, '<br>');
         } else {
-          const resend = new Resend(process.env.RESEND_API_KEY);
-          const emailResult = await resend.emails.send({
-            from: 'PrepSkul <info@prepskul.com>',
-            to: profile.email,
-            subject: subject,
-            html: body.replace(/\n/g, '<br />'),
-          });
-          
-          // Check if Resend actually succeeded
-          if (emailResult.error) {
-            console.error('❌ Resend API error sending rejection email:', emailResult.error);
-            console.error('Error details:', JSON.stringify(emailResult.error, null, 2));
-          } else if (emailResult.data?.id) {
-            console.log('📧 Rejection email sent successfully:', {
-              emailId: emailResult.data.id,
-              to: profile.email,
-              subject: subject
-            });
-          } else {
-            console.warn('⚠️ Resend returned unexpected response:', emailResult);
-          }
+          rejectionReason = 'Your application did not meet our current requirements.';
+        }
+        
+        // Generate branded email using template
+        const emailHtml = profileRejectedEmail(
+          profile.full_name || 'Tutor',
+          rejectionReason
+        );
+
+        // Send using branded template
+        const emailResult = await sendCustomEmail(
+          profile.email,
+          profile.full_name || 'Tutor',
+          subject || 'Your PrepSkul Tutor Application Status Update',
+          emailHtml
+        );
+
+        if (!emailResult.success) {
+          console.error('❌ Error sending rejection email:', emailResult.error);
+        } else {
+          console.log('📧 Rejection email sent successfully to:', profile.email);
         }
       } catch (emailError: any) {
         console.error('❌ Error sending email:', emailError);
@@ -61,7 +70,7 @@ export async function POST(
       status: 'rejected',
       reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),
-      admin_review_notes: reasons || '',
+      admin_review_notes: reasons || body || '',
     }).eq('id', id);
 
     return NextResponse.json({ success: true });

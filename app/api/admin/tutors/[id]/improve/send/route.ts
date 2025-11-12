@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
+import { profileNeedsImprovementEmail } from '@/lib/email_templates/tutor_profile_templates';
+import { sendCustomEmail } from '@/lib/notifications';
 
 export async function POST(
   request: NextRequest,
@@ -18,42 +20,35 @@ export async function POST(
     const { data: tutor } = await supabase.from('tutor_profiles').select('user_id').eq('id', id).maybeSingle();
     if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 404 });
 
-    const { data: profile } = await supabase.from('profiles').select('email').eq('id', tutor.user_id).maybeSingle();
+    const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', tutor.user_id).maybeSingle();
 
     // Prepare improvement notes from reasons and email body
-    const improvements = reasons ? reasons.split(', ') : [];
+    const improvements = reasons ? reasons.split(', ').filter((r: string) => r.trim()) : [];
     const improvementNotes = improvements.length > 0 
-      ? `Improvement Areas:\n${improvements.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}\n\n${body}`
-      : body;
+      ? `Improvement Areas:\n${improvements.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}\n\n${body || ''}`
+      : body || '';
 
     // Send email if email address exists
     if (profile?.email) {
       try {
-        const { Resend } = await import('resend');
-        if (!process.env.RESEND_API_KEY) {
-          console.warn('⚠️ RESEND_API_KEY not set - email not sent, but status updated');
+        // Generate branded email using template
+        const emailHtml = profileNeedsImprovementEmail(
+          profile.full_name || 'Tutor',
+          improvements.length > 0 ? improvements : ['Please review your profile and make necessary improvements.']
+        );
+
+        // Send using branded template
+        const emailResult = await sendCustomEmail(
+          profile.email,
+          profile.full_name || 'Tutor',
+          subject || 'Your PrepSkul Tutor Profile - Improvement Requests',
+          emailHtml
+        );
+
+        if (!emailResult.success) {
+          console.error('❌ Error sending improvement email:', emailResult.error);
         } else {
-          const resend = new Resend(process.env.RESEND_API_KEY);
-          const emailResult = await resend.emails.send({
-            from: 'PrepSkul <info@prepskul.com>',
-            to: profile.email,
-            subject: subject,
-            html: body.replace(/\n/g, '<br />'),
-          });
-          
-          // Check if Resend actually succeeded
-          if (emailResult.error) {
-            console.error('❌ Resend API error sending improvement email:', emailResult.error);
-            console.error('Error details:', JSON.stringify(emailResult.error, null, 2));
-          } else if (emailResult.data?.id) {
-            console.log('📧 Improvement email sent successfully:', {
-              emailId: emailResult.data.id,
-              to: profile.email,
-              subject: subject
-            });
-          } else {
-            console.warn('⚠️ Resend returned unexpected response:', emailResult);
-          }
+          console.log('📧 Improvement email sent successfully to:', profile.email);
         }
       } catch (emailError: any) {
         console.error('❌ Error sending email:', emailError);

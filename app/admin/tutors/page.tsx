@@ -32,13 +32,18 @@ export default async function TutorsPage() {
   if (tutors) {
     tutorsWithProfiles = await Promise.all(
       tutors.map(async (tutor) => {
-        // Use tutor.id (primary key) first, fallback to user_id
-        const profileId = tutor.id || tutor.user_id;
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('full_name, phone_number, email')
-          .eq('id', profileId)
-          .maybeSingle();
+        // IMPORTANT: tutor.user_id is the FK to profiles.id, NOT tutor.id
+        // tutor.id is the primary key of tutor_profiles table
+        const profileId = tutor.user_id;
+        let profile = null;
+        if (profileId) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('full_name, phone_number, email')
+            .eq('id', profileId)
+            .maybeSingle();
+          profile = profileData;
+        }
         
         return { ...tutor, profiles: profile || {} };
       })

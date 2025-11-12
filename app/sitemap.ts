@@ -5,10 +5,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   
   return [
     {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
+    url: baseUrl,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 1,
     },
     {
       url: `${baseUrl}/en`,
@@ -48,14 +48,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/en/programs`,
-      lastModified: new Date(),
+        lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,
     },
     {
       url: `${baseUrl}/fr/programs`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
+        lastModified: new Date(),
+        changeFrequency: 'weekly',
       priority: 0.9,
     },
     {

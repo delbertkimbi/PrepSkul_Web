@@ -99,21 +99,38 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
   const priceDeviation = Math.abs(adminPrice - pricingResult.suggestedPrice);
   const showWarning = ratingDeviation > 0.3 || priceDeviation > 2000;
 
+  // Handle expected_rate - might be stored as TEXT, NUMERIC, or null
+  const parseRate = (rate: any): number => {
+    if (!rate) return 0;
+    if (typeof rate === 'number') return rate;
+    if (typeof rate === 'string') {
+      // Remove currency symbols and parse
+      const cleaned = rate.replace(/[^\d.,]/g, '').replace(',', '');
+      const parsed = parseFloat(cleaned);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
+  
+  const tutorRequestedRate = parseRate(tutor.expected_rate) || parseRate(tutor.hourly_rate) || 0;
+
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Set Rating & Pricing</h2>
-          <p className="text-sm text-gray-500 mt-1">Review algorithm suggestions and set final values</p>
-        </div>
-        <button
-          onClick={() => setShowPreview(!showPreview)}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition"
-        >
-          <Eye className="w-4 h-4" />
-          {showPreview ? 'Hide' : 'Show'} Preview
-        </button>
+    <div className="p-6 space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">Rating & Pricing</h2>
+        <p className="text-sm text-gray-500 mt-0.5">Set the tutor's rating and session price</p>
       </div>
+
+      {/* Tutor's Desired Payment Range - Compact & Subtle Reference */}
+      {tutorRequestedRate > 0 && (
+        <div className="flex items-center justify-between p-2.5 bg-gray-50/50 border border-gray-200 rounded-md">
+          <span className="text-xs text-gray-500">Tutor requested:</span>
+          <span className="text-xs font-medium text-gray-700">
+            {formatPrice(tutorRequestedRate)}
+            {tutor.payment_method && ` • ${tutor.payment_method}`}
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Rating Section */}
@@ -123,24 +140,19 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
               Initial Rating (3.0 - 4.5)
             </label>
             
-            {/* Suggested Rating */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Algorithm Suggestion</p>
-                  <div className="flex items-center gap-2">
-                    <Star className={`w-5 h-5 ${getRatingColor(ratingResult.suggestedRating)} fill-current`} />
-                    <span className={`text-lg font-bold ${getRatingColor(ratingResult.suggestedRating)}`}>
-                      {formatRating(ratingResult.suggestedRating)}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-gray-600">Credential Score</p>
-                  <p className="text-sm font-semibold">{ratingResult.credentialScore}/100</p>
-                </div>
+            {/* Suggested Rating - Compact */}
+            <div className="bg-blue-50/30 border border-blue-100 rounded-lg p-2.5 mb-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-gray-500">Suggested</span>
+                <span className="text-xs text-gray-400">{ratingResult.credentialScore}/100</span>
               </div>
-              <p className="text-xs text-gray-600 mt-2">{ratingResult.justification}</p>
+              <div className="flex items-center gap-2 mb-1.5">
+                <Star className={`w-4 h-4 ${getRatingColor(ratingResult.suggestedRating)} fill-current`} />
+                <span className={`text-base font-semibold ${getRatingColor(ratingResult.suggestedRating)}`}>
+                  {formatRating(ratingResult.suggestedRating)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">{ratingResult.justification}</p>
             </div>
 
             {/* Admin Rating Input */}
@@ -155,16 +167,16 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
                   onChange={(e) => setAdminRating(parseFloat(e.target.value) || 3.0)}
                   className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <div className="flex items-center gap-1">
-                  <Star className={`w-6 h-6 ${getRatingColor(adminRating)} fill-current`} />
-                  <span className={`text-xl font-bold ${getRatingColor(adminRating)}`}>
+                <div className="flex items-center gap-1.5">
+                  <Star className={`w-5 h-5 ${getRatingColor(adminRating)} fill-current`} />
+                  <span className={`text-lg font-semibold ${getRatingColor(adminRating)}`}>
                     {formatRating(adminRating)}
                   </span>
                 </div>
               </div>
               {showWarning && ratingDeviation > 0.3 && (
-                <div className="flex items-center gap-2 mt-2 text-amber-600 text-sm">
-                  <AlertCircle className="w-4 h-4" />
+                <div className="flex items-center gap-2 mt-2 text-amber-600 text-xs">
+                  <AlertCircle className="w-3.5 h-3.5" />
                   <span>Significantly different from suggestion ({formatRating(Math.abs(ratingDeviation))} points)</span>
                 </div>
               )}
@@ -179,28 +191,26 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
               Session Price (XAF)
             </label>
             
-            {/* Suggested Pricing */}
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-3">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Algorithm Suggestion</p>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getTierColor(pricingResult.suggestedTier)}`}>
-                      {PRICING_TIERS[pricingResult.suggestedTier].label}
-                    </span>
-                    <span className="text-lg font-bold text-gray-900">
-                      {formatPrice(pricingResult.suggestedPrice)}
-                    </span>
-                  </div>
-                </div>
+            {/* Suggested Pricing - Compact */}
+            <div className="bg-purple-50/30 border border-purple-100 rounded-lg p-2.5 mb-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs text-gray-500">Suggested</span>
+                <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${getTierColor(pricingResult.suggestedTier)}`}>
+                  {PRICING_TIERS[pricingResult.suggestedTier].label}
+                </span>
               </div>
-              <p className="text-xs text-gray-600">{pricingResult.justification}</p>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-base font-semibold text-gray-900">
+                  {formatPrice(pricingResult.suggestedPrice)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">{pricingResult.justification}</p>
             </div>
 
             {/* Admin Pricing Input */}
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-600 mb-1 block">Pricing Tier</label>
+                <label className="text-xs text-gray-600 mb-1.5 block">Pricing Tier</label>
                 <select
                   value={adminTier}
                   onChange={(e) => {
@@ -209,7 +219,7 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
                     // Auto-adjust price to middle of tier range
                     setAdminPrice(Math.round((tierInfo.minPrice + tierInfo.maxPrice) / 2 / 500) * 500);
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   {Object.values(PRICING_TIERS).map((tier) => (
                     <option key={tier.tier} value={tier.tier}>
@@ -220,7 +230,7 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
               </div>
 
               <div>
-                <label className="text-xs text-gray-600 mb-1 block">Base Session Price</label>
+                <label className="text-xs text-gray-600 mb-1.5 block">Session Price</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -229,16 +239,16 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
                     step="500"
                     value={adminPrice}
                     onChange={(e) => setAdminPrice(parseInt(e.target.value) || 3000)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                   />
                   <span className="text-sm text-gray-600">XAF</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-400 mt-1">
                   Range: {formatPrice(PRICING_TIERS[adminTier].minPrice)} - {formatPrice(PRICING_TIERS[adminTier].maxPrice)}
                 </p>
                 {showWarning && priceDeviation > 2000 && (
-                  <div className="flex items-center gap-2 mt-2 text-amber-600 text-sm">
-                    <AlertCircle className="w-4 h-4" />
+                  <div className="flex items-center gap-2 mt-2 text-amber-600 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5" />
                     <span>Significantly different from suggestion ({formatPrice(priceDeviation)} difference)</span>
                   </div>
                 )}
@@ -248,94 +258,67 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
         </div>
       </div>
 
-      {/* Tutor's Desired Payment Range */}
-      {(tutor.expected_rate || tutor.hourly_rate) && (
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Tutor's Desired Payment Range</h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-600">Expected Rate (from application):</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {formatPrice(tutor.expected_rate || tutor.hourly_rate || 0)}
-              </span>
-            </div>
-            {tutor.payment_method && (
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">Payment Method:</span>
-                <span className="text-sm font-medium text-gray-900">{tutor.payment_method}</span>
-              </div>
-            )}
-            <div className="mt-3 pt-3 border-t border-yellow-300">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-600">Admin Set Price:</span>
-                <span className="text-sm font-bold text-blue-900">{formatPrice(adminPrice)}</span>
-              </div>
-              <div className="mt-1 text-xs text-gray-600">
-                Difference: {formatPrice(Math.abs(adminPrice - (tutor.expected_rate || tutor.hourly_rate || 0)))}
-                {adminPrice > (tutor.expected_rate || tutor.hourly_rate || 0) ? ' higher' : adminPrice < (tutor.expected_rate || tutor.hourly_rate || 0) ? ' lower' : ' (same)'}
-              </div>
-            </div>
+      {/* Monthly Pricing Preview - Compact */}
+      <div className="flex items-center justify-between p-3 bg-gray-50/30 border border-gray-200 rounded-lg">
+        <span className="text-xs text-gray-500">Monthly preview:</span>
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-xs text-gray-400">3x/week</p>
+            <p className="text-sm font-semibold text-gray-900">{formatPrice(monthlyPrices.threeSessions)}</p>
           </div>
-        </div>
-      )}
-
-      {/* Monthly Pricing Preview */}
-      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-700 mb-3">Monthly Pricing (Auto-calculated)</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-gray-600 mb-1">3 Sessions/Week</p>
-            <p className="text-lg font-bold text-gray-900">{formatPrice(monthlyPrices.threeSessions)}</p>
-            <p className="text-xs text-gray-500">12 sessions/month</p>
-          </div>
-          <div>
-            <p className="text-xs text-gray-600 mb-1">4 Sessions/Week</p>
-            <p className="text-lg font-bold text-gray-900">{formatPrice(monthlyPrices.fourSessions)}</p>
-            <p className="text-xs text-gray-500">16 sessions/month</p>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">4x/week</p>
+            <p className="text-sm font-semibold text-gray-900">{formatPrice(monthlyPrices.fourSessions)}</p>
           </div>
         </div>
       </div>
 
-      {/* Student Preview */}
+      {/* Student Preview - Hidden by default */}
       {showPreview && (
-        <div className="mt-6 p-4 border-2 border-dashed border-blue-300 rounded-lg bg-blue-50">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Student Preview</h3>
+        <div className="p-4 border border-blue-200 rounded-lg bg-blue-50/30">
+          <p className="text-xs font-medium text-gray-700 mb-3">Student preview</p>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Star className={`w-5 h-5 ${getRatingColor(adminRating)} fill-current`} />
-              <span className={`text-lg font-bold ${getRatingColor(adminRating)}`}>
+              <span className={`text-lg font-semibold ${getRatingColor(adminRating)}`}>
                 {formatRating(adminRating)}
               </span>
-              {adminRating >= 4.5 && (
-                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded">
-                  Top Rated
-                </span>
-              )}
             </div>
             <div className="flex-1 border-l border-gray-300 pl-4">
-              <p className="text-xs text-gray-600 mb-1">Per Session</p>
-              <p className="text-xl font-bold text-gray-900">{formatPrice(adminPrice)}</p>
+              <p className="text-xs text-gray-500 mb-0.5">Per session</p>
+              <p className="text-lg font-semibold text-gray-900">{formatPrice(adminPrice)}</p>
             </div>
           </div>
         </div>
       )}
 
+      {/* Toggle Preview Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowPreview(!showPreview)}
+          className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1.5 transition"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          {showPreview ? 'Hide' : 'Show'} student preview
+        </button>
+      </div>
+
       {/* Save Button */}
-      <div className="mt-6 pt-6 border-t border-gray-200 flex items-center justify-between">
+      <div className="pt-4 border-t border-gray-200 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {saveSuccess && (
-            <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+            <div className="flex items-center gap-2 text-green-600 text-sm">
               <CheckCircle className="w-4 h-4" />
-              <span>Saved successfully!</span>
+              <span>Saved!</span>
             </div>
           )}
         </div>
         <button
           onClick={handleSave}
           disabled={isSaving || adminRating < 3.0 || adminRating > 4.5 || adminPrice < 3000 || adminPrice > 15000}
-          className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-medium text-sm"
+          className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition text-sm font-medium"
         >
-          {isSaving ? 'Saving...' : 'Save Rating & Pricing'}
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
       </div>
     </div>

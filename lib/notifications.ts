@@ -5,17 +5,57 @@
  * Uses Resend for emails and Twilio for SMS (when configured)
  */
 
+import { Resend } from 'resend';
 
+// Initialize Resend at runtime (not module level) to avoid build-time errors
+async function getResend() {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured');
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 // Email notification templates
 export async function sendTutorApprovalEmail(
   tutorEmail: string,
   tutorName: string,
-  adminNotes?: string
+  adminNotes?: string,
+  ratingData?: {
+    rating?: number;
+    sessionPrice?: number;
+    pricingTier?: string;
+    ratingJustification?: string;
+  }
 ) {
   console.log('📧 Sending approval email to:', tutorEmail);
   
   try {
+    // Format rating, price, and tier
+    const formatRating = (rating: number | null | undefined): string => {
+      if (!rating) return 'N/A';
+      return rating.toFixed(1);
+    };
+
+    const formatPrice = (price: number | null | undefined): string => {
+      if (!price) return 'N/A';
+      return `${price.toLocaleString('en-US')} XAF`;
+    };
+
+    const formatTier = (tier: string | null | undefined): string => {
+      if (!tier) return 'N/A';
+      const tierMap: Record<string, string> = {
+        'entry': 'Entry Level',
+        'intermediate': 'Intermediate',
+        'advanced': 'Advanced',
+        'expert': 'Expert',
+      };
+      return tierMap[tier] || tier;
+    };
+
+    const rating = formatRating(ratingData?.rating);
+    const sessionPrice = formatPrice(ratingData?.sessionPrice);
+    const pricingTier = formatTier(ratingData?.pricingTier);
+
     // Email template
     const htmlContent = `
       <!DOCTYPE html>
@@ -32,9 +72,16 @@ export async function sendTutorApprovalEmail(
             .success-icon { font-size: 64px; text-align: center; margin: 20px 0; }
             .button { display: inline-block; background: #4A6FBF; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: 600; }
             .notes-box { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 15px; margin: 20px 0; border-radius: 4px; }
+            .rating-box { background: #fff; border: 2px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .rating-box h3 { margin: 0 0 15px 0; color: #1B2C4F; font-size: 16px; }
+            .rating-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+            .rating-item:last-child { border-bottom: none; }
+            .rating-label { color: #666; font-size: 14px; }
+            .rating-value { color: #1B2C4F; font-weight: 600; font-size: 14px; }
             .footer { background: #ffffff; padding: 30px; text-align: center; color: #666; font-size: 14px; border-top: 1px solid #eee; }
             ul { padding-left: 20px; }
             li { margin: 8px 0; }
+            .info-note { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; font-size: 13px; color: #856404; }
           </style>
         </head>
         <body>
@@ -54,6 +101,24 @@ export async function sendTutorApprovalEmail(
                 <p style="margin: 5px 0 0 0;">${adminNotes}</p>
               </div>
               ` : ''}
+              <div class="rating-box">
+                <h3>Your Profile Details:</h3>
+                <div class="rating-item">
+                  <span class="rating-label">Your Initial Rating:</span>
+                  <span class="rating-value">${rating} ⭐</span>
+                </div>
+                <div class="rating-item">
+                  <span class="rating-label">Your Session Price:</span>
+                  <span class="rating-value">${sessionPrice}</span>
+                </div>
+                <div class="rating-item">
+                  <span class="rating-label">Pricing Tier:</span>
+                  <span class="rating-value">${pricingTier}</span>
+                </div>
+              </div>
+              <div class="info-note">
+                <strong>ℹ️ Important Note:</strong> This is your initial rating based on your credentials and qualifications. Starting from your 3rd student review onwards, your rating will be dynamically updated based on actual student feedback and reviews.
+              </div>
               <p><strong style="color: #1B2C4F;">What's next?</strong></p>
               <ul>
                 <li>Your profile is now <strong>live</strong> and visible to students</li>
@@ -77,9 +142,18 @@ export async function sendTutorApprovalEmail(
     `;
 
     // Send email via Resend
+    const resend = await getResend();
+    
+    // Get from email from environment variable or use default
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <onboarding@resend.dev>';
+    
+    // Set reply-to to business email so replies go to info@prepskul.com
+    const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
+    
     const { data, error } = await resend.emails.send({
-      from: 'PrepSkul <info@prepskul.com>',
+      from: fromEmail,
       to: tutorEmail,
+      replyTo: replyTo,
       subject: 'Your PrepSkul Tutor Profile Has Been Approved! 🎉',
       html: htmlContent,
     });
@@ -160,13 +234,22 @@ export async function sendTutorRejectionEmail(
       </html>
     `;
 
-    // Send email via Resend
-    const { data, error } = await resend.emails.send({
-      from: 'PrepSkul <info@prepskul.com>',
-      to: tutorEmail,
-      subject: 'Your PrepSkul Tutor Profile Needs Updates',
-      html: htmlContent,
-    });
+        // Send email via Resend
+        const resend = await getResend();
+        
+        // Get from email from environment variable or use default
+        const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <onboarding@resend.dev>';
+        
+        // Set reply-to to business email so replies go to info@prepskul.com
+        const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
+        
+        const { data, error } = await resend.emails.send({
+          from: fromEmail,
+          to: tutorEmail,
+          replyTo: replyTo,
+          subject: 'Your PrepSkul Tutor Profile Needs Updates',
+          html: htmlContent,
+        });
 
     if (error) {
       console.error('❌ Resend error:', error);
@@ -185,7 +268,7 @@ export async function sendTutorRejectionEmail(
 export async function sendTutorApprovalSMS(
   tutorPhone: string,
   tutorName: string
-) {
+): Promise<{ success: boolean; error?: any }> {
   // TODO: Implement with Twilio
   console.log('📱 Sending approval SMS to:', tutorPhone);
   
@@ -193,7 +276,7 @@ export async function sendTutorApprovalSMS(
     const message = `PrepSkul: Congratulations ${tutorName}! Your tutor profile has been approved. Students can now book sessions with you. Log in to get started!`;
     console.log(`SMS Template: "${message}"`);
     
-    return { success: true };
+    return { success: true, error: null };
   } catch (error) {
     console.error('Error sending approval SMS:', error);
     return { success: false, error };
@@ -204,7 +287,7 @@ export async function sendTutorRejectionSMS(
   tutorPhone: string,
   tutorName: string,
   rejectionReason: string
-) {
+): Promise<{ success: boolean; error?: any }> {
   // TODO: Implement with Twilio
   console.log('📱 Sending rejection SMS to:', tutorPhone);
   
@@ -212,7 +295,7 @@ export async function sendTutorRejectionSMS(
     const message = `PrepSkul: Hi ${tutorName}, your profile needs updates. Check email for details. Reason: ${rejectionReason.substring(0, 50)}...`;
     console.log(`SMS Template: "${message}"`);
     
-    return { success: true };
+    return { success: true, error: null };
   } catch (error) {
     console.error('Error sending rejection SMS:', error);
     return { success: false, error };
@@ -226,16 +309,30 @@ export async function notifyTutorApproval(
   tutorEmail: string | null,
   tutorPhone: string | null,
   tutorName: string,
-  adminNotes?: string
+  adminNotes?: string,
+  ratingData?: {
+    rating?: number;
+    sessionPrice?: number;
+    pricingTier?: string;
+    ratingJustification?: string;
+  }
 ) {
-  const results = {
-    email: { success: false, error: null as any },
-    sms: { success: false, error: null as any },
+  const results: {
+    email: { success: boolean; error?: any };
+    sms: { success: boolean; error?: any };
+  } = {
+    email: { success: false, error: null },
+    sms: { success: false, error: null },
   };
   
   // Send email if available
   if (tutorEmail) {
-    const emailResult = await sendTutorApprovalEmail(tutorEmail, tutorName, adminNotes);
+    const emailResult = await sendTutorApprovalEmail(
+      tutorEmail, 
+      tutorName, 
+      adminNotes,
+      ratingData
+    );
     results.email = emailResult;
   }
   
@@ -254,9 +351,12 @@ export async function notifyTutorRejection(
   tutorName: string,
   rejectionReason: string
 ) {
-  const results = {
-    email: { success: false, error: null as any },
-    sms: { success: false, error: null as any },
+  const results: {
+    email: { success: boolean; error?: any };
+    sms: { success: boolean; error?: any };
+  } = {
+    email: { success: false, error: null },
+    sms: { success: false, error: null },
   };
   
   // Send email if available
@@ -292,24 +392,33 @@ export async function sendCustomEmail(
   console.log('📧 Sending custom email to:', tutorEmail);
   
   try {
-    // For now, log to console
-    // TODO: Integrate with Resend or Supabase email service
-    console.log('Email Details:');
-    console.log('  To:', tutorEmail);
-    console.log('  Name:', tutorName);
-    console.log('  Subject:', subject);
-    console.log('  Body:', body);
+    // Get Resend instance
+    const resend = await getResend();
+    
+    // Get from email from environment variable or use default
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <onboarding@resend.dev>';
+    
+    // Set reply-to to business email so replies go to info@prepskul.com
+    const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
+    
+    // Send email via Resend
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: tutorEmail,
+      replyTo: replyTo,
+      subject: subject,
+      html: body,
+    });
 
-    // TODO: Replace with actual email sending
-    // Example with Resend:
-    // const resend = new Resend(process.env.RESEND_API_KEY);
-    // await resend.emails.send({
-    //   from: 'PrepSkul <info@prepskul.com>',
-    //   to: tutorEmail,
-    //   subject: subject,
-    //   html: body,
-    // });
+    if (error) {
+      console.error('❌ Resend error:', error);
+      return {
+        success: false,
+        error: error.message || 'Failed to send email',
+      };
+    }
 
+    console.log('✅ Custom email sent successfully:', data);
     return { success: true };
   } catch (error: any) {
     console.error('❌ Error sending custom email:', error);
