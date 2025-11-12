@@ -6,6 +6,7 @@
 /* Using Poppins font instead of Geist */
 @theme {
   --font-sans: "Poppins", system-ui, sans-serif;
+  --font-lato: var(--font-lato), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
 
   --color-background: oklch(0.99 0.005 106);
@@ -123,6 +124,10 @@ img[alt*="favicon"] {
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  .font-lato {
+    font-family: var(--font-lato), system-ui, sans-serif;
   }
 }
 

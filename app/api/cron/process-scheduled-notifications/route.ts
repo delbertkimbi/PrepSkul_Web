@@ -9,7 +9,7 @@
  *    {
  *      "crons": [{
  *        "path": "/api/cron/process-scheduled-notifications",
- *        "schedule": "*/5 * * * *"
+ *        "schedule": "0,5,10,15,20,25,30,35,40,45,50,55 * * * *"
  *      }]
  *    }
  * 

@@ -29,6 +29,11 @@ export function LanguageSwitcher({ currentLocale }: LanguageSwitcherProps) {
     setIsOpen(false)
   }
 
+  // Get language code (En or Fr)
+  const getLanguageCode = (locale: Locale) => {
+    return locale.toUpperCase().slice(0, 2)
+  }
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
@@ -38,11 +43,13 @@ export function LanguageSwitcher({ currentLocale }: LanguageSwitcherProps) {
           className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
         >
           <Globe className="h-4 w-4" />
-          <span className="hidden sm:inline">
-            {localeFlags[currentLocale]} {localeNames[currentLocale]}
+          {/* Large screens: Show only En/Fr */}
+          <span className="hidden lg:inline">
+            {getLanguageCode(currentLocale)}
           </span>
-          <span className="sm:hidden">
-            {localeFlags[currentLocale]}
+          {/* Small/Medium screens: Show flag + full name */}
+          <span className="lg:hidden">
+            {localeFlags[currentLocale]} {localeNames[currentLocale]}
           </span>
         </Button>
       </DropdownMenuTrigger>

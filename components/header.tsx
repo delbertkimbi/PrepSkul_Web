@@ -27,7 +27,7 @@ export function Header() {
               className="h-8 w-8 object-contain"
               priority
             />
-            <div className="text-2xl font-bold text-primary">PrepSkul</div>
+            <div className="text-2xl font-black text-primary font-lato">PrepSkul</div>
           </Link>
 
           {/* Desktop Navigation */}
