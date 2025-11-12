@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { TrialSessionService } from '@/lib/services/trial-session-service';
 
 /// Fapshi Payment Webhook Handler
 /// 
@@ -46,11 +45,16 @@ export async function POST(request: Request) {
 
       // Update payment status
       if (status === 'SUCCESSFUL') {
-        // Payment successful - complete payment and generate Meet link
-        await TrialSessionService.completePaymentAndGenerateMeet(
-          sessionId: trialSessionId,
-          transactionId: transId,
-        );
+        // Payment successful - update payment status
+        // Note: Meet link generation will be handled by the Flutter app
+        await supabase
+          .from('trial_sessions')
+          .update({
+            payment_status: 'paid',
+            fapshi_trans_id: transId,
+            status: 'scheduled',
+          })
+          .eq('id', trialSessionId);
 
         console.log('✅ Payment completed for trial:', trialSessionId);
       } else if (status === 'FAILED') {
@@ -177,183 +181,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-
-
-
-
-
-
-        console.error('❌ Error fetching session payment:', paymentError);
-        return NextResponse.json(
-          { error: 'Session payment not found' },
-          { status: 404 }
-        );
-      }
-
-      const paymentId = payment.id;
-      const tutorId = payment.individual_sessions.tutor_id;
-      const tutorEarnings = parseFloat(payment.tutor_earnings);
-
-      if (status === 'SUCCESSFUL' || status === 'SUCCESS') {
-        // Payment successful
-        const now = new Date().toISOString();
-
-        // Update payment status
-        await supabase
-          .from('session_payments')
-          .update({
-            payment_status: 'paid',
-            payment_confirmed_at: now,
-            updated_at: now,
-          })
-          .eq('id', paymentId);
-
-        // Update tutor earnings to active
-        await supabase
-          .from('tutor_earnings')
-          .update({
-            earnings_status: 'active',
-            added_to_active_balance: true,
-            active_balance_added_at: now,
-            updated_at: now,
-          })
-          .eq('session_payment_id', paymentId);
-
-        // Update session_payments wallet status
-        await supabase
-          .from('session_payments')
-          .update({
-            earnings_added_to_wallet: true,
-            wallet_updated_at: now,
-            updated_at: now,
-          })
-          .eq('id', paymentId);
-
-        console.log('✅ Payment confirmed for session:', sessionId);
-      } else if (status === 'FAILED' || status === 'FAIL') {
-        // Payment failed
-        await supabase
-          .from('session_payments')
-          .update({
-            payment_status: 'failed',
-            payment_failed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', paymentId);
-
-        console.log('❌ Payment failed for session:', sessionId);
-      } else if (status === 'PENDING') {
-        // Payment still pending - already set during initiation
-        console.log('⏳ Payment pending for session:', sessionId);
-      }
-    } else {
-      console.log('⚠️ Unknown external ID format:', externalId);
-      return NextResponse.json(
-        { message: 'Unknown payment type' },
-        { status: 200 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
-  } catch (error: any) {
-    console.error('❌ Error processing Fapshi webhook:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-
-
-
-
-
-
-        console.error('❌ Error fetching session payment:', paymentError);
-        return NextResponse.json(
-          { error: 'Session payment not found' },
-          { status: 404 }
-        );
-      }
-
-      const paymentId = payment.id;
-      const tutorId = payment.individual_sessions.tutor_id;
-      const tutorEarnings = parseFloat(payment.tutor_earnings);
-
-      if (status === 'SUCCESSFUL' || status === 'SUCCESS') {
-        // Payment successful
-        const now = new Date().toISOString();
-
-        // Update payment status
-        await supabase
-          .from('session_payments')
-          .update({
-            payment_status: 'paid',
-            payment_confirmed_at: now,
-            updated_at: now,
-          })
-          .eq('id', paymentId);
-
-        // Update tutor earnings to active
-        await supabase
-          .from('tutor_earnings')
-          .update({
-            earnings_status: 'active',
-            added_to_active_balance: true,
-            active_balance_added_at: now,
-            updated_at: now,
-          })
-          .eq('session_payment_id', paymentId);
-
-        // Update session_payments wallet status
-        await supabase
-          .from('session_payments')
-          .update({
-            earnings_added_to_wallet: true,
-            wallet_updated_at: now,
-            updated_at: now,
-          })
-          .eq('id', paymentId);
-
-        console.log('✅ Payment confirmed for session:', sessionId);
-      } else if (status === 'FAILED' || status === 'FAIL') {
-        // Payment failed
-        await supabase
-          .from('session_payments')
-          .update({
-            payment_status: 'failed',
-            payment_failed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', paymentId);
-
-        console.log('❌ Payment failed for session:', sessionId);
-      } else if (status === 'PENDING') {
-        // Payment still pending - already set during initiation
-        console.log('⏳ Payment pending for session:', sessionId);
-      }
-    } else {
-      console.log('⚠️ Unknown external ID format:', externalId);
-      return NextResponse.json(
-        { message: 'Unknown payment type' },
-        { status: 200 }
-      );
-    }
-
-    return NextResponse.json({ message: 'Webhook processed successfully' }, { status: 200 });
-  } catch (error: any) {
-    console.error('❌ Error processing Fapshi webhook:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
-  }
-}
-
-
-
-
-
-
