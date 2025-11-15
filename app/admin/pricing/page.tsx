@@ -67,18 +67,47 @@ export default function PricingControlsPage() {
     try {
       setSaving(true);
       
-      // Upsert trial session pricing
-      await supabase
+      // Upsert trial session pricing with updated_at
+      const { error: error30 } = await supabase
         .from('trial_session_pricing')
-        .upsert([
-          { duration_minutes: 30, price_xaf: trial30Price, is_active: true },
-          { duration_minutes: 60, price_xaf: trial60Price, is_active: true },
-        ], { onConflict: 'duration_minutes' });
+        .upsert(
+          { 
+            duration_minutes: 30, 
+            price_xaf: trial30Price, 
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'duration_minutes' }
+        );
+      
+      if (error30) {
+        console.error('Error saving 30min pricing:', error30);
+        throw error30;
+      }
+      
+      const { error: error60 } = await supabase
+        .from('trial_session_pricing')
+        .upsert(
+          { 
+            duration_minutes: 60, 
+            price_xaf: trial60Price, 
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'duration_minutes' }
+        );
+      
+      if (error60) {
+        console.error('Error saving 60min pricing:', error60);
+        throw error60;
+      }
       
       alert('Trial session pricing saved successfully!');
-    } catch (error) {
+      // Reload pricing to confirm
+      await loadPricing();
+    } catch (error: any) {
       console.error('Error saving trial pricing:', error);
-      alert('Error saving trial pricing');
+      alert(`Error saving trial pricing: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
@@ -132,15 +161,72 @@ export default function PricingControlsPage() {
 
   const toggleRule = async (ruleId: string, isActive: boolean) => {
     try {
-      await supabase
+      setSaving(true);
+      const newStatus = !isActive;
+      
+      const { error } = await supabase
         .from('tutor_discount_rules')
-        .update({ is_active: !isActive })
+        .update({ 
+          is_active: newStatus,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', ruleId);
       
-      await supabase.rpc('update_tutor_discounts');
-      loadPricing();
-    } catch (error) {
+      if (error) {
+        console.error('Error toggling rule:', error);
+        alert(`Error ${newStatus ? 'activating' : 'deactivating'} discount rule: ${error.message}`);
+        return;
+      }
+      
+      // Update tutor discounts when rule is toggled
+      const { error: rpcError } = await supabase.rpc('update_tutor_discounts');
+      if (rpcError) {
+        console.error('Error updating tutor discounts:', rpcError);
+        // Don't fail the toggle, just log the error
+      }
+      
+      alert(`Discount rule ${newStatus ? 'activated' : 'deactivated'} successfully!`);
+      await loadPricing();
+    } catch (error: any) {
       console.error('Error toggling rule:', error);
+      alert(`Error: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteRule = async (ruleId: string) => {
+    if (!confirm('Are you sure you want to delete this discount rule? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      setSaving(true);
+      
+      const { error } = await supabase
+        .from('tutor_discount_rules')
+        .delete()
+        .eq('id', ruleId);
+      
+      if (error) {
+        console.error('Error deleting rule:', error);
+        alert(`Error deleting discount rule: ${error.message}`);
+        return;
+      }
+      
+      // Update tutor discounts after deletion
+      const { error: rpcError } = await supabase.rpc('update_tutor_discounts');
+      if (rpcError) {
+        console.error('Error updating tutor discounts:', rpcError);
+      }
+      
+      alert('Discount rule deleted successfully!');
+      await loadPricing();
+    } catch (error: any) {
+      console.error('Error deleting rule:', error);
+      alert(`Error: ${error.message || 'Unknown error'}`);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -380,16 +466,24 @@ export default function PricingControlsPage() {
                           Criteria: {JSON.stringify(rule.criteria)}
                         </div>
                       </div>
-                      <button
-                        onClick={() => toggleRule(rule.id, rule.is_active)}
-                        className={`px-4 py-2 rounded-lg text-sm ${
-                          rule.is_active
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200'
-                        }`}
-                      >
-                        {rule.is_active ? 'Deactivate' : 'Activate'}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleRule(rule.id, rule.is_active)}
+                          className={`px-4 py-2 rounded-lg text-sm ${
+                            rule.is_active
+                              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                              : 'bg-green-100 text-green-700 hover:bg-green-200'
+                          }`}
+                        >
+                          {rule.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button
+                          onClick={() => deleteRule(rule.id)}
+                          className="px-4 py-2 rounded-lg text-sm bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
