@@ -73,6 +73,34 @@ export async function POST(
       admin_review_notes: reasons || body || '',
     }).eq('id', id);
 
+    // Create in-app notification
+    try {
+      const rejectionReason = reasons || body || 'Your application did not meet our current requirements.';
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: tutor.user_id,
+          type: 'profile_rejected',
+          notification_type: 'profile_rejected',
+          title: 'Profile Update Required',
+          message: `Your tutor profile application needs updates. Please review the feedback and resubmit.\n\nReason: ${rejectionReason}`,
+          priority: 'high',
+          is_read: false,
+          action_url: '/tutor/profile',
+          action_text: 'Update Profile',
+          icon: '⚠️',
+        });
+      
+      if (notifError) {
+        console.error('❌ Error creating in-app notification:', notifError);
+      } else {
+        console.log('✅ In-app notification created for tutor rejection');
+      }
+    } catch (notifError) {
+      console.error('❌ Error creating in-app notification:', notifError);
+      // Don't fail the request if notification creation fails
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

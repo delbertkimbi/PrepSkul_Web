@@ -325,7 +325,7 @@ export default async function ActiveSessionsPage() {
                       <User size={14} />
                       <span>Learner: {session.learner?.full_name || 'Unknown'}</span>
                     </div>
-                      <div className="flex items-center gap-2 text-gray-600">
+                    <div className="flex items-center gap-2 text-gray-600">
                       <Clock size={14} />
                       <span>{formatTime(session.scheduled_time)} ({session.scheduled_date})</span>
                     </div>

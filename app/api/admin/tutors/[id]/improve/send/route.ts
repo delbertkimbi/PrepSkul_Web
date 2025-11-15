@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
 import { profileNeedsImprovementEmail } from '@/lib/email_templates/tutor_profile_templates';
-import { sendCustomEmail } from '@/lib/notifications';
+import { sendCustomEmail, notifyTutorImprovement } from '@/lib/notifications';
 
 export async function POST(
   request: NextRequest,
@@ -20,7 +20,7 @@ export async function POST(
     const { data: tutor } = await supabase.from('tutor_profiles').select('user_id').eq('id', id).maybeSingle();
     if (!tutor) return NextResponse.json({ error: 'Tutor not found' }, { status: 404 });
 
-    const { data: profile } = await supabase.from('profiles').select('email, full_name').eq('id', tutor.user_id).maybeSingle();
+    const { data: profile } = await supabase.from('profiles').select('email, full_name, phone_number').eq('id', tutor.user_id).maybeSingle();
 
     // Prepare improvement notes from reasons and email body
     const improvements = reasons ? reasons.split(', ').filter((r: string) => r.trim()) : [];
@@ -28,35 +28,18 @@ export async function POST(
       ? `Improvement Areas:\n${improvements.map((r: string, i: number) => `${i + 1}. ${r}`).join('\n')}\n\n${body || ''}`
       : body || '';
 
-    // Send email if email address exists
-    if (profile?.email) {
-      try {
-        // Generate branded email using template
-        const emailHtml = profileNeedsImprovementEmail(
-          profile.full_name || 'Tutor',
-          improvements.length > 0 ? improvements : ['Please review your profile and make necessary improvements.']
-        );
+    // Send notifications (email, SMS, in-app) using unified function
+    const tutorName = profile?.full_name || 'Tutor';
+    const notificationResult = await notifyTutorImprovement(
+      profile?.email || null,
+      profile?.phone_number || null,
+      tutorName,
+      tutor.user_id,
+      improvements.length > 0 ? improvements : ['Please review your profile and make necessary improvements.'],
+      body || undefined
+    );
 
-        // Send using branded template
-        const emailResult = await sendCustomEmail(
-          profile.email,
-          profile.full_name || 'Tutor',
-          subject || 'Your PrepSkul Tutor Profile - Improvement Requests',
-          emailHtml
-        );
-
-        if (!emailResult.success) {
-          console.error('❌ Error sending improvement email:', emailResult.error);
-        } else {
-          console.log('📧 Improvement email sent successfully to:', profile.email);
-        }
-      } catch (emailError: any) {
-        console.error('❌ Error sending email:', emailError);
-        // Continue with status update even if email fails
-      }
-    } else {
-      console.warn('⚠️ No email address found for tutor - email not sent');
-    }
+    console.log('📧 Notification results:', notificationResult);
 
     // Update tutor profile with status and admin notes
     const { error: updateError } = await supabase.from('tutor_profiles').update({

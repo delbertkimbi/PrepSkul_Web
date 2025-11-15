@@ -127,7 +127,23 @@ export default async function PendingTutors() {
                     Applied: {new Date(tutor.created_at).toLocaleDateString()}
                   </p>
                   <p className="text-sm text-gray-500">
-                    Phone: {tutor.profiles?.phone_number || 'N/A'}
+                    Phone: {(() => {
+                      const phone = tutor.profiles?.phone_number || '';
+                      if (!phone) return 'N/A';
+                      // Normalize phone number - remove duplicate +237 prefixes
+                      let normalized = phone.toString().trim();
+                      while (normalized.startsWith('+237')) {
+                        normalized = normalized.substring(4);
+                      }
+                      while (normalized.startsWith('237')) {
+                        normalized = normalized.substring(3);
+                      }
+                      if (normalized.length > 0) {
+                        normalized = normalized.replace(/^0+/, '');
+                        return `+237${normalized}`;
+                      }
+                      return phone;
+                    })()}
                   </p>
                 </div>
               </div>

@@ -145,7 +145,7 @@ export async function sendTutorApprovalEmail(
     const resend = await getResend();
     
     // Get from email from environment variable or use default
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <onboarding@resend.dev>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <noreply@mail.prepskul.com>';
     
     // Set reply-to to business email so replies go to info@prepskul.com
     const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
@@ -238,7 +238,7 @@ export async function sendTutorRejectionEmail(
         const resend = await getResend();
         
         // Get from email from environment variable or use default
-        const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <onboarding@resend.dev>';
+        const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <noreply@mail.prepskul.com>';
         
         // Set reply-to to business email so replies go to info@prepskul.com
         const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
@@ -303,12 +303,13 @@ export async function sendTutorRejectionSMS(
 }
 
 /**
- * Main notification function - sends both email and SMS
+ * Main notification function - sends email, SMS, and creates in-app notification
  */
 export async function notifyTutorApproval(
   tutorEmail: string | null,
   tutorPhone: string | null,
   tutorName: string,
+  tutorUserId: string, // Add userId for in-app notifications
   adminNotes?: string,
   ratingData?: {
     rating?: number;
@@ -320,26 +321,74 @@ export async function notifyTutorApproval(
   const results: {
     email: { success: boolean; error?: any };
     sms: { success: boolean; error?: any };
+    inApp: { success: boolean; error?: any };
   } = {
     email: { success: false, error: null },
     sms: { success: false, error: null },
+    inApp: { success: false, error: null },
   };
   
   // Send email if available
   if (tutorEmail) {
-    const emailResult = await sendTutorApprovalEmail(
-      tutorEmail, 
-      tutorName, 
-      adminNotes,
-      ratingData
-    );
-    results.email = emailResult;
+    try {
+      const emailResult = await sendTutorApprovalEmail(
+        tutorEmail, 
+        tutorName, 
+        adminNotes,
+        ratingData
+      );
+      results.email = emailResult;
+    } catch (e) {
+      console.error('❌ Error sending approval email:', e);
+      results.email = { success: false, error: e };
+    }
   }
   
   // Send SMS if available
   if (tutorPhone) {
-    const smsResult = await sendTutorApprovalSMS(tutorPhone, tutorName);
-    results.sms = smsResult;
+    try {
+      const smsResult = await sendTutorApprovalSMS(tutorPhone, tutorName);
+      results.sms = smsResult;
+    } catch (e) {
+      console.error('❌ Error sending approval SMS:', e);
+      results.sms = { success: false, error: e };
+    }
+  }
+  
+  // Create in-app notification
+  try {
+    const { createServerSupabaseClient } = await import('@/lib/supabase-server');
+    const supabase = await createServerSupabaseClient();
+    
+    const ratingText = ratingData?.rating 
+      ? `\n\nYour Rating: ${ratingData.rating.toFixed(1)}/5.0\nSession Price: ${ratingData.sessionPrice?.toLocaleString('en-US')} XAF`
+      : '';
+    
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: tutorUserId,
+        type: 'profile_approved',
+        notification_type: 'profile_approved',
+        title: '🎉 Profile Approved!',
+        message: `Your PrepSkul tutor profile has been approved. Your profile is now live and students can book sessions with you!${ratingText}${adminNotes ? `\n\nAdmin Note: ${adminNotes}` : ''}`,
+        priority: 'high',
+        is_read: false,
+        action_url: '/tutor/dashboard',
+        action_text: 'View Dashboard',
+        icon: '🎉',
+      });
+    
+    if (notifError) {
+      console.error('❌ Error creating in-app notification:', notifError);
+      results.inApp = { success: false, error: notifError };
+    } else {
+      console.log('✅ In-app notification created for tutor approval');
+      results.inApp = { success: true };
+    }
+  } catch (e) {
+    console.error('❌ Error creating in-app notification:', e);
+    results.inApp = { success: false, error: e };
   }
   
   return results;
@@ -349,26 +398,150 @@ export async function notifyTutorRejection(
   tutorEmail: string | null,
   tutorPhone: string | null,
   tutorName: string,
+  tutorUserId: string, // Add userId for in-app notifications
   rejectionReason: string
 ) {
   const results: {
     email: { success: boolean; error?: any };
     sms: { success: boolean; error?: any };
+    inApp: { success: boolean; error?: any };
   } = {
     email: { success: false, error: null },
     sms: { success: false, error: null },
+    inApp: { success: false, error: null },
   };
   
   // Send email if available
   if (tutorEmail) {
-    const emailResult = await sendTutorRejectionEmail(tutorEmail, tutorName, rejectionReason);
-    results.email = emailResult;
+    try {
+      const emailResult = await sendTutorRejectionEmail(tutorEmail, tutorName, rejectionReason);
+      results.email = emailResult;
+    } catch (e) {
+      console.error('❌ Error sending rejection email:', e);
+      results.email = { success: false, error: e };
+    }
   }
   
   // Send SMS if available
   if (tutorPhone) {
-    const smsResult = await sendTutorRejectionSMS(tutorPhone, tutorName, rejectionReason);
-    results.sms = smsResult;
+    try {
+      const smsResult = await sendTutorRejectionSMS(tutorPhone, tutorName, rejectionReason);
+      results.sms = smsResult;
+    } catch (e) {
+      console.error('❌ Error sending rejection SMS:', e);
+      results.sms = { success: false, error: e };
+    }
+  }
+  
+  // Create in-app notification
+  try {
+    const { createServerSupabaseClient } = await import('@/lib/supabase-server');
+    const supabase = await createServerSupabaseClient();
+    
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: tutorUserId,
+        type: 'profile_rejected',
+        notification_type: 'profile_rejected',
+        title: 'Profile Update Required',
+        message: `Your tutor profile application needs updates. Please review the feedback and resubmit.\n\nReason: ${rejectionReason}`,
+        priority: 'high',
+        is_read: false,
+        action_url: '/tutor/profile',
+        action_text: 'Update Profile',
+        icon: '⚠️',
+      });
+    
+    if (notifError) {
+      console.error('❌ Error creating in-app notification:', notifError);
+      results.inApp = { success: false, error: notifError };
+    } else {
+      console.log('✅ In-app notification created for tutor rejection');
+      results.inApp = { success: true };
+    }
+  } catch (e) {
+    console.error('❌ Error creating in-app notification:', e);
+    results.inApp = { success: false, error: e };
+  }
+  
+  return results;
+}
+
+/**
+ * Notify tutor that their profile needs improvement
+ * Sends email, SMS, and creates in-app notification
+ */
+export async function notifyTutorImprovement(
+  tutorEmail: string | null,
+  tutorPhone: string | null,
+  tutorName: string,
+  tutorUserId: string,
+  improvements: string[],
+  adminNotes?: string
+) {
+  const results: {
+    email: { success: boolean; error?: any };
+    sms: { success: boolean; error?: any };
+    inApp: { success: boolean; error?: any };
+  } = {
+    email: { success: false, error: null },
+    sms: { success: false, error: null },
+    inApp: { success: false, error: null },
+  };
+  
+  // Send email if available
+  if (tutorEmail) {
+    try {
+      const { profileNeedsImprovementEmail } = await import('@/lib/email_templates/tutor_profile_templates');
+      const emailHtml = profileNeedsImprovementEmail(tutorName, improvements);
+      const emailResult = await sendCustomEmail(
+        tutorEmail,
+        tutorName,
+        'Your PrepSkul Tutor Profile - Improvement Requests',
+        emailHtml
+      );
+      results.email = emailResult;
+    } catch (e) {
+      console.error('❌ Error sending improvement email:', e);
+      results.email = { success: false, error: e };
+    }
+  }
+  
+  // Create in-app notification
+  try {
+    const { createServerSupabaseClient } = await import('@/lib/supabase-server');
+    const supabase = await createServerSupabaseClient();
+    
+    const improvementsText = improvements.length > 0
+      ? `\n\nImprovement Areas:\n${improvements.map((imp, i) => `${i + 1}. ${imp}`).join('\n')}`
+      : '';
+    
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: tutorUserId,
+        type: 'profile_improvement',
+        notification_type: 'profile_improvement',
+        title: 'Profile Improvement Requested',
+        message: `Your tutor profile needs some improvements before approval.${improvementsText}${adminNotes ? `\n\nAdmin Notes: ${adminNotes}` : ''}`,
+        priority: 'high',
+        is_read: false,
+        action_url: '/tutor/profile',
+        action_text: 'Update Profile',
+        icon: '📝',
+      });
+    
+    if (notifError) {
+      console.error('❌ Error creating in-app notification:', notifError);
+      results.inApp = { success: false, error: notifError };
+    } else {
+      console.log('✅ In-app notification created for tutor improvement');
+      results.inApp = { success: true };
+    }
+  } catch (e) {
+    console.error('❌ Error creating in-app notification:', e);
+    results.inApp = { success: false, error: e };
   }
   
   return results;
@@ -396,7 +569,7 @@ export async function sendCustomEmail(
     const resend = await getResend();
     
     // Get from email from environment variable or use default
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <onboarding@resend.dev>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <noreply@mail.prepskul.com>';
     
     // Set reply-to to business email so replies go to info@prepskul.com
     const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';

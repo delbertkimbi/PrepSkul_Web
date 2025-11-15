@@ -31,10 +31,10 @@ export async function POST(
       return NextResponse.json({ error: 'Tutor not found' }, { status: 404 });
     }
 
-    // Get tutor email from profiles table
+    // Get tutor email and user info from profiles table
     const { data: profile } = await supabase
       .from('profiles')
-      .select('email, full_name')
+      .select('email, full_name, id')
       .eq('id', tutor.user_id)
       .maybeSingle();
 
@@ -55,10 +55,8 @@ export async function POST(
 
       const resend = new Resend(process.env.RESEND_API_KEY);
       
-      // Use Resend's default sender for testing, or verified domain
-      // For production, you need to verify prepskul.com domain at https://resend.com/domains
-      // For now, use onboarding@resend.dev (Resend's test domain) or your verified domain
-      const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+      // Use Resend's verified domain (mail.prepskul.com)
+      const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <noreply@mail.prepskul.com>';
       
       // Set reply-to to business email so replies go to info@prepskul.com
       const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
@@ -95,6 +93,34 @@ export async function POST(
         to: profile.email,
         subject: subject
       });
+
+      // Optionally create in-app notification for custom emails
+      // (Admin can choose to notify user about the email)
+      try {
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: profile.id,
+            type: 'tutor_message',
+            notification_type: 'tutor_message',
+            title: 'New Message from PrepSkul',
+            message: `You have received a message from PrepSkul admin. Check your email for details.`,
+            priority: 'normal',
+            is_read: false,
+            action_url: '/tutor/profile',
+            action_text: 'View Profile',
+            icon: '📧',
+          });
+        
+        if (notifError) {
+          console.warn('⚠️ Could not create in-app notification:', notifError);
+        } else {
+          console.log('✅ In-app notification created for custom email');
+        }
+      } catch (notifError) {
+        console.warn('⚠️ Error creating in-app notification:', notifError);
+        // Don't fail the request if notification creation fails
+      }
 
       return NextResponse.json({ 
         success: true,

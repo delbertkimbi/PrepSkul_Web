@@ -37,10 +37,8 @@ export async function POST(request: NextRequest) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Use Resend's default sender for testing, or verified domain
-    // For production, you need to verify prepskul.com domain at https://resend.com/domains
-    // For now, use onboarding@resend.dev (Resend's test domain) or your verified domain
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    // Use Resend's verified domain (mail.prepskul.com)
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'PrepSkul <noreply@mail.prepskul.com>';
     
     // Set reply-to to business email so replies go to info@prepskul.com
     const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';

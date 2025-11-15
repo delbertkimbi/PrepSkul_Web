@@ -129,7 +129,32 @@ export default async function TutorDetailPage({
   // Debug: Log final name result
   console.log('Final fullName:', fullName, 'Profile exists:', !!profile);
   const email = profile?.email || tutor.email || '';
-  const phoneNumber = profile?.phone_number || tutor.phone_number || '';
+  
+  // Normalize phone number - remove duplicate +237 prefixes
+  const normalizePhoneNumber = (phone: string | null | undefined): string => {
+    if (!phone) return '';
+    let normalized = phone.toString().trim();
+    
+    // Remove all occurrences of +237 at the start
+    while (normalized.startsWith('+237')) {
+      normalized = normalized.substring(4);
+    }
+    while (normalized.startsWith('237')) {
+      normalized = normalized.substring(3);
+    }
+    
+    // Add +237 prefix once if number exists
+    if (normalized.length > 0) {
+      // Remove any leading zeros
+      normalized = normalized.replace(/^0+/, '');
+      return `+237${normalized}`;
+    }
+    
+    return phone;
+  };
+  
+  const rawPhoneNumber = profile?.phone_number || tutor.phone_number || '';
+  const phoneNumber = normalizePhoneNumber(rawPhoneNumber);
   const whatsappLink = phoneNumber ? `https://wa.me/${phoneNumber.replace(/[^0-9]/g, '')}` : '#';
   const callLink = phoneNumber ? `tel:${phoneNumber}` : '#';
 

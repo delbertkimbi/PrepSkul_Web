@@ -18,14 +18,14 @@ export default async function SessionsPage() {
   }
 
   const adminStatus = await isAdmin(user.id);
-  
+
   if (!adminStatus) {
     redirect('/admin/login');
   }
 
   // Get Supabase client for data fetching
   const supabase = await createServerSupabaseClient();
-  
+
   if (!supabase) {
     console.error('Failed to create Supabase client');
     return (
@@ -72,7 +72,7 @@ export default async function SessionsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sessions</h1>
           <p className="text-gray-600">Manage and monitor all tutoring sessions</p>
-        </div>
+            </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -94,9 +94,9 @@ export default async function SessionsPage() {
             {criticalFlags > 0 && (
               <p className="text-sm text-red-600 mt-1">{criticalFlags} critical</p>
             )}
-          </div>
-        </div>
-
+                    </div>
+                      </div>
+                      
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Link
@@ -109,7 +109,7 @@ export default async function SessionsPage() {
                 <p className="text-sm text-gray-600 mb-4">
                   Review and resolve flags detected in session transcripts
                 </p>
-                <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
                   <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
                     {unresolvedFlags} Unresolved
                   </span>
@@ -117,9 +117,9 @@ export default async function SessionsPage() {
                     <span className="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-semibold">
                       {criticalFlags} Critical
                     </span>
-                  )}
-                </div>
-              </div>
+                      )}
+                    </div>
+                  </div>
               <svg
                 className="w-8 h-8 text-red-600"
                 fill="none"
@@ -133,7 +133,7 @@ export default async function SessionsPage() {
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-            </div>
+                  </div>
           </Link>
 
           <Link
@@ -162,7 +162,7 @@ export default async function SessionsPage() {
               </svg>
             </div>
           </Link>
-        </div>
+          </div>
 
         {/* Info Box */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
