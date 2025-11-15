@@ -65,6 +65,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
       max-width: 600px;
       margin: 0 auto;
       background-color: #ffffff;
+      text-align: center;
     }
     .header {
       background: linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%);
@@ -84,6 +85,11 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
       margin: 0 auto 20px;
       display: block;
     }
+    .logo[alt] {
+      font-size: 18px;
+      color: white;
+      font-weight: 600;
+    }
     .icon {
       font-size: 64px;
       text-align: center;
@@ -92,6 +98,7 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
     .content {
       padding: 40px 30px;
       background-color: #ffffff;
+      text-align: left;
     }
     .greeting {
       font-size: 16px;
@@ -179,7 +186,8 @@ export function generateEmailTemplate(data: EmailTemplateData): string {
 <body>
   <div class="email-container">
     <div class="header">
-      <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" />
+      <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+      <div style="display: none; font-size: 24px; color: white; font-weight: 600; margin-bottom: 20px;">📚 PrepSkul</div>
       <h1>${title}</h1>
     </div>
     <div class="content">
