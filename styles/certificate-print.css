@@ -1,0 +1,34 @@
+@media print {
+  @page {
+    size: landscape;
+    margin: 0;
+  }
+
+  body {
+    margin: 0;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  /* Certificate specific styles */
+  .certificate-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .certificate {
+    transform: scale(0.9);
+    transform-origin: center;
+  }
+}
