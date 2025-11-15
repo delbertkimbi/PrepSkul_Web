@@ -10,6 +10,8 @@ export function middleware(request: NextRequest) {
   
   // Detect if request is from admin subdomain
   const isAdminSubdomain = hostname.startsWith('admin.')
+  // Detect if request is from academy subdomain
+  const isAcademySubdomain = hostname.startsWith('academy.') || hostname.startsWith('academy.localhost')
   
   // PRIORITY 1: Handle admin subdomain requests
   if (isAdminSubdomain) {
@@ -19,6 +21,16 @@ export function middleware(request: NextRequest) {
     }
     // If on any other path (including /en, /fr), redirect to admin login
     return NextResponse.redirect(new URL('/admin/login', request.url))
+  }
+  
+  // PRIORITY 1b: Handle academy subdomain requests
+  if (isAcademySubdomain) {
+    // If already on /academy path, let it through
+    if (pathname.startsWith('/academy')) {
+      return NextResponse.next()
+    }
+    // Rewrite all other paths to academy subtree
+    return NextResponse.rewrite(new URL(`/academy${pathname}`, request.url))
   }
   
   // PRIORITY 2: Handle /admin routes on main domain (non-admin subdomain)
@@ -38,11 +50,15 @@ export function middleware(request: NextRequest) {
     if (acceptLanguage) {
       const preferredLocale = acceptLanguage
         .split(',')
-        .map(lang => lang.split(';')[0].trim())
-        .find(lang => locales.includes(lang.split('-')[0]))
+        .map((lang: string) => {
+          const cleanLang = lang.split(';')[0].trim();
+          const langCode = cleanLang.split('-')[0];
+          return langCode;
+        })
+        .find((langCode: string) => locales.includes(langCode))
 
       if (preferredLocale) {
-        detectedLocale = preferredLocale.split('-')[0]
+        detectedLocale = preferredLocale
       }
     }
 
