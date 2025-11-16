@@ -192,10 +192,10 @@ export default function ContactPage() {
   const renderProgramSpecificFields = () => {
     if (formData.program === 'academic') {
       return (
-        <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-primary" />
-            {t.contact.form.fields.academicSubjects.label} <span className="text-primary">*</span>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            {t.contact.form.fields.academicSubjects.label} *
           </Label>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {Object.entries(t.contact.form.fields.academicSubjects.options).map(([key, value]) => (
@@ -221,17 +221,17 @@ export default function ContactPage() {
 
     if (formData.program === 'exam') {
       return (
-        <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground flex items-center gap-2">
-            <Target className="h-4 w-4 text-primary" />
-            {t.contact.form.fields.examTypes.label} <span className="text-primary">*</span>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            <Target className="h-4 w-4" />
+            {t.contact.form.fields.examTypes.label} *
           </Label>
           <Select
             value={formData.examType}
             onValueChange={(value) => setFormData({ ...formData, examType: value })}
             required
           >
-            <SelectTrigger className="h-12 text-base data-[placeholder]:text-muted-foreground/60">
+            <SelectTrigger className="h-10">
               <SelectValue placeholder={t.contact.form.fields.examTypes.placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -251,10 +251,10 @@ export default function ContactPage() {
 
     if (formData.program === 'skills') {
       return (
-        <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-primary" />
-            {t.contact.form.fields.skills.label} <span className="text-primary">*</span>
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold flex items-center gap-2">
+            <Wrench className="h-4 w-4" />
+            {t.contact.form.fields.skills.label} *
           </Label>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {Object.entries(t.contact.form.fields.skills.options).map(([key, value]) => (
@@ -337,17 +337,17 @@ export default function ContactPage() {
                 </div>
                 ) : (
                   <>
-                    <div className="text-center mb-8">
-                      <h2 className="text-2xl sm:text-3xl font-bold mb-3 text-foreground">{t.contact.form.title}</h2>
-                      <p className="text-base text-muted-foreground/80 leading-relaxed">Fill out the form below and we'll connect you with the right solution</p>
+                    <div className="text-center mb-6">
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">{t.contact.form.title}</h2>
+                      <p className="text-sm sm:text-base text-muted-foreground">Fill out the form below and we'll connect you with the right solution</p>
           </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                       {/* Basic Information */}
-                      <div className="space-y-5">
-                  <div className="space-y-2.5">
-                    <Label htmlFor="name" className="text-base font-medium text-foreground">
-                            {t.contact.form.fields.name.label} <span className="text-primary">*</span>
+                      <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name" className="text-sm font-semibold">
+                            {t.contact.form.fields.name.label} *
                     </Label>
                     <Input
                       id="name"
@@ -355,13 +355,13 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
-                            className="h-12 text-base placeholder:text-muted-foreground/60 placeholder:font-normal"
+                            className="h-10"
                     />
                   </div>
 
-                  <div className="space-y-2.5">
-                    <Label htmlFor="phone" className="text-base font-medium text-foreground">
-                            {t.contact.form.fields.phone.label} <span className="text-primary">*</span>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone" className="text-sm font-semibold">
+                            {t.contact.form.fields.phone.label} *
                     </Label>
                     <Input
                       id="phone"
@@ -370,23 +370,23 @@ export default function ContactPage() {
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                             required
-                            className="h-12 text-base placeholder:text-muted-foreground/60 placeholder:font-normal"
+                            className="h-10"
                     />
                         </div>
                   </div>
 
                       {/* Role and Program Selection */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="space-y-2.5">
-                          <Label htmlFor="role" className="text-base font-medium text-foreground">
-                            {t.contact.form.fields.role.label} <span className="text-primary">*</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                          <Label htmlFor="role" className="text-sm font-semibold">
+                            {t.contact.form.fields.role.label} *
                     </Label>
                     <Select
                             value={formData.role}
                             onValueChange={(value) => setFormData({ ...formData, role: value })}
                       required
                     >
-                            <SelectTrigger id="role" className="h-12 text-base data-[placeholder]:text-muted-foreground/60">
+                            <SelectTrigger id="role" className="h-10">
                               <SelectValue placeholder={t.contact.form.fields.role.placeholder} />
                       </SelectTrigger>
                       <SelectContent>
@@ -397,9 +397,9 @@ export default function ContactPage() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2.5">
-                          <Label htmlFor="program" className="text-base font-medium text-foreground">
-                            {t.contact.form.fields.program.label} <span className="text-primary">*</span>
+                  <div className="space-y-2">
+                          <Label htmlFor="program" className="text-sm font-semibold">
+                            {t.contact.form.fields.program.label} *
                           </Label>
                           <Select
                             value={formData.program}
@@ -412,7 +412,7 @@ export default function ContactPage() {
                             })}
                             required
                           >
-                            <SelectTrigger id="program" className="h-12 text-base data-[placeholder]:text-muted-foreground/60">
+                            <SelectTrigger id="program" className="h-10">
                               <SelectValue placeholder={t.contact.form.fields.program.placeholder} />
                             </SelectTrigger>
                             <SelectContent>
@@ -432,17 +432,17 @@ export default function ContactPage() {
                       )}
 
                       {/* Comment Field */}
-                      <div className="space-y-2.5">
-                        <Label htmlFor="comment" className="text-base font-medium text-foreground">
-                          {t.contact.form.fields.comment.label} <span className="text-muted-foreground text-sm font-normal">(optional)</span>
+                      <div className="space-y-2">
+                        <Label htmlFor="comment" className="text-sm font-semibold">
+                          {t.contact.form.fields.comment.label}
                     </Label>
                     <Textarea
                           id="comment"
                           placeholder={t.contact.form.fields.comment.placeholder}
-                          rows={4}
+                          rows={3}
                           value={formData.comment}
                           onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                          className="resize-none text-base placeholder:text-muted-foreground/60 placeholder:font-normal min-h-[100px]"
+                          className="resize-none"
                     />
                   </div>
 

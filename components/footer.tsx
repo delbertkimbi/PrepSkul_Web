@@ -1,15 +1,59 @@
 "use client"
 
+import type React from "react"
+
 import Link from "next/link"
 import Image from "next/image"
 import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react"
 import { TikTokIcon } from "./tiktok-icon"
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useLocale } from "@/lib/locale-context"
 import { getTranslations } from "@/lib/translations"
 
 export function Footer() {
+  const [showComingSoon, setShowComingSoon] = useState(false)
   const { locale } = useLocale()
   const t = getTranslations(locale)
+
+  const LAUNCH_DATE = new Date("2025-11-12T00:00:00")
+
+  const calculateTimeLeft = () => {
+    const now = new Date().getTime()
+    const difference = LAUNCH_DATE.getTime() - now
+
+    // Stop at zero when countdown reaches launch date
+    if (difference <= 0) {
+      return {
+        days: 0,
+        hours: 0,
+        minutes: 0,
+        seconds: 0,
+      }
+    }
+
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+    }
+  }
+
+  const [countdown, setCountdown] = useState(calculateTimeLeft())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCountdown(calculateTimeLeft())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  const handleAppClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setShowComingSoon(true)
+  }
 
   return (
     <>
@@ -18,17 +62,7 @@ export function Footer() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
             {/* Brand */}
             <div className="space-y-3">
-              <Link href="/" className="flex items-center gap-0.5">
-                <Image
-                  src="/logo-white.png"
-                  alt="PrepSkul Logo"
-                  width={32}
-                  height={32}
-                  className="h-9 w-9 object-contain"
-                  priority
-                />
-                <div className="text-2xl font-black text-primary-foreground font-lato">PrepSkul</div>
-              </Link>
+              <h3 className="text-2xl font-bold">PrepSkul</h3>
               <p className="text-primary-foreground/80 leading-relaxed text-sm">
                 {t.footer.description}
               </p>
@@ -142,12 +176,10 @@ export function Footer() {
             <div className="space-y-2">
               <h4 className="font-bold text-lg">{t.footer.downloadApp}</h4>
               <div className="space-y-1">
-                <a
-                  href="https://app.prepskul.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={handleAppClick}
                   className="block w-full hover:opacity-80 transition-opacity"
-                  aria-label="Open PrepSkul App on Google Play"
+                  aria-label="Download on Google Play - Coming Soon"
                 >
                   <Image
                     src="/google-play-badge.png"
@@ -156,13 +188,11 @@ export function Footer() {
                     height={40}
                     className="w-full max-w-[135px]"
                   />
-                </a>
-                <a
-                  href="https://app.prepskul.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                </button>
+                <button
+                  onClick={handleAppClick}
                   className="block w-full hover:opacity-80 transition-opacity"
-                  aria-label="Open PrepSkul App on App Store"
+                  aria-label="Download on App Store - Coming Soon"
                 >
                   <Image
                     src="/app-store-badge.png"
@@ -171,7 +201,7 @@ export function Footer() {
                     height={40}
                     className="w-full max-w-[135px]"
                   />
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -181,6 +211,41 @@ export function Footer() {
           </div>
         </div>
       </footer>
+
+      <Dialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">{t.footer.comingSoon}</DialogTitle>
+            <DialogDescription className="text-center pt-4">
+              {t.footer.comingSoonDescription}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex justify-center gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.days}</div>
+                <div className="text-xs text-muted-foreground">{t.footer.days}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.hours}</div>
+                <div className="text-xs text-muted-foreground">{t.footer.hours}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.minutes}</div>
+                <div className="text-xs text-muted-foreground">{t.footer.minutes}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary">{countdown.seconds}</div>
+                <div className="text-xs text-muted-foreground">{t.footer.seconds}</div>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground pt-2 text-center">
+              {t.footer.getReady}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

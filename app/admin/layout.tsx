@@ -9,14 +9,6 @@ export const metadata = {
     },
   },
   title: 'PrepSkul Admin',
-  icons: {
-    icon: [
-      { url: '/logo-blue.png', type: 'image/png' },
-      { url: '/logo-blue.png', type: 'image/png', sizes: 'any' }
-    ],
-    shortcut: '/logo-blue.png',
-    apple: '/logo-blue.png',
-  },
 };
 
 export default function AdminLayout({
