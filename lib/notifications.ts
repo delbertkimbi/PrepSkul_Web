@@ -234,7 +234,7 @@ export async function sendTutorRejectionEmail(
       </html>
     `;
 
-        // Send email via Resend
+    // Send email via Resend
         const resend = await getResend();
         
         // Get from email from environment variable or use default
@@ -243,13 +243,13 @@ export async function sendTutorRejectionEmail(
         // Set reply-to to business email so replies go to info@prepskul.com
         const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
         
-        const { data, error } = await resend.emails.send({
+    const { data, error } = await resend.emails.send({
           from: fromEmail,
-          to: tutorEmail,
+      to: tutorEmail,
           replyTo: replyTo,
-          subject: 'Your PrepSkul Tutor Profile Needs Updates',
-          html: htmlContent,
-        });
+      subject: 'Your PrepSkul Tutor Profile Needs Updates',
+      html: htmlContent,
+    });
 
     if (error) {
       console.error('❌ Resend error:', error);
@@ -337,7 +337,7 @@ export async function notifyTutorApproval(
         adminNotes,
         ratingData
       );
-      results.email = emailResult;
+    results.email = emailResult;
     } catch (e) {
       console.error('❌ Error sending approval email:', e);
       results.email = { success: false, error: e };
@@ -347,8 +347,8 @@ export async function notifyTutorApproval(
   // Send SMS if available
   if (tutorPhone) {
     try {
-      const smsResult = await sendTutorApprovalSMS(tutorPhone, tutorName);
-      results.sms = smsResult;
+    const smsResult = await sendTutorApprovalSMS(tutorPhone, tutorName);
+    results.sms = smsResult;
     } catch (e) {
       console.error('❌ Error sending approval SMS:', e);
       results.sms = { success: false, error: e };
@@ -414,8 +414,8 @@ export async function notifyTutorRejection(
   // Send email if available
   if (tutorEmail) {
     try {
-      const emailResult = await sendTutorRejectionEmail(tutorEmail, tutorName, rejectionReason);
-      results.email = emailResult;
+    const emailResult = await sendTutorRejectionEmail(tutorEmail, tutorName, rejectionReason);
+    results.email = emailResult;
     } catch (e) {
       console.error('❌ Error sending rejection email:', e);
       results.email = { success: false, error: e };
@@ -425,8 +425,8 @@ export async function notifyTutorRejection(
   // Send SMS if available
   if (tutorPhone) {
     try {
-      const smsResult = await sendTutorRejectionSMS(tutorPhone, tutorName, rejectionReason);
-      results.sms = smsResult;
+    const smsResult = await sendTutorRejectionSMS(tutorPhone, tutorName, rejectionReason);
+    results.sms = smsResult;
     } catch (e) {
       console.error('❌ Error sending rejection SMS:', e);
       results.sms = { success: false, error: e };
