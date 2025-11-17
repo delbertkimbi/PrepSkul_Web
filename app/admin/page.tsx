@@ -53,36 +53,54 @@ export default async function AdminDashboard() {
     .select('*', { count: 'exact', head: true })
     .eq('status', 'pending');
   
-  // Active sessions (happening now)
+  // Active sessions (happening now) - check both individual_sessions and trial_sessions
   const now = new Date();
   const nowISO = now.toISOString();
-  const { count: activeSessions } = await supabase
-    .from('lessons')
+  const todayDate = now.toISOString().split('T')[0];
+  const nowTime = now.toTimeString().split(' ')[0].substring(0, 5);
+  
+  // Count active individual sessions
+  const { count: activeIndividualSessions } = await supabase
+    .from('individual_sessions')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'scheduled')
-    .lte('start_time', nowISO)
-    .gte('end_time', nowISO);
+    .eq('status', 'in_progress')
+    .eq('scheduled_date', todayDate)
+    .lte('scheduled_time', nowTime);
+  
+  // Count active trial sessions
+  const { count: activeTrialSessions } = await supabase
+    .from('trial_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'in_progress')
+    .eq('scheduled_date', todayDate)
+    .lte('scheduled_time', nowTime);
+  
+  const activeSessions = (activeIndividualSessions || 0) + (activeTrialSessions || 0);
   
   // Upcoming sessions today
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-  
-  const { count: upcomingToday } = await supabase
-    .from('lessons')
+  const { count: upcomingTodayIndividual } = await supabase
+    .from('individual_sessions')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'scheduled')
-    .gte('start_time', startOfDay.toISOString())
-    .lte('start_time', endOfDay.toISOString());
+    .eq('scheduled_date', todayDate)
+    .gte('scheduled_time', nowTime);
   
-  // Total revenue from completed payments
+  const { count: upcomingTodayTrial } = await supabase
+    .from('trial_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'scheduled')
+    .eq('scheduled_date', todayDate)
+    .gte('scheduled_time', nowTime);
+  
+  const upcomingToday = (upcomingTodayIndividual || 0) + (upcomingTodayTrial || 0);
+  
+  // Total revenue from completed session payments
   const { data: completedPayments } = await supabase
-    .from('payments')
+    .from('session_payments')
     .select('amount')
-    .eq('status', 'completed');
+    .eq('payment_status', 'paid');
   
-  const totalRevenue = completedPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+  const totalRevenue = completedPayments?.reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0;
   
   // This month's revenue
   const startOfMonth = new Date();
@@ -90,12 +108,12 @@ export default async function AdminDashboard() {
   startOfMonth.setHours(0, 0, 0, 0);
   
   const { data: monthlyPayments } = await supabase
-    .from('payments')
+    .from('session_payments')
     .select('amount')
-    .eq('status', 'completed')
+    .eq('payment_status', 'paid')
     .gte('created_at', startOfMonth.toISOString());
   
-  const monthlyRevenue = monthlyPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
+  const monthlyRevenue = monthlyPayments?.reduce((sum, p) => sum + Number(p.amount || 0), 0) || 0;
 
   // Active user metrics
   const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
@@ -142,7 +160,7 @@ export default async function AdminDashboard() {
             <div className="bg-white p-6 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-600">Pending Tutors</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">{pendingTutors || 0}</p>
-              <a href="/admin/tutors/pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
+              <a href="/admin/tutors?tab=pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
                 Review applications →
               </a>
             </div>
@@ -191,7 +209,7 @@ export default async function AdminDashboard() {
               <h3 className="font-semibold text-gray-900">Active Now</h3>
               <p className="text-sm text-gray-600 mt-1">Monitor ongoing sessions</p>
             </a>
-            <a href="/admin/tutors/pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
+            <a href="/admin/tutors?tab=pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
               <h3 className="font-semibold text-gray-900">Pending Tutors</h3>
               <p className="text-sm text-gray-600 mt-1">Review tutor applications</p>
             </a>

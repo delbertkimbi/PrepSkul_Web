@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import AdminNav from '../../components/AdminNav';
+import TutorCard from '../components/TutorCard';
 
 export default async function PendingTutors() {
   // Check authentication
@@ -30,15 +31,17 @@ export default async function PendingTutors() {
   // Fetch profiles separately for each tutor
   let tutorsWithProfiles = [];
   if (tutors) {
-    tutorsWithProfiles = await Promise.all(
+      tutorsWithProfiles = await Promise.all(
       tutors.map(async (tutor) => {
+        // Use tutor.id (primary key) first, fallback to user_id
+        const profileId = tutor.id || tutor.user_id;
         const { data: profile } = await supabase
           .from('profiles')
-          .select('full_name, phone, email')
-          .eq('id', tutor.user_id)
-          .single();
+          .select('full_name, phone_number, email')
+          .eq('id', profileId)
+          .maybeSingle();
         
-        return { ...tutor, profiles: profile };
+        return { ...tutor, profiles: profile || {} };
       })
     );
   }
@@ -97,52 +100,7 @@ export default async function PendingTutors() {
 
         {/* Tutor Cards */}
         {tutorsWithProfiles?.map((tutor) => (
-          <div key={tutor.id} className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {tutor.profiles?.full_name?.charAt(0) || 'T'}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{tutor.profiles?.full_name || 'Unknown'}</h3>
-                  <p className="text-sm text-gray-600">
-                    {Array.isArray(tutor.tutoring_areas) ? tutor.tutoring_areas.join(', ') : 'No subjects'}
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {tutor.city || 'Location not specified'} • {tutor.years_of_experience || 0} years experience
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Applied: {new Date(tutor.created_at).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Phone: {tutor.profiles?.phone || 'N/A'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <form action={`/api/admin/tutors/approve`} method="POST">
-                  <input type="hidden" name="tutorId" value={tutor.id} />
-                  <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
-                    Approve
-                  </button>
-                </form>
-                <form action={`/api/admin/tutors/reject`} method="POST">
-                  <input type="hidden" name="tutorId" value={tutor.id} />
-                  <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
-                    Reject
-                  </button>
-                </form>
-                <a 
-                  href={`/admin/tutors/${tutor.id}`} 
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium"
-                >
-                  View Details
-                </a>
-              </div>
-            </div>
-          </div>
+          <TutorCard key={tutor.id} tutor={tutor} />
         ))}
       </div>
         </div>

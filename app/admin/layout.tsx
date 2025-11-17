@@ -1,7 +1,5 @@
-import type { Metadata } from "next"
-
 // Block search engines from indexing admin pages
-export const metadata: Metadata = {
+export const metadata = {
   robots: {
     index: false,
     follow: false,
@@ -13,13 +11,11 @@ export const metadata: Metadata = {
   title: 'PrepSkul Admin',
   icons: {
     icon: [
-      { url: '/logo.jpg', sizes: '32x32', type: 'image/jpeg' },
-      { url: '/logo.jpg', sizes: '192x192', type: 'image/jpeg' },
+      { url: '/logo-blue.png', type: 'image/png' },
+      { url: '/logo-blue.png', type: 'image/png', sizes: 'any' }
     ],
-    apple: [
-      { url: '/logo.jpg', sizes: '180x180', type: 'image/jpeg' },
-    ],
-    shortcut: '/logo.jpg',
+    shortcut: '/logo-blue.png',
+    apple: '/logo-blue.png',
   },
 };
 
