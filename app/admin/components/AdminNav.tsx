@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 export default function AdminNav() {
@@ -26,7 +27,18 @@ export default function AdminNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center space-x-8">
-            <h1 className="text-xl font-bold text-white">PrepSkul Admin</h1>
+            <div className="flex items-center gap-2">
+              <Image
+                src="/app_logo(white).png"
+                alt="PrepSkul"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+              />
+              <h1 className="text-xl font-bold text-white" style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}>
+                PrepSkul Admin
+              </h1>
+            </div>
             <div className="hidden md:flex space-x-4">
               {navItems.map((item) => (
                 <Link

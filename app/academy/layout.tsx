@@ -7,15 +7,17 @@ export default function AcademyLayout({ children }: { children: React.ReactNode 
 		<div className="min-h-screen flex flex-col bg-gray-50">
 			<div className="border-b bg-white/80 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-white/50">
 				<div className="container mx-auto px-4 py-4 flex items-center justify-between">
-					<div className="flex items-center gap-3">
+					<div className="flex items-center gap-2">
 						<Image 
-							src="/logo.jpg" 
-							alt="PrepSkul Logo" 
-							width={40} 
-							height={40} 
-							className="rounded-lg object-contain"
+							src="/app_logo(blue).png" 
+							alt="PrepSkul" 
+							width={33} 
+							height={33} 
+							className="h-8 w-8 object-contain"
 						/>
-						<div className="text-xl sm:text-2xl font-bold text-primary drop-shadow-md select-none">PrepSkul</div>
+						<span className="text-2xl font-black text-primary drop-shadow-md select-none" style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}>
+							PrepSkul
+						</span>
 					</div>
 					{/* Desktop nav */}
 					

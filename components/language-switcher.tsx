@@ -18,6 +18,7 @@ interface LanguageSwitcherProps {
 
 export function LanguageSwitcher({ currentLocale }: LanguageSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -29,21 +30,37 @@ export function LanguageSwitcher({ currentLocale }: LanguageSwitcherProps) {
     setIsOpen(false)
   }
 
+  // Get abbreviated locale code (EN, FR)
+  const getLocaleCode = (locale: Locale) => {
+    return locale.toUpperCase()
+  }
+
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
           size="sm" 
-          className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          className="flex items-center gap-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground relative min-w-[3rem]"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
-          <Globe className="h-4 w-4" />
-          <span className="hidden sm:inline">
-            {localeFlags[currentLocale]} {localeNames[currentLocale]}
-          </span>
-          <span className="sm:hidden">
-            {localeFlags[currentLocale]}
-          </span>
+          <Globe className="h-4 w-4 flex-shrink-0" />
+          <div className="relative w-full flex items-center justify-center">
+            {/* Default: Show abbreviated code (EN/FR) */}
+            <span className={`transition-all duration-200 ${isHovered ? 'opacity-0 scale-95 absolute' : 'opacity-100 scale-100 relative'}`}>
+              {getLocaleCode(currentLocale)}
+            </span>
+            {/* On hover: Show flag and full name (desktop only) */}
+            <span className={`hidden sm:flex items-center gap-1.5 transition-all duration-200 ${isHovered ? 'opacity-100 scale-100 relative' : 'opacity-0 scale-95 absolute'}`}>
+              <span className="text-base">{localeFlags[currentLocale]}</span>
+              <span>{localeNames[currentLocale]}</span>
+            </span>
+            {/* Mobile: Always show abbreviated */}
+            <span className="sm:hidden">
+              {getLocaleCode(currentLocale)}
+            </span>
+          </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
