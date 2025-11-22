@@ -20,20 +20,37 @@ export default function CertificatePage() {
 	const [tutorName, setTutorName] = useState("")
 	const [isGenerating, setIsGenerating] = useState(false)
 
-	const finalQuizStatus = getFinalQuizStatus(params.level)
-	const existingCert = getCertificate(params.level)
+	const [finalQuizStatus, setFinalQuizStatus] = useState<{ scorePercent: number; isPassed: boolean } | null>(null)
+	const [existingCert, setExistingCert] = useState<any>(null)
+	const [allModulesCompleted, setAllModulesCompleted] = useState(false)
+	const [loading, setLoading] = useState(true)
 	const order = level?.modules.map(m => m.id) ?? []
-	const allModulesCompleted = isLevelCompleted(params.level, order)
 
 	useEffect(() => {
-		if (existingCert) {
-			setCertificateData(existingCert)
-			setTutorName(existingCert.tutorName)
+		const loadData = async () => {
+			const quizStatus = await getFinalQuizStatus(params.level)
+			setFinalQuizStatus(quizStatus)
+			
+			const cert = await getCertificate(params.level)
+			setExistingCert(cert)
+			if (cert) {
+				setCertificateData(cert)
+				setTutorName(cert.tutorName)
+			}
+			
+			const completed = await isLevelCompleted(params.level, order)
+			setAllModulesCompleted(completed)
+			setLoading(false)
 		}
-	}, [existingCert])
+		loadData()
+	}, [params.level, order])
 
 	if (!level) {
 		return <div className="text-sm text-red-600">Level not found.</div>
+	}
+
+	if (loading) {
+		return <div className="text-sm text-gray-600">Loading...</div>
 	}
 
 	if (!allModulesCompleted || !finalQuizStatus?.isPassed) {
@@ -60,16 +77,21 @@ export default function CertificatePage() {
 		)
 	}
 
-	const handleClaimCertificate = () => {
+	const handleClaimCertificate = async () => {
 		if (!tutorName.trim()) {
 			alert("Please enter your name to claim the certificate.")
 			return
 		}
-		const code = issueCertificate(params.level, tutorName.trim())
-		const cert = getCertificate(params.level)
-		if (cert) {
-			setCertificateData(cert)
+		setIsGenerating(true)
+		const code = await issueCertificate(params.level, tutorName.trim())
+		if (code) {
+			const cert = await getCertificate(params.level)
+			if (cert) {
+				setCertificateData(cert)
+				setExistingCert(cert)
+			}
 		}
+		setIsGenerating(false)
 	}
 
 	const handleDownloadPDF = async () => {

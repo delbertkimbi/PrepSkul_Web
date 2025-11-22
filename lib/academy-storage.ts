@@ -1,4 +1,5 @@
 import type { AcademyLevelId } from './academy-data';
+import { academySupabase } from './academy-supabase';
 
 export interface ModuleProgress {
 	scorePercent: number; // 0-100
@@ -29,97 +30,299 @@ export interface AcademyProgressState {
 
 export const PASS_THRESHOLD = 70; // percent required to pass and unlock next module
 
-const STORAGE_KEY = 'prepskul.academy.progress.v1';
+// Cache for progress data (to avoid excessive API calls)
+let progressCache: AcademyProgressState | null = null;
+let cacheUserId: string | null = null;
 
-export function loadProgress(): AcademyProgressState {
-	if (typeof window === 'undefined') return { levels: {} };
+/**
+ * Get current user ID
+ */
+async function getCurrentUserId(): Promise<string | null> {
+	const { data: { user } } = await academySupabase.auth.getUser();
+	return user?.id || null;
+}
+
+/**
+ * Load all progress from Supabase
+ */
+export async function loadProgress(): Promise<AcademyProgressState> {
+	const userId = await getCurrentUserId();
+	if (!userId) return { levels: {} };
+
+	// Return cached data if available and user hasn't changed
+	if (progressCache && cacheUserId === userId) {
+		return progressCache;
+	}
+
 	try {
-		const raw = window.localStorage.getItem(STORAGE_KEY);
-		if (!raw) return { levels: {} };
-		return JSON.parse(raw);
-	} catch {
+		// Fetch all progress records for this user
+		const { data: progressRecords, error } = await academySupabase
+			.from('academy_progress')
+			.select('*')
+			.eq('user_id', userId);
+
+		if (error) throw error;
+
+		// Fetch final quiz records
+		const { data: finalQuizzes, error: quizError } = await academySupabase
+			.from('academy_level_quizzes')
+			.select('*')
+			.eq('user_id', userId);
+
+		if (quizError) throw quizError;
+
+		// Fetch certificates
+		const { data: certificates, error: certError } = await academySupabase
+			.from('academy_certificates')
+			.select('*')
+			.eq('user_id', userId);
+
+		if (certError) throw certError;
+
+		// Transform database records into AcademyProgressState format
+		const state: AcademyProgressState = { levels: {} };
+
+		// Group progress by level
+		progressRecords?.forEach((record) => {
+			const levelId = record.level_id as AcademyLevelId;
+			if (!state.levels[levelId]) {
+				state.levels[levelId] = { modules: {} };
+			}
+
+			const sectionProgress: Record<string, number> = {};
+			if (record.section_progress && typeof record.section_progress === 'object') {
+				Object.entries(record.section_progress).forEach(([key, value]) => {
+					sectionProgress[key] = typeof value === 'number' ? value : 0;
+				});
+			}
+
+			state.levels[levelId]!.modules[record.module_id] = {
+				scorePercent: record.quiz_score || 0,
+				isPassed: record.is_passed || false,
+				watchedSections: record.watched_sections || [],
+				sectionProgress,
+			};
+		});
+
+		// Add final quiz data
+		finalQuizzes?.forEach((quiz) => {
+			const levelId = quiz.level_id as AcademyLevelId;
+			if (!state.levels[levelId]) {
+				state.levels[levelId] = { modules: {} };
+			}
+			state.levels[levelId]!.finalQuiz = {
+				scorePercent: quiz.score,
+				isPassed: quiz.is_passed,
+				completedAt: quiz.completed_at,
+			};
+		});
+
+		// Add certificate data
+		certificates?.forEach((cert) => {
+			const levelId = cert.level_id as AcademyLevelId;
+			if (!state.levels[levelId]) {
+				state.levels[levelId] = { modules: {} };
+			}
+			state.levels[levelId]!.completedCertificate = {
+				issuedAt: cert.issued_at,
+				verificationCode: cert.verification_code,
+				tutorName: cert.tutor_name,
+			};
+		});
+
+		// Cache the result
+		progressCache = state;
+		cacheUserId = userId;
+
+		return state;
+	} catch (error) {
+		console.error('Error loading progress:', error);
 		return { levels: {} };
 	}
 }
 
-export function saveProgress(state: AcademyProgressState): void {
-	if (typeof window === 'undefined') return;
-	window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+/**
+ * Save module quiz score to Supabase
+ */
+export async function recordModuleScore(levelId: AcademyLevelId, moduleId: string, scorePercent: number): Promise<AcademyProgressState> {
+	const userId = await getCurrentUserId();
+	if (!userId) {
+		console.error('No user logged in');
+		return { levels: {} };
+	}
+
+	const isPassed = scorePercent >= PASS_THRESHOLD;
+
+	try {
+		// Upsert progress record
+		const { error } = await academySupabase
+			.from('academy_progress')
+			.upsert({
+				user_id: userId,
+				level_id: levelId,
+				module_id: moduleId,
+				quiz_score: scorePercent,
+				is_passed: isPassed,
+				started_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+			}, {
+				onConflict: 'user_id,level_id,module_id',
+			});
+
+		if (error) throw error;
+
+		// Invalidate cache
+		progressCache = null;
+
+		// Reload and return
+		return await loadProgress();
+	} catch (error) {
+		console.error('Error recording module score:', error);
+		return await loadProgress();
+	}
 }
 
-export function recordModuleScore(levelId: AcademyLevelId, moduleId: string, scorePercent: number): AcademyProgressState {
-	const current = loadProgress();
-	const level = current.levels[levelId] ?? { modules: {} };
-	const existing = level.modules[moduleId] ?? { scorePercent: 0, isPassed: false };
-	level.modules[moduleId] = {
-		...existing,
-		scorePercent,
-		isPassed: scorePercent >= PASS_THRESHOLD,
-	};
-	current.levels[levelId] = level;
-	saveProgress(current);
-	return current;
+/**
+ * Mark a section video as watched
+ */
+export async function markSectionVideoWatched(levelId: AcademyLevelId, moduleId: string, sectionId: string): Promise<AcademyProgressState> {
+	const userId = await getCurrentUserId();
+	if (!userId) {
+		console.error('No user logged in');
+		return { levels: {} };
+	}
+
+	try {
+		// Get current progress
+		const { data: existing } = await academySupabase
+			.from('academy_progress')
+			.select('watched_sections')
+			.eq('user_id', userId)
+			.eq('level_id', levelId)
+			.eq('module_id', moduleId)
+			.single();
+
+		const watchedSections = new Set(existing?.watched_sections || []);
+		watchedSections.add(sectionId);
+
+		// Update progress
+		const { error } = await academySupabase
+			.from('academy_progress')
+			.upsert({
+				user_id: userId,
+				level_id: levelId,
+				module_id: moduleId,
+				watched_sections: Array.from(watchedSections),
+				updated_at: new Date().toISOString(),
+			}, {
+				onConflict: 'user_id,level_id,module_id',
+			});
+
+		if (error) throw error;
+
+		// Invalidate cache
+		progressCache = null;
+
+		// Dispatch progress update event
+		if (typeof window !== 'undefined') {
+			window.dispatchEvent(new CustomEvent('prepskul:progress-updated'));
+		}
+
+		return await loadProgress();
+	} catch (error) {
+		console.error('Error marking section as watched:', error);
+		return await loadProgress();
+	}
 }
 
-export function markSectionVideoWatched(levelId: AcademyLevelId, moduleId: string, sectionId: string): AcademyProgressState {
-	const current = loadProgress();
-	const level = current.levels[levelId] ?? { modules: {} };
-	const mod = level.modules[moduleId] ?? { scorePercent: 0, watchedSections: [], isPassed: false };
-	const watched = new Set(mod.watchedSections ?? []);
-	watched.add(sectionId);
-	mod.watchedSections = Array.from(watched);
-	level.modules[moduleId] = mod;
-	current.levels[levelId] = level;
-	saveProgress(current);
-	return current;
-}
-
-export function getModuleWatchedSections(levelId: AcademyLevelId, moduleId: string): string[] {
-	const state = loadProgress();
+/**
+ * Get watched sections for a module
+ */
+export async function getModuleWatchedSections(levelId: AcademyLevelId, moduleId: string): Promise<string[]> {
+	const state = await loadProgress();
 	return state.levels[levelId]?.modules?.[moduleId]?.watchedSections ?? [];
 }
 
-export function getModuleCompletionPercentFromWatched(levelId: AcademyLevelId, moduleId: string, totalVideoCount: number): number {
+/**
+ * Get module completion percent from watched sections
+ */
+export async function getModuleCompletionPercentFromWatched(levelId: AcademyLevelId, moduleId: string, totalVideoCount: number): Promise<number> {
 	if (!totalVideoCount || totalVideoCount <= 0) return 0;
-	const watched = getModuleWatchedSections(levelId, moduleId).length;
-	return Math.round((watched / totalVideoCount) * 100);
+	const watched = await getModuleWatchedSections(levelId, moduleId);
+	return Math.round((watched.length / totalVideoCount) * 100);
 }
 
-export function canAccessModule(levelId: AcademyLevelId, moduleOrderIds: string[], targetModuleId: string): boolean {
+/**
+ * Check if user can access a module (previous module must be passed)
+ */
+export async function canAccessModule(levelId: AcademyLevelId, moduleOrderIds: string[], targetModuleId: string): Promise<boolean> {
 	const idx = moduleOrderIds.indexOf(targetModuleId);
 	if (idx <= 0) return true; // First module always accessible
 	const prevId = moduleOrderIds[idx - 1];
-	const state = loadProgress();
+	const state = await loadProgress();
 	const passed = state.levels[levelId]?.modules?.[prevId]?.isPassed === true;
 	return passed;
 }
 
-export function isLevelCompleted(levelId: AcademyLevelId, moduleOrderIds: string[]): boolean {
-	const state = loadProgress();
+/**
+ * Check if level is completed (all modules passed)
+ */
+export async function isLevelCompleted(levelId: AcademyLevelId, moduleOrderIds: string[]): Promise<boolean> {
+	const state = await loadProgress();
 	const level = state.levels[levelId];
 	if (!level) return false;
 	return moduleOrderIds.every(id => level.modules[id]?.isPassed === true);
 }
 
-export function canAccessFinalQuiz(levelId: AcademyLevelId, moduleOrderIds: string[]): boolean {
-	return isLevelCompleted(levelId, moduleOrderIds);
+/**
+ * Check if user can access final quiz
+ */
+export async function canAccessFinalQuiz(levelId: AcademyLevelId, moduleOrderIds: string[]): Promise<boolean> {
+	return await isLevelCompleted(levelId, moduleOrderIds);
 }
 
-export function recordFinalQuizScore(levelId: AcademyLevelId, scorePercent: number): AcademyProgressState {
-	const current = loadProgress();
-	const level = current.levels[levelId] ?? { modules: {} };
-	level.finalQuiz = {
-		scorePercent,
-		isPassed: scorePercent >= PASS_THRESHOLD,
-		completedAt: new Date().toISOString(),
-	};
-	current.levels[levelId] = level;
-	saveProgress(current);
-	return current;
+/**
+ * Record final quiz score
+ */
+export async function recordFinalQuizScore(levelId: AcademyLevelId, scorePercent: number): Promise<AcademyProgressState> {
+	const userId = await getCurrentUserId();
+	if (!userId) {
+		console.error('No user logged in');
+		return { levels: {} };
+	}
+
+	const isPassed = scorePercent >= PASS_THRESHOLD;
+
+	try {
+		const { error } = await academySupabase
+			.from('academy_level_quizzes')
+			.upsert({
+				user_id: userId,
+				level_id: levelId,
+				score: scorePercent,
+				is_passed: isPassed,
+				completed_at: new Date().toISOString(),
+			}, {
+				onConflict: 'user_id,level_id',
+			});
+
+		if (error) throw error;
+
+		// Invalidate cache
+		progressCache = null;
+
+		return await loadProgress();
+	} catch (error) {
+		console.error('Error recording final quiz score:', error);
+		return await loadProgress();
+	}
 }
 
-export function getFinalQuizStatus(levelId: AcademyLevelId): { scorePercent: number; isPassed: boolean } | null {
-	const state = loadProgress();
+/**
+ * Get final quiz status
+ */
+export async function getFinalQuizStatus(levelId: AcademyLevelId): Promise<{ scorePercent: number; isPassed: boolean } | null> {
+	const state = await loadProgress();
 	const finalQuiz = state.levels[levelId]?.finalQuiz;
 	if (!finalQuiz) return null;
 	return {
@@ -128,58 +331,121 @@ export function getFinalQuizStatus(levelId: AcademyLevelId): { scorePercent: num
 	};
 }
 
-export function updateSectionProgress(levelId: AcademyLevelId, moduleId: string, sectionId: string, progress: number): AcademyProgressState {
-    const current = loadProgress();
-    const level = current.levels[levelId] ?? { modules: {} };
-    const mod = level.modules[moduleId] ?? { scorePercent: 0, watchedSections: [], sectionProgress: {}, isPassed: false };
-    
-    if (!mod.sectionProgress) mod.sectionProgress = {};
-    mod.sectionProgress[sectionId] = progress;
-    
-    if (progress === 100 && !mod.watchedSections?.includes(sectionId)) {
-        const watched = new Set(mod.watchedSections ?? []);
-        watched.add(sectionId);
-        mod.watchedSections = Array.from(watched);
-    }
-    
-    level.modules[moduleId] = mod;
-    current.levels[levelId] = level;
-    saveProgress(current);
+/**
+ * Update section progress
+ */
+export async function updateSectionProgress(levelId: AcademyLevelId, moduleId: string, sectionId: string, progress: number): Promise<AcademyProgressState> {
+	const userId = await getCurrentUserId();
+	if (!userId) {
+		console.error('No user logged in');
+		return { levels: {} };
+	}
 
-    // Dispatch progress update event
-    if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('prepskul:progress-updated'));
-    }
-    
-    return current;
+	try {
+		// Get current progress
+		const { data: existing } = await academySupabase
+			.from('academy_progress')
+			.select('section_progress, watched_sections')
+			.eq('user_id', userId)
+			.eq('level_id', levelId)
+			.eq('module_id', moduleId)
+			.single();
+
+		const sectionProgress: Record<string, number> = (existing?.section_progress as Record<string, number>) || {};
+		sectionProgress[sectionId] = progress;
+
+		const watchedSections = new Set(existing?.watched_sections || []);
+		if (progress === 100) {
+			watchedSections.add(sectionId);
+		}
+
+		// Update progress
+		const { error } = await academySupabase
+			.from('academy_progress')
+			.upsert({
+				user_id: userId,
+				level_id: levelId,
+				module_id: moduleId,
+				section_progress: sectionProgress,
+				watched_sections: Array.from(watchedSections),
+				updated_at: new Date().toISOString(),
+			}, {
+				onConflict: 'user_id,level_id,module_id',
+			});
+
+		if (error) throw error;
+
+		// Invalidate cache
+		progressCache = null;
+
+		// Dispatch progress update event
+		if (typeof window !== 'undefined') {
+			window.dispatchEvent(new CustomEvent('prepskul:progress-updated'));
+		}
+
+		return await loadProgress();
+	} catch (error) {
+		console.error('Error updating section progress:', error);
+		return await loadProgress();
+	}
 }
 
-export function getSectionProgress(levelId: AcademyLevelId, moduleId: string, sectionId: string): number {
-    const state = loadProgress();
-    return state.levels[levelId]?.modules?.[moduleId]?.sectionProgress?.[sectionId] ?? 0;
+/**
+ * Get section progress
+ */
+export async function getSectionProgress(levelId: AcademyLevelId, moduleId: string, sectionId: string): Promise<number> {
+	const state = await loadProgress();
+	return state.levels[levelId]?.modules?.[moduleId]?.sectionProgress?.[sectionId] ?? 0;
 }
 
-export function getModuleQuizStatus(levelId: AcademyLevelId, moduleId: string): boolean {
-    const state = loadProgress();
-    return state.levels[levelId]?.modules?.[moduleId]?.isPassed ?? false;
+/**
+ * Get module quiz status
+ */
+export async function getModuleQuizStatus(levelId: AcademyLevelId, moduleId: string): Promise<boolean> {
+	const state = await loadProgress();
+	return state.levels[levelId]?.modules?.[moduleId]?.isPassed ?? false;
 }
 
-export function issueCertificate(levelId: AcademyLevelId, tutorName: string): string {
-    const state = loadProgress();
-    const level = state.levels[levelId] ?? { modules: {} };
-    const code = generateVerificationCode(levelId, tutorName);
-	level.completedCertificate = {
-		issuedAt: new Date().toISOString(),
-		verificationCode: code,
-		tutorName,
-	};
-	state.levels[levelId] = level;
-	saveProgress(state);
-	return code;
+/**
+ * Issue certificate
+ */
+export async function issueCertificate(levelId: AcademyLevelId, tutorName: string): Promise<string> {
+	const userId = await getCurrentUserId();
+	if (!userId) {
+		console.error('No user logged in');
+		return '';
+	}
+
+	const code = generateVerificationCode(levelId, tutorName);
+
+	try {
+		const { error } = await academySupabase
+			.from('academy_certificates')
+			.insert({
+				user_id: userId,
+				level_id: levelId,
+				tutor_name: tutorName,
+				verification_code: code,
+				issued_at: new Date().toISOString(),
+			});
+
+		if (error) throw error;
+
+		// Invalidate cache
+		progressCache = null;
+
+		return code;
+	} catch (error) {
+		console.error('Error issuing certificate:', error);
+		return '';
+	}
 }
 
-export function getCertificate(levelId: AcademyLevelId) {
-	const state = loadProgress();
+/**
+ * Get certificate
+ */
+export async function getCertificate(levelId: AcademyLevelId) {
+	const state = await loadProgress();
 	return state.levels[levelId]?.completedCertificate;
 }
 
@@ -190,4 +456,10 @@ function generateVerificationCode(levelId: string, tutorName: string): string {
 	return `PS-${hash.toString(16).toUpperCase()}`;
 }
 
-
+/**
+ * Clear progress cache (useful after logout or when forcing refresh)
+ */
+export function clearProgressCache() {
+	progressCache = null;
+	cacheUserId = null;
+}

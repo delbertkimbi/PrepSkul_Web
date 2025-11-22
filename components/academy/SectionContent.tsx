@@ -1,8 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion";
-import { useEffect, useRef } from "react";
-import { markSectionVideoWatched } from "@/lib/academy-storage";
+import { useEffect, useRef, useState } from "react";
+import { markSectionVideoWatched, updateSectionProgress } from "@/lib/academy-storage";
 
 interface SectionContentProps {
   section: any;
@@ -29,6 +29,43 @@ export function SectionContent({ section, levelId, moduleId }: SectionContentPro
   const embedUrl = toYoutubeEmbed(section?.youtubeUrl || section?.videoUrl || section?.video || null);
   const iframeId = `yt-${moduleId ?? 'mod'}-${section?.id}`;
   const playerRef = useRef<any | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [hasTrackedScroll, setHasTrackedScroll] = useState(false);
+
+  // Track scroll progress for sections without videos
+  useEffect(() => {
+    if (!levelId || !moduleId || !section?.id || embedUrl || hasTrackedScroll) return;
+
+    const handleScroll = () => {
+      if (!contentRef.current) return;
+      
+      const element = contentRef.current;
+      const rect = element.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      
+      // Calculate how much of the content is visible
+      const visibleTop = Math.max(0, -rect.top);
+      const visibleBottom = Math.min(rect.height, windowHeight - rect.top);
+      const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+      const progress = Math.min(100, Math.round((visibleHeight / rect.height) * 100));
+      
+      // Update progress when user scrolls through content
+      if (progress > 0) {
+        updateSectionProgress(levelId as any, moduleId, section.id, progress);
+      }
+      
+      // Mark as complete when user has scrolled through most of the content
+      if (progress >= 80 && !hasTrackedScroll) {
+        setHasTrackedScroll(true);
+        updateSectionProgress(levelId as any, moduleId, section.id, 100);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [levelId, moduleId, section?.id, embedUrl, hasTrackedScroll]);
 
   useEffect(() => {
     if (!embedUrl) return;
@@ -66,12 +103,12 @@ export function SectionContent({ section, levelId, moduleId }: SectionContentPro
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         playerRef.current = new (win as any).YT.Player(iframeId, {
           events: {
-            onStateChange: (e: any) => {
+            onStateChange: async (e: any) => {
               // 0 = ended
               if (e.data === 0) {
                 try {
                     if (levelId && moduleId && section?.id) {
-                      markSectionVideoWatched(levelId as any, moduleId as any, section.id);
+                      await markSectionVideoWatched(levelId as any, moduleId as any, section.id);
                       try {
                         window.dispatchEvent(new CustomEvent('prepskul:progress-updated', { detail: { levelId, moduleId, sectionId: section.id } }));
                       } catch (e) {}
@@ -98,7 +135,14 @@ export function SectionContent({ section, levelId, moduleId }: SectionContentPro
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }} className="max-w-4xl mx-auto py-6 px-4">
-        <motion.div variants={cardVariants} initial="offscreen" whileInView="onscreen" viewport={{ once: true, amount: 0.2 }} className="mb-6">
+        <motion.div 
+          ref={contentRef}
+          variants={cardVariants} 
+          initial="offscreen" 
+          whileInView="onscreen" 
+          viewport={{ once: true, amount: 0.2 }} 
+          className="mb-6"
+        >
         <h2 className="text-2xl font-bold text-primary mb-3">{section?.title}</h2>
         {/* Use default foreground color inside prose to avoid very-light muted text blending into background */}
         <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: section?.html ?? "" }} />

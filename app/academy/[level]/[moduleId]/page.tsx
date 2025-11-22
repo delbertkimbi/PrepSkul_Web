@@ -20,8 +20,17 @@ export default function ModulePage() {
 	const [submitted, setSubmitted] = useState(false)
 
 	const order = useMemo(() => level?.modules.map(m => m.id) ?? [], [level])
+	const [accessible, setAccessible] = useState(true)
+	const [loading, setLoading] = useState(true)
 
-	const accessible = useMemo(() => canAccessModule(params.level, order, params.moduleId), [params.level, order, params.moduleId])
+	useEffect(() => {
+		const checkAccess = async () => {
+			const canAccess = await canAccessModule(params.level, order, params.moduleId)
+			setAccessible(canAccess)
+			setLoading(false)
+		}
+		checkAccess()
+	}, [params.level, order, params.moduleId])
 
 	if (!res || !level) return <div className="text-sm text-red-600">Module not found.</div>
 
@@ -37,16 +46,20 @@ export default function ModulePage() {
 		return Math.round((correct / module.quiz.length) * 100)
 	}, [selected, module.quiz])
 
-	const handleSubmit = useCallback(() => {
+	const handleSubmit = useCallback(async () => {
 		setSubmitted(true)
 		if (!allAnswered) return
 		const percent = scorePercent
-		recordModuleScore(params.level, params.moduleId, percent)
-			if (percent >= PASS_THRESHOLD) {
+		await recordModuleScore(params.level, params.moduleId, percent)
+		if (percent >= PASS_THRESHOLD) {
 			// Go back to level overview; next module will be unlocked
 			router.push(`/academy/${params.level}`)
 		}
 	}, [allAnswered, scorePercent, params.level, params.moduleId, router])
+
+	if (loading) {
+		return <div className="text-sm text-gray-600">Loading...</div>
+	}
 
 	if (!accessible) {
 		return (
