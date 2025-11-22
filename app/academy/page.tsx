@@ -223,114 +223,6 @@ export default function AcademyDashboard() {
 				</div>
 			</motion.section>
 
-			{/* Training Modules Section */}
-			<motion.section
-				initial={{ opacity: 0 }}
-				whileInView={{ opacity: 1 }}
-				viewport={{ once: true, margin: "-100px" }}
-				className="max-w-7xl mx-auto px-4 py-16 sm:py-20"
-			>
-				<motion.div
-					initial={{ opacity: 0, y: 30 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					viewport={{ once: true }}
-					className="text-center mb-12"
-				>
-					<h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 text-gray-900">
-						Explore <span className="text-[#2d3a6b]">Training Modules</span>
-					</h2>
-					<p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
-						Choose your path and start your journey to teaching excellence. Each level builds on the previous one, creating a comprehensive learning experience.
-					</p>
-				</motion.div>
-
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-					{ACADEMY_LEVELS.map((level, index) => {
-						const levelProgress = progress.levels[level.id];
-						const total = level.modules.length;
-						const passed = level.modules.filter(m => levelProgress?.modules?.[m.id]?.isPassed).length;
-						const percent = Math.round((passed / total) * 100);
-						const completed = percent >= PASS_THRESHOLD;
-						
-						return (
-							<motion.div
-								key={level.id}
-								initial={{ opacity: 0, y: 50, scale: 0.9 }}
-								whileInView={{ opacity: 1, y: 0, scale: 1 }}
-								viewport={{ once: true, margin: "-50px" }}
-								transition={{ 
-									delay: index * 0.15,
-									type: "spring",
-									stiffness: 100
-								}}
-								whileHover={{ 
-									scale: 1.05,
-									rotateY: 5,
-									transition: { duration: 0.3 }
-								}}
-							>
-								<Card className={`border-2 h-full flex flex-col ${completed ? 'border-[#2d3a6b] shadow-xl bg-gradient-to-br from-white to-blue-50/30' : 'border-gray-200 shadow-lg bg-white'} hover:shadow-2xl transition-all duration-300 hover:border-[#2d3a6b]/60`}>
-									<CardContent className="p-6 sm:p-8 space-y-6 flex flex-col flex-1">
-										<div className="flex items-start justify-between mb-2">
-											<div className="flex-1">
-												<h3 className="font-bold text-xl sm:text-2xl text-[#2d3a6b] mb-2">{level.name}</h3>
-												{completed && (
-													<motion.span 
-														initial={{ scale: 0 }}
-														whileInView={{ scale: 1 }}
-														viewport={{ once: true }}
-														className="inline-block bg-[#2d3a6b] text-white rounded-full px-3 py-1 text-xs font-bold shadow-md"
-													>
-														✓ Completed
-													</motion.span>
-												)}
-											</div>
-										</div>
-										
-										{/* User-friendly module description */}
-										<p className="text-sm sm:text-base text-gray-700 leading-relaxed flex-1">
-											{moduleDescriptions[level.id] || level.description}
-										</p>
-
-										{/* Progress Bar */}
-										<div className="space-y-2">
-											<div className="flex items-center justify-between text-xs font-medium">
-												<span className="text-[#2d3a6b]">Progress</span>
-												<span className="text-gray-600">{percent}% Complete</span>
-											</div>
-											<div className="h-3 w-full rounded-full bg-gray-200 overflow-hidden shadow-inner">
-												<motion.div 
-													initial={{ width: 0 }}
-													whileInView={{ width: `${percent}%` }}
-													viewport={{ once: true }}
-													transition={{ duration: 1, delay: index * 0.1 }}
-													className="h-full rounded-full bg-gradient-to-r from-[#2d3a6b] to-[#3d4a7b] shadow-sm"
-												/>
-											</div>
-										</div>
-
-										{/* Module Stats */}
-										<div className="flex items-center justify-between pt-2 border-t border-gray-200">
-											<span className="text-xs text-gray-600">
-												{total} {total === 1 ? 'Module' : 'Modules'}
-											</span>
-											<Button 
-												asChild 
-												size="sm" 
-												className="px-6 !rounded-full bg-[#2d3a6b] hover:bg-[#3d4a7b] text-white shadow-md hover:shadow-lg transition-all"
-											>
-												<a href={`/academy/${level.id}`}>
-													{completed ? 'Review' : 'Start Learning'}
-												</a>
-											</Button>
-										</div>
-									</CardContent>
-								</Card>
-							</motion.div>
-						)
-					})}
-				</div>
-			</motion.section>
 
 			{/* Call to Action Section */}
 			<motion.section
@@ -357,9 +249,10 @@ export default function AcademyDashboard() {
 						>
 							<Button 
 								size="lg" 
+								asChild
 								className="px-8 py-6 text-lg bg-white text-[#2d3a6b] hover:bg-blue-50 font-semibold rounded-full shadow-xl hover:shadow-2xl transition-all"
 							>
-								Get Started Now
+								<a href="/academy/signup">Get Started Now</a>
 							</Button>
 						</motion.div>
 					</motion.div>

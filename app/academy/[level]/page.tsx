@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { getLevelById, type AcademyLevelId } from "@/lib/academy-data"
 import { canAccessModule, loadProgress, isLevelCompleted, getFinalQuizStatus, getCertificate } from "@/lib/academy-storage"
@@ -10,12 +10,53 @@ import { Button } from "@/components/ui/button"
 export default function LevelOverviewPage() {
 	const params = useParams<{ level: AcademyLevelId }>()
 	const level = getLevelById(params.level)
-	const progress = loadProgress()
+	const [progress, setProgress] = useState<Awaited<ReturnType<typeof loadProgress>>>({ levels: {} })
+	const [allModulesCompleted, setAllModulesCompleted] = useState(false)
+	const [finalQuizStatus, setFinalQuizStatus] = useState<{ scorePercent: number; isPassed: boolean } | null>(null)
+	const [certificate, setCertificate] = useState<any>(null)
+	const [moduleAccess, setModuleAccess] = useState<Record<string, boolean>>({})
+	const [loading, setLoading] = useState(true)
 
 	const order = useMemo(() => level?.modules.map(m => m.id) ?? [], [level])
-	const allModulesCompleted = useMemo(() => isLevelCompleted(params.level, order), [params.level, order])
-	const finalQuizStatus = useMemo(() => getFinalQuizStatus(params.level), [params.level])
-	const certificate = useMemo(() => getCertificate(params.level), [params.level])
+
+	useEffect(() => {
+		const loadData = async () => {
+			const progressData = await loadProgress()
+			setProgress(progressData)
+			
+			const completed = await isLevelCompleted(params.level, order)
+			setAllModulesCompleted(completed)
+			
+			const quizStatus = await getFinalQuizStatus(params.level)
+			setFinalQuizStatus(quizStatus)
+			
+			const cert = await getCertificate(params.level)
+			setCertificate(cert)
+
+			// Check access for each module
+			const accessMap: Record<string, boolean> = {}
+			for (const module of level?.modules || []) {
+				accessMap[module.id] = await canAccessModule(params.level, order, module.id)
+			}
+			setModuleAccess(accessMap)
+			setLoading(false)
+
+			// Listen for progress updates
+			const handleProgressUpdate = async () => {
+				const updated = await loadProgress()
+				setProgress(updated)
+				const completed = await isLevelCompleted(params.level, order)
+				setAllModulesCompleted(completed)
+				const quizStatus = await getFinalQuizStatus(params.level)
+				setFinalQuizStatus(quizStatus)
+				const cert = await getCertificate(params.level)
+				setCertificate(cert)
+			}
+			window.addEventListener('prepskul:progress-updated', handleProgressUpdate)
+			return () => window.removeEventListener('prepskul:progress-updated', handleProgressUpdate)
+		}
+		loadData()
+	}, [params.level, order, level])
 
 	if (!level) {
 		return <div className="text-sm text-red-600">Level not found.</div>
@@ -53,7 +94,7 @@ export default function LevelOverviewPage() {
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
 				{level.modules.map((m, idx) => {
 					const status = progress.levels[level.id]?.modules?.[m.id];
-					const accessible = canAccessModule(level.id, order, m.id);
+					const accessible = moduleAccess[m.id] ?? (idx === 0); // First module always accessible
 					// Choose the module's first section id if present, otherwise fallback to legacy '1-1'
 					const firstSectionId = (m as any).sections?.[0]?.id ?? '1-1';
 					return (

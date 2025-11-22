@@ -2,7 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import AdminNav from '../../components/AdminNav';
-import TutorCard from '../components/TutorCard';
+import TutorCard from '@/app/admin/components/TutorCard';
 
 export default async function PendingTutors() {
   // Check authentication

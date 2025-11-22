@@ -86,7 +86,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Explain how nursery education fits within Cameroon's education system.</li>
@@ -178,7 +178,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tutor Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tutor Tip:</p>
 								<p class="text-sm text-muted-foreground">You teach these goals not only during lessons — but during snack time, play, and routines!</p>
 							</div>
 						</section>
@@ -212,7 +212,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-muted/50 p-4 rounded-lg my-4">
-								<p class="font-semibold mb-2 text-sm">🧠 Ratio of Play to Structure:</p>
+								<p class="font-semibold mb-2 text-sm"> Ratio of Play to Structure:</p>
 								<ul class="space-y-1 text-sm text-muted-foreground ml-4">
 									<li><strong>Nursery 1:</strong> 80% play / 20% structured</li>
 									<li><strong>Nursery 2:</strong> 50% play / 50% structured</li>
@@ -277,7 +277,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Integration Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Integration Tip:</p>
 								<p class="text-sm text-muted-foreground">You can combine areas — e.g., sing a counting song about animals → covers math + music + science.</p>
 							</div>
 						</section>
@@ -287,7 +287,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground font-semibold mb-3">You Are:</p>
 							<div class="space-y-3">
 								<div class="flex items-start gap-3">
-									<span class="text-2xl">🎨</span>
+									<span class="text-2xl"></span>
 									<div>
 										<p class="font-semibold">A Facilitator of Play:</p>
 										<p class="text-sm text-muted-foreground">Set up learning corners and guide discovery</p>
@@ -334,7 +334,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 
 						<section class="space-y-4 mt-6">
 							<div class="bg-primary/5 p-4 rounded-lg">
-								<h3 class="font-bold text-lg mb-3">🌼 Reflection Activity</h3>
+								<h3 class="font-bold text-lg mb-3"> Reflection Activity</h3>
 								<p class="text-muted-foreground mb-2">Think of a time you played with a small child.</p>
 								<p class="text-sm text-muted-foreground mb-2">What did they learn during that moment, even if it wasn't a "lesson"?</p>
 								<p class="text-xs text-primary/80 italic mb-3">(Example: Sharing, counting, color recognition, patience)</p>
@@ -381,7 +381,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 					{
 						id: '1-2',
 						title: '1.2 Objectives of Nursery Education (Ages 3–5)',
-						html: `<div class="space-y-4">
+						html: `<div class="space-y-6">
 							<p class="text-muted-foreground">According to the National Nursery Curriculum, early education targets six core developmental areas. These goals are taught not only during lessons but through routines, play, and daily interactions.</p>
 							<div class="overflow-x-auto my-4">
 								<table class="min-w-full border-collapse border border-primary/20">
@@ -427,30 +427,383 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tutor Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tutor Tip:</p>
 								<p class="text-sm text-muted-foreground">You teach these goals not only during lessons — but during snack time, play, and routines!</p>
 							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Understanding Each Developmental Area</h4>
+								<div class="space-y-4 text-sm">
+									<div>
+										<p class="font-medium mb-2">• Language & Communication</p>
+										<p class="text-muted-foreground ml-4 mb-2">This area focuses on developing children's ability to express themselves clearly, understand instructions, and communicate their needs. Tutors should create opportunities for children to speak, listen, and engage in conversations throughout the day.</p>
+										<ul class="list-disc list-inside space-y-1 text-muted-foreground ml-8">
+											<li>Encourage children to describe what they see, hear, and feel</li>
+											<li>Read stories aloud and ask open-ended questions</li>
+											<li>Model correct grammar and pronunciation naturally</li>
+											<li>Use songs and rhymes to develop phonological awareness</li>
+										</ul>
+									</div>
+									<div>
+										<p class="font-medium mb-2">• Social & Emotional Growth</p>
+										<p class="text-muted-foreground ml-4 mb-2">Children learn to interact with others, manage their emotions, and develop empathy. Activities like group play, sharing toys, and role-playing help children understand social norms and emotional regulation.</p>
+										<ul class="list-disc list-inside space-y-1 text-muted-foreground ml-8">
+											<li>Create opportunities for cooperative play and teamwork</li>
+											<li>Help children identify and express their emotions appropriately</li>
+											<li>Model conflict resolution and problem-solving strategies</li>
+											<li>Celebrate acts of kindness and sharing</li>
+										</ul>
+									</div>
+									<div>
+										<p class="font-medium mb-2">• Cognitive Development</p>
+										<p class="text-muted-foreground ml-4 mb-2">This involves developing thinking skills, problem-solving abilities, and understanding cause and effect. Encourage children to ask questions, explore their environment, and make connections between ideas.</p>
+										<ul class="list-disc list-inside space-y-1 text-muted-foreground ml-8">
+											<li>Provide puzzles, sorting activities, and matching games</li>
+											<li>Ask "what if" and "why" questions to stimulate thinking</li>
+											<li>Encourage experimentation and trial-and-error learning</li>
+											<li>Help children make predictions and observe outcomes</li>
+										</ul>
+									</div>
+									<div>
+										<p class="font-medium mb-2">• Physical Development</p>
+										<p class="text-muted-foreground ml-4 mb-2">Both fine motor skills (using small muscles for writing, cutting) and gross motor skills (running, jumping, balancing) are essential. Provide activities that challenge both types of movement.</p>
+										<ul class="list-disc list-inside space-y-1 text-muted-foreground ml-8">
+											<li>Fine motor: Drawing, cutting, threading beads, building with blocks</li>
+											<li>Gross motor: Running, jumping, climbing, dancing, ball games</li>
+											<li>Balance activities: Walking on lines, standing on one foot</li>
+											<li>Coordination: Catching, throwing, kicking balls</li>
+										</ul>
+									</div>
+									<div>
+										<p class="font-medium mb-2">• Creativity & Aesthetics</p>
+										<p class="text-muted-foreground ml-4 mb-2">Allow children to express themselves through art, music, dance, and drama. These activities foster imagination and help children communicate ideas they may not yet express verbally.</p>
+										<ul class="list-disc list-inside space-y-1 text-muted-foreground ml-8">
+											<li>Provide various art materials and let children create freely</li>
+											<li>Play different types of music and encourage movement</li>
+											<li>Use dramatic play and role-playing scenarios</li>
+											<li>Celebrate unique expressions and avoid "cookie-cutter" art</li>
+										</ul>
+									</div>
+									<div>
+										<p class="font-medium mb-2">• Moral & Cultural Values</p>
+										<p class="text-muted-foreground ml-4 mb-2">Teach respect, honesty, kindness, and appreciation for cultural diversity. Use stories, songs, and daily interactions to reinforce positive values and cultural awareness.</p>
+										<ul class="list-disc list-inside space-y-1 text-muted-foreground ml-8">
+											<li>Share stories from different cultures and traditions</li>
+											<li>Practice greetings and phrases in local languages</li>
+											<li>Model respectful behavior and kindness in daily interactions</li>
+											<li>Discuss right and wrong through age-appropriate scenarios</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Practical Application</h4>
+								<p class="text-sm text-muted-foreground mb-3">When planning activities, consider how each activity addresses multiple developmental areas simultaneously:</p>
+								<div class="space-y-3">
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Example 1: Nature Walk</p>
+										<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+											<li>Physical: Walking, running, climbing</li>
+											<li>Language: Describing what they see and hear</li>
+											<li>Cognitive: Observing, questioning, categorizing</li>
+											<li>Environmental: Learning about plants, animals, weather</li>
+										</ul>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Example 2: Storytelling with Puppets</p>
+										<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+											<li>Language: Listening, speaking, vocabulary building</li>
+											<li>Social: Taking turns, sharing, empathy</li>
+											<li>Creativity: Using imagination, role-playing</li>
+											<li>Emotional: Identifying with characters, understanding feelings</li>
+										</ul>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Example 3: Sorting and Counting</p>
+										<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+											<li>Cognitive: Problem-solving, categorization, number concepts</li>
+											<li>Fine Motor: Picking up, moving, placing objects</li>
+											<li>Language: Naming objects, describing attributes</li>
+											<li>Social: Working together, sharing materials</li>
+										</ul>
+									</div>
+								</div>
+							</div>
 						</div>`,
-						youtubeUrl: 'https://www.youtube.com/watch?v=Tg9oZYOvg4s',
-						caption: 'Play-based Learning Explained – The Teaching Channel',
+						youtubeUrl: '',
+						caption: '',
 					},
                     {
                         id: '1-3',
                         title: '1.3 Stages of Nursery Learning in Cameroon',
-                        html: `<p class="text-muted-foreground">Nursery 1 (3–4): 80% play / 20% structure. Nursery 2 (4–5): 50% play / 50% structure. Repetition through fun builds understanding.</p>`,
-                        youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
-                        caption: 'Stages of Child Development – Oxford TEFL',
+                        html: `<div class="space-y-6">
+							<p class="text-muted-foreground">Nursery education in Cameroon is structured into two distinct stages, each designed to meet the developmental needs of children at different ages. Understanding these stages helps tutors adapt their teaching approach appropriately.</p>
+							
+							<div class="overflow-x-auto my-4">
+								<table class="min-w-full border-collapse border border-primary/20">
+									<thead class="bg-primary/10">
+										<tr>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Level</th>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Age Range</th>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Focus</th>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Examples</th>
+										</tr>
+									</thead>
+									<tbody class="text-sm">
+										<tr>
+											<td class="border border-primary/20 p-3 font-medium">Nursery 1</td>
+											<td class="border border-primary/20 p-3">3–4 years</td>
+											<td class="border border-primary/20 p-3">Sensory exploration and self-awareness</td>
+											<td class="border border-primary/20 p-3">Name body parts, play color games, simple songs</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-3 font-medium">Nursery 2</td>
+											<td class="border border-primary/20 p-3">4–5 years</td>
+											<td class="border border-primary/20 p-3">Communication and cooperation</td>
+											<td class="border border-primary/20 p-3">Speak in short sentences, count to 10, share toys</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3 text-lg">Ratio of Play to Structure</h4>
+								<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-sm mb-1">Nursery 1 (Ages 3–4)</p>
+										<p class="text-sm text-muted-foreground">80% play / 20% structured activities</p>
+										<p class="text-xs text-muted-foreground mt-2">Children at this age learn primarily through exploration, sensory experiences, and free play. Structured activities should be very short (3–5 minutes) and highly engaging.</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-sm mb-1">Nursery 2 (Ages 4–5)</p>
+										<p class="text-sm text-muted-foreground">50% play / 50% structured activities</p>
+										<p class="text-xs text-muted-foreground mt-2">As children mature, they can handle longer structured activities (8–10 minutes) while still needing plenty of play time for social and creative development.</p>
+									</div>
+								</div>
+								<div class="mt-4 pt-4 border-t border-primary/20">
+									<p class="text-sm font-medium mb-2">→ Why This Balance Matters:</p>
+									<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+										<li>Play allows children to explore, experiment, and make their own discoveries</li>
+										<li>Structured activities introduce new concepts and skills systematically</li>
+										<li>The right balance prevents boredom (too much structure) or lack of learning (too much free play)</li>
+										<li>Children need both guided learning and independent exploration</li>
+									</ul>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">Key Developmental Milestones</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">Nursery 1 Milestones:</p>
+										<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+											<li>Recognizes and names basic colors and shapes</li>
+											<li>Follows simple one-step instructions</li>
+											<li>Engages in parallel play (plays alongside others)</li>
+											<li>Uses 2–3 word phrases to express needs</li>
+											<li>Shows interest in books and pictures</li>
+										</ul>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">Nursery 2 Milestones:</p>
+										<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+											<li>Counts objects up to 10</li>
+											<li>Engages in cooperative play with peers</li>
+											<li>Uses complete sentences (4–5 words)</li>
+											<li>Recognizes some letters and numbers</li>
+											<li>Shows empathy and helps others</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500 my-4">
+								<h4 class="font-semibold mb-2 text-blue-700 dark:text-blue-400">→ Teaching Strategy</h4>
+								<p class="text-sm text-muted-foreground mb-2">Repetition through fun builds understanding. Children need to encounter the same concepts multiple times in different contexts:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Monday: Count blocks during play</li>
+									<li>Wednesday: Count steps while walking</li>
+									<li>Friday: Count fruits during snack time</li>
+								</ul>
+								<p class="text-sm text-muted-foreground mt-2 italic">This natural repetition helps concepts stick without feeling like "drill work."</p>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Transitioning Between Stages</h4>
+								<p class="text-sm text-muted-foreground mb-3">As children progress from Nursery 1 to Nursery 2, you'll notice gradual changes in their abilities and needs:</p>
+								<div class="space-y-3">
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-2">• Signs a Child is Ready for More Structure:</p>
+										<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+											<li>Sits and focuses for 5+ minutes on preferred activities</li>
+											<li>Follows multi-step instructions (2–3 steps)</li>
+											<li>Shows interest in letters, numbers, and writing</li>
+											<li>Engages in cooperative play with clear rules</li>
+										</ul>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-2">• When to Maintain More Play Time:</p>
+										<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+											<li>Child shows signs of stress or frustration with structured tasks</li>
+											<li>Difficulty following instructions or staying focused</li>
+											<li>Prefers physical movement and exploration</li>
+											<li>Needs more time to develop social skills through play</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						</div>`,
+                        youtubeUrl: '',
+                        caption: '',
                     },
                     {
                         id: '1-4',
                         title: '1.4 Key Components of the Nursery Curriculum',
-                        html: `<p class="text-muted-foreground">Blend language, number work, environmental studies, creative arts, psychomotor skills, and moral education using integrated activities.</p>`,
-                        youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
-                        caption: 'Creative Learning in Early Years – Cambridge English',
+                        html: `<div class="space-y-6">
+							<p class="text-muted-foreground">The Cameroon Nursery Curriculum is designed around six key learning areas that work together to support holistic child development. Effective tutors integrate these areas throughout the day rather than teaching them in isolation.</p>
+							
+							<div class="overflow-x-auto my-4">
+								<table class="min-w-full border-collapse border border-primary/20">
+									<thead class="bg-primary/10">
+										<tr>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Learning Area</th>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Goals</th>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Sample Activities</th>
+											<th class="border border-primary/20 p-3 text-left text-sm font-semibold">Simple Assessment</th>
+										</tr>
+									</thead>
+									<tbody class="text-sm">
+										<tr>
+											<td class="border border-primary/20 p-3 font-medium">Language Development</td>
+											<td class="border border-primary/20 p-3">Improve speaking, listening, and early literacy</td>
+											<td class="border border-primary/20 p-3">Songs, stories, "show and tell", picture discussions</td>
+											<td class="border border-primary/20 p-3">Can name 5 animals, follows 2-step instructions</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-3 font-medium">Number Work</td>
+											<td class="border border-primary/20 p-3">Recognize and count objects 1–10</td>
+											<td class="border border-primary/20 p-3">Counting beans, shape sorting, number songs</td>
+											<td class="border border-primary/20 p-3">Match 3 blocks to numeral 3</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-3 font-medium">Environmental Studies</td>
+											<td class="border border-primary/20 p-3">Understand family, community, nature</td>
+											<td class="border border-primary/20 p-3">Nature walk, role-play "market", family tree</td>
+											<td class="border border-primary/20 p-3">Draw "my house", names family members</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-3 font-medium">Creative Arts & Music</td>
+											<td class="border border-primary/20 p-3">Express imagination through art, music, drama</td>
+											<td class="border border-primary/20 p-3">Painting, dance, singing, puppet shows</td>
+											<td class="border border-primary/20 p-3">Make bead patterns, sings along to songs</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-3 font-medium">Physical & Psychomotor Skills</td>
+											<td class="border border-primary/20 p-3">Build coordination and control</td>
+											<td class="border border-primary/20 p-3">Obstacle course, cutting, jumping, balancing</td>
+											<td class="border border-primary/20 p-3">Catch a ball 3 times, cuts along a line</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-3 font-medium">Moral & Social Education</td>
+											<td class="border border-primary/20 p-3">Encourage kindness and respect</td>
+											<td class="border border-primary/20 p-3">Group games, "thank you" practice, sharing circles</td>
+											<td class="border border-primary/20 p-3">Shares toys willingly, says please and thank you</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">→ Integration Example: "The Market Day"</h4>
+								<p class="text-sm text-muted-foreground mb-3">A well-planned activity can cover multiple learning areas simultaneously:</p>
+								<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-xs mb-1">Language Development</p>
+										<p class="text-xs text-muted-foreground">Children name fruits and vegetables, practice "I want..." phrases</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-xs mb-1">Number Work</p>
+										<p class="text-xs text-muted-foreground">Count items, sort by color or size, practice "How many?"</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-xs mb-1">Environmental Studies</p>
+										<p class="text-xs text-muted-foreground">Learn about local foods, community roles, buying and selling</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-xs mb-1">Creative Arts</p>
+										<p class="text-xs text-muted-foreground">Draw market scenes, create fruit collages, sing market songs</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-xs mb-1">Physical Skills</p>
+										<p class="text-xs text-muted-foreground">Carry baskets, arrange items, practice fine motor with play money</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-semibold text-xs mb-1">Moral & Social</p>
+										<p class="text-xs text-muted-foreground">Take turns, share resources, practice polite interactions</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500 my-4">
+								<h4 class="font-semibold mb-2 text-green-700 dark:text-green-400">→ Integration Tip</h4>
+								<p class="text-sm text-muted-foreground">You can combine areas — e.g., sing a counting song about animals → covers math + music + science. The key is to look for natural connections rather than forcing integration.</p>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">Daily Integration Checklist</h4>
+								<p class="text-sm text-muted-foreground mb-2">A typical day should touch on all six areas:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>• Language: Story time, conversations, songs</li>
+									<li>• Number Work: Counting during transitions, number games</li>
+									<li>• Environmental Studies: Discuss weather, community helpers</li>
+									<li>• Creative Arts: Drawing, music, movement activities</li>
+									<li>• Physical Skills: Outdoor play, fine motor activities</li>
+									<li>• Moral & Social: Group activities, sharing, kindness practices</li>
+								</ul>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Planning Integrated Activities</h4>
+								<p class="text-sm text-muted-foreground mb-3">Effective integration requires thoughtful planning. Here's how to create activities that naturally connect multiple learning areas:</p>
+								<div class="space-y-3">
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-2">• Start with a Theme or Real-Life Context</p>
+										<p class="text-xs text-muted-foreground">Choose themes that children can relate to: "Going to the Market," "My Family," "Animals Around Us," "Weather and Seasons." These themes provide natural opportunities to integrate multiple learning areas.</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-2">• Identify Natural Connections</p>
+										<p class="text-xs text-muted-foreground">Look for ways learning areas naturally overlap. For example, when learning about animals, children can count animals (math), describe them (language), draw them (art), move like them (physical), and learn about their habitats (environmental studies).</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-2">• Use Play as the Foundation</p>
+										<p class="text-xs text-muted-foreground">Play-based activities naturally integrate multiple areas. A simple "cooking" activity involves measuring (math), following recipes (language), discussing ingredients (environmental studies), and working together (social skills).</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-2">• Rotate Focus Areas</p>
+										<p class="text-xs text-muted-foreground">While integrating, ensure each learning area gets dedicated attention throughout the week. Some days may emphasize language more, while others focus on physical development or creative arts.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Assessment Through Observation</h4>
+								<p class="text-sm text-muted-foreground mb-3">Since activities integrate multiple areas, assessment should also be integrated. Observe children during natural activities:</p>
+								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
+									<li>• During play: Note how children use language, solve problems, interact with peers</li>
+									<li>• During routines: Observe counting, following instructions, helping others</li>
+									<li>• During creative activities: Assess fine motor skills, imagination, self-expression</li>
+									<li>• During group activities: Evaluate social skills, cooperation, emotional regulation</li>
+								</ul>
+								<p class="text-sm text-muted-foreground mt-3">→ Remember: Assessment doesn't always require formal tests. Daily observations provide rich information about children's development across all learning areas.</p>
+							</div>
+						</div>`,
+                        youtubeUrl: '',
+                        caption: '',
                     },
                     {
                         id: '1-5',
-                        title: '1.5 The Tutor’s Role in Early Learning',
+                        title: '1.5 The Tutor\'s Role in Early Learning',
                         html: `<p class="text-muted-foreground">Be a facilitator of play, an observer, an emotional anchor, a language model, and a bridge to parents. First relationship, then learning.</p>`,
                         youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
                         caption: 'The Role of the Teacher in Early Childhood – UNICEF Education',
@@ -546,7 +899,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <p class="text-muted-foreground mb-6">(Duration: ~30–40 minutes)</p>
 
                 <div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-                    <h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+                    <h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
                     <p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Explain how children aged 3–5 think, feel, and learn according to developmental theories.</li>
@@ -624,7 +977,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h3 class="text-xl font-semibold text-primary/90">(Erikson's "Initiative vs Guilt" Stage)</h3>
 
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">🌼 Erik Erikson's Theory</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Erik Erikson's Theory</h4>
                     <p class="text-muted-foreground mb-4">
                         Erikson believed children pass through stages of social-emotional growth. Ages 3–5: <strong>Initiative vs Guilt</strong>.
                         Children start to take <strong>initiative</strong>: lead games, imagine roles, try new tasks. If over-controlled or criticized &rarr; they feel <strong>guilty</strong> or shy.
@@ -668,10 +1021,10 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <div class="bg-primary/5 p-4 rounded-lg mt-6">
                     <h4 class="font-semibold text-lg mb-3">Tutor Strategies</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
-                        <li>✅ <strong>Acknowledge emotions</strong>: "You're angry — that's okay. Let's breathe."</li>
-                        <li>✅ <strong>Praise effort</strong>, not only success: "You tried zipping your bag — great job!"</li>
-                        <li>✅ <strong>Encourage leadership</strong>: "Who can help pass crayons?"</li>
-                        <li>✅ Use emotion cards to teach feeling words.</li>
+                        <li>• <strong>Acknowledge emotions</strong>: "You're angry — that's okay. Let's breathe."</li>
+                        <li>• <strong>Praise effort</strong>, not only success: "You tried zipping your bag — great job!"</li>
+                        <li>• <strong>Encourage leadership</strong>: "Who can help pass crayons?"</li>
+                        <li>• Use emotion cards to teach feeling words.</li>
                     </ul>
                 </div>
             </div>
@@ -741,7 +1094,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                         <li><strong>Pretend Play:</strong> empathy &amp; language ("doctor," "market")</li>
                         <li><strong>Sensory Play:</strong> science &amp; motor control (sand, water, dough)</li>
                     </ul>
-                    <p class="mt-4 text-sm font-semibold text-primary">💡 Tutor Reminder: Never say "just playing" — say <strong>"learning through play."</strong></p>
+                    <p class="mt-4 text-sm font-semibold text-primary">→ Tutor Reminder: Never say "just playing" — say <strong>"learning through play."</strong></p>
                 </div>
             </div>
 
@@ -786,11 +1139,11 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <div class="bg-primary/5 p-4 rounded-lg mt-6">
                     <h4 class="font-semibold text-lg mb-3">🌈 Positive Management Strategies</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
-                        <li>✅ Keep lessons <strong>short</strong> (5–7 minutes per activity)</li>
-                        <li>✅ Use <strong>transitions</strong>: "Clean up, clean up&hellip;" song</li>
-                        <li>✅ Give <strong>choices</strong>: "Red cup or blue cup?"</li>
-                        <li>✅ Display a <strong>visual routine chart</strong> (with pictures)</li>
-                        <li>✅ Create a <strong>"calm corner"</strong> with soft toys or books</li>
+                        <li>• Keep lessons <strong>short</strong> (5–7 minutes per activity)</li>
+                        <li>• Use <strong>transitions</strong>: "Clean up, clean up&hellip;" song</li>
+                        <li>• Give <strong>choices</strong>: "Red cup or blue cup?"</li>
+                        <li>• Display a <strong>visual routine chart</strong> (with pictures)</li>
+                        <li>• Create a <strong>"calm corner"</strong> with soft toys or books</li>
                     </ul>
                     <p class="mt-4 text-sm font-semibold text-red-600">🚫 Avoid shouting, hitting, or long time-outs.</p>
                     <p class="text-sm text-muted-foreground">Use <strong>1 minute of calm for every year of age</strong> (max 5 min).</p>
@@ -882,21 +1235,121 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground">To counter Centration, show a child two differently shaped containers with the same amount of water, and ask them to compare after pouring the water back into the original container. This helps teach Conservation.</p>
                 </div>
             </div>`,
-            youtubeUrl: 'https://youtu.be/8I2gL8y8s3Y',
-            caption: 'Piaget’s Stages of Cognitive Development – Khan Academy',
+            youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+            caption: 'Piaget\'s Stages of Cognitive Development – Khan Academy',
         },
         {
             id: 'n2s2',
             title: '2.2 Emotional and Social Growth',
-            html: `<div class="space-y-4">
+            html: `<div class="space-y-6">
                 <p class="text-muted-foreground">Ages 3–5 fall into Erikson's Initiative vs. Guilt stage. Children start to plan activities and take charge. Tutors should encourage this initiative by giving choices and praising effort, or else the child may feel guilt about independent actions.</p>
-                <ul class="list-disc list-inside space-y-1 ml-4 text-sm text-muted-foreground">
-                    <li>Empathy emerges, so encourage them to notice friends' feelings.</li>
-                    <li>Play progresses from solitary/parallel to cooperative play.</li>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3 text-lg">🌱 Understanding Initiative vs. Guilt</h4>
+                    <p class="text-sm text-muted-foreground mb-3">During this stage, children develop a sense of purpose and begin to take initiative in their activities. They want to lead, create, and explore independently.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1 text-green-700">• Encouraging Initiative</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-2">
+                                <li>Give choices: "Red or blue crayon?"</li>
+                                <li>Let them lead activities: "Who wants to pass out papers?"</li>
+                                <li>Praise effort: "You tried hard to zip your bag!"</li>
+                                <li>Allow mistakes: "That's okay, let's try again."</li>
                 </ul>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1 text-red-700">→ Avoiding Guilt</p>
+                            <ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-2">
+                                <li>Don't over-control: "No, do it my way!"</li>
+                                <li>Avoid constant criticism: "That's wrong again!"</li>
+                                <li>Don't shame mistakes: "You're so clumsy!"</li>
+                                <li>Avoid comparison: "Why can't you be like Awa?"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto my-4">
+                    <table class="min-w-full border-collapse border border-primary/20">
+                        <thead class="bg-primary/10">
+                            <tr>
+                                <th class="border border-primary/20 p-3 text-left text-sm font-semibold">Social Skill</th>
+                                <th class="border border-primary/20 p-3 text-left text-sm font-semibold">Age 3 Milestone</th>
+                                <th class="border border-primary/20 p-3 text-left text-sm font-semibold">Age 4 Milestone</th>
+                                <th class="border border-primary/20 p-3 text-left text-sm font-semibold">Age 5 Milestone</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr>
+                                <td class="border border-primary/20 p-3 font-medium">Empathy</td>
+                                <td class="border border-primary/20 p-3">Recognizes basic emotions (happy, sad)</td>
+                                <td class="border border-primary/20 p-3">Comforts others when upset</td>
+                                <td class="border border-primary/20 p-3">Understands others' perspectives</td>
+                            </tr>
+                            <tr class="bg-muted/30">
+                                <td class="border border-primary/20 p-3 font-medium">Friendship</td>
+                                <td class="border border-primary/20 p-3">Plays alongside others (parallel play)</td>
+                                <td class="border border-primary/20 p-3">Has preferred playmates</td>
+                                <td class="border border-primary/20 p-3">Forms close friendships, shares secrets</td>
+                            </tr>
+                            <tr>
+                                <td class="border border-primary/20 p-3 font-medium">Sharing</td>
+                                <td class="border border-primary/20 p-3">Struggles with sharing, needs reminders</td>
+                                <td class="border border-primary/20 p-3">Shares with encouragement</td>
+                                <td class="border border-primary/20 p-3">Shares willingly, takes turns</td>
+                            </tr>
+                            <tr class="bg-muted/30">
+                                <td class="border border-primary/20 p-3 font-medium">Conflict Resolution</td>
+                                <td class="border border-primary/20 p-3">Cries or hits when upset</td>
+                                <td class="border border-primary/20 p-3">Uses words: "That's mine!"</td>
+                                <td class="border border-primary/20 p-3">Negotiates: "Can I have a turn?"</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border-l-4 border-blue-500 my-4">
+                    <h4 class="font-semibold mb-2 text-blue-700 dark:text-blue-400">→ Teaching Empathy</h4>
+                    <p class="text-sm text-muted-foreground mb-2">Empathy emerges naturally, but tutors can nurture it:</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Name emotions: "Awa looks sad. How can we help?"</li>
+                        <li>Read stories about feelings: "The boy in the story felt scared."</li>
+                        <li>Model empathy: "I see you're frustrated. Let's take a break."</li>
+                        <li>Use emotion cards: Show pictures of happy, sad, angry faces</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-muted/50 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-2">🎭 Play Progression</h4>
+                    <p class="text-sm text-muted-foreground mb-2">Children's play evolves as they develop socially:</p>
+                    <div class="space-y-2">
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1">Solitary Play (Age 2–3)</p>
+                            <p class="text-xs text-muted-foreground">Plays alone, doesn't interact with others. This is normal and healthy!</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1">Parallel Play (Age 3–4)</p>
+                            <p class="text-xs text-muted-foreground">Plays beside others but not with them. Two children drawing separately at the same table.</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1">Cooperative Play (Age 4–5)</p>
+                            <p class="text-xs text-muted-foreground">Plays together with shared goals. Building a tower together, playing "house" with roles.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500 my-4">
+                    <h4 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Practical Activities</h4>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li><strong>Emotion Charades:</strong> Act out emotions, children guess</li>
+                        <li><strong>Friendship Circle:</strong> Share one thing you like about a friend</li>
+                        <li><strong>Helping Hands:</strong> Assign classroom jobs (line leader, helper)</li>
+                        <li><strong>Role-Play Scenarios:</strong> "What if someone is sad? How can we help?"</li>
+                    </ul>
+                </div>
             </div>`,
-            youtubeUrl: 'https://youtu.be/3z-y3Vp8o_4',
-            caption: 'Erikson’s Psychosocial Stages Explained – Simply Psychology',
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n2s3',
@@ -904,8 +1357,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Play is the primary mode of learning. Tutors must guide constructive, fantasy, and cooperative play to build skills. For example, playing "market" develops math (counting money/items) and social skills (negotiating). Always refer to it as "learning through play."</p>
             </div>`,
-            youtubeUrl: 'https://youtu.be/zS1r_C13zE4',
-            caption: 'The Importance of Play in Early Learning – TEDx',
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n2s4',
@@ -913,8 +1366,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Average attention span for a 4-year-old is 5–8 minutes. Behavior is often communication, not defiance. Use positive strategies like short activities, visual schedules, firm-but-kind redirection, and natural consequences instead of punishment.</p>
             </div>`,
-            youtubeUrl: 'https://youtu.be/j-3Qp50aW40',
-            caption: 'Positive Behavior Management in Early Childhood – NAEYC',
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n2s5',
@@ -922,7 +1375,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Tutors observe and record, but do not diagnose. Look for red flags in speech (few words), motor skills (can't hold a crayon), or severe behavior problems (daily long tantrums). Report concerns kindly to parents and the school administration for professional follow-up.</p>
             </div>`,
-            youtubeUrl: 'https://www.youtube.com/watch?v=S8p5272L-2w',
+            youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
             caption: 'Early Signs of Developmental Delays – Child Mind Institute',
         },
     ],
@@ -1016,7 +1469,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <p class="text-muted-foreground mb-6">(Duration: Variable — depends on practice tasks)</p>
 
                 <div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-                    <h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+                    <h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
                     <p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Explain the purpose of a scheme of work and lesson plan within the national nursery curriculum.</li>
@@ -1032,7 +1485,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h2 class="text-2xl font-bold text-primary">3.1 What is a Scheme of Work?</h2>
                 <p class="text-muted-foreground">A Scheme of Work is your term roadmap—it ensures you follow the national syllabus systematically without skipping essential topics.</p>
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">💡 Key Features</h4>
+                    <h4 class="font-semibold text-lg mb-3">→ Key Features</h4>
                     <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
                         <li>Derived from the MINEDUB Nursery Syllabus.</li>
                         <li>Covers one term (10–12 weeks) at a time.</li>
@@ -1128,43 +1581,234 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             id: 'n3s1',
             title: '3.1 What is a Scheme of Work?',
             html: `<div class="space-y-4"><p class="text-muted-foreground">A Scheme of Work is a term-long roadmap that ensures syllabus coverage through weekly themes and clear learning outcomes. Divide the term into 10–12 weeks, each with a theme, subtheme and activities.</p></div>`,
-            youtubeUrl: 'https://www.youtube.com/watch?v=TeacherToolkit',
+            youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
             caption: 'Understanding Scheme of Work – TeacherToolkit',
         },
         {
             id: 'n3s2',
             title: '3.2 The Daily Lesson Plan',
-            html: `<div class="space-y-4"><p class="text-muted-foreground">A lesson plan converts the scheme into a daily guide: objective, materials, introduction, main activity, assessment and wrap-up. Keep activities short and hands-on.</p></div>`,
-            youtubeUrl: 'https://www.youtube.com/watch?v=BritishCouncil',
-            caption: 'Lesson Planning for Early Years – British Council TEFL',
+            html: `<div class="space-y-6">
+                <p class="text-muted-foreground">A lesson plan converts the scheme into a daily guide: objective, materials, introduction, main activity, assessment and wrap-up. Keep activities short and hands-on.</p>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">Essential Components of a Lesson Plan</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Learning Objective</p>
+                            <p class="text-sm text-muted-foreground ml-4">Clearly state what children will learn or be able to do by the end of the lesson. Make it specific and age-appropriate. Example: "Children will be able to count objects from 1 to 5."</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Materials Needed</p>
+                            <p class="text-sm text-muted-foreground ml-4">List all materials required: books, toys, art supplies, manipulatives, etc. Prepare materials in advance to avoid disruptions during the lesson.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Introduction (5 minutes)</p>
+                            <p class="text-sm text-muted-foreground ml-4">Capture children's attention with a song, story, or engaging question. Connect the lesson to children's prior knowledge or experiences.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Main Activity (10-15 minutes)</p>
+                            <p class="text-sm text-muted-foreground ml-4">The core learning experience. Keep it hands-on, interactive, and engaging. Break into smaller steps if needed.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Assessment</p>
+                            <p class="text-sm text-muted-foreground ml-4">Observe children during the activity. Note who understands the concept and who needs additional support. Use simple checklists or anecdotal notes.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Wrap-up (3-5 minutes)</p>
+                            <p class="text-sm text-muted-foreground ml-4">Review what was learned, allow children to share their work, and transition smoothly to the next activity.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-muted/50 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-2">→ Planning Tips</h4>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Keep activities short (5-10 minutes for Nursery 1, 10-15 minutes for Nursery 2)</li>
+                        <li>Include movement and hands-on experiences</li>
+                        <li>Plan for transitions between activities</li>
+                        <li>Have backup activities ready in case something doesn't work</li>
+                        <li>Be flexible and adjust based on children's responses</li>
+                    </ul>
+                </div>
+            </div>`,
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n3s3',
             title: '3.3 Working with National Syllabus Themes',
-            html: `<div class="space-y-4"><p class="text-muted-foreground">Use themes to anchor learning to children’s lives. Cross-link language, math, science and art across a week.</p></div>`,
-            youtubeUrl: 'https://www.youtube.com/watch?v=TeacherTom',
-            caption: 'Theme-Based Teaching in Early Childhood – Teacher Tom',
+            html: `<div class="space-y-6">
+                <p class="text-muted-foreground">Use themes to anchor learning to children's lives. Cross-link language, math, science and art across a week.</p>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">Why Themes Work</h4>
+                    <p class="text-sm text-muted-foreground mb-3">Thematic teaching helps children make connections between different areas of learning. When everything relates to a central theme, learning becomes more meaningful and memorable.</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Children see how different subjects connect to real life</li>
+                        <li>Vocabulary and concepts are reinforced across multiple activities</li>
+                        <li>Learning feels natural and engaging rather than fragmented</li>
+                        <li>Children can build on their knowledge throughout the week</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-muted/50 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">Example Theme: "My Family"</h4>
+                    <div class="space-y-3">
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-medium text-sm mb-1">• Language Development</p>
+                            <p class="text-xs text-muted-foreground ml-4">Read stories about families, discuss family members, practice family vocabulary (mother, father, sister, brother, etc.)</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-medium text-sm mb-1">• Number Work</p>
+                            <p class="text-xs text-muted-foreground ml-4">Count family members, compare family sizes, create family graphs</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-medium text-sm mb-1">• Environmental Studies</p>
+                            <p class="text-xs text-muted-foreground ml-4">Discuss family roles, family traditions, different types of families</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-medium text-sm mb-1">• Creative Arts</p>
+                            <p class="text-xs text-muted-foreground ml-4">Draw family portraits, create family collages, sing family songs</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-medium text-sm mb-1">• Physical Skills</p>
+                            <p class="text-xs text-muted-foreground ml-4">Family movement games, fine motor activities (cutting, pasting family pictures)</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-medium text-sm mb-1">• Moral & Social</p>
+                            <p class="text-xs text-muted-foreground ml-4">Discuss respect for family, sharing with siblings, helping at home</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-2">→ Selecting Themes</h4>
+                    <p class="text-sm text-muted-foreground mb-2">Choose themes that are:</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Relevant to children's lives and experiences</li>
+                        <li>Age-appropriate and developmentally suitable</li>
+                        <li>Rich enough to support a week of activities</li>
+                        <li>Connected to the national curriculum requirements</li>
+                    </ul>
+                </div>
+            </div>`,
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n3s4',
             title: '3.4 Integrating Learning Areas',
-            html: `<div class="space-y-4"><p class="text-muted-foreground">Plan activities that touch three or more learning areas (e.g., counting during role-play, describing during art, observing during science).</p></div>`,
-            youtubeUrl: 'https://www.youtube.com/watch?v=TeachStarter',
-            caption: 'Integrated Learning for Early Years – Teach Starter',
+            html: `<div class="space-y-6">
+                <p class="text-muted-foreground">Plan activities that touch three or more learning areas (e.g., counting during role-play, describing during art, observing during science).</p>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">What is Integration?</h4>
+                    <p class="text-sm text-muted-foreground mb-3">Integration means weaving different learning domains—cognitive, physical, emotional, and social—into one rich activity. Instead of teaching subjects in isolation, integrated activities help children see connections and learn holistically.</p>
+                    <div class="bg-white p-3 rounded border border-primary/20">
+                        <p class="font-medium text-sm mb-2">Example: Theme – Our Pet Dog</p>
+                        <ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+                            <li>Language — describe the pet, learn pet vocabulary</li>
+                            <li>Math — count legs, compare sizes</li>
+                            <li>Science — animal care, what pets need</li>
+                            <li>Art — mould dog with clay, draw pets</li>
+                            <li>Social — talk about kindness to animals, responsibility</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="bg-muted/50 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">Benefits of Integration</h4>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
+                        <li>• Makes learning more meaningful and relevant to children</li>
+                        <li>• Saves time by covering multiple objectives in one activity</li>
+                        <li>• Helps children see how different skills connect</li>
+                        <li>• Supports different learning styles and interests</li>
+                        <li>• Makes teaching more engaging and less repetitive</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-2">→ Planning Integrated Activities</h4>
+                    <p class="text-sm text-muted-foreground mb-2">When planning, ask yourself:</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>Which learning areas can naturally connect in this activity?</li>
+                        <li>How can I incorporate language, math, and creative expression?</li>
+                        <li>What social and physical skills can be included?</li>
+                        <li>Does this activity feel natural, or am I forcing connections?</li>
+                    </ul>
+                </div>
+            </div>`,
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n3s5',
             title: '3.5 Balancing Academics with Play',
-            html: `<div class="space-y-4"><p class="text-muted-foreground">Keep play at the centre: 70% play, 20% mini-lessons, 10% routines. Observe play — it reveals learning.</p></div>`,
-            youtubeUrl: 'https://www.youtube.com/watch?v=UNICEFCameroon',
-            caption: 'Learning Through Play – UNICEF Cameroon',
+            html: `<div class="space-y-6">
+                <p class="text-muted-foreground">Keep play at the centre: 70% play, 20% mini-lessons, 10% routines. Observe play — it reveals learning.</p>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">The Balance Formula</h4>
+                    <p class="text-sm text-muted-foreground mb-3">Play is the child's language of learning. Every structured lesson must include time for free or guided play.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1">70% Play</p>
+                            <p class="text-xs text-muted-foreground">Free play, guided play, dramatic play, outdoor play — each supports different outcomes (imagination, concept development, social skills, physical development).</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1">20% Mini-lessons</p>
+                            <p class="text-xs text-muted-foreground">Short, focused teaching moments that introduce new concepts or skills. These should be interactive and hands-on.</p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-primary/20">
+                            <p class="font-semibold text-sm mb-1">10% Routines</p>
+                            <p class="text-xs text-muted-foreground">Transitions, snack time, cleanup, greetings, and goodbyes. These moments also offer learning opportunities.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-muted/50 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-3">Types of Play</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Free Play</p>
+                            <p class="text-sm text-muted-foreground ml-4">Children choose their own activities and materials. This supports creativity, decision-making, and independence.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Guided Play</p>
+                            <p class="text-sm text-muted-foreground ml-4">Tutor provides materials and gentle direction while children explore. Balances structure with freedom.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Dramatic Play</p>
+                            <p class="text-sm text-muted-foreground ml-4">Role-playing, pretending, using props. Develops language, social skills, and imagination.</p>
+                        </div>
+                        <div>
+                            <p class="font-medium text-sm mb-1">• Outdoor Play</p>
+                            <p class="text-sm text-muted-foreground ml-4">Physical activities, nature exploration, large motor skills. Essential for physical development and well-being.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-primary/5 p-4 rounded-lg my-4">
+                    <h4 class="font-semibold mb-2">→ Observing Play</h4>
+                    <p class="text-sm text-muted-foreground mb-2">Play reveals what children know and understand. When observing play, notice:</p>
+                    <ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+                        <li>What concepts children are exploring (counting, sorting, comparing)</li>
+                        <li>How children use language (vocabulary, sentence structure, communication)</li>
+                        <li>Social interactions (sharing, cooperation, conflict resolution)</li>
+                        <li>Problem-solving strategies and creativity</li>
+                        <li>Areas where children need support or extension</li>
+                    </ul>
+                </div>
+            </div>`,
+            youtubeUrl: '',
+            caption: '',
         },
         {
             id: 'n3s6',
             title: '3.6 Reflection and Evaluation',
             html: `<div class="space-y-4"><p class="text-muted-foreground">Reflect after each lesson: what worked, what to change, and note actions in a Lesson Reflection Journal.</p></div>`,
-            youtubeUrl: '',
-            caption: '',
+            youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+            caption: 'Reflection and Evaluation in Early Childhood Education',
         },
     ],
     quiz: [
@@ -1250,7 +1894,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
     title: "Teaching Methods for Nursery Pupils",
     description: "Master effective teaching strategies for early childhood, including using storytelling, songs, hands-on manipulatives, games, and daily routines to maximize learning and development.",
     content: {
-        html: "<div class=\"space-y-10\">\n\n            <div class=\"space-y-6\">\n                <h1 class=\"text-3xl font-bold text-primary mb-2\">Module 4: Teaching Methods for Nursery Pupils</h1>\n                <p class=\"text-muted-foreground mb-6\">(Duration: ~30–40 minutes)</p>\n\n                <div class=\"bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg\">\n                    <h3 class=\"font-bold text-lg mb-3 text-primary\">🎯 Learning Objectives</h3>\n                    <p class=\"text-sm mb-2\">By the end of this module, tutors will be able to:</p>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use storytelling, songs, and rhymes as effective teaching tools.</li>\n                        <li>Apply visuals, manipulatives, and hands-on activities to enhance learning.</li>\n                        <li>Organize classroom games to support literacy and numeracy development.</li>\n                        <li>Facilitate group work to promote social learning.</li>\n                        <li>Use daily routines as a teaching opportunity.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.1 Storytelling and Songs as Teaching Tools</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Language, Memory, and Emotion)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why They Work</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Stories and songs are powerful because they combine language, memory, emotion, and culture. Children learn best when lessons are fun, relatable, and repeatable.\n                    </p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li><strong>Memory:</strong> Rhythm and rhyme aid retention</li>\n                        <li><strong>Language:</strong> Introduces new vocabulary in context</li>\n                        <li><strong>Social-emotional growth:</strong> Characters model empathy, problem-solving</li>\n                        <li><strong>Cultural connection:</strong> Local stories embed traditions</li>\n                    </ul>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">📝 Classroom Examples</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Story:</strong> “Anansi and the Pot of Beans” → teaches sharing and problem-solving</li>\n                    <li><strong>Song:</strong> “Muna Akong” (local lullaby with counting) → teaches numbers and rhythm</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">👩‍🏫 Teaching Tips</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use <strong>props</strong> (puppets, flannel boards, felt cutouts).</li>\n                        <li>Pause for prediction questions → “What happens next?”</li>\n                        <li>Repeat actions and sounds → “Head, Shoulders, Knees, and Toes”</li>\n                        <li>Use local names for relevance → “Awa, Tiku, Muma”</li>\n                    </ul>\n                </div>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🎨 Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Ask pupils to retell a short story using finger puppets or drawings. This reinforces comprehension, sequencing, and creativity.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.2 Using Visuals and Manipulatives</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Hands-on, Active Exploration)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: What Are Manipulatives?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        <strong>Manipulatives</strong> are hands-on learning tools that let children explore concepts physically. They are vital for concrete learners in the nursery age group.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Type</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Examples</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Purpose</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Real Objects</td>\n                                <td class=\"px-4 py-3\">Fruits, stones</td>\n                                <td class=\"px-4 py-3\">Counting, sorting</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pictures/Flashcards</td>\n                                <td class=\"px-4 py-3\">Animals, vehicles</td>\n                                <td class=\"px-4 py-3\">Vocabulary, matching</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Models</td>\n                                <td class=\"px-4 py-3\">Toy animals, cars</td>\n                                <td class=\"px-4 py-3\">Role-play, problem-solving</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Body</td>\n                                <td class=\"px-4 py-3\">Fingers, claps</td>\n                                <td class=\"px-4 py-3\">Rhythm, math, coordination</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">📋 Rules for Use</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Must be **Big, colorful, and safe**</li>\n                    <li>Provide **1 set per 2–3 children**</li>\n                    <li>**Rotate weekly** to maintain interest and novelty</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">💡 Tutor Tip</h4>\n                    <p class=\"text-sm font-semibold text-primary\">“Seeing &lt; Touching &lt; Doing.”</p>\n                    <p class=\"text-sm text-muted-foreground\">Let children physically manipulate items to deepen understanding. Hands-on learning is always superior to passive observation.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.3 Classroom Games for Numeracy and Literacy</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Active, Social, and Enjoyable Learning)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Games?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Games make learning active, social, and enjoyable. Short, frequent games help children focus and internalize skills without feeling like work.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔢 Numeracy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Bean Bag Toss:</strong> Numbered baskets → count &amp; match</li>\n                    <li><strong>Musical Numbers:</strong> Music stops → child finds their number</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔠 Literacy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Sound Bingo:</strong> Match objects with initial sound</li>\n                    <li><strong>Letter Hunt:</strong> Hide letters in the classroom → “Find A!”</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">✅ Rules for Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Keep them **Short** (3–5 minutes)</li>\n                    <li>Ensure **Everyone wins** (focus on participation, avoid discouragement)</li>\n                    <li>Provide **Clear instructions** with demonstration</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🎨 Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Prepare a “Number Hunt” using natural materials (leaves, stones, sticks) for outdoor learning.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.4 Group Work and Social Learning</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Vygotsky's Social Interaction)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Group Work?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        According to psychologist Vygotsky, children learn best when interacting with peers and adults. Group work develops crucial cooperation, empathy, and communication skills.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">👥 Guidelines & Activities</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Age 3:</strong> Pairs or parallel play is most common.</li>\n                    <li><strong>Ages 4–5:</strong> Small groups (3–5 children) are effective.</li>\n                    <li><strong>Sample Activity:</strong> Role-play (Market, Doctor, Family) → builds social skills and empathy.</li>\n                    <li><strong>Sample Activity:</strong> Build a tower together → teaches math and fine motor skills.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">✅ Tutor Role in Group Work</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Assign roles (leader, recorder, cleaner) when appropriate.</li>\n                        <li>**Model positive communication** → “Ask, don’t grab.”</li>\n                        <li>**Praise teamwork** → “You helped Awa — kind friend!”</li>\n                        <li>Facilitate, don't dominate, the interaction.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.5 Teaching Through Routines</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(The Hidden Curriculum)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Routines are Teaching Moments</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Daily routines are the hidden curriculum — crucial opportunities to teach responsibility, hygiene, emotional regulation, and language skills.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Routine</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Phrase/Song</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Outcome</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Arrival</td>\n                                <td class=\"px-4 py-3\">“Good morning, how are you?”</td>\n                                <td class=\"px-4 py-3\">Greeting, mood check</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Snack</td>\n                                <td class=\"px-4 py-3\">“Wash hands, rub rub rub”</td>\n                                <td class=\"px-4 py-3\">Hygiene &amp; fine motor</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pack Away</td>\n                                <td class=\"px-4 py-3\">“Clean up, clean up, everybody”</td>\n                                <td class=\"px-4 py-3\">Responsibility</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Goodbye</td>\n                                <td class=\"px-4 py-3\">“See you later, alligator!”</td>\n                                <td class=\"px-4 py-3\">Closure &amp; memory</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">✅ Tips for Effective Routines</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Use the **same song daily** → children feel secure and anticipate the next step.</li>\n                    <li>Integrate **short instructions** → language + routine learning.</li>\n                    <li>Encourage children to **lead parts of the routine** to build independence.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🎨 Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Create a **“Routine Chart”** with pictures showing each daily step. Rotate a **“helper of the day”** to lead the class through the chart.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">✅ Module 4 Summary</h2>\n\n                <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                    <li>**Stories &amp; songs:** Language, memory, culture, emotion</li>\n                    <li>**Manipulatives:** Hands-on exploration of concepts</li>\n                    <li>**Games:** Active learning for numeracy &amp; literacy</li>\n                    <li>**Group work:** Social-emotional development, cooperative learning</li>\n                    <li>**Routines:** Teach life skills, reinforce structure and language</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">💬 Reflection Task</h4>\n                    <p class=\"text-muted-foreground mb-4\">Reflect on your current teaching methods:</p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li>Which one method can you commit to using **every day** this week to enhance your lesson?</li>\n                    </ul>\n                    <p class=\"mt-2 text-sm text-muted-foreground\">Write your commitment and plan in your journal (3–5 sentences).</p>\n                </div>\n            </div>\n        </div>",
+        html: "<div class=\"space-y-10\">\n\n            <div class=\"space-y-6\">\n                <h1 class=\"text-3xl font-bold text-primary mb-2\">Module 4: Teaching Methods for Nursery Pupils</h1>\n                <p class=\"text-muted-foreground mb-6\">(Duration: ~30–40 minutes)</p>\n\n                <div class=\"bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg\">\n                    <h3 class=\"font-bold text-lg mb-3 text-primary\"> Learning Objectives</h3>\n                    <p class=\"text-sm mb-2\">By the end of this module, tutors will be able to:</p>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use storytelling, songs, and rhymes as effective teaching tools.</li>\n                        <li>Apply visuals, manipulatives, and hands-on activities to enhance learning.</li>\n                        <li>Organize classroom games to support literacy and numeracy development.</li>\n                        <li>Facilitate group work to promote social learning.</li>\n                        <li>Use daily routines as a teaching opportunity.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.1 Storytelling and Songs as Teaching Tools</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Language, Memory, and Emotion)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why They Work</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Stories and songs are powerful because they combine language, memory, emotion, and culture. Children learn best when lessons are fun, relatable, and repeatable.\n                    </p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li><strong>Memory:</strong> Rhythm and rhyme aid retention</li>\n                        <li><strong>Language:</strong> Introduces new vocabulary in context</li>\n                        <li><strong>Social-emotional growth:</strong> Characters model empathy, problem-solving</li>\n                        <li><strong>Cultural connection:</strong> Local stories embed traditions</li>\n                    </ul>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\"> Classroom Examples</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Story:</strong> “Anansi and the Pot of Beans” → teaches sharing and problem-solving</li>\n                    <li><strong>Song:</strong> “Muna Akong” (local lullaby with counting) → teaches numbers and rhythm</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">👩‍🏫 Teaching Tips</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use <strong>props</strong> (puppets, flannel boards, felt cutouts).</li>\n                        <li>Pause for prediction questions → “What happens next?”</li>\n                        <li>Repeat actions and sounds → “Head, Shoulders, Knees, and Toes”</li>\n                        <li>Use local names for relevance → “Awa, Tiku, Muma”</li>\n                    </ul>\n                </div>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\"> Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Ask pupils to retell a short story using finger puppets or drawings. This reinforces comprehension, sequencing, and creativity.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.2 Using Visuals and Manipulatives</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Hands-on, Active Exploration)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: What Are Manipulatives?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        <strong>Manipulatives</strong> are hands-on learning tools that let children explore concepts physically. They are vital for concrete learners in the nursery age group.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Type</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Examples</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Purpose</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Real Objects</td>\n                                <td class=\"px-4 py-3\">Fruits, stones</td>\n                                <td class=\"px-4 py-3\">Counting, sorting</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pictures/Flashcards</td>\n                                <td class=\"px-4 py-3\">Animals, vehicles</td>\n                                <td class=\"px-4 py-3\">Vocabulary, matching</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Models</td>\n                                <td class=\"px-4 py-3\">Toy animals, cars</td>\n                                <td class=\"px-4 py-3\">Role-play, problem-solving</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Body</td>\n                                <td class=\"px-4 py-3\">Fingers, claps</td>\n                                <td class=\"px-4 py-3\">Rhythm, math, coordination</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\"> Rules for Use</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Must be **Big, colorful, and safe**</li>\n                    <li>Provide **1 set per 2–3 children**</li>\n                    <li>**Rotate weekly** to maintain interest and novelty</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">→ Tutor Tip</h4>\n                    <p class=\"text-sm font-semibold text-primary\">“Seeing &lt; Touching &lt; Doing.”</p>\n                    <p class=\"text-sm text-muted-foreground\">Let children physically manipulate items to deepen understanding. Hands-on learning is always superior to passive observation.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.3 Classroom Games for Numeracy and Literacy</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Active, Social, and Enjoyable Learning)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Games?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Games make learning active, social, and enjoyable. Short, frequent games help children focus and internalize skills without feeling like work.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔢 Numeracy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Bean Bag Toss:</strong> Numbered baskets → count &amp; match</li>\n                    <li><strong>Musical Numbers:</strong> Music stops → child finds their number</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔠 Literacy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Sound Bingo:</strong> Match objects with initial sound</li>\n                    <li><strong>Letter Hunt:</strong> Hide letters in the classroom → “Find A!”</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">• Rules for Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Keep them **Short** (3–5 minutes)</li>\n                    <li>Ensure **Everyone wins** (focus on participation, avoid discouragement)</li>\n                    <li>Provide **Clear instructions** with demonstration</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\"> Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Prepare a “Number Hunt” using natural materials (leaves, stones, sticks) for outdoor learning.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.4 Group Work and Social Learning</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Vygotsky's Social Interaction)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Group Work?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        According to psychologist Vygotsky, children learn best when interacting with peers and adults. Group work develops crucial cooperation, empathy, and communication skills.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">👥 Guidelines & Activities</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Age 3:</strong> Pairs or parallel play is most common.</li>\n                    <li><strong>Ages 4–5:</strong> Small groups (3–5 children) are effective.</li>\n                    <li><strong>Sample Activity:</strong> Role-play (Market, Doctor, Family) → builds social skills and empathy.</li>\n                    <li><strong>Sample Activity:</strong> Build a tower together → teaches math and fine motor skills.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">• Tutor Role in Group Work</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Assign roles (leader, recorder, cleaner) when appropriate.</li>\n                        <li>**Model positive communication** → “Ask, don’t grab.”</li>\n                        <li>**Praise teamwork** → “You helped Awa — kind friend!”</li>\n                        <li>Facilitate, don't dominate, the interaction.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.5 Teaching Through Routines</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(The Hidden Curriculum)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Routines are Teaching Moments</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Daily routines are the hidden curriculum — crucial opportunities to teach responsibility, hygiene, emotional regulation, and language skills.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Routine</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Phrase/Song</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Outcome</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Arrival</td>\n                                <td class=\"px-4 py-3\">“Good morning, how are you?”</td>\n                                <td class=\"px-4 py-3\">Greeting, mood check</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Snack</td>\n                                <td class=\"px-4 py-3\">“Wash hands, rub rub rub”</td>\n                                <td class=\"px-4 py-3\">Hygiene &amp; fine motor</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pack Away</td>\n                                <td class=\"px-4 py-3\">“Clean up, clean up, everybody”</td>\n                                <td class=\"px-4 py-3\">Responsibility</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Goodbye</td>\n                                <td class=\"px-4 py-3\">“See you later, alligator!”</td>\n                                <td class=\"px-4 py-3\">Closure &amp; memory</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">• Tips for Effective Routines</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Use the **same song daily** → children feel secure and anticipate the next step.</li>\n                    <li>Integrate **short instructions** → language + routine learning.</li>\n                    <li>Encourage children to **lead parts of the routine** to build independence.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\"> Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Create a **“Routine Chart”** with pictures showing each daily step. Rotate a **“helper of the day”** to lead the class through the chart.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">• Module 4 Summary</h2>\n\n                <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                    <li>**Stories &amp; songs:** Language, memory, culture, emotion</li>\n                    <li>**Manipulatives:** Hands-on exploration of concepts</li>\n                    <li>**Games:** Active learning for numeracy &amp; literacy</li>\n                    <li>**Group work:** Social-emotional development, cooperative learning</li>\n                    <li>**Routines:** Teach life skills, reinforce structure and language</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">💬 Reflection Task</h4>\n                    <p class=\"text-muted-foreground mb-4\">Reflect on your current teaching methods:</p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li>Which one method can you commit to using **every day** this week to enhance your lesson?</li>\n                    </ul>\n                    <p class=\"mt-2 text-sm text-muted-foreground\">Write your commitment and plan in your journal (3–5 sentences).</p>\n                </div>\n            </div>\n        </div>",
         videos: [
             {
                 youtubeUrl: "https://youtu.be/S8p5272L-2w",
@@ -1274,36 +1918,36 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
         {
             id: "n4s1",
             title: "4.1 Storytelling and Songs as Teaching Tools",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Stories and songs are fundamental tools because the rhythm and repetition aid memory (retention). They introduce new vocabulary in a meaningful context and help children process emotions through characters' actions (empathy, problem-solving).</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Practical Tip:</p>\n                    <p class=\"text-sm text-muted-foreground\">Always use <Strong>props</Strong> (puppets, flannel boards) to make the story tangible and pause frequently to ask, “What happens next?” to engage critical thinking.</p>\n                </div>\n            </div>",
-            youtubeUrl: "https://youtu.be/S8p5272L-2w",
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Stories and songs are fundamental tools because the rhythm and repetition aid memory (retention). They introduce new vocabulary in a meaningful context and help children process emotions through characters' actions (empathy, problem-solving).</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Practical Tip:</p>\n                    <p class=\"text-sm text-muted-foreground\">Always use <Strong>props</Strong> (puppets, flannel boards) to make the story tangible and pause frequently to ask, \"What happens next?\" to engage critical thinking.</p>\n                </div>\n            </div>",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Storytelling Techniques for Early Childhood"
         },
         {
             id: "n4s2",
             title: "4.2 Using Visuals and Manipulatives",
             html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Manipulatives are hands-on, concrete objects (like stones, blocks, fruits) that allow nursery pupils to physically explore concepts. This hands-on approach is vital because children at this age learn best by <Strong>doing</Strong>, not just watching or listening.</p>\n                <ul class=\"list-disc list-inside space-y-1 ml-4 text-sm text-muted-foreground\">\n                    <li>Ensure materials are safe, colorful, and age-appropriate.</li>\n                    <li>Rotate manipulatives weekly to keep the children interested.</li>\n                </ul>\n            </div>",
-            youtubeUrl: "https://youtu.be/j-3Qp50aW40",
-            caption: "The Role of Manipulatives in Early Math"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n4s3",
             title: "4.3 Classroom Games for Numeracy and Literacy",
             html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Games (like Sound Bingo or Bean Bag Toss) keep learning active, social, and joyful. They are most effective when they are short (3–5 minutes) to match the child's attention span and when the instructions are clear and demonstrated first.</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Rule:</p>\n                    <p class=\"text-sm text-muted-foreground\">Focus on participation and social learning; avoid games where only one child wins consistently to prevent discouragement.</p>\n                </div>\n            </div>",
-            youtubeUrl: "https://youtu.be/8I2gL8y8s3Y",
-            caption: "Nursery Numeracy Games"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n4s4",
             title: "4.4 Group Work and Social Learning",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Group work, especially collaborative activities like role-play (ages 4–5), promotes cooperation, empathy, and communication skills. The tutor's role is to facilitate by modeling positive language (“Ask, don’t grab”) and praising teamwork.</p>\n            </div>",
-            youtubeUrl: "https://youtu.be/3z-y3Vp8o_4",
-            caption: "Vygotsky's Social Learning Theory Explained"
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Group work, especially collaborative activities like role-play (ages 4–5), promotes cooperation, empathy, and communication skills. The tutor's role is to facilitate by modeling positive language (\"Ask, don't grab\") and praising teamwork.</p>\n            </div>",
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n4s5",
             title: "4.5 Teaching Through Routines",
             html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Daily routines (arrival, snack time, pack-away) are teaching opportunities for life skills, hygiene, responsibility, and language. Using consistent songs and phrases creates a predictable structure that makes children feel secure and ready to learn.</p>\n            </div>",
-            youtubeUrl: "https://www.youtube.com/watch?v=kYI4j2U_Gk8",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Using Daily Routines to Teach Toddlers"
         }
     ],
@@ -1466,7 +2110,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
     title: "Classroom Management & Pupil Engagement",
     description: "This topic focuses on creating a positive and organized learning environment where pupils are motivated and actively involved in the learning process.",
     content: {
-        html: "<div class=\"space-y-10\">\n\n            <div class=\"space-y-6\">\n                <h1 class=\"text-3xl font-bold text-primary mb-2\">Module 5: Classroom Management & Pupil Engagement</h1>\n                <p class=\"text-muted-foreground mb-6\">(Duration: ~30–40 minutes)</p>\n\n                <div class=\"bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg\">\n                    <h3 class=\"font-bold text-lg mb-3 text-primary\">🎯 Learning Objectives</h3>\n                    <p class=\"text-sm mb-2\">By the end of this module, tutors will be able to:</p>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use storytelling, songs, and rhymes as effective teaching tools.</li>\n                        <li>Apply visuals, manipulatives, and hands-on activities to enhance learning.</li>\n                        <li>Organize classroom games to support literacy and numeracy development.</li>\n                        <li>Facilitate group work to promote social learning.</li>\n                        <li>Use daily routines as a teaching opportunity.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.1 Storytelling and Songs as Teaching Tools</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Language, Memory, and Emotion)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why They Work</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Stories and songs are powerful because they combine language, memory, emotion, and culture. Children learn best when lessons are fun, relatable, and repeatable.\n                    </p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li><strong>Memory:</strong> Rhythm and rhyme aid retention</li>\n                        <li><strong>Language:</strong> Introduces new vocabulary in context</li>\n                        <li><strong>Social-emotional growth:</strong> Characters model empathy, problem-solving</li>\n                        <li><strong>Cultural connection:</strong> Local stories embed traditions</li>\n                    </ul>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">📝 Classroom Examples</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Story:</strong> “Anansi and the Pot of Beans” → teaches sharing and problem-solving</li>\n                    <li><strong>Song:</strong> “Muna Akong” (local lullaby with counting) → teaches numbers and rhythm</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">👩‍🏫 Teaching Tips</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use <strong>props</strong> (puppets, flannel boards, felt cutouts).</li>\n                        <li>Pause for prediction questions → “What happens next?”</li>\n                        <li>Repeat actions and sounds → “Head, Shoulders, Knees, and Toes”</li>\n                        <li>Use local names for relevance → “Awa, Tiku, Muma”</li>\n                    </ul>\n                </div>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🎨 Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Ask pupils to retell a short story using finger puppets or drawings. This reinforces comprehension, sequencing, and creativity.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.2 Using Visuals and Manipulatives</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Hands-on, Active Exploration)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: What Are Manipulatives?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        <strong>Manipulatives</strong> are hands-on learning tools that let children explore concepts physically. They are vital for concrete learners in the nursery age group.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Type</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Examples</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Purpose</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Real Objects</td>\n                                <td class=\"px-4 py-3\">Fruits, stones</td>\n                                <td class=\"px-4 py-3\">Counting, sorting</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pictures/Flashcards</td>\n                                <td class=\"px-4 py-3\">Animals, vehicles</td>\n                                <td class=\"px-4 py-3\">Vocabulary, matching</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Models</td>\n                                <td class=\"px-4 py-3\">Toy animals, cars</td>\n                                <td class=\"px-4 py-3\">Role-play, problem-solving</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Body</td>\n                                <td class=\"px-4 py-3\">Fingers, claps</td>\n                                <td class=\"px-4 py-3\">Rhythm, math, coordination</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">📋 Rules for Use</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Must be **Big, colorful, and safe**</li>\n                    <li>Provide **1 set per 2–3 children**</li>\n                    <li>**Rotate weekly** to maintain interest and novelty</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">💡 Tutor Tip</h4>\n                    <p class=\"text-sm font-semibold text-primary\">“Seeing &lt; Touching &lt; Doing.”</p>\n                    <p class=\"text-sm text-muted-foreground\">Let children physically manipulate items to deepen understanding. Hands-on learning is always superior to passive observation.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.3 Classroom Games for Numeracy and Literacy</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Active, Social, and Enjoyable Learning)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Games?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Games make learning active, social, and enjoyable. Short, frequent games help children focus and internalize skills without feeling like work.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔢 Numeracy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Bean Bag Toss:</strong> Numbered baskets → count &amp; match</li>\n                    <li><strong>Musical Numbers:</strong> Music stops → child finds their number</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔠 Literacy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Sound Bingo:</strong> Match objects with initial sound</li>\n                    <li><strong>Letter Hunt:</strong> Hide letters in the classroom → “Find A!”</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">✅ Rules for Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Keep them **Short** (3–5 minutes)</li>\n                    <li>Ensure **Everyone wins** (focus on participation, avoid discouragement)</li>\n                    <li>Provide **Clear instructions** with demonstration</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🎨 Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Prepare a “Number Hunt” using natural materials (leaves, stones, sticks) for outdoor learning.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.4 Group Work and Social Learning</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Vygotsky's Social Interaction)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Group Work?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        According to psychologist Vygotsky, children learn best when interacting with peers and adults. Group work develops crucial cooperation, empathy, and communication skills.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">👥 Guidelines & Activities</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Age 3:</strong> Pairs or parallel play is most common.</li>\n                    <li><strong>Ages 4–5:</strong> Small groups (3–5 children) are effective.</li>\n                    <li><strong>Sample Activity:</strong> Role-play (Market, Doctor, Family) → builds social skills and empathy.</li>\n                    <li><strong>Sample Activity:</strong> Build a tower together → teaches math and fine motor skills.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">✅ Tutor Role in Group Work</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Assign roles (leader, recorder, cleaner) when appropriate.</li>\n                        <li>**Model positive communication** → “Ask, don’t grab.”</li>\n                        <li>**Praise teamwork** → “You helped Awa — kind friend!”</li>\n                        <li>Facilitate, don't dominate, the interaction.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.5 Teaching Through Routines</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(The Hidden Curriculum)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Routines are Teaching Moments</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Daily routines are the hidden curriculum — crucial opportunities to teach responsibility, hygiene, emotional regulation, and language skills.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Routine</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Phrase/Song</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Outcome</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Arrival</td>\n                                <td class=\"px-4 py-3\">“Good morning, how are you?”</td>\n                                <td class=\"px-4 py-3\">Greeting, mood check</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Snack</td>\n                                <td class=\"px-4 py-3\">“Wash hands, rub rub rub”</td>\n                                <td class=\"px-4 py-3\">Hygiene &amp; fine motor</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pack Away</td>\n                                <td class=\"px-4 py-3\">“Clean up, clean up, everybody”</td>\n                                <td class=\"px-4 py-3\">Responsibility</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Goodbye</td>\n                                <td class=\"px-4 py-3\">“See you later, alligator!”</td>\n                                <td class=\"px-4 py-3\">Closure &amp; memory</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">✅ Tips for Effective Routines</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Use the **same song daily** → children feel secure and anticipate the next step.</li>\n                    <li>Integrate **short instructions** → language + routine learning.</li>\n                    <li>Encourage children to **lead parts of the routine** to build independence.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🎨 Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Create a **“Routine Chart”** with pictures showing each daily step. Rotate a **“helper of the day”** to lead the class through the chart.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">✅ Module 4 Summary</h2>\n\n                <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                    <li>**Stories &amp; songs:** Language, memory, culture, emotion</li>\n                    <li>**Manipulatives:** Hands-on exploration of concepts</li>\n                    <li>**Games:** Active learning for numeracy &amp; literacy</li>\n                    <li>**Group work:** Social-emotional development, cooperative learning</li>\n                    <li>**Routines:** Teach life skills, reinforce structure and language</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">💬 Reflection Task</h4>\n                    <p class=\"text-muted-foreground mb-4\">Reflect on your current teaching methods:</p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li>Which one method can you commit to using **every day** this week to enhance your lesson?</li>\n                    </ul>\n                    <p class=\"mt-2 text-sm text-muted-foreground\">Write your commitment and plan in your journal (3–5 sentences).</p>\n                </div>\n            </div>\n        </div>",
+        html: "<div class=\"space-y-10\">\n\n            <div class=\"space-y-6\">\n                <h1 class=\"text-3xl font-bold text-primary mb-2\">Module 5: Classroom Management & Pupil Engagement</h1>\n                <p class=\"text-muted-foreground mb-6\">(Duration: ~30–40 minutes)</p>\n\n                <div class=\"bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg\">\n                    <h3 class=\"font-bold text-lg mb-3 text-primary\"> Learning Objectives</h3>\n                    <p class=\"text-sm mb-2\">By the end of this module, tutors will be able to:</p>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use storytelling, songs, and rhymes as effective teaching tools.</li>\n                        <li>Apply visuals, manipulatives, and hands-on activities to enhance learning.</li>\n                        <li>Organize classroom games to support literacy and numeracy development.</li>\n                        <li>Facilitate group work to promote social learning.</li>\n                        <li>Use daily routines as a teaching opportunity.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.1 Storytelling and Songs as Teaching Tools</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Language, Memory, and Emotion)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why They Work</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Stories and songs are powerful because they combine language, memory, emotion, and culture. Children learn best when lessons are fun, relatable, and repeatable.\n                    </p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li><strong>Memory:</strong> Rhythm and rhyme aid retention</li>\n                        <li><strong>Language:</strong> Introduces new vocabulary in context</li>\n                        <li><strong>Social-emotional growth:</strong> Characters model empathy, problem-solving</li>\n                        <li><strong>Cultural connection:</strong> Local stories embed traditions</li>\n                    </ul>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\"> Classroom Examples</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Story:</strong> “Anansi and the Pot of Beans” → teaches sharing and problem-solving</li>\n                    <li><strong>Song:</strong> “Muna Akong” (local lullaby with counting) → teaches numbers and rhythm</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">👩‍🏫 Teaching Tips</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Use <strong>props</strong> (puppets, flannel boards, felt cutouts).</li>\n                        <li>Pause for prediction questions → “What happens next?”</li>\n                        <li>Repeat actions and sounds → “Head, Shoulders, Knees, and Toes”</li>\n                        <li>Use local names for relevance → “Awa, Tiku, Muma”</li>\n                    </ul>\n                </div>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\"> Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Ask pupils to retell a short story using finger puppets or drawings. This reinforces comprehension, sequencing, and creativity.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.2 Using Visuals and Manipulatives</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Hands-on, Active Exploration)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: What Are Manipulatives?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        <strong>Manipulatives</strong> are hands-on learning tools that let children explore concepts physically. They are vital for concrete learners in the nursery age group.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Type</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Examples</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Purpose</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Real Objects</td>\n                                <td class=\"px-4 py-3\">Fruits, stones</td>\n                                <td class=\"px-4 py-3\">Counting, sorting</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pictures/Flashcards</td>\n                                <td class=\"px-4 py-3\">Animals, vehicles</td>\n                                <td class=\"px-4 py-3\">Vocabulary, matching</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Models</td>\n                                <td class=\"px-4 py-3\">Toy animals, cars</td>\n                                <td class=\"px-4 py-3\">Role-play, problem-solving</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Body</td>\n                                <td class=\"px-4 py-3\">Fingers, claps</td>\n                                <td class=\"px-4 py-3\">Rhythm, math, coordination</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\"> Rules for Use</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Must be **Big, colorful, and safe**</li>\n                    <li>Provide **1 set per 2–3 children**</li>\n                    <li>**Rotate weekly** to maintain interest and novelty</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">→ Tutor Tip</h4>\n                    <p class=\"text-sm font-semibold text-primary\">“Seeing &lt; Touching &lt; Doing.”</p>\n                    <p class=\"text-sm text-muted-foreground\">Let children physically manipulate items to deepen understanding. Hands-on learning is always superior to passive observation.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.3 Classroom Games for Numeracy and Literacy</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Active, Social, and Enjoyable Learning)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Games?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Games make learning active, social, and enjoyable. Short, frequent games help children focus and internalize skills without feeling like work.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔢 Numeracy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Bean Bag Toss:</strong> Numbered baskets → count &amp; match</li>\n                    <li><strong>Musical Numbers:</strong> Music stops → child finds their number</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">🔠 Literacy Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Sound Bingo:</strong> Match objects with initial sound</li>\n                    <li><strong>Letter Hunt:</strong> Hide letters in the classroom → “Find A!”</li>\n                </ul>\n\n                <h4 class=\"font-semibold text-xl mb-3\">• Rules for Games</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Keep them **Short** (3–5 minutes)</li>\n                    <li>Ensure **Everyone wins** (focus on participation, avoid discouragement)</li>\n                    <li>Provide **Clear instructions** with demonstration</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\"> Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Prepare a “Number Hunt” using natural materials (leaves, stones, sticks) for outdoor learning.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.4 Group Work and Social Learning</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(Vygotsky's Social Interaction)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Why Group Work?</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        According to psychologist Vygotsky, children learn best when interacting with peers and adults. Group work develops crucial cooperation, empathy, and communication skills.\n                    </p>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">👥 Guidelines & Activities</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li><strong>Age 3:</strong> Pairs or parallel play is most common.</li>\n                    <li><strong>Ages 4–5:</strong> Small groups (3–5 children) are effective.</li>\n                    <li><strong>Sample Activity:</strong> Role-play (Market, Doctor, Family) → builds social skills and empathy.</li>\n                    <li><strong>Sample Activity:</strong> Build a tower together → teaches math and fine motor skills.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg mt-6\">\n                    <h4 class=\"font-semibold text-lg mb-3\">• Tutor Role in Group Work</h4>\n                    <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                        <li>Assign roles (leader, recorder, cleaner) when appropriate.</li>\n                        <li>**Model positive communication** → “Ask, don’t grab.”</li>\n                        <li>**Praise teamwork** → “You helped Awa — kind friend!”</li>\n                        <li>Facilitate, don't dominate, the interaction.</li>\n                    </ul>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">4.5 Teaching Through Routines</h2>\n                <h3 class=\"text-xl font-semibold text-primary/90\">(The Hidden Curriculum)</h3>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">🔍 Elaboration: Routines are Teaching Moments</h4>\n                    <p class=\"text-muted-foreground mb-4\">\n                        Daily routines are the hidden curriculum — crucial opportunities to teach responsibility, hygiene, emotional regulation, and language skills.\n                    </p>\n                </div>\n\n                <div class=\"relative overflow-x-auto shadow-sm rounded-lg\">\n                    <table class=\"w-full text-sm\">\n                        <thead class=\"bg-primary/5\">\n                            <tr>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Routine</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Phrase/Song</th>\n                                <th class=\"px-4 py-3 text-left font-semibold\">Learning Outcome</th>\n                            </tr>\n                        </thead>\n                        <tbody>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Arrival</td>\n                                <td class=\"px-4 py-3\">“Good morning, how are you?”</td>\n                                <td class=\"px-4 py-3\">Greeting, mood check</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Snack</td>\n                                <td class=\"px-4 py-3\">“Wash hands, rub rub rub”</td>\n                                <td class=\"px-4 py-3\">Hygiene &amp; fine motor</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Pack Away</td>\n                                <td class=\"px-4 py-3\">“Clean up, clean up, everybody”</td>\n                                <td class=\"px-4 py-3\">Responsibility</td>\n                            </tr>\n                            <tr class=\"border-b border-primary/10\">\n                                <td class=\"px-4 py-3 font-medium\">Goodbye</td>\n                                <td class=\"px-4 py-3\">“See you later, alligator!”</td>\n                                <td class=\"px-4 py-3\">Closure &amp; memory</td>\n                            </tr>\n                        </tbody>\n                    </table>\n                </div>\n\n                <h4 class=\"font-semibold text-xl mb-3\">• Tips for Effective Routines</h4>\n                <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                    <li>Use the **same song daily** → children feel secure and anticipate the next step.</li>\n                    <li>Integrate **short instructions** → language + routine learning.</li>\n                    <li>Encourage children to **lead parts of the routine** to build independence.</li>\n                </ul>\n\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\"> Mini Activity</h4>\n                    <p class=\"text-muted-foreground\">Create a **“Routine Chart”** with pictures showing each daily step. Rotate a **“helper of the day”** to lead the class through the chart.</p>\n                </div>\n            </div>\n\n            <div class=\"space-y-6\">\n                <h2 class=\"text-2xl font-bold text-primary\">• Module 4 Summary</h2>\n\n                <ul class=\"list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4\">\n                    <li>**Stories &amp; songs:** Language, memory, culture, emotion</li>\n                    <li>**Manipulatives:** Hands-on exploration of concepts</li>\n                    <li>**Games:** Active learning for numeracy &amp; literacy</li>\n                    <li>**Group work:** Social-emotional development, cooperative learning</li>\n                    <li>**Routines:** Teach life skills, reinforce structure and language</li>\n                </ul>\n\n                <div class=\"bg-secondary/5 p-4 rounded-lg\">\n                    <h4 class=\"font-semibold text-lg mb-3\">💬 Reflection Task</h4>\n                    <p class=\"text-muted-foreground mb-4\">Reflect on your current teaching methods:</p>\n                    <ul class=\"list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4\">\n                        <li>Which one method can you commit to using **every day** this week to enhance your lesson?</li>\n                    </ul>\n                    <p class=\"mt-2 text-sm text-muted-foreground\">Write your commitment and plan in your journal (3–5 sentences).</p>\n                </div>\n            </div>\n        </div>",
         videos: [
             {
                 youtubeUrl: "https://youtu.be/S8p5272L-2w",
@@ -1490,37 +2134,37 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
         {
             id: "n5s1",
             title: "5.1  Setting Classroom Rules for Nursery Pupils",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Effective classroom management begins with using positive language such as saying “We walk inside” instead of “Don’t run.” This encourages desired behavior rather than focusing on what not to do. Teachers can also use visual reminders like posters with pictures, emojis, or drawings to make rules more engaging and easy for children to remember. Consistency is key—repeating and reinforcing the rules daily for at least two to three weeks helps pupils internalize them and build lasting habits.</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Practical Tip:</p>\n                    <p class=\"text-sm text-muted-foreground\">Encouraging participation boosts pupil engagement and ownership of classroom behavior. Allowing children to help illustrate or decorate the rules gives them a sense of pride and responsibility, making them more likely to follow them.</p>\n                </div>\n            </div>",
-            youtubeUrl: "https://youtu.be/S8p5272L-2w",
-            caption: "Storytelling Techniques for Early Childhood"
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Effective classroom management begins with using positive language such as saying \"We walk inside\" instead of \"Don't run.\" This encourages desired behavior rather than focusing on what not to do. Teachers can also use visual reminders like posters with pictures, emojis, or drawings to make rules more engaging and easy for children to remember. Consistency is key—repeating and reinforcing the rules daily for at least two to three weeks helps pupils internalize them and build lasting habits.</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Practical Tip:</p>\n                    <p class=\"text-sm text-muted-foreground\">Encouraging participation boosts pupil engagement and ownership of classroom behavior. Allowing children to help illustrate or decorate the rules gives them a sense of pride and responsibility, making them more likely to follow them.</p>\n                </div>\n            </div>",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
+            caption: "Setting Classroom Rules for Nursery Pupils"
         },
         {
             id: "n5s2",
             title: "5.2 Encouraging Positive Behavior",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Encouraging positive behavior is essential because <strong>positive reinforcement</strong> strengthens desired actions and builds children’s confidence. Recognizing and rewarding good behavior motivates pupils to repeat it and creates a supportive classroom atmosphere. Teachers can use specific praise, such as “You put the toys away — excellent job!”, to clearly highlight what the child did well, making the feedback more meaningful and effective.</p>\n                <ul class=\"list-disc list-inside space-y-1 ml-4 text-sm text-muted-foreground\">\n                    <li>It’s important to avoid vague praise like “Good job,” which lacks clarity, and to steer away from negative focus such as “Stop doing that.” Instead, highlight positive behaviors and guide pupils gently toward improvement.</li>\n                    <li>🎨 Mini Activity: Have children design a sticker chart for one week, leaving space for them to add their own stickers to track progress and stay motivated.</li>\n                </ul>\n            </div>",
-            youtubeUrl: "https://youtu.be/j-3Qp50aW40",
-            caption: "The Role of Manipulatives in Early Math"
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Encouraging positive behavior is essential because <strong>positive reinforcement</strong> strengthens desired actions and builds children's confidence. Recognizing and rewarding good behavior motivates pupils to repeat it and creates a supportive classroom atmosphere. Teachers can use specific praise, such as \"You put the toys away — excellent job!\", to clearly highlight what the child did well, making the feedback more meaningful and effective.</p>\n                <ul class=\"list-disc list-inside space-y-1 ml-4 text-sm text-muted-foreground\">\n                    <li>It's important to avoid vague praise like \"Good job,\" which lacks clarity, and to steer away from negative focus such as \"Stop doing that.\" Instead, highlight positive behaviors and guide pupils gently toward improvement.</li>\n                    <li> Mini Activity: Have children design a sticker chart for one week, leaving space for them to add their own stickers to track progress and stay motivated.</li>\n                </ul>\n            </div>",
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n5s3",
             title: "5.3 Handling Misbehavior with Patience and Care",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Handling misbehavior with patience and care begins with understanding that misbehavior is a form of communication. Children often act out because they lack the words to express their feelings or needs. Instead of reacting with frustration, tutors should aim to respond calmly and guide the child toward better choices. The Calm, Connect, Redirect approach helps achieve this by focusing on empathy, clear communication, and gentle correction.</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Rule:</p>\n                    <p class=\"text-sm text-muted-foreground\">In practice, tutors can use empathy-based responses. For example, if a child throws blocks, say, “I see you’re frustrated. Let’s build together instead.” If a child refuses to share, respond with, “We use kind hands. Would you like to use the blue or green block first?” Additionally, creating a Safe Space — a cozy corner with soft toys or books — gives children a place to calm down and practice self-regulation before rejoining group activities.</p>\n                </div>\n            </div>",
-            youtubeUrl: "https://youtu.be/8I2gL8y8s3Y",
-            caption: "Nursery Numeracy Games"
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Handling misbehavior with patience and care begins with understanding that misbehavior is a form of communication. Children often act out because they lack the words to express their feelings or needs. Instead of reacting with frustration, tutors should aim to respond calmly and guide the child toward better choices. The Calm, Connect, Redirect approach helps achieve this by focusing on empathy, clear communication, and gentle correction.</p>\n                <div class=\"bg-primary/5 p-4 rounded-lg\">\n                    <p class=\"font-semibold text-sm mb-2\">Rule:</p>\n                    <p class=\"text-sm text-muted-foreground\">In practice, tutors can use empathy-based responses. For example, if a child throws blocks, say, \"I see you're frustrated. Let's build together instead.\" If a child refuses to share, respond with, \"We use kind hands. Would you like to use the blue or green block first?\" Additionally, creating a Safe Space — a cozy corner with soft toys or books — gives children a place to calm down and practice self-regulation before rejoining group activities.</p>\n                </div>\n            </div>",
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n5s4",
             title: "5.4 Keeping pupils engaged and focused",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Keeping pupils engaged and focused requires understanding their attention spans, which naturally vary by age—about 3–5 minutes for age 3, 5–8 minutes for age 4, and 8–10 minutes for age 5. Since young children’s focus shifts quickly, lessons should include short, varied, and interactive activities. Using voice modulation—whispering, singing, or speaking loudly—can instantly recapture attention and make learning more dynamic and enjoyable.</p>\n <p> Examples of engaging activities include a counting song with claps to blend numeracy and motor coordination, story acting with puppets to build literacy and social skills, and an outdoor scavenger hunt that enhances problem-solving, observation, and teamwork. 🧩 Mini Activity: Prepare a Magic Bag with 3–4 objects and invite children to pick one and tell a story about it, stimulating creativity and verbal expression.</p>           </div>",
-            youtubeUrl: "https://youtu.be/3z-y3Vp8o_4",
-            caption: "Vygotsky's Social Learning Theory Explained"
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Keeping pupils engaged and focused requires understanding their attention spans, which naturally vary by age—about 3–5 minutes for age 3, 5–8 minutes for age 4, and 8–10 minutes for age 5. Since young children's focus shifts quickly, lessons should include short, varied, and interactive activities. Using voice modulation—whispering, singing, or speaking loudly—can instantly recapture attention and make learning more dynamic and enjoyable.</p>\n <p> Examples of engaging activities include a counting song with claps to blend numeracy and motor coordination, story acting with puppets to build literacy and social skills, and an outdoor scavenger hunt that enhances problem-solving, observation, and teamwork. 🧩 Mini Activity: Prepare a Magic Bag with 3–4 objects and invite children to pick one and tell a story about it, stimulating creativity and verbal expression.</p>           </div>",
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n5s5",
             title: "5.5 Time Management During Short Lessons",
-            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Effective time management ensures that short lessons remain productive, engaging, and balanced. A well-structured 20–25 minute lesson helps maintain children’s focus while covering key learning areas. Begin with 0–3 minutes of greeting and a song to build connection and energy, such as a “Good morning” circle with a name game. Move to 3–8 minutes of story or demonstration time to develop literacy and listening skills—for example, telling “Anansi and the Pot of Beans” with puppets.</p>\n  <p>From 8–18 minutes, transition into hands-on play to reinforce core skills like counting blocks or drawing shapes. This is followed by 18–22 minutes of sharing and reflection, where pupils display their work and build verbal confidence through peer learning. Finally, use 22–25 minutes for packing up and saying goodbye with a fun routine such as a “Clean up, clean up” song, promoting responsibility and closure. 🎨 Mini Activity: Have tutors create a full-day lesson timetable that includes songs, storytelling, play sessions, reflection, and daily routines to practice efficient scheduling and pacing.</p>          </div>",
-            youtubeUrl: "https://www.youtube.com/watch?v=kYI4j2U_Gk8",
-            caption: "Using Daily Routines to Teach Toddlers"
+            html: "<div class=\"space-y-4\">\n                <p class=\"text-muted-foreground\">Effective time management ensures that short lessons remain productive, engaging, and balanced. A well-structured 20–25 minute lesson helps maintain children's focus while covering key learning areas. Begin with 0–3 minutes of greeting and a song to build connection and energy, such as a \"Good morning\" circle with a name game. Move to 3–8 minutes of story or demonstration time to develop literacy and listening skills—for example, telling \"Anansi and the Pot of Beans\" with puppets.</p>\n  <p>From 8–18 minutes, transition into hands-on play to reinforce core skills like counting blocks or drawing shapes. This is followed by 18–22 minutes of sharing and reflection, where pupils display their work and build verbal confidence through peer learning. Finally, use 22–25 minutes for packing up and saying goodbye with a fun routine such as a \"Clean up, clean up\" song, promoting responsibility and closure.  Mini Activity: Have tutors create a full-day lesson timetable that includes songs, storytelling, play sessions, reflection, and daily routines to practice efficient scheduling and pacing.</p>          </div>",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
+            caption: "Time Management During Short Lessons"
         }
     ],
     quiz: [
@@ -1678,7 +2322,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <p class="text-muted-foreground mb-6">(Duration: ~60 minutes with exercises and examples)</p>
 
                 <div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-                    <h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+                    <h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
                     <p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Apply continuous, informal, and practical assessment methods for nursery pupils.</li>
@@ -1701,7 +2345,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </p>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3">📋 Methods</h4>
+                <h4 class="font-semibold text-xl mb-3"> Methods</h4>
                 <div class="relative overflow-x-auto shadow-sm rounded-lg">
                     <table class="w-full text-sm">
                         <thead class="bg-primary/5">
@@ -1764,7 +2408,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h2 class="text-2xl font-bold text-primary">6.2 Observation and Note-taking Techniques</h2>
 
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">📝 Anecdotal Records</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Anecdotal Records</h4>
                     <p class="text-muted-foreground mb-4">
                         Short, objective descriptions of what the child did and said.
                     </p>
@@ -1778,7 +2422,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </div>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3">✅ Effective Note-Taking Tips</h4>
+                <h4 class="font-semibold text-xl mb-3">• Effective Note-Taking Tips</h4>
                 <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                     <li>Avoid subjective words (e.g., "lazy," "naughty")</li>
                     <li>Include time, activity, behavior, and context</li>
@@ -1796,7 +2440,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h2 class="text-2xl font-bold text-primary">6.3 Report Card Writing and Termly Evaluation</h2>
 
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">📋 Structure of a Nursery Report Card (Cameroon)</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Structure of a Nursery Report Card (Cameroon)</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li><strong>Levels:</strong> Excellent, Good, Fair, Needs Support</li>
                         <li>Include specific, positive comments</li>
@@ -1805,7 +2449,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </ul>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3">📝 Sample Comments</h4>
+                <h4 class="font-semibold text-xl mb-3"> Sample Comments</h4>
                 <div class="relative overflow-x-auto shadow-sm rounded-lg">
                     <table class="w-full text-sm">
                         <thead class="bg-primary/5">
@@ -1857,7 +2501,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </div>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3">✅ Parent Communication Tips</h4>
+                <h4 class="font-semibold text-xl mb-3">• Parent Communication Tips</h4>
                 <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                     <li>Listen actively to concerns</li>
                     <li>Celebrate small wins, not just academic achievements</li>
@@ -1874,7 +2518,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h2 class="text-2xl font-bold text-primary">6.5 Supporting Slow Learners</h2>
 
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">🎯 Strategies</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Strategies</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li><strong>Extra time:</strong> Let the child complete tasks at their pace</li>
                         <li><strong>Peer buddy system:</strong> Pair with confident peers</li>
@@ -1884,7 +2528,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 </div>
 
                 <div class="bg-primary/5 p-4 rounded-lg mt-6">
-                    <h4 class="font-semibold text-lg mb-3">💡 Principle</h4>
+                    <h4 class="font-semibold text-lg mb-3">→ Principle</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Do not compare to peers → focus on personal growth</li>
                         <li>Track progress in anecdotal records and checklists</li>
@@ -1905,7 +2549,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             </div>
 
             <div class="space-y-6">
-                <h2 class="text-2xl font-bold text-primary">✅ Module 6 Summary</h2>
+                <h2 class="text-2xl font-bold text-primary">• Module 6 Summary</h2>
 
                 <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                     <li><strong>Assessment</strong> is continuous, informal, and evidence-based</li>
@@ -1957,7 +2601,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground">Use photos and videos to document learning moments. Always get parent consent before sharing images.</p>
                 </div>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=early-childhood-assessment",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Early Childhood Assessment Techniques — real classroom examples of informal assessment"
         },
         {
@@ -1970,8 +2614,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground italic">Date: 01/11/25 | Child: Tiku | Activity: Block play<br/>Observation: Tiku stacked 6 blocks, said "Look, tall tower!" Then helped Awa when hers fell.</p>
                 </div>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=observation-record-keeping",
-            caption: "Observation and Record-Keeping in Nursery — examples of good anecdotal note-taking"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n6s3",
@@ -1979,8 +2623,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Nursery report cards use levels: Excellent, Good, Fair, Needs Support. Include specific, positive comments; avoid peer comparisons; include actionable tips. Sample: "Speaks in full sentences; enjoys storytelling and asking questions."</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=effective-reports",
-            caption: "Writing Effective Early Childhood Reports — practical examples"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n6s4",
@@ -1988,8 +2632,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Key principles: start with positive observation, show evidence (photos/videos/work samples), set one clear goal per update, use simple language. Example WhatsApp update: "Today Tiku counted to 5 independently during playtime. Practicing at home will help reinforce this skill."</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=parent-communication",
-            caption: "Communicating with Parents Effectively — practical strategies for daily updates"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n6s5",
@@ -1997,7 +2641,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Strategies include: extra time (let child complete tasks at their pace), peer buddy system (pair with confident peers), simplify tasks (use fewer objects or steps), celebrate small wins. Principle: do not compare to peers → focus on personal growth. Track progress in anecdotal records and adjust future activities based on assessment.</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=slow-learners",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Supporting Slow Learners in Early Childhood"
         }
     ],
@@ -2166,7 +2810,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <p class="text-muted-foreground mb-6">(Duration: ~60+ minutes)</p>
 
                 <div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-                    <h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+                    <h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
                     <p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Apply ethical principles in real-life nursery scenarios.</li>
@@ -2192,7 +2836,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </ul>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3">📝 Practical Examples</h4>
+                <h4 class="font-semibold text-xl mb-3"> Practical Examples</h4>
                 <div class="space-y-3">
                     <div class="bg-primary/5 p-4 rounded-lg">
                         <p class="text-sm font-semibold mb-2">Scenario 1:</p>
@@ -2241,7 +2885,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </div>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3">📝 Examples</h4>
+                <h4 class="font-semibold text-xl mb-3"> Examples</h4>
                 <div class="space-y-3">
                     <div class="bg-primary/5 p-4 rounded-lg">
                         <p class="text-sm font-semibold mb-2">Parent Meeting:</p>
@@ -2278,7 +2922,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <li>Plan cooperative activities such as art + drama</li>
                 </ul>
 
-                <h4 class="font-semibold text-xl mb-3 mt-6">📝 Examples</h4>
+                <h4 class="font-semibold text-xl mb-3 mt-6"> Examples</h4>
                 <div class="space-y-3">
                     <div class="bg-primary/5 p-4 rounded-lg">
                         <p class="text-sm font-semibold mb-2">Example 1:</p>
@@ -2316,7 +2960,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </ul>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3 mt-6">📝 Scenarios</h4>
+                <h4 class="font-semibold text-xl mb-3 mt-6"> Scenarios</h4>
                 <div class="space-y-3">
                     <div class="bg-primary/5 p-4 rounded-lg">
                         <p class="text-sm font-semibold mb-2">Scenario 1:</p>
@@ -2338,7 +2982,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h2 class="text-2xl font-bold text-primary">7.5 Reflective Practice</h2>
 
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">🎯 Purpose</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Purpose</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Identify strengths and areas for improvement</li>
                         <li>Promote continuous professional growth</li>
@@ -2373,7 +3017,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 </div>
 
                 <div class="bg-primary/5 p-4 rounded-lg mt-6">
-                    <h4 class="font-semibold text-lg mb-3">📝 Scenario</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Scenario</h4>
                     <p class="text-sm text-muted-foreground">Lesson on counting → some children struggled. Reflection: plan extra visual aids and peer support next session.</p>
                 </div>
 
@@ -2389,7 +3033,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             </div>
 
             <div class="space-y-6">
-                <h2 class="text-2xl font-bold text-primary">✅ Module 7 Summary</h2>
+                <h2 class="text-2xl font-bold text-primary">• Module 7 Summary</h2>
 
                 <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                     <li><strong>Ethics:</strong> Safety, confidentiality, respect for culture</li>
@@ -2440,7 +3084,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground">Child falls during play → calmly assist and guide, do not scold. Parent asks about another child → respond: "I cannot share private information, but let's focus on your child's progress."</p>
                 </div>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=ethics-early-childhood",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Ethics in Early Childhood Education"
         },
         {
@@ -2453,8 +3097,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground italic">Parent Meeting: "Tiku enjoys block play. Encouraging him to count blocks at home will reinforce this skill."</p>
                 </div>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=professional-communication",
-            caption: "Professional Communication in Early Childhood"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n7s3",
@@ -2466,8 +3110,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground">Tutor A reads a story; Tutor B prepares art materials and guides children in drawing.</p>
                 </div>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=collaborative-teaching",
-            caption: "Collaborative Teaching in Early Childhood"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n7s4",
@@ -2475,8 +3119,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">For tutors: practice lessons in front of mirror or record to improve confidence, prepare materials and backup plans. For children: keep promises, use consistent routines and familiar language, validate feelings. Example: Child refuses to participate → sit beside them, model the activity, encourage small steps.</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=building-trust-children",
-            caption: "Building Trust with Young Children"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n7s5",
@@ -2484,7 +3128,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Purpose: identify strengths and areas for improvement, promote continuous professional growth, encourage a growth mindset. Tools include weekly journal (what went well, what to improve, one new strategy), mentor consultation, and video review. Example: Lesson on counting → some children struggled. Reflection: plan extra visual aids and peer support next session.</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=reflective-practice",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Reflective Practice in Early Childhood Education"
         }
     ],
@@ -2653,7 +3297,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <p class="text-muted-foreground mb-6">(Duration: ~90 minutes)</p>
 
                 <div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-                    <h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+                    <h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
                     <p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Navigate and customize the Prepskul Tutor Portal efficiently for lesson planning and communication.</li>
@@ -2681,7 +3325,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </ul>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3 mt-6">📋 Step-by-Step Practical Example</h4>
+                <h4 class="font-semibold text-xl mb-3 mt-6"> Step-by-Step Practical Example</h4>
                 <div class="bg-primary/5 p-4 rounded-lg">
                     <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Log in → select Nursery 2, Term 1</li>
@@ -2709,7 +3353,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 <h2 class="text-2xl font-bold text-primary">8.2 Digital Record-Keeping & Feedback</h2>
 
                 <div class="bg-secondary/5 p-4 rounded-lg">
-                    <h4 class="font-semibold text-lg mb-3">📝 Methods</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Methods</h4>
                     <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Upload photos/videos showing children demonstrating skills</li>
                         <li>Tag each skill: e.g., "Color recognition," "Counting 1–10," "Fine motor skills"</li>
@@ -2750,7 +3394,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <h4 class="font-semibold text-lg mb-3">🎭 Applied Role-Play</h4>
                     <p class="text-sm text-muted-foreground mb-2">Tutor sends photo/video to parent via portal.</p>
                     <p class="text-sm text-muted-foreground mb-2">Parent asks: "Did Awa manage to follow instructions?"</p>
-                    <p class="text-sm text-muted-foreground italic">Response: "Yes! She counted 1–5 correctly and stacked blocks in order. Great progress!" ✅</p>
+                    <p class="text-sm text-muted-foreground italic">Response: "Yes! She counted 1–5 correctly and stacked blocks in order. Great progress!" •</p>
                 </div>
             </div>
 
@@ -2767,7 +3411,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     </ul>
                 </div>
 
-                <h4 class="font-semibold text-xl mb-3 mt-6">📝 Sample Lesson Plan — Theme: "Farm Animals"</h4>
+                <h4 class="font-semibold text-xl mb-3 mt-6"> Sample Lesson Plan — Theme: "Farm Animals"</h4>
                 <div class="bg-primary/5 p-4 rounded-lg">
                     <ol class="list-decimal list-inside space-y-2 text-sm text-muted-foreground ml-4">
                         <li>Video (2 min) → show farm animals and their sounds</li>
@@ -2829,9 +3473,9 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                 </div>
 
                 <div class="bg-primary/5 p-4 rounded-lg mt-6">
-                    <h4 class="font-semibold text-lg mb-3">📝 Scenario Practice</h4>
+                    <h4 class="font-semibold text-lg mb-3"> Scenario Practice</h4>
                     <p class="text-sm text-muted-foreground mb-2">A child wants unsupervised tablet use. Tutor response:</p>
-                    <p class="text-sm text-muted-foreground italic">"We will use it together for 3 minutes. I'll show you how to play safely." ✅</p>
+                    <p class="text-sm text-muted-foreground italic">"We will use it together for 3 minutes. I'll show you how to play safely." •</p>
                 </div>
 
                 <div class="bg-secondary/5 p-4 rounded-lg mt-6">
@@ -2875,7 +3519,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             </div>
 
             <div class="space-y-6">
-                <h2 class="text-2xl font-bold text-primary">✅ Module 8 Summary & Reflection</h2>
+                <h2 class="text-2xl font-bold text-primary">• Module 8 Summary & Reflection</h2>
 
                 <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
                     <li>Plan, record, and track lessons digitally</li>
@@ -2926,7 +3570,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
                     <p class="text-sm text-muted-foreground">Templates are editable to suit your classroom's needs. Always preview before sharing with parents.</p>
                 </div>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=tutor-portal",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Using a Tutor Portal Effectively"
         },
         {
@@ -2935,8 +3579,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Methods include uploading photos/videos showing children demonstrating skills, tagging each skill (e.g., "Color recognition," "Counting 1–10"), adding 1-line feedback for each child, and generating weekly or monthly reports automatically. Example: Awa - Block stacking - Counting 1–5 - "Awa stacked 5 blocks correctly, lined them in order."</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=digital-assessment",
-            caption: "Digital Assessment in Early Childhood"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n8s3",
@@ -2944,8 +3588,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Types of tech activities: short videos (2–3 min) for songs/counting/storytelling, e-flashcards for animals/colors/shapes/numbers with sounds, tablet rotation (1 tablet per 5 children, max 3 minutes per child), interactive slides. Sample lesson: Video (2 min) → E-flashcard matching (3 min) → Hands-on activity (5 min) → Reflection discussion (3 min).</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=tech-integration",
-            caption: "Integrating Technology in Nursery Lessons"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n8s4",
@@ -2953,8 +3597,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Upload videos or activities with short descriptions (e.g., "Nursery 2: Counting 1–5 using bean bags"). Review peer-uploaded resources and provide constructive feedback. Example: "Worked well for 4–5 children; suggest larger props for visual clarity."</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=sharing-resources",
-            caption: "Sharing Digital Resources with Colleagues"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n8s5",
@@ -2962,8 +3606,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Key safety rules: no full names or identifying information online, obtain parent consent for all photos/videos, always supervise screen time, use safe search and age-appropriate content filters, limit tech usage to 2–3 min per child. Example response to unsupervised tablet request: "We will use it together for 3 minutes. I'll show you how to play safely."</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=online-safety",
-            caption: "Online Safety for Young Children"
+            youtubeUrl: "",
+            caption: ""
         },
         {
             id: "n8s6",
@@ -2971,7 +3615,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
             html: `<div class="space-y-4">
                 <p class="text-muted-foreground">Digital assessment techniques: use photos and videos to document learning milestones, tag activities for cognitive/social/emotional/physical/creative skills, compile weekly progress reports automatically. Applied exercise: record a child performing fine motor, counting, and language skills; upload and tag all 3 skills; generate a progress report summary.</p>
             </div>`,
-            youtubeUrl: "https://www.youtube.com/watch?v=digital-assessment",
+            youtubeUrl: "https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT",
             caption: "Digital Assessment in Early Childhood"
         }
     ],
@@ -3143,7 +3787,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Explain the structure and organization of Basic Education in Cameroon</li>
@@ -3347,9 +3991,9 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<div class="bg-primary/10 p-4 rounded-lg my-4">
 								<p class="font-semibold mb-2">Key Priority Subjects:</p>
 								<ul class="list-disc list-inside space-y-1 text-sm">
-									<li>✅ English</li>
-									<li>✅ Mathematics</li>
-									<li>✅ French</li>
+									<li>• English</li>
+									<li>• Mathematics</li>
+									<li>• French</li>
 								</ul>
 							</div>
 						</section>
@@ -3358,7 +4002,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">1.5 The Role and Responsibilities of a Primary Tutor</h2>
 							<p class="text-muted-foreground">A Primary Tutor is not just a teacher but a guide, mentor, and role model.</p>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<h3 class="font-semibold mb-3">🧑‍🏫 The Primary Tutor is:</h3>
+								<h3 class="font-semibold mb-3">The Primary Tutor is:</h3>
 								<ul class="space-y-2 text-sm">
 									<li><strong>A Teacher:</strong> Plans lessons, explains concepts, and supports learning.</li>
 									<li><strong>A Facilitator:</strong> Encourages discovery and active participation.</li>
@@ -3375,7 +4019,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground">The CBC promotes active, learner-centered, and competency-oriented education.</p>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Do's (Best Practices)</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Do's (Best Practices)</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Prioritize learner-centered methods</li>
 										<li>Teach phonics before reading</li>
@@ -3387,7 +4031,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border-l-4 border-red-500">
-									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">❌ Don'ts (Outdated Practices)</h3>
+									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">→ Don'ts (Outdated Practices)</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Overreliance on lecturing and rote learning</li>
 										<li>Punitive or fear-based discipline ("cane mentality")</li>
@@ -3398,7 +4042,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</div>
 
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<h3 class="font-semibold mb-2">🧠 The Primary Tutor's Mindset</h3>
+								<h3 class="font-semibold mb-2"> The Primary Tutor's Mindset</h3>
 								<p class="text-sm text-muted-foreground mb-2">Children aged 6–11:</p>
 								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 									<li>Learn best by doing, exploring, and interacting</li>
@@ -3414,10 +4058,10 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 						</section>
 
 						<section class="space-y-4">
-							<h2 class="text-2xl font-bold text-primary">👨‍🏫 Reflection Activity</h2>
+							<h2 class="text-2xl font-bold text-primary">Reflection Activity</h2>
 							<div class="bg-muted/50 p-4 rounded-lg">
 								<p class="text-sm text-muted-foreground mb-2">Write your answer in your teacher notebook:</p>
-								<p class="text-sm font-medium mb-2">❓ Why do some pupils struggle from Class 1 to Class 6 in Cameroon schools?</p>
+								<p class="text-sm font-medium mb-2">→ Why do some pupils struggle from Class 1 to Class 6 in Cameroon schools?</p>
 								<p class="text-xs text-muted-foreground italic">Hint: Consider weak literacy foundations, lack of phonics instruction, fear-based classroom culture, limited home support, and low learner confidence.</p>
 							</div>
 						</section>
@@ -3537,47 +4181,346 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h3 class="text-xl font-semibold mt-6">Structure of Primary School</h3>
 							<p class="text-muted-foreground">Primary education in Cameroon lasts six years and is divided into two main cycles: Lower Basic (Class 1–3, ages 6–8) and Upper Basic (Class 4–6, ages 9–11).</p>
 						</div>`,
-						youtubeUrl: '',
-						caption: 'Basic Education Structure in Cameroon'
+						youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+						caption: 'Understanding Primary Education in Cameroon'
 					},
 					{
 						id: '1-2',
 						title: '1.2 The Aims and Vision of Primary Education (CBC Perspective)',
-						html: `<div class="space-y-4">
+						html: `<div class="space-y-6">
 							<p class="text-muted-foreground">The Competency-Based Curriculum (CBC) envisions a Cameroonian child who is a competent and lifelong learner, disciplined and morally upright, creative and critical problem-solver, team player and effective communicator, and a productive and patriotic member of society.</p>
-							<p class="text-muted-foreground">Core competencies include Communication, Critical Thinking & Problem Solving, Collaboration & Teamwork, Digital Literacy, and Citizenship & Values.</p>
+							
+							<h3 class="text-xl font-semibold mt-6">CBC Core Competencies and Expected Outcomes</h3>
+							<div class="overflow-x-auto my-4">
+								<table class="min-w-full border-collapse border border-primary/20">
+									<thead class="bg-primary/10">
+										<tr>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Core Competency</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Expected Learning Outcome</th>
+										</tr>
+									</thead>
+									<tbody class="text-sm">
+										<tr>
+											<td class="border border-primary/20 p-2 font-medium">Communication</td>
+											<td class="border border-primary/20 p-2">Reads fluently, listens actively, and expresses ideas clearly</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2 font-medium">Critical Thinking & Problem Solving</td>
+											<td class="border border-primary/20 p-2">Analyzes information and applies knowledge to real-life challenges</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-2 font-medium">Collaboration & Teamwork</td>
+											<td class="border border-primary/20 p-2">Works effectively with others to achieve shared goals</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2 font-medium">Digital Literacy</td>
+											<td class="border border-primary/20 p-2">Uses digital tools safely and productively for learning</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-2 font-medium">Citizenship & Values</td>
+											<td class="border border-primary/20 p-2">Demonstrates respect, patriotism, and social responsibility</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Implementation in the Classroom</h4>
+								<p class="text-sm text-muted-foreground mb-2">To develop these competencies, tutors should:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Create opportunities for group work and peer learning</li>
+									<li>Encourage questioning and problem-solving activities</li>
+									<li>Integrate technology in meaningful ways</li>
+									<li>Model and reinforce positive values daily</li>
+									<li>Connect lessons to real-world applications</li>
+								</ul>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Understanding Each Competency</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• Communication</p>
+										<p class="text-sm text-muted-foreground ml-4">This goes beyond reading and writing. It includes listening skills, speaking clearly, using appropriate vocabulary, and understanding non-verbal cues. Children should be able to express their thoughts, ask questions, and engage in meaningful conversations.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Critical Thinking & Problem Solving</p>
+										<p class="text-sm text-muted-foreground ml-4">Children learn to analyze situations, identify problems, think of solutions, and evaluate outcomes. This involves asking "why" and "how" questions, making connections, and applying knowledge to new situations.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Collaboration & Teamwork</p>
+										<p class="text-sm text-muted-foreground ml-4">Working together effectively requires sharing ideas, listening to others, compromising, and contributing to group goals. This builds social skills and prepares children for future work environments.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Digital Literacy</p>
+										<p class="text-sm text-muted-foreground ml-4">In today's world, children need to use technology safely and effectively. This includes basic computer skills, internet safety, using educational apps, and understanding how to find reliable information online.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Citizenship & Values</p>
+										<p class="text-sm text-muted-foreground ml-4">Children learn to respect others, follow rules, contribute to their community, and understand their rights and responsibilities. This includes cultural awareness, moral values, and national pride.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Practical Examples</h4>
+								<div class="space-y-2 text-sm text-muted-foreground">
+									<p><strong>Communication:</strong> Have children present their projects to the class, participate in debates, or write letters to community members.</p>
+									<p><strong>Critical Thinking:</strong> Pose real-world problems like "How can we reduce waste in our school?" and guide children through the problem-solving process.</p>
+									<p><strong>Collaboration:</strong> Assign group projects where children must work together to create a presentation or solve a challenge.</p>
+									<p><strong>Digital Literacy:</strong> Use educational websites for research, create digital presentations, or use apps for interactive learning.</p>
+									<p><strong>Citizenship:</strong> Organize community service projects, discuss current events, or celebrate cultural diversity in the classroom.</p>
+								</div>
+							</div>
 						</div>`,
 						youtubeUrl: '',
-						caption: 'CBC Vision and Competencies'
+						caption: ''
 					},
 					{
 						id: '1-3',
 						title: '1.3 What Makes Primary Education Different from Nursery?',
 						html: `<div class="space-y-4">
 							<p class="text-muted-foreground">The transition from nursery to primary marks a shift from learning through play to structured learning and foundational skill development. Primary combines play and structured academic work, focuses on reading and writing, and emphasizes literacy, numeracy, and discipline.</p>
+							
+							<div class="overflow-x-auto my-4">
+								<table class="min-w-full border-collapse border border-primary/20">
+									<thead class="bg-primary/10">
+										<tr>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Nursery (Pre-Primary)</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Primary Education</th>
+										</tr>
+									</thead>
+									<tbody class="text-sm">
+										<tr>
+											<td class="border border-primary/20 p-2">Mainly play-based learning</td>
+											<td class="border border-primary/20 p-2">Combination of play and structured academic work</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2">Focus on interaction, sounds, and oral language</td>
+											<td class="border border-primary/20 p-2">Focus on reading, writing, and composition</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-2">Simple counting and shapes</td>
+											<td class="border border-primary/20 p-2">Advanced arithmetic and applied problem-solving</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2">Short, playful activities</td>
+											<td class="border border-primary/20 p-2">Longer, more focused learning tasks</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-2">Emphasis on socialization</td>
+											<td class="border border-primary/20 p-2">Emphasis on literacy, numeracy, and discipline</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Transition Strategies</h4>
+								<p class="text-sm text-muted-foreground mb-2">To help children transition smoothly from nursery to primary:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Gradually introduce structured activities while maintaining play elements</li>
+									<li>Build on oral language skills to develop reading and writing</li>
+									<li>Use familiar nursery activities (songs, stories) as bridges to academic content</li>
+									<li>Maintain a positive, supportive environment to reduce anxiety</li>
+									<li>Celebrate small achievements to build confidence</li>
+								</ul>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Key Differences Explained</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• Learning Approach</p>
+										<p class="text-sm text-muted-foreground ml-4">Nursery focuses on exploration and discovery through play, while primary introduces more structured learning with specific objectives and assessments. However, primary should still incorporate play-based activities to keep children engaged.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Language Development</p>
+										<p class="text-sm text-muted-foreground ml-4">In nursery, children develop oral language skills, vocabulary, and basic communication. Primary builds on this foundation by introducing reading, writing, grammar, and composition skills systematically.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Mathematics</p>
+										<p class="text-sm text-muted-foreground ml-4">Nursery introduces basic counting and shapes. Primary expands to include arithmetic operations, problem-solving, measurement, and more complex mathematical concepts.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Attention Span</p>
+										<p class="text-sm text-muted-foreground ml-4">Nursery activities are short (5-10 minutes). Primary activities can be longer (15-30 minutes) but should still be broken into manageable segments with movement breaks.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Assessment</p>
+										<p class="text-sm text-muted-foreground ml-4">Nursery uses observation and informal assessment. Primary introduces more formal assessments, tests, and progress tracking while still maintaining continuous assessment approaches.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Supporting the Transition</h4>
+								<p class="text-sm text-muted-foreground mb-2">As a primary tutor, you play a crucial role in helping children adjust:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Be patient and understanding during the first few weeks</li>
+									<li>Use familiar routines and activities from nursery as starting points</li>
+									<li>Gradually increase structure while maintaining fun and engagement</li>
+									<li>Communicate with nursery teachers to understand each child's background</li>
+									<li>Provide extra support for children who struggle with the transition</li>
+								</ul>
+							</div>
 						</div>`,
 						youtubeUrl: '',
-						caption: 'Nursery vs Primary Education'
+						caption: ''
 					},
 					{
 						id: '1-4',
 						title: '1.4 Subjects Taught Under MINEDUB Curriculum',
 						html: `<div class="space-y-4">
-							<p class="text-muted-foreground">Lower Primary (Class 1–3) includes English/French, Mathematics, Science & Health Education, Social Studies, Moral Instruction, Creative Arts, PE, and ICT Introduction.</p>
-							<p class="text-muted-foreground">Upper Primary (Class 4–6) includes English/French, Mathematics, Science, ICT & Basic Coding, Civic & Moral Education, History, PE, and Arts & Music.</p>
-							<p class="text-muted-foreground font-semibold">Key Priority Subjects: English, Mathematics, French</p>
+							<p class="text-muted-foreground">The MINEDUB curriculum is designed to provide a well-rounded education that develops both academic skills and character. Subjects are carefully structured to build foundational knowledge while promoting critical thinking and practical application.</p>
+							
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
+								<div class="bg-primary/5 p-4 rounded-lg">
+									<h3 class="font-semibold mb-2">Lower Primary (Class 1–3)</h3>
+									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+										<li>English / French</li>
+										<li>Mathematics</li>
+										<li>Science & Health Education</li>
+										<li>Social Studies</li>
+										<li>Moral Instruction</li>
+										<li>Creative Arts</li>
+										<li>Physical Education (PE)</li>
+										<li>ICT (Introduction)</li>
+									</ul>
+								</div>
+								<div class="bg-primary/5 p-4 rounded-lg">
+									<h3 class="font-semibold mb-2">Upper Primary (Class 4–6)</h3>
+									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+										<li>English / French</li>
+										<li>Mathematics</li>
+										<li>Science</li>
+										<li>ICT & Basic Coding</li>
+										<li>Civic & Moral Education</li>
+										<li>History</li>
+										<li>Physical Education</li>
+										<li>Arts & Music</li>
+									</ul>
+								</div>
+							</div>
+							
+							<div class="bg-primary/10 p-4 rounded-lg my-4">
+								<p class="font-semibold mb-2">Key Priority Subjects:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm">
+									<li>• English</li>
+									<li>• Mathematics</li>
+									<li>• French</li>
+								</ul>
+								<p class="text-sm text-muted-foreground mt-2">These three subjects receive additional instructional time and are considered foundational for all other learning.</p>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Subject Integration</h4>
+								<p class="text-sm text-muted-foreground">Effective tutors integrate subjects to create meaningful learning experiences. For example:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Use stories in English class to teach moral values</li>
+									<li>Apply mathematics in science experiments</li>
+									<li>Create art projects related to social studies topics</li>
+									<li>Use ICT tools to enhance learning across all subjects</li>
+								</ul>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Understanding Each Subject Area</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• English / French</p>
+										<p class="text-sm text-muted-foreground ml-4">These language subjects focus on reading, writing, speaking, and listening skills. Children learn phonics, vocabulary, grammar, and composition. Bilingual instruction helps children develop proficiency in both official languages of Cameroon.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Mathematics</p>
+										<p class="text-sm text-muted-foreground ml-4">From basic counting to problem-solving, mathematics develops logical thinking and numerical skills. Topics include arithmetic, geometry, measurement, and data handling, all taught through practical, hands-on activities.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Science & Health Education</p>
+										<p class="text-sm text-muted-foreground ml-4">Children explore the natural world, conduct simple experiments, and learn about health, hygiene, and safety. This subject encourages curiosity, observation, and scientific thinking.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Social Studies</p>
+										<p class="text-sm text-muted-foreground ml-4">Children learn about their community, country, history, geography, and culture. This subject helps develop citizenship, cultural awareness, and understanding of social structures.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Moral Instruction / Civic & Moral Education</p>
+										<p class="text-sm text-muted-foreground ml-4">Teaches values, ethics, respect, and responsible citizenship. Children learn about right and wrong, respect for others, and their role in society.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Creative Arts / Arts & Music</p>
+										<p class="text-sm text-muted-foreground ml-4">Encourages self-expression through drawing, painting, music, dance, and drama. These activities develop creativity, fine motor skills, and cultural appreciation.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Physical Education</p>
+										<p class="text-sm text-muted-foreground ml-4">Promotes physical fitness, coordination, teamwork, and healthy habits. Activities include games, sports, exercises, and movement activities.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• ICT (Information and Communication Technology)</p>
+										<p class="text-sm text-muted-foreground ml-4">Introduces children to computers, basic software, internet safety, and digital literacy. Upper primary may include basic coding concepts.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Teaching Tips for Each Subject</h4>
+								<div class="space-y-2 text-sm text-muted-foreground">
+									<p><strong>Languages:</strong> Use stories, songs, role-play, and conversations. Make reading fun and accessible.</p>
+									<p><strong>Mathematics:</strong> Use manipulatives, real-world problems, games, and visual aids. Make math practical and relevant.</p>
+									<p><strong>Science:</strong> Conduct experiments, observe nature, ask questions, and explore. Let children discover through hands-on activities.</p>
+									<p><strong>Social Studies:</strong> Use maps, stories, field trips, and discussions. Connect learning to children's lives and experiences.</p>
+									<p><strong>Arts:</strong> Provide various materials, encourage creativity, celebrate unique expressions, and integrate with other subjects.</p>
+								</div>
+							</div>
 						</div>`,
 						youtubeUrl: '',
-						caption: 'Primary School Subjects'
+						caption: ''
 					},
 					{
 						id: '1-5',
 						title: '1.5 The Role and Responsibilities of a Primary Tutor',
 						html: `<div class="space-y-4">
-							<p class="text-muted-foreground">A Primary Tutor is a teacher, facilitator, assessor, role model, parent liaison, and digital guide. They plan lessons, encourage discovery, monitor progress, demonstrate values, communicate with parents, and introduce safe technology use.</p>
+							<p class="text-muted-foreground">A Primary Tutor is not just a teacher but a guide, mentor, and role model. The role encompasses multiple dimensions that contribute to holistic child development.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h3 class="font-semibold mb-3">The Primary Tutor is:</h3>
+								<ul class="space-y-2 text-sm">
+									<li><strong>A Teacher:</strong> Plans lessons, explains concepts, and supports learning through clear instruction and guidance.</li>
+									<li><strong>A Facilitator:</strong> Encourages discovery and active participation rather than passive reception of information.</li>
+									<li><strong>An Assessor:</strong> Monitors learning progress through continuous assessment and provides timely feedback.</li>
+									<li><strong>A Role Model:</strong> Demonstrates values like respect, patience, honesty, and integrity in daily interactions.</li>
+									<li><strong>A Parent Liaison:</strong> Communicates effectively with parents and guardians about student progress and concerns.</li>
+									<li><strong>A Digital Guide:</strong> Introduces safe and productive use of technology for learning and research.</li>
+								</ul>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Daily Responsibilities</h4>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+									<li>Prepare lesson plans aligned with CBC curriculum</li>
+									<li>Create engaging learning activities and materials</li>
+									<li>Maintain classroom discipline and positive learning environment</li>
+									<li>Assess student work and provide constructive feedback</li>
+									<li>Track attendance and monitor student progress</li>
+									<li>Communicate with parents about student development</li>
+									<li>Participate in professional development activities</li>
+								</ul>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Professional Ethics</h4>
+								<p class="text-sm text-muted-foreground mb-2">Primary tutors must maintain high ethical standards:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Treat all students fairly and without bias</li>
+									<li>Maintain confidentiality of student records</li>
+									<li>Respect cultural and individual differences</li>
+									<li>Model positive behavior and values</li>
+									<li>Continuously improve teaching skills through training</li>
+								</ul>
+							</div>
 						</div>`,
 						youtubeUrl: '',
-						caption: 'Primary Tutor Role'
+						caption: ''
 					},
 					{
 						id: '1-6',
@@ -3586,8 +4529,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground">The CBC promotes active, learner-centered, and competency-oriented education. Best practices include prioritizing learner-centered methods, teaching phonics before reading, using inquiry-based science, focusing on competency over memorization, and emphasizing continuous assessment.</p>
 							<p class="text-muted-foreground font-semibold">Golden Rule: "Teach the child, not the topic."</p>
 						</div>`,
-						youtubeUrl: '',
-						caption: 'CBC Teaching Philosophy'
+						youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+						caption: 'Teaching Philosophy in Primary Education'
 					}
 				]
 			},
@@ -3598,7 +4541,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Explain the major physical, cognitive, emotional, and social development characteristics of children aged 6–11</li>
@@ -3615,7 +4558,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">2.1 Age Characteristics of Primary Learners</h2>
 							<p class="text-muted-foreground">Understanding how children grow and learn at different stages helps teachers adapt lessons effectively.</p>
 							
-							<h3 class="text-xl font-semibold mt-6">✅ Lower Primary (6–8 years — Classes 1–3)</h3>
+							<h3 class="text-xl font-semibold mt-6">• Lower Primary (6–8 years — Classes 1–3)</h3>
 							<div class="overflow-x-auto my-4">
 								<table class="min-w-full border-collapse border border-primary/20">
 									<thead class="bg-primary/10">
@@ -3653,7 +4596,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 
-							<h3 class="text-xl font-semibold mt-6">✅ Upper Primary (9–11 years — Classes 4–6)</h3>
+							<h3 class="text-xl font-semibold mt-6">• Upper Primary (9–11 years — Classes 4–6)</h3>
 							<div class="overflow-x-auto my-4">
 								<table class="min-w-full border-collapse border border-primary/20">
 									<thead class="bg-primary/10">
@@ -3700,7 +4643,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">2.2 Brain & Learning Theory (Simplified for Classroom Application)</h2>
 							<p class="text-muted-foreground">Understanding basic child psychology helps teachers choose effective teaching strategies.</p>
 							
-							<h3 class="text-xl font-semibold mt-6">🧠 Piaget – Concrete Operational Stage (Ages 7–11)</h3>
+							<h3 class="text-xl font-semibold mt-6"> Piaget – Concrete Operational Stage (Ages 7–11)</h3>
 							<p class="text-muted-foreground">Children at this stage:</p>
 							<ul class="list-disc list-inside space-y-2 ml-4 text-muted-foreground">
 								<li>Think best with real objects and practical examples</li>
@@ -3729,7 +4672,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground">At this stage, children want to feel capable, productive, and recognized.</p>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h4 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Do</h4>
+									<h4 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Do</h4>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Praise effort and progress, not just results</li>
 										<li>Give classroom responsibilities (line leader, monitor)</li>
@@ -3737,7 +4680,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border-l-4 border-red-500">
-									<h4 class="font-semibold mb-2 text-red-700 dark:text-red-400">❌ Avoid</h4>
+									<h4 class="font-semibold mb-2 text-red-700 dark:text-red-400">→ Avoid</h4>
 									<p class="text-sm text-muted-foreground mb-2">Shaming or labeling ("lazy," "slow") — it damages confidence and motivation.</p>
 									<p class="text-sm font-medium">Replace: "You are slow."</p>
 									<p class="text-sm font-medium text-green-600 dark:text-green-400">With: "Let's practice again. You're improving each time!"</p>
@@ -3776,9 +4719,9 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h3 class="text-xl font-semibold mt-6">Strategies to Sustain Attention</h3>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground">
-									<li>✅ Use brain breaks (2–3 minutes of stretching, songs, or quick games)</li>
-									<li>✅ Incorporate call-and-response to regain focus</li>
-									<li>✅ Add movement-based tasks: "Touch something blue." "Stand up if your answer is an odd number."</li>
+									<li>• Use brain breaks (2–3 minutes of stretching, songs, or quick games)</li>
+									<li>• Incorporate call-and-response to regain focus</li>
+									<li>• Add movement-based tasks: "Touch something blue." "Stand up if your answer is an odd number."</li>
 								</ul>
 								<p class="text-sm text-muted-foreground mt-2">These small changes re-energize learners and prevent boredom.</p>
 							</div>
@@ -3788,7 +4731,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">2.4 Motivation Psychology in Primary Learners</h2>
 							<p class="text-muted-foreground">Children perform best when they feel valued, encouraged, and successful.</p>
 							
-							<h3 class="text-xl font-semibold mt-6">💡 Types of Motivation</h3>
+							<h3 class="text-xl font-semibold mt-6">→ Types of Motivation</h3>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
 									<h4 class="font-semibold mb-2">Positive Motivation</h4>
@@ -3879,7 +4822,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Do</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Do</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Speak at the child's eye level</li>
 										<li>Set clear expectations and classroom rules together</li>
@@ -4075,7 +5018,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Explain the structure of the Competency-Based Curriculum (CBC) under MINEDUB</li>
@@ -4199,9 +5142,9 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<div class="bg-primary/10 p-4 rounded-lg my-4">
 								<p class="font-semibold mb-2">Key Priority Subjects:</p>
 								<ul class="list-disc list-inside space-y-1 text-sm">
-									<li>✅ English</li>
-									<li>✅ Mathematics</li>
-									<li>✅ French</li>
+									<li>• English</li>
+									<li>• Mathematics</li>
+									<li>• French</li>
 								</ul>
 							</div>
 						</section>
@@ -4382,9 +5325,9 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground">A PLP helps each learner reach their potential. It is used for:</p>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
 								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-									<li>✅ Slow learners</li>
-									<li>✅ Pupils with learning difficulties</li>
-									<li>✅ Highly gifted learners needing extra challenge</li>
+									<li>• Slow learners</li>
+									<li>• Pupils with learning difficulties</li>
+									<li>• Highly gifted learners needing extra challenge</li>
 								</ul>
 								<h3 class="font-semibold mt-4 mb-2">Strategies for PLP</h3>
 								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
@@ -4559,7 +5502,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Understand the purpose and structure of literacy teaching in the CBC</li>
@@ -4904,7 +5847,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									<li>Pair them with confident readers</li>
 								</ul>
 								<p class="text-sm font-medium mt-2">Teacher language:</p>
-								<p class="text-sm text-green-600 dark:text-green-400">✅ "You're improving every day."</p>
+								<p class="text-sm text-green-600 dark:text-green-400">• "You're improving every day."</p>
 								<p class="text-sm text-red-600 dark:text-red-400">🚫 Avoid: "You're too slow."</p>
 								<p class="text-sm text-muted-foreground mt-2">Remember: Confidence comes before competence.</p>
 							</div>
@@ -5071,7 +6014,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Understand the CBC approach to teaching numeracy in primary school</li>
@@ -5467,7 +6410,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Teach science concepts from Classes 1–6 clearly and practically</li>
@@ -5500,7 +6443,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">6.2 PRINCIPLES OF SCIENCE TEACHING (CBC STYLE)</h2>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Do</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Do</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Start from children's experiences</li>
 										<li>Use real objects and visual aids</li>
@@ -5511,7 +6454,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border-l-4 border-red-500">
-									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">❌ Avoid</h3>
+									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">→ Avoid</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Memorization without understanding</li>
 										<li>Fear-based teaching ("Don't touch! Stop!")</li>
@@ -5771,7 +6714,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, trainees will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Teach Social Studies from Classes 1–6 effectively</li>
@@ -6051,7 +6994,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Establish clear classroom rules and daily routines</li>
@@ -6071,11 +7014,11 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
 								<p class="font-semibold mb-2">Children learn best when:</p>
 								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-									<li>✅ They feel respected</li>
-									<li>✅ Classroom has predictable routines</li>
-									<li>✅ Expectations are clear and consistent</li>
-									<li>✅ Praise is frequent</li>
-									<li>✅ Punishment is rare and fair</li>
+									<li>• They feel respected</li>
+									<li>• Classroom has predictable routines</li>
+									<li>• Expectations are clear and consistent</li>
+									<li>• Praise is frequent</li>
+									<li>• Punishment is rare and fair</li>
 								</ul>
 								<p class="text-sm font-medium mt-2">Tip: Classroom management is not about control—it's about guiding behavior positively.</p>
 							</div>
@@ -6085,13 +7028,13 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">8.2 Essential Classroom Rules</h2>
 							<p class="text-muted-foreground">Rules should be: Few in number, Simple and understandable, Positively worded, Displayed visibly</p>
 							<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg my-4">
-								<h3 class="font-semibold mb-2">Sample "Do" Rules Poster ✅</h3>
+								<h3 class="font-semibold mb-2">Sample "Do" Rules Poster •</h3>
 								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-									<li>✅ We listen when others speak</li>
-									<li>✅ We raise hands before talking</li>
-									<li>✅ We respect everyone</li>
-									<li>✅ We take care of classroom materials</li>
-									<li>✅ We keep our bodies calm (no fighting)</li>
+									<li>• We listen when others speak</li>
+									<li>• We raise hands before talking</li>
+									<li>• We respect everyone</li>
+									<li>• We take care of classroom materials</li>
+									<li>• We keep our bodies calm (no fighting)</li>
 								</ul>
 								<p class="text-sm font-medium mt-2">Tip: Avoid "Don't" rules—they are less effective. Example: Instead of "Don't shout," say "Use a calm voice."</p>
 							</div>
@@ -6110,7 +7053,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Do</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Do</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Speak at the child's eye level</li>
 										<li>Set clear expectations and classroom rules together</li>
@@ -6154,8 +7097,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									<li>🚫 No name-calling</li>
 									<li>🚫 No mocking accents / appearance</li>
 									<li>🚫 No physical harm</li>
-									<li>✅ Tell teacher if bullied</li>
-									<li>✅ Stand up for classmates</li>
+									<li>• Tell teacher if bullied</li>
+									<li>• Stand up for classmates</li>
 								</ul>
 								<p class="text-sm font-medium mt-2">Slogan: "In this class, we lift each other up."</p>
 							</div>
@@ -6322,7 +7265,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Use MINEDUB Continuous Assessment (C.A.) system effectively</li>
@@ -6345,7 +7288,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									<li>Guide lesson planning</li>
 									<li>Improve teaching methods</li>
 								</ul>
-								<p class="text-sm font-medium mt-2">Important: Assessment is not for punishment or shaming. ✅ Assessment supports learning and growth.</p>
+								<p class="text-sm font-medium mt-2">Important: Assessment is not for punishment or shaming. • Assessment supports learning and growth.</p>
 							</div>
 						</section>
 
@@ -6416,7 +7359,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									<li>Lower classes: 10–20 minutes</li>
 									<li>Upper classes: 30–45 minutes</li>
 								</ul>
-								<p class="text-sm font-medium mt-2">Avoid: ❌ 10-page copying tasks, ❌ Punishment homework, ❌ Excessive workloads</p>
+								<p class="text-sm font-medium mt-2">Avoid: → 10-page copying tasks, → Punishment homework, → Excessive workloads</p>
 							</div>
 						</section>
 					</div>`
@@ -6581,7 +7524,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Demonstrate professional behavior at all times</li>
@@ -6615,7 +7558,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">10.2 Ethical Conduct Standards</h2>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">Do: ✅</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">Do: •</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Be honest and transparent</li>
 										<li>Treat all pupils fairly</li>
@@ -6627,7 +7570,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border-l-4 border-red-500">
-									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">Avoid: ❌</h3>
+									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">Avoid: →</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Insulting or humiliating children</li>
 										<li>Asking pupils for personal gifts</li>
@@ -6648,13 +7591,13 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									<li>Encourage participation and praise effort</li>
 								</ul>
 								<p class="text-sm font-medium mt-2">Replace: "You don't understand anything."</p>
-								<p class="text-sm font-medium text-green-600 dark:text-green-400">With: "Good try — let's go through it together." ✅</p>
+								<p class="text-sm font-medium text-green-600 dark:text-green-400">With: "Good try — let's go through it together." •</p>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
 								<h3 class="font-semibold mb-2">With Parents:</h3>
 								<p class="text-sm text-muted-foreground">Be respectful and collaborative. Provide solutions, not blame.</p>
 								<p class="text-sm font-medium mt-2">Say: "Let's help build Sara's reading skills together."</p>
-								<p class="text-sm font-medium text-red-600 dark:text-red-400">Don't say: "Your child is stubborn." ❌</p>
+								<p class="text-sm font-medium text-red-600 dark:text-red-400">Don't say: "Your child is stubborn." →</p>
 							</div>
 						</section>
 
@@ -6832,7 +7775,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Build positive and professional relationships with parents</li>
@@ -6864,7 +7807,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">11.2 Professional Parent Communication Rules</h2>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg border-l-4 border-green-500">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Do:</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Do:</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Always be respectful and polite</li>
 										<li>Offer practical solutions, not criticism</li>
@@ -6874,7 +7817,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg border-l-4 border-red-500">
-									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">❌ Avoid:</h3>
+									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">→ Avoid:</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Arguing emotionally</li>
 										<li>Sending harsh or sarcastic messages</li>
@@ -6908,7 +7851,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h2 class="text-2xl font-bold text-primary">11.4 Good vs Bad Homework Examples</h2>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
 								<div class="bg-green-50 dark:bg-green-950/20 p-4 rounded-lg">
-									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">✅ Good Homework:</h3>
+									<h3 class="font-semibold mb-2 text-green-700 dark:text-green-400">• Good Homework:</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Read 6 sight words, copy 2 sentences</li>
 										<li>4 addition problems + 1 word problem</li>
@@ -6916,7 +7859,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									</ul>
 								</div>
 								<div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-lg">
-									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">❌ Bad Homework:</h3>
+									<h3 class="font-semibold mb-2 text-red-700 dark:text-red-400">→ Bad Homework:</h3>
 									<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground">
 										<li>Copy 4 pages of text</li>
 										<li>Punishment writing "I will be serious" 200 times</li>
@@ -7079,7 +8022,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 				content: {
 					html: `<div class="space-y-6">
 						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-							<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 							<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
 								<li>Introduce basic ICT skills to children (Class 1–6)</li>
@@ -7160,8 +8103,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 									<li>Photos without permission</li>
 								</ul>
 								<p class="text-sm font-medium mt-2">🚫 Avoid online strangers, suspicious links, fights, or bad language</p>
-								<p class="text-sm font-medium mt-2">✅ Always tell an adult if something scares or confuses you</p>
-								<p class="text-sm font-medium mt-2">✅ Be kind and respectful online</p>
+								<p class="text-sm font-medium mt-2">• Always tell an adult if something scares or confuses you</p>
+								<p class="text-sm font-medium mt-2">• Be kind and respectful online</p>
 							</div>
 						</section>
 
@@ -7347,7 +8290,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand the purpose and goals of secondary education</li>
@@ -7429,11 +8372,11 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
 								<p class="font-semibold mb-2">Quick Checklist:</p>
 								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
-									<li>✅ Neat appearance</li>
-									<li>✅ Respectful communication</li>
-									<li>✅ Prepared lessons</li>
-									<li>✅ Fair assessment</li>
-									<li>✅ Professional online behavior</li>
+									<li>• Neat appearance</li>
+									<li>• Respectful communication</li>
+									<li>• Prepared lessons</li>
+									<li>• Fair assessment</li>
+									<li>• Professional online behavior</li>
 								</ul>
 							</div>
 						</div>
@@ -7481,7 +8424,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Model responsible digital behavior for students</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Balance online tools with face-to-face teaching for engagement.</p>
 							</div>
 						</div>
@@ -7519,7 +8462,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 						</div>
 
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 1 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 1 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Secondary education develops critical, creative, and independent learners</li>
 								<li>Tutors are mentors, facilitators, evaluators, and role models</li>
@@ -7541,23 +8484,120 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 						html: `<div class="space-y-4">
 							<p class="text-muted-foreground">Secondary education bridges primary learning and higher studies, developing critical thinking, creativity, moral responsibility, and readiness for further education or career paths.</p>
 						</div>`,
-						youtubeUrl: '',
-						caption: 'Purpose of Secondary Education',
+						youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+						caption: 'Introduction to Secondary Education',
 					},
 					{
 						id: 's1s2',
 						title: '1.2 Role of the Secondary Tutor',
 						html: `<div class="space-y-4">
 							<p class="text-muted-foreground">Tutors serve as subject experts, facilitators, mentors, evaluators, and role models. They connect lessons to real life, encourage active learning, support emotional growth, assess fairly, and demonstrate ethics and discipline.</p>
+							
+							<div class="relative overflow-x-auto shadow-sm rounded-lg my-4">
+								<table class="w-full text-sm">
+									<thead class="bg-primary/5">
+										<tr>
+											<th class="px-4 py-3 text-left font-semibold">Role</th>
+											<th class="px-4 py-3 text-left font-semibold">Function</th>
+											<th class="px-4 py-3 text-left font-semibold">Example</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr class="border-b border-primary/10">
+											<td class="px-4 py-3 font-medium">Subject Expert</td>
+											<td class="px-4 py-3">Master content</td>
+											<td class="px-4 py-3">Connect lessons to real-life scenarios</td>
+										</tr>
+										<tr class="border-b border-primary/10">
+											<td class="px-4 py-3 font-medium">Facilitator</td>
+											<td class="px-4 py-3">Encourage active learning</td>
+											<td class="px-4 py-3">Group discussions, experiments</td>
+										</tr>
+										<tr class="border-b border-primary/10">
+											<td class="px-4 py-3 font-medium">Mentor</td>
+											<td class="px-4 py-3">Support emotional growth</td>
+											<td class="px-4 py-3">Advise on study habits, peer issues</td>
+										</tr>
+										<tr class="border-b border-primary/10">
+											<td class="px-4 py-3 font-medium">Evaluator</td>
+											<td class="px-4 py-3">Assess learning fairly</td>
+											<td class="px-4 py-3">Projects, tests, feedback</td>
+										</tr>
+										<tr class="border-b border-primary/10">
+											<td class="px-4 py-3 font-medium">Role Model</td>
+											<td class="px-4 py-3">Demonstrate ethics & discipline</td>
+											<td class="px-4 py-3">Punctuality, honesty, respect</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Key Responsibilities</h4>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Plan engaging lessons aligned with curriculum objectives</li>
+									<li>Create a positive and inclusive learning environment</li>
+									<li>Provide timely and constructive feedback</li>
+									<li>Support students' academic and personal development</li>
+									<li>Maintain professional relationships with students and parents</li>
+								</ul>
+							</div>
 						</div>`,
 						youtubeUrl: '',
-						caption: 'Role of Secondary Tutors',
+						caption: '',
 					},
 					{
 						id: 's1s3',
 						title: '1.3 Professional and Ethical Conduct',
-						html: `<div class="space-y-4">
+						html: `<div class="space-y-6">
 							<p class="text-muted-foreground">Tutors should prepare lessons with clear objectives, treat students fairly and inclusively, respect confidentiality and boundaries, and use technology responsibly. Maintain neat appearance, respectful communication, and professional online behavior.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Core Principles of Professional Conduct</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• Preparation and Planning</p>
+										<p class="text-sm text-muted-foreground ml-4">Always come to class prepared with clear lesson objectives, materials, and a well-structured plan. Preparation shows respect for students' time and demonstrates professionalism.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Fairness and Inclusivity</p>
+										<p class="text-sm text-muted-foreground ml-4">Treat all students equally, regardless of their background, abilities, or personal characteristics. Create an inclusive environment where every student feels valued and has equal opportunities to learn.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Confidentiality</p>
+										<p class="text-sm text-muted-foreground ml-4">Respect student privacy. Do not share personal information, grades, or behavioral issues with unauthorized persons. Maintain confidentiality in all professional interactions.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Appropriate Boundaries</p>
+										<p class="text-sm text-muted-foreground ml-4">Maintain professional relationships with students. Avoid favoritism, inappropriate personal relationships, or crossing boundaries that could compromise your professional role.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Responsible Technology Use</p>
+										<p class="text-sm text-muted-foreground ml-4">Use technology appropriately for educational purposes. Model safe and ethical online behavior, and ensure all digital interactions remain professional.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">Professional Appearance and Communication</h4>
+								<div class="space-y-2 text-sm text-muted-foreground">
+									<p><strong>Appearance:</strong> Dress neatly and appropriately for the educational setting. Your appearance should reflect professionalism and respect for the teaching profession.</p>
+									<p><strong>Communication:</strong> Use respectful, clear, and appropriate language. Listen actively to students and respond thoughtfully. Avoid sarcasm, harsh criticism, or language that could be demeaning.</p>
+									<p><strong>Online Behavior:</strong> Maintain professional standards in all online communications. Use school-approved platforms, avoid private messaging with students, and model responsible digital citizenship.</p>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Ethical Decision-Making</h4>
+								<p class="text-sm text-muted-foreground mb-2">When facing ethical dilemmas, consider:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>What is in the best interest of the student?</li>
+									<li>Does this action maintain professional boundaries?</li>
+									<li>Would I be comfortable if this action were made public?</li>
+									<li>Does this align with school policies and professional standards?</li>
+									<li>How does this affect other students and the learning environment?</li>
+								</ul>
+							</div>
 						</div>`,
 						youtubeUrl: '',
 						caption: 'Professional Conduct for Tutors',
@@ -7565,8 +8605,73 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 					{
 						id: 's1s4',
 						title: '1.4 Lesson Planning Essentials',
-						html: `<div class="space-y-4">
+						html: `<div class="space-y-6">
 							<p class="text-muted-foreground">A strong lesson plan includes clear objectives, teaching methods, required materials, student activities, and assessment strategies. Example: Teaching the water cycle with group drawing, quiz, and oral/written assessment.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Essential Components of a Lesson Plan</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• Learning Objectives</p>
+										<p class="text-sm text-muted-foreground ml-4">Clearly state what students will know, understand, or be able to do by the end of the lesson. Objectives should be specific, measurable, and aligned with curriculum standards.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Teaching Methods</p>
+										<p class="text-sm text-muted-foreground ml-4">Choose appropriate instructional strategies such as lecture, discussion, group work, experiments, or project-based learning. Match methods to learning objectives and student needs.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Required Materials</p>
+										<p class="text-sm text-muted-foreground ml-4">List all resources needed: textbooks, handouts, technology, lab equipment, or other supplies. Prepare materials in advance to ensure smooth lesson delivery.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Student Activities</p>
+										<p class="text-sm text-muted-foreground ml-4">Plan engaging activities that allow students to practice and apply what they're learning. Include individual work, pair work, and group activities to cater to different learning styles.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Assessment Strategies</p>
+										<p class="text-sm text-muted-foreground ml-4">Determine how you will measure student learning. This could include quizzes, presentations, written work, observations, or self-assessments. Assessment should align with learning objectives.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Example Lesson Plan: The Water Cycle</h4>
+								<div class="space-y-3">
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Topic:</p>
+										<p class="text-sm text-muted-foreground">The Water Cycle</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Objective:</p>
+										<p class="text-sm text-muted-foreground">Students will be able to describe the stages of the water cycle and explain its importance to life on Earth.</p>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Activities:</p>
+										<ul class="list-disc list-inside space-y-1 text-xs text-muted-foreground ml-4">
+											<li>Group drawing activity illustrating the water cycle</li>
+											<li>Short quiz to check understanding</li>
+											<li>Oral explanation of the process</li>
+											<li>Written summary of key concepts</li>
+										</ul>
+									</div>
+									<div class="bg-white p-3 rounded border border-primary/20">
+										<p class="font-medium text-sm mb-1">Assessment:</p>
+										<p class="text-sm text-muted-foreground">Oral explanation + written summary, group presentation evaluation</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Planning Tips</h4>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Start with the end in mind — what should students achieve?</li>
+									<li>Break complex topics into manageable segments</li>
+									<li>Include time for questions and clarification</li>
+									<li>Plan for different learning paces and abilities</li>
+									<li>Leave room for flexibility and spontaneous learning moments</li>
+									<li>Reflect on what worked and what needs improvement after each lesson</li>
+								</ul>
+							</div>
 						</div>`,
 						youtubeUrl: '',
 						caption: 'Lesson Planning for Secondary',
@@ -7574,8 +8679,69 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 					{
 						id: 's1s5',
 						title: '1.5 Technology in Secondary Teaching',
-						html: `<div class="space-y-4">
+						html: `<div class="space-y-6">
 							<p class="text-muted-foreground">Integrate tools like PowerPoint, Google Classroom, and Kahoot. Assign tasks digitally and model responsible digital behavior. Balance online tools with face-to-face teaching for engagement.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Essential Technology Tools</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• Presentation Tools</p>
+										<p class="text-sm text-muted-foreground ml-4">PowerPoint, Google Slides, or Prezi can make lessons more visual and engaging. Use them to present information, include multimedia elements, and organize content clearly.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Learning Management Systems</p>
+										<p class="text-sm text-muted-foreground ml-4">Platforms like Google Classroom, Moodle, or Microsoft Teams help organize assignments, share resources, facilitate communication, and track student progress.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Interactive Learning Tools</p>
+										<p class="text-sm text-muted-foreground ml-4">Kahoot, Quizizz, or Mentimeter make learning fun and interactive. Use them for quizzes, polls, and formative assessments that engage students actively.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Research and Information Tools</p>
+										<p class="text-sm text-muted-foreground ml-4">Teach students to use search engines effectively, evaluate online sources, and access educational databases. Guide them in developing digital research skills.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Collaboration Tools</p>
+										<p class="text-sm text-muted-foreground ml-4">Google Docs, Padlet, or shared whiteboards enable students to work together on projects, share ideas, and collaborate in real-time, even remotely.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">Digital Assignments and Assessment</h4>
+								<p class="text-sm text-muted-foreground mb-2">Technology enables various types of digital assignments:</p>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Online quizzes and tests for immediate feedback</li>
+									<li>Digital portfolios showcasing student work</li>
+									<li>Multimedia projects (videos, podcasts, presentations)</li>
+									<li>Online discussions and forums for extended learning</li>
+									<li>Digital research projects and presentations</li>
+								</ul>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Best Practices for Technology Integration</h4>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Balance technology with face-to-face interaction — don't let screens replace human connection</li>
+									<li>Model responsible digital behavior — show students how to use technology ethically and safely</li>
+									<li>Start simple — introduce one tool at a time and build gradually</li>
+									<li>Ensure accessibility — make sure all students can access and use the technology</li>
+									<li>Have backup plans — technology can fail, so always have non-digital alternatives ready</li>
+									<li>Teach digital literacy — help students develop critical thinking about online information</li>
+									<li>Respect privacy — use school-approved platforms and protect student data</li>
+								</ul>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">Addressing Technology Challenges</h4>
+								<div class="space-y-2 text-sm text-muted-foreground">
+									<p><strong>Limited Access:</strong> Be creative with available resources. Use mobile phones, shared devices, or offline tools when internet access is limited.</p>
+									<p><strong>Technical Issues:</strong> Always test technology before class. Have alternative activities ready if technology fails.</p>
+									<p><strong>Digital Divide:</strong> Ensure all students have equal opportunities. Provide support for those with limited access or skills.</p>
+									<p><strong>Distractions:</strong> Set clear guidelines for technology use. Monitor student activity and redirect when necessary.</p>
+								</div>
+							</div>
 						</div>`,
 						youtubeUrl: '',
 						caption: 'Technology Integration',
@@ -7586,8 +8752,8 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 						html: `<div class="space-y-4">
 							<p class="text-muted-foreground">Common challenges include low motivation (use real-life examples), discipline issues (set clear rules), diverse abilities (differentiated instruction), and limited resources (be creative with materials).</p>
 						</div>`,
-						youtubeUrl: '',
-						caption: 'Addressing Teaching Challenges',
+						youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+						caption: 'Addressing Teaching Challenges in Secondary Education',
 					},
 				],
 				quiz: [
@@ -7679,7 +8845,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand the cognitive, emotional, and social development of adolescents (ages 11–18)</li>
@@ -7743,7 +8909,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Use mixed activities to reach all learners.</p>
 							</div>
 						</div>
@@ -7794,7 +8960,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Principle:</p>
+								<p class="font-semibold text-sm mb-2">→ Principle:</p>
 								<p class="text-sm text-muted-foreground">Positive reinforcement is more effective than punishment.</p>
 							</div>
 						</div>
@@ -7808,7 +8974,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Recognize early signs of stress, anxiety, or bullying</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Incorporate short check-ins, journals, or class discussions to monitor well-being.</p>
 							</div>
 						</div>
@@ -7822,7 +8988,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Foster respect for diversity and opinions</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Principle:</p>
+								<p class="font-semibold text-sm mb-2">→ Principle:</p>
 								<p class="text-sm text-muted-foreground">Every learner should feel valued, capable, and supported.</p>
 							</div>
 						</div>
@@ -7841,7 +9007,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 						</div>
 
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 2 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 2 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Adolescents have unique cognitive, emotional, and social needs</li>
 								<li>Tutors must recognize learning styles and adapt instruction</li>
@@ -8010,7 +9176,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand the structure and objectives of the secondary school curriculum</li>
@@ -8092,7 +9258,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li><strong>Differentiated instruction:</strong> Adjust for different learning needs</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Mix methods to maintain engagement and cater to diverse learners.</p>
 							</div>
 						</div>
@@ -8160,13 +9326,13 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Track student progress electronically</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Combine traditional and digital methods for effective learning.</p>
 							</div>
 						</div>
 
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 3 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 3 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Secondary curriculum guides learning outcomes and skills development</li>
 								<li>Lesson planning ensures structured, engaging, and purposeful teaching</li>
@@ -8326,7 +9492,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand the principles of effective classroom management</li>
@@ -8361,7 +9527,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Recognize individual differences and needs</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Use a token system or point chart for motivation.</p>
 							</div>
 							<div class="bg-secondary/5 p-4 rounded-lg my-4">
@@ -8424,13 +9590,13 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Gamify behavior tracking with apps like ClassDojo</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Technology should supplement, not replace, personal engagement with students.</p>
 							</div>
 						</div>
 
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 4 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 4 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Effective classroom management combines clear rules, positive reinforcement, and consistent expectations</li>
 								<li>Tutors must address challenging behaviors constructively</li>
@@ -8580,7 +9746,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 5: Motivation & Engagement Strategies for Secondary Learners</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Identify factors that motivate secondary students</li>
@@ -8669,7 +9835,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</ul>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 5 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 5 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Motivation includes intrinsic (personal satisfaction) and extrinsic (rewards) factors</li>
 								<li>Active learning, collaboration, gamification, choice, and relevance enhance engagement</li>
@@ -8801,7 +9967,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 6: Inclusive Education & Diversity Strategies</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand the principles of inclusive education</li>
@@ -8836,7 +10002,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li><strong>Emotional diversity:</strong> Different personalities, social skills, and confidence levels</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Observe students' learning preferences and adapt accordingly.</p>
 							</div>
 						</div>
@@ -8898,12 +10064,12 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Recognize achievements fairly and inclusively</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Class discussions can include perspectives from various cultures, genders, and abilities.</p>
 							</div>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 6 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 6 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Inclusive education ensures all learners have access to quality education</li>
 								<li>Diversity includes cognitive, cultural, physical, and emotional differences</li>
@@ -9043,7 +10209,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 7: Effective Communication & Teacher-Student Relationships</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand the role of communication in teaching and learning</li>
@@ -9074,7 +10240,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li><strong>Active listening:</strong> Show understanding, ask clarifying questions, paraphrase</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Match verbal and non-verbal signals for consistent communication.</p>
 							</div>
 						</div>
@@ -9100,7 +10266,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Encourage peer feedback and collaborative discussion</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Avoid sarcasm or negative comments; maintain professionalism at all times.</p>
 							</div>
 						</div>
@@ -9113,7 +10279,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</ul>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 7 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 7 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Effective communication is essential for understanding, engagement, and trust</li>
 								<li>Tutors must combine verbal, non-verbal, and digital communication skills</li>
@@ -9253,7 +10419,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 8: Effective Lesson Delivery & Teaching Techniques</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Deliver lessons clearly, confidently, and engagingly</li>
@@ -9324,7 +10490,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Mix techniques to suit topic, learners, and available resources.</p>
 							</div>
 						</div>
@@ -9346,7 +10512,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li><strong>Reading/writing learners:</strong> Summaries, essays, research assignments</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Include multiple approaches in one lesson to reach all students.</p>
 							</div>
 						</div>
@@ -9367,7 +10533,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</div>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 8 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 8 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Effective lessons are clear, engaging, and purposeful</li>
 								<li>Tutors should mix teaching techniques for diverse learners</li>
@@ -9507,7 +10673,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 9: Assessment, Feedback & Student Progress Monitoring</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Understand different types of assessment and their purposes</li>
@@ -9624,7 +10790,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<p class="text-sm text-muted-foreground">"Your essay has strong arguments, but include more evidence to support your claims. Try adding one example from the textbook."</p>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Combine written, verbal, and digital feedback for maximum impact.</p>
 							</div>
 						</div>
@@ -9652,7 +10818,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</ul>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 9 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 9 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Assessment types serve different purposes: formative, summative, diagnostic, peer/self</li>
 								<li>Effective feedback is specific, actionable, and timely</li>
@@ -9806,7 +10972,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 10: Classroom Technology Integration & Digital Tools</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Identify technology tools suitable for secondary education</li>
@@ -9923,7 +11089,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</ul>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 10 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 10 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Technology enhances engagement, collaboration, and learning when integrated thoughtfully</li>
 								<li>Tutors should plan, monitor, and balance tech use with traditional methods</li>
@@ -10063,7 +11229,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 11: Student Wellbeing, Mental Health & Motivation</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~60 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Recognize the importance of student wellbeing in learning</li>
@@ -10096,7 +11262,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Attention difficulties (ADHD, learning challenges)</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Early recognition and referral are key; always communicate with school counselors or parents when needed.</p>
 							</div>
 						</div>
@@ -10179,7 +11345,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</ul>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 11 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 11 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Student wellbeing directly affects academic performance and engagement</li>
 								<li>Common challenges include anxiety, low self-esteem, isolation, and attention difficulties</li>
@@ -10319,7 +11485,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							<h1 class="text-3xl font-bold text-primary mb-2">Module 12: Digital Teaching, Coding Basics & Child Online Safety</h1>
 							<p class="text-muted-foreground mb-6">(Duration: ~90 minutes)</p>
 							<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
-								<h3 class="font-bold text-lg mb-3 text-primary">🎯 Learning Objectives</h3>
+								<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
 								<p class="text-sm mb-2">By the end of this module, tutors will be able to:</p>
 								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 									<li>Introduce basic ICT skills and coding to secondary students</li>
@@ -10441,7 +11607,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								</table>
 							</div>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Important:</p>
+								<p class="font-semibold text-sm mb-2">→ Important:</p>
 								<p class="text-sm text-muted-foreground">Always supervise students and ensure content is age-appropriate.</p>
 							</div>
 						</div>
@@ -10454,7 +11620,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 								<li>Be kind, respectful, and responsible online</li>
 							</ul>
 							<div class="bg-primary/5 p-4 rounded-lg my-4">
-								<p class="font-semibold text-sm mb-2">💡 Tip:</p>
+								<p class="font-semibold text-sm mb-2">→ Tip:</p>
 								<p class="text-sm text-muted-foreground">Model good online behavior for students.</p>
 							</div>
 						</div>
@@ -10485,7 +11651,7 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 							</div>
 						</div>
 						<div class="space-y-6">
-							<h2 class="text-2xl font-bold text-primary">✅ Module 12 Summary</h2>
+							<h2 class="text-2xl font-bold text-primary">• Module 12 Summary</h2>
 							<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
 								<li>Digital education enhances engagement, creativity, and problem-solving</li>
 								<li>Basic ICT skills include device handling, internet navigation, typing, digital creativity, and coding</li>
@@ -10636,7 +11802,707 @@ export const ACADEMY_LEVELS: AcademyLevel[] = [
 		name: 'Skills Training',
 		description: 'Vocational instruction, project-based learning, and safety compliance.',
 		modules: [
-		
+			{
+				id: 's1',
+				title: 'Foundational Teaching Skills & The Tutor\'s Role',
+				description: 'This module defines the scope of teaching practical skills and covers essential pedagogical principles. It emphasizes the unique role of the skills tutor in guiding learners from theory to practical application.',
+				content: {
+					html: `<div class="space-y-6">
+						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
+							<p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Understand the specific challenges and rewards of teaching practical skills.</li>
+								<li>Define the roles of the skills tutor (instructor, mentor, evaluator).</li>
+								<li>Apply core professional ethics and best practices.</li>
+								<li>Understand the basics of adult learning theory (andragogy).</li>
+							</ul>
+						</div>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">1.1 The Role of the Skills Tutor</h2>
+							<p class="text-muted-foreground">The skills tutor plays a dynamic, hands-on role that extends far beyond traditional lecturing. They must transition from merely a source of information to a practical coach who demonstrates techniques, observes execution, and provides real-time feedback.</p>
+							<p class="text-muted-foreground">The primary challenge is ensuring learners can translate theoretical knowledge (e.g., "what code to write") into demonstrable practical application ("writing functional code").</p>
+							<p class="text-muted-foreground">The reward is seeing a learner successfully produce a tangible result or solve a real-world problem using their new abilities. The tutor is an instructor, a mentor guiding learners through frustration, and an evaluator assessing competency, not just memorization.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">1.2 Understanding Adult Learners</h2>
+							<p class="text-muted-foreground">Teaching adults requires a different approach than teaching adolescents. Adult learners are typically motivated, goal-oriented, and self-directed. They come to the table with prior experiences they wish to build upon and often need to know why they are learning a specific skill before they commit to mastering it.</p>
+							<p class="text-muted-foreground">Tutors should leverage adult learning theory (andragogy) by focusing on relevance, problem-solving, and respecting the learner's existing knowledge base. They value autonomy and practical application over rote memorization of facts.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold text-lg mb-3">Key Principles for Adult Learners:</h4>
+								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
+									<li><strong>Relevance:</strong> Clearly link every skill demonstration to real-world applications or job market demands.</li>
+									<li><strong>Experience-Based:</strong> Encourage learners to share past experiences and build on existing knowledge.</li>
+									<li><strong>Problem-Centered:</strong> Structure lessons around solving practical problems or completing real projects.</li>
+									<li><strong>Autonomy:</strong> Allow choice in projects or problem-solving approaches when possible.</li>
+								</ul>
+							</div>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">1.3 Professional Ethics</h2>
+							<p class="text-muted-foreground">Maintaining professional ethics and best practices is crucial in a practical skills academy. The tutor sets the standard for conduct, safety, and integrity. This involves not only teaching the technical aspects of the skill (e.g., using a soldering iron correctly, writing secure code) but also instilling professional values needed in the workplace.</p>
+							<p class="text-muted-foreground">Tutors must ensure a safe working environment, maintain confidentiality, and treat all learners fairly and without bias. Adhering to these ethical codes builds a strong, professional reputation for both the tutor and the academy.</p>
+							
+							<div class="overflow-x-auto my-4">
+								<table class="min-w-full border-collapse border border-primary/20">
+									<thead class="bg-primary/10">
+										<tr>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Area</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Best Practice •</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Avoid →</th>
+										</tr>
+									</thead>
+									<tbody class="text-sm">
+										<tr>
+											<td class="border border-primary/20 p-2 font-medium">Safety</td>
+											<td class="border border-primary/20 p-2">Enforce safety standards for tools/software</td>
+											<td class="border border-primary/20 p-2">Ignoring safety rules for speed/convenience</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2 font-medium">Fairness</td>
+											<td class="border border-primary/20 p-2">Treat all learners equally, assess objectively</td>
+											<td class="border border-primary/20 p-2">Showing favoritism or bias</td>
+										</tr>
+										<tr>
+											<td class="border border-primary/20 p-2 font-medium">Confidentiality</td>
+											<td class="border border-primary/20 p-2">Protect learner records and project ideas</td>
+											<td class="border border-primary/20 p-2">Discussing learner progress publicly</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2 font-medium">Professionalism</td>
+											<td class="border border-primary/20 p-2">Model punctuality, honesty, and respect</td>
+											<td class="border border-primary/20 p-2">Inappropriate communication or appearance</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+					</div>`,
+					videos: [],
+				},
+				sections: [
+					{
+						id: 's1s1',
+						title: '1.1 The Role of the Skills Tutor',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">The skills tutor plays a dynamic, hands-on role that extends far beyond traditional lecturing. They must transition from merely a source of information to a practical coach who demonstrates techniques, observes execution, and provides real-time feedback.</p></div>`,
+						youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+						caption: 'The Role of Skills Tutors in Practical Training',
+					},
+					{
+						id: 's1s2',
+						title: '1.2 Understanding Adult Learners',
+						html: `<div class="space-y-6">
+							<p class="text-muted-foreground">Teaching adults requires a different approach. Adult learners are typically motivated, goal-oriented, and self-directed. Tutors should leverage adult learning theory (andragogy) by focusing on relevance, problem-solving, and respecting the learner's existing knowledge base.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-3">Key Principles for Adult Learners</h4>
+								<div class="space-y-3">
+									<div>
+										<p class="font-medium text-sm mb-1">• Relevance</p>
+										<p class="text-sm text-muted-foreground ml-4">Clearly link every skill demonstration to real-world applications or job market demands. Adult learners need to understand why they're learning something and how it applies to their goals. Show practical examples and connect skills to career opportunities.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Experience-Based Learning</p>
+										<p class="text-sm text-muted-foreground ml-4">Encourage learners to share past experiences and build on existing knowledge. Adults bring valuable life and work experience to the classroom. Use their experiences as a foundation for new learning and create opportunities for peer learning.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Problem-Centered Approach</p>
+										<p class="text-sm text-muted-foreground ml-4">Structure lessons around solving practical problems or completing real projects. Instead of abstract theory, focus on tangible outcomes. Adults learn best when they can immediately apply what they've learned to solve real challenges.</p>
+									</div>
+									<div>
+										<p class="font-medium text-sm mb-1">• Autonomy and Self-Direction</p>
+										<p class="text-sm text-muted-foreground ml-4">Allow choice in projects or problem-solving approaches when possible. Give adults control over their learning path. Provide options for how they demonstrate competency and respect their ability to direct their own learning.</p>
+									</div>
+								</div>
+							</div>
+							
+							<div class="bg-muted/50 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">Characteristics of Adult Learners</h4>
+								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
+									<li>They are internally motivated and want to know the purpose of learning</li>
+									<li>They have accumulated life experiences that serve as learning resources</li>
+									<li>They are ready to learn when they see relevance to their lives</li>
+									<li>They prefer learning that is problem-oriented rather than subject-oriented</li>
+									<li>They want to be treated with respect and as equals</li>
+									<li>They may have fixed schedules and need flexible learning options</li>
+								</ul>
+							</div>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold mb-2">→ Teaching Strategies for Adult Learners</h4>
+								<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+									<li>Start with "why" before "how" — explain the purpose and benefits</li>
+									<li>Use real-world scenarios and case studies</li>
+									<li>Encourage discussion and peer learning</li>
+									<li>Provide immediate opportunities to practice and apply skills</li>
+									<li>Offer constructive feedback that helps them improve</li>
+									<li>Respect their time and make learning efficient</li>
+									<li>Create a collaborative rather than authoritative learning environment</li>
+								</ul>
+							</div>
+						</div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's1s3',
+						title: '1.3 Professional Ethics',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Maintaining professional ethics and best practices is crucial in a practical skills academy. The tutor sets the standard for conduct, safety, and integrity. Tutors must ensure a safe working environment, maintain confidentiality, and treat all learners fairly and without bias.</p>
+						
+						<div class="overflow-x-auto my-4">
+							<table class="min-w-full border-collapse border border-primary/20">
+								<thead class="bg-primary/10">
+									<tr>
+										<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Area</th>
+										<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Best Practice •</th>
+										<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Avoid →</th>
+									</tr>
+								</thead>
+								<tbody class="text-sm">
+									<tr>
+										<td class="border border-primary/20 p-2 font-medium">Safety</td>
+										<td class="border border-primary/20 p-2">Enforce safety standards for tools/software</td>
+										<td class="border border-primary/20 p-2">Ignoring safety rules for speed/convenience</td>
+									</tr>
+									<tr class="bg-muted/30">
+										<td class="border border-primary/20 p-2 font-medium">Fairness</td>
+										<td class="border border-primary/20 p-2">Treat all learners equally, assess objectively</td>
+										<td class="border border-primary/20 p-2">Showing favoritism or bias</td>
+									</tr>
+									<tr>
+										<td class="border border-primary/20 p-2 font-medium">Confidentiality</td>
+										<td class="border border-primary/20 p-2">Protect learner records and project ideas</td>
+										<td class="border border-primary/20 p-2">Discussing learner progress publicly</td>
+									</tr>
+									<tr class="bg-muted/30">
+										<td class="border border-primary/20 p-2 font-medium">Professionalism</td>
+										<td class="border border-primary/20 p-2">Model punctuality, honesty, and respect</td>
+										<td class="border border-primary/20 p-2">Inappropriate communication or appearance</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						
+						<div class="bg-primary/5 p-4 rounded-lg my-4">
+							<h4 class="font-semibold mb-3">Core Ethical Principles</h4>
+							<div class="space-y-3">
+								<div>
+									<p class="font-medium text-sm mb-1">• Safety First</p>
+									<p class="text-sm text-muted-foreground ml-4">In practical skills training, safety is paramount. Always enforce safety standards for tools, equipment, and software. Never compromise safety for speed or convenience. Conduct regular safety briefings and ensure all learners understand and follow safety protocols.</p>
+								</div>
+								<div>
+									<p class="font-medium text-sm mb-1">• Fairness and Equity</p>
+									<p class="text-sm text-muted-foreground ml-4">Treat all learners equally, regardless of their background, experience level, or personal characteristics. Assess objectively based on demonstrated competency, not personal preferences. Create an inclusive environment where everyone has equal opportunities to succeed.</p>
+								</div>
+								<div>
+									<p class="font-medium text-sm mb-1">• Confidentiality</p>
+									<p class="text-sm text-muted-foreground ml-4">Protect learner records, project ideas, and personal information. Do not discuss individual learner progress or challenges publicly. Maintain confidentiality in all professional interactions and respect learners' privacy.</p>
+								</div>
+								<div>
+									<p class="font-medium text-sm mb-1">• Professionalism</p>
+									<p class="text-sm text-muted-foreground ml-4">Model the professional behavior you expect from learners. This includes punctuality, honesty, respect, appropriate communication, and professional appearance. Your conduct sets the standard for the entire learning environment.</p>
+								</div>
+							</div>
+						</div>
+						
+						<div class="bg-muted/50 p-4 rounded-lg my-4">
+							<h4 class="font-semibold mb-2">Instilling Professional Values</h4>
+							<p class="text-sm text-muted-foreground mb-2">Beyond teaching technical skills, tutors must also instill professional values needed in the workplace:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Workplace ethics and integrity</li>
+								<li>Time management and punctuality</li>
+								<li>Quality standards and attention to detail</li>
+								<li>Teamwork and collaboration</li>
+								<li>Continuous learning and improvement</li>
+								<li>Responsibility and accountability</li>
+							</ul>
+						</div>
+						
+						<div class="bg-primary/5 p-4 rounded-lg my-4">
+							<h4 class="font-semibold mb-2">→ Building a Professional Reputation</h4>
+							<p class="text-sm text-muted-foreground mb-2">Adhering to ethical codes builds a strong, professional reputation for both the tutor and the academy:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Learners trust tutors who demonstrate consistent ethical behavior</li>
+								<li>Employers value graduates from programs with strong ethical standards</li>
+								<li>Professional reputation attracts quality learners and opportunities</li>
+								<li>Ethical conduct creates a positive learning environment</li>
+								<li>It sets a foundation for learners' future professional success</li>
+							</ul>
+						</div>
+					</div>`,
+						youtubeUrl: 'https://youtu.be/tf2ishCttRM?si=dvMXuSTxqHvf0NPT',
+						caption: 'Professional Ethics in Skills Training',
+					},
+				],
+				quiz: [
+					{
+						question: 'Which of the following is the most accurate description of the primary role of a skills tutor during hands-on practice?',
+						options: [
+							'A lecturer providing theoretical knowledge.',
+							'An evaluator focused solely on the final grade.',
+							'A coach providing real-time feedback and guidance.',
+							'An administrator managing materials inventory.',
+						],
+						correctAnswerIndex: 2,
+					},
+					{
+						question: 'Adult learners typically prefer rote memorization over problem-solving centered around real-world application.',
+						options: ['True', 'False'],
+						correctAnswerIndex: 1,
+					},
+					{
+						question: 'What is the term used in adult learning theory that emphasizes relevance, experience, and autonomy for adult learners?',
+						options: ['Pedagogy', 'Andragogy', 'Heutagogy', 'Syllabology'],
+						correctAnswerIndex: 1,
+					},
+				],
+			},
+			{
+				id: 's2',
+				title: 'Curriculum Design & Lesson Planning for Skills-Based Training',
+				description: 'This module provides a framework for designing an effective, project-based curriculum that moves learners from novice to competent practitioner.',
+				content: {
+					html: `<div class="space-y-6">
+						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
+							<p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Design a skills-based curriculum with clear, measurable outcomes.</li>
+								<li>Create detailed lesson plans that balance theory, demonstration, and practice.</li>
+								<li>Develop engaging project-based learning activities.</li>
+								<li>Select appropriate tools and resources.</li>
+							</ul>
+						</div>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">2.1 Backward Design for Skills</h2>
+							<p class="text-muted-foreground">The most effective way to design a skills curriculum is using Backward Design. This process flips traditional planning by starting with the desired outcome: competency.</p>
+							<p class="text-muted-foreground">Tutors first determine what a learner should be able to do by the end of the course, then they design the assessments (the final project or practical exam), and finally, they plan the specific lessons and activities that will build those skills. This ensures every lesson is relevant and moves the learner closer to mastery, rather than simply covering information sequentially.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">2.2 Project-Based Learning</h2>
+							<p class="text-muted-foreground">Project-Based Learning (PBL) should be the central pedagogical method in a skills academy. Instead of isolated exercises, learners work on a "capstone project" that integrates multiple skills learned throughout the module or course (e.g., building a complete website, a functional circuit board, a piece of furniture).</p>
+							<p class="text-muted-foreground">PBL encourages problem-solving, persistence, and application of knowledge in a realistic context. The project becomes the assessment artifact that demonstrates mastery of the required skills.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">2.3 Sourcing Resources & Materials</h2>
+							<p class="text-muted-foreground">Identifying and acquiring the necessary tools, software, or raw materials is a critical planning step. Tutors must ensure that the resources are available, in good working order, and safe for learner use. This involves anticipating potential shortages, managing inventory, and ensuring access to appropriate digital tools or physical equipment.</p>
+							
+							<div class="bg-primary/5 p-4 rounded-lg my-4">
+								<h4 class="font-semibold text-lg mb-3">Resource Planning Essentials:</h4>
+								<ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground ml-4">
+									<li><strong>Software/Tech Skills:</strong> Ensure all learners have access to necessary platforms, licenses, and appropriate hardware.</li>
+									<li><strong>Handwork/Trades:</strong> Manage raw material inventory (wood, metal, fabric) and ensure tools are maintained and calibrated.</li>
+									<li><strong>Accessibility:</strong> Provide alternatives for learners with physical limitations (e.g., voice-to-text software, ergonomic tools).</li>
+								</ul>
+							</div>
+						</section>
+					</div>`,
+					videos: [],
+				},
+				sections: [
+					{
+						id: 's2s1',
+						title: '2.1 Backward Design for Skills',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">The most effective way to design a skills curriculum is using Backward Design. This process flips traditional planning by starting with the desired outcome: competency. Tutors first determine what a learner should be able to do by the end of the course, then they design the assessments, and finally, they plan the specific lessons and activities that will build those skills.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's2s2',
+						title: '2.2 Project-Based Learning',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Project-Based Learning (PBL) should be the central pedagogical method in a skills academy. Instead of isolated exercises, learners work on a "capstone project" that integrates multiple skills learned throughout the module or course. PBL encourages problem-solving, persistence, and application of knowledge in a realistic context.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's2s3',
+						title: '2.3 Sourcing Resources & Materials',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Identifying and acquiring the necessary tools, software, or raw materials is a critical planning step. Tutors must ensure that the resources are available, in good working order, and safe for learner use. This involves anticipating potential shortages, managing inventory, and ensuring access to appropriate digital tools or physical equipment.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+				],
+				quiz: [
+					{
+						question: 'Which planning method is highlighted in Module 2 as the most effective for skills training, by starting with the desired outcome (competency)?',
+						options: ['Sequential Design', 'Backward Design', 'Traditional Lecturing', 'Rote Memorization Planning'],
+						correctAnswerIndex: 1,
+					},
+					{
+						question: 'When sourcing resources for a handwork course, what is a crucial safety aspect a tutor must ensure?',
+						options: [
+							'All tools are branded with a specific logo.',
+							'Tools are maintained, calibrated, and in good working order.',
+							'All materials are purchased from the most expensive supplier.',
+							'The classroom is decorated with inspirational posters.',
+						],
+						correctAnswerIndex: 1,
+					},
+				],
+			},
+			{
+				id: 's3',
+				title: 'Demonstration, Coaching, & Hands-On Instruction',
+				description: 'This module is the core of practical instruction. It focuses on how to demonstrate techniques effectively and coach learners through the inevitable challenges of skill acquisition.',
+				content: {
+					html: `<div class="space-y-6">
+						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
+							<p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Master effective demonstration techniques (show, don't just tell).</li>
+								<li>Apply coaching methods to guide learners during practical tasks.</li>
+								<li>Manage safety protocols in a workshop or digital environment.</li>
+								<li>Provide immediate, effective feedback during practice sessions.</li>
+							</ul>
+						</div>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">3.1 The Art of Demonstration</h2>
+							<p class="text-muted-foreground">In skills training, "show, don't just tell" is paramount. A clear, step-by-step demonstration is often more effective than a lengthy verbal explanation. Tutors should break complex tasks down into manageable, visible steps.</p>
+							<p class="text-muted-foreground">Using visual aids, document cameras, or screen-sharing software for tech skills can ensure all learners see exactly what is being done. Repetition of the demonstration, and having learners explain the steps back, solidifies understanding.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">3.2 Coaching for Competence</h2>
+							<p class="text-muted-foreground">During hands-on practice sessions, the tutor transitions into a coaching role. This involves circulating the room, observing learners, troubleshooting common errors in real-time, and offering encouragement.</p>
+							<p class="text-muted-foreground">Coaching focuses on guiding the learner to the correct solution rather than simply giving them the answer. Building confidence is as important as building the physical skill, so tutors should use supportive language and patience when learners inevitably encounter frustration or failure.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">3.3 Safety First</h2>
+							<p class="text-muted-foreground">Establishing and rigorously enforcing safety standards is a non-negotiable part of practical skills training. This applies equally to a woodworking shop (protective gear, machine operation rules) and a tech lab (cyber safety, data handling protocols).</p>
+							<p class="text-muted-foreground">Tutors must provide clear safety inductions, model safe behavior themselves, and immediately address any unsafe practices to protect learners and equipment.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">3.4 Providing Immediate, Effective Feedback</h2>
+							<p class="text-muted-foreground">The most valuable feedback for skills learners is immediate. Waiting until a project is graded a week later is ineffective. Feedback should be delivered during the activity itself, focusing on the action rather than the person.</p>
+							<p class="text-muted-foreground">Tutors should be specific: "Move your wrist like this to improve your soldering angle," rather than "Your soldering is bad." This constructive, immediate feedback loop accelerates skill acquisition.</p>
+						</section>
+					</div>`,
+					videos: [],
+				},
+				sections: [
+					{
+						id: 's3s1',
+						title: '3.1 The Art of Demonstration',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">In skills training, "show, don't just tell" is paramount. A clear, step-by-step demonstration is often more effective than a lengthy verbal explanation. Tutors should break complex tasks down into manageable, visible steps. Using visual aids, document cameras, or screen-sharing software for tech skills can ensure all learners see exactly what is being done.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's3s2',
+						title: '3.2 Coaching for Competence',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">During hands-on practice sessions, the tutor transitions into a coaching role. This involves circulating the room, observing learners, troubleshooting common errors in real-time, and offering encouragement. Coaching focuses on guiding the learner to the correct solution rather than simply giving them the answer.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's3s3',
+						title: '3.3 Safety First',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Establishing and rigorously enforcing safety standards is a non-negotiable part of practical skills training. This applies equally to a woodworking shop (protective gear, machine operation rules) and a tech lab (cyber safety, data handling protocols). Tutors must provide clear safety inductions, model safe behavior themselves, and immediately address any unsafe practices.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's3s4',
+						title: '3.4 Providing Immediate, Effective Feedback',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">The most valuable feedback for skills learners is immediate. Waiting until a project is graded a week later is ineffective. Feedback should be delivered during the activity itself, focusing on the action rather than the person. Tutors should be specific: "Move your wrist like this to improve your soldering angle," rather than "Your soldering is bad."</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+				],
+				quiz: [
+					{
+						question: 'The "Art of Demonstration" suggests that lengthy verbal explanations are always more effective than breaking tasks into visual steps.',
+						options: ['True', 'False'],
+						correctAnswerIndex: 1,
+					},
+					{
+						question: 'During a coaching session on a tech skill, a learner is frustrated with an error. What is the best approach for the tutor?',
+						options: [
+							'Complete the task for the learner to save time.',
+							'Tell them their code is "bad" and they should try harder.',
+							'Guide the learner to the correct solution with supportive language.',
+							'Ignore the frustration and move to the next learner.',
+						],
+						correctAnswerIndex: 2,
+					},
+					{
+						question: 'Why is immediate feedback more valuable than feedback given a week later for a learner acquiring a practical skill?',
+						options: [
+							'It allows the learner to correct the error/technique while the memory of the action is fresh (accelerates skill acquisition / prevents bad habits from forming).',
+							'It saves the tutor time.',
+							'It makes the learner feel better immediately.',
+							'It is easier for the tutor to remember what happened.',
+						],
+						correctAnswerIndex: 0,
+					},
+					{
+						question: 'Which best describes the most appropriate way for a tutor to provide constructive feedback during an activity?',
+						options: [
+							'Focusing on the learner\'s personality.',
+							'Focusing only on the final grade.',
+							'Focusing on the specific action or technique being performed.',
+							'Focusing on how quickly the learner is working.',
+						],
+						correctAnswerIndex: 2,
+					},
+					{
+						question: 'Safety protocols are optional as long as the project is completed on time.',
+						options: ['True', 'False'],
+						correctAnswerIndex: 1,
+					},
+				],
+			},
+			{
+				id: 's4',
+				title: 'Assessment & Evaluation of Practical Skills',
+				description: 'This module covers how to assess skills development effectively, moving beyond traditional testing to competency-based evaluation.',
+				content: {
+					html: `<div class="space-y-6">
+						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
+							<p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Develop competency-based assessment criteria.</li>
+								<li>Utilize rubrics to evaluate practical projects fairly.</li>
+								<li>Provide meaningful feedback that facilitates skill improvement.</li>
+								<li>Monitor learner progress and adapt instruction accordingly.</li>
+							</ul>
+						</div>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">4.1 Competency-Based Assessment</h2>
+							<p class="text-muted-foreground">In a skills academy, the ultimate assessment is whether a learner can perform the skill in a real-world scenario. Competency-based assessment evaluates mastery of a skill through demonstration or production of a functional artifact (e.g., the finished product, a working application).</p>
+							<p class="text-muted-foreground">It focuses on practical application rather than theoretical knowledge recall, providing a true measure of readiness for the workforce.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">4.2 Using Rubrics for Clarity</h2>
+							<p class="text-muted-foreground">Rubrics are essential tools for ensuring fair, transparent, and objective evaluation of practical projects. A well-designed rubric clearly defines the criteria for success (e.g., "code runs without errors," "joints are flush and smooth") across different levels of mastery (e.g., Novice, Competent, Proficient).</p>
+							<p class="text-muted-foreground">Sharing the rubric with learners at the start of a project helps them understand expectations and self-assess their own progress.</p>
+							
+							<div class="overflow-x-auto my-4">
+								<table class="min-w-full border-collapse border border-primary/20">
+									<thead class="bg-primary/10">
+										<tr>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Criteria</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Proficient (4 pts)</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Competent (3 pts)</th>
+											<th class="border border-primary/20 p-2 text-left text-sm font-semibold">Novice (1 pt)</th>
+										</tr>
+									</thead>
+									<tbody class="text-sm">
+										<tr>
+											<td class="border border-primary/20 p-2 font-medium">Code Functionality</td>
+											<td class="border border-primary/20 p-2">Code runs without errors and meets all specs</td>
+											<td class="border border-primary/20 p-2">Code runs with minor errors</td>
+											<td class="border border-primary/20 p-2">Code fails to run</td>
+										</tr>
+										<tr class="bg-muted/30">
+											<td class="border border-primary/20 p-2 font-medium">Code Style</td>
+											<td class="border border-primary/20 p-2">Code is clean, well-commented, and efficient</td>
+											<td class="border border-primary/20 p-2">Code is mostly clean, some comments</td>
+											<td class="border border-primary/20 p-2">Code is messy and uncommented</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">4.3 Constructive Feedback Loops</h2>
+							<p class="text-muted-foreground">Turning assessment results into actionable next steps is the core purpose of feedback. The tutor's role is to bridge the gap between current performance and desired competency.</p>
+							<p class="text-muted-foreground">Feedback should be balanced, highlighting strengths first, then identifying specific areas for improvement, and finally, offering a plan for how to achieve the next level of mastery. This creates a continuous loop of learning and improvement.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">4.4 Monitoring Learner Progress</h2>
+							<p class="text-muted-foreground">Tracking the progress of each learner allows the tutor to adapt instruction as needed. This can be done through simple checklists of completed skills, tracking project milestones, or digital platforms.</p>
+							<p class="text-muted-foreground">This monitoring helps tutors identify learners who are struggling and require extra coaching, or those who are excelling and need extension tasks.</p>
+						</section>
+					</div>`,
+					videos: [],
+				},
+				sections: [
+					{
+						id: 's4s1',
+						title: '4.1 Competency-Based Assessment',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">In a skills academy, the ultimate assessment is whether a learner can perform the skill in a real-world scenario. Competency-based assessment evaluates mastery of a skill through demonstration or production of a functional artifact. It focuses on practical application rather than theoretical knowledge recall, providing a true measure of readiness for the workforce.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's4s2',
+						title: '4.2 Using Rubrics for Clarity',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Rubrics are essential tools for ensuring fair, transparent, and objective evaluation of practical projects. A well-designed rubric clearly defines the criteria for success across different levels of mastery. Sharing the rubric with learners at the start of a project helps them understand expectations and self-assess their own progress.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's4s3',
+						title: '4.3 Constructive Feedback Loops',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Turning assessment results into actionable next steps is the core purpose of feedback. Feedback should be balanced, highlighting strengths first, then identifying specific areas for improvement, and finally, offering a plan for how to achieve the next level of mastery.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's4s4',
+						title: '4.4 Monitoring Learner Progress',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Tracking the progress of each learner allows the tutor to adapt instruction as needed. This can be done through simple checklists of completed skills, tracking project milestones, or digital platforms. This monitoring helps tutors identify learners who are struggling and require extra coaching, or those who are excelling and need extension tasks.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+				],
+				quiz: [
+					{
+						question: 'What is the primary purpose of competency-based assessment in a skills academy?',
+						options: [
+							'To ensure learners can recall theoretical facts.',
+							'To grade learners on their written test scores.',
+							'To determine if a learner can perform the skill in a real-world scenario.',
+							'To compare learners\' speed of completion.',
+						],
+						correctAnswerIndex: 2,
+					},
+					{
+						question: 'Rubrics help ensure fair and objective evaluation of practical projects by clearly defining criteria for success.',
+						options: ['True', 'False'],
+						correctAnswerIndex: 0,
+					},
+					{
+						question: 'When providing feedback using the "balanced" approach, what is the sequence of information that should be delivered to the learner?',
+						options: [
+							'Weaknesses first, then strengths, then next steps.',
+							'Strengths first, then specific areas for improvement, and finally, a plan/next steps for improvement.',
+							'Only strengths, no areas for improvement.',
+							'Only areas for improvement, no strengths.',
+						],
+						correctAnswerIndex: 1,
+					},
+					{
+						question: 'A tutor tracks quiz scores, homework, and participation using a spreadsheet to identify students needing extra support. What assessment function is this an example of?',
+						options: ['Summative Assessment', 'Monitoring Progress', 'Backward Design', 'Theoretical Planning'],
+						correctAnswerIndex: 1,
+					},
+					{
+						question: 'What is the term for an assessment tool that clearly defines the criteria for success across different levels of mastery for a project?',
+						options: ['Checklist', 'Rubric', 'Test', 'Essay'],
+						correctAnswerIndex: 1,
+					},
+				],
+			},
+			{
+				id: 's5',
+				title: 'Learner Engagement, Motivation, & Job Readiness',
+				description: 'The final module focuses on keeping learners motivated and preparing them for the transition from student to professional practitioner or entrepreneur.',
+				content: {
+					html: `<div class="space-y-6">
+						<div class="bg-primary/5 border-l-4 border-primary p-4 rounded-r-lg">
+							<h3 class="font-bold text-lg mb-3 text-primary"> Learning Objectives</h3>
+							<p class="text-sm mb-2">By the end of this module, tutors should be able to:</p>
+							<ul class="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+								<li>Apply strategies to maintain high learner motivation and overcome frustration.</li>
+								<li>Foster a collaborative, inclusive workshop or studio environment.</li>
+								<li>Prepare learners for the workforce or entrepreneurship (e.g., portfolio building, job search).</li>
+								<li>Engage in continuous professional development as a skills tutor.</li>
+							</ul>
+						</div>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">5.1 Overcoming the Learning Plateau</h2>
+							<p class="text-muted-foreground">Skill acquisition often involves periods of rapid growth followed by frustrating plateaus where progress seems to stall. Tutors must proactively manage expectations and maintain high learner motivation during these times.</p>
+							<p class="text-muted-foreground">Strategies include using encouraging language, breaking down tasks into even smaller milestones, celebrating small wins, and reminding learners of their long-term goals. Patience and persistence are skills the tutor must model.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">5.2 Job Readiness & Portfolio Building</h2>
+							<p class="text-muted-foreground">The ultimate goal of a skills academy is often employment or entrepreneurship. Tutors play a key role in preparing learners for this transition. This involves guiding students in compiling a professional portfolio of their best work (e.g., a GitHub repository, a physical showcase of handwork, an online resume).</p>
+							<p class="text-muted-foreground">Tutors can also facilitate job readiness through mock interviews, sharing industry insights, and networking opportunities.</p>
+						</section>
+
+						<section class="space-y-4">
+							<h2 class="text-2xl font-bold text-primary">5.3 Tutor\'s Next Steps</h2>
+							<p class="text-muted-foreground">The journey of the skills tutor also involves continuous professional development. Reflection on the effectiveness of teaching methods, networking with industry professionals, and engaging in further training (e.g., new software certifications, advanced handwork techniques) keeps the tutor at the top of their game and ensures the academy's offerings remain relevant to industry demands.</p>
+						</section>
+					</div>`,
+					videos: [],
+				},
+				sections: [
+					{
+						id: 's5s1',
+						title: '5.1 Overcoming the Learning Plateau',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">Skill acquisition often involves periods of rapid growth followed by frustrating plateaus where progress seems to stall. Tutors must proactively manage expectations and maintain high learner motivation during these times. Strategies include using encouraging language, breaking down tasks into even smaller milestones, celebrating small wins, and reminding learners of their long-term goals.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's5s2',
+						title: '5.2 Job Readiness & Portfolio Building',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">The ultimate goal of a skills academy is often employment or entrepreneurship. Tutors play a key role in preparing learners for this transition. This involves guiding students in compiling a professional portfolio of their best work (e.g., a GitHub repository, a physical showcase of handwork, an online resume). Tutors can also facilitate job readiness through mock interviews, sharing industry insights, and networking opportunities.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+					{
+						id: 's5s3',
+						title: '5.3 Tutor\'s Next Steps',
+						html: `<div class="space-y-4"><p class="text-muted-foreground">The journey of the skills tutor also involves continuous professional development. Reflection on the effectiveness of teaching methods, networking with industry professionals, and engaging in further training (e.g., new software certifications, advanced handwork techniques) keeps the tutor at the top of their game and ensures the academy's offerings remain relevant to industry demands.</p></div>`,
+						youtubeUrl: '',
+						caption: '',
+					},
+				],
+				quiz: [
+					{
+						question: 'The ultimate goal of a skills academy should be solely academic achievement, not preparation for employment.',
+						options: ['True', 'False'],
+						correctAnswerIndex: 1,
+					},
+					{
+						question: 'When learners hit a "plateau" in their skill development, which strategy is most effective for a tutor to maintain motivation?',
+						options: [
+							'Telling them to give up if it\'s too hard.',
+							'Ignoring the plateau and assigning harder work.',
+							'Breaking tasks into smaller milestones and celebrating small wins.',
+							'Doubling the workload to force progress.',
+						],
+						correctAnswerIndex: 2,
+					},
+					{
+						question: 'Name one element that should be included in a learner\'s professional portfolio to prepare them for the workforce after completing a tech skill course.',
+						options: [
+							'Best work samples / GitHub repository / Resume / Project showcase.',
+							'Only personal photos.',
+							'Only academic transcripts.',
+							'Only letters of recommendation.',
+						],
+						correctAnswerIndex: 0,
+					},
+					{
+						question: 'Engaging in further training or certifications as a tutor is an example of what continuous process?',
+						options: [
+							'Wasting time and money.',
+							'Professional Stagnation.',
+							'Continuous Professional Development (CPD).',
+							'Only necessary if explicitly required by law.',
+						],
+						correctAnswerIndex: 2,
+					},
+					{
+						question: 'Fostering a collaborative, inclusive environment is just as important as the technical instruction itself.',
+						options: ['True', 'False'],
+						correctAnswerIndex: 0,
+					},
+				],
+			},
 		],
 	},
 ];

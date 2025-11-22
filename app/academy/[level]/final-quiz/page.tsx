@@ -19,8 +19,20 @@ export default function FinalQuizPage() {
 	const [submitted, setSubmitted] = useState(false)
 
 	const order = useMemo(() => level?.modules.map(m => m.id) ?? [], [level])
-	const accessible = useMemo(() => canAccessFinalQuiz(params.level, order), [params.level, order])
-	const finalQuizStatus = useMemo(() => getFinalQuizStatus(params.level), [params.level])
+	const [accessible, setAccessible] = useState(false)
+	const [finalQuizStatus, setFinalQuizStatus] = useState<{ scorePercent: number; isPassed: boolean } | null>(null)
+	const [loading, setLoading] = useState(true)
+
+	useEffect(() => {
+		const loadData = async () => {
+			const canAccess = await canAccessFinalQuiz(params.level, order)
+			setAccessible(canAccess)
+			const status = await getFinalQuizStatus(params.level)
+			setFinalQuizStatus(status)
+			setLoading(false)
+		}
+		loadData()
+	}, [params.level, order])
 
 	if (!level || !finalQuiz) {
 		return <div className="text-sm text-red-600">Final quiz not available for this level.</div>
@@ -36,16 +48,22 @@ export default function FinalQuizPage() {
 		return Math.round((correct / finalQuiz.length) * 100)
 	}, [selected, finalQuiz])
 
-	const handleSubmit = useCallback(() => {
+	const handleSubmit = useCallback(async () => {
 		setSubmitted(true)
 		if (!allAnswered) return
 		const percent = scorePercent
-		recordFinalQuizScore(params.level, percent)
+		await recordFinalQuizScore(params.level, percent)
+		const status = await getFinalQuizStatus(params.level)
+		setFinalQuizStatus(status)
 		if (percent >= PASS_THRESHOLD) {
 			// Navigate to certificate page
 			router.push(`/academy/${params.level}/certificate`)
 		}
 	}, [allAnswered, scorePercent, params.level, router])
+
+	if (loading) {
+		return <div className="text-sm text-gray-600">Loading...</div>
+	}
 
 	if (!accessible) {
 		return (
