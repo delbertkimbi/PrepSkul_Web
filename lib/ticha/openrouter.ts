@@ -3,11 +3,17 @@
  * Handles all AI model interactions with design-focused prompts
  */
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY!
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
-if (!OPENROUTER_API_KEY) {
-  throw new Error('Missing OPENROUTER_API_KEY environment variable')
+/**
+ * Get OpenRouter API key (lazy evaluation to avoid build-time errors)
+ */
+function getOpenRouterApiKey(): string {
+  const key = process.env.OPENROUTER_API_KEY
+  if (!key) {
+    throw new Error('Missing OPENROUTER_API_KEY environment variable')
+  }
+  return key
 }
 
 interface OpenRouterMessage {
@@ -44,10 +50,11 @@ interface OpenRouterOptions {
  * Call OpenRouter API
  */
 async function callOpenRouter(options: OpenRouterOptions): Promise<OpenRouterResponse> {
+  const apiKey = getOpenRouterApiKey()
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://ticha.prepskul.com',
       'X-Title': 'Ticha AI',
