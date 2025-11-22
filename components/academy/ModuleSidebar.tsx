@@ -16,15 +16,33 @@ export default function ModuleSidebar({ levelId, moduleId, sections }: ModuleSid
   const [open, setOpen] = useState(false);
   const totalVideos = useMemo(() => sections.filter(s => s.youtubeUrl).length, [sections]);
   const [watched, setWatched] = useState<string[]>([]);
+  const [percent, setPercent] = useState(0);
+  const [sectionProgressMap, setSectionProgressMap] = useState<Record<string, number>>({});
+  const [quizStatus, setQuizStatus] = useState(false);
+
+  const loadProgress = async () => {
+    const watchedSections = await getModuleWatchedSections(levelId as any, moduleId);
+    const completionPercent = await getModuleCompletionPercentFromWatched(levelId as any, moduleId, totalVideos);
+    const quizPassed = await getModuleQuizStatus(levelId as any, moduleId);
+    
+    setWatched(watchedSections);
+    setPercent(completionPercent);
+    setQuizStatus(quizPassed);
+
+    // Load section progress
+    const progressMap: Record<string, number> = {};
+    for (const section of sections) {
+      progressMap[section.id] = await getSectionProgress(levelId as any, moduleId, section.id);
+    }
+    setSectionProgressMap(progressMap);
+  };
 
   useEffect(() => {
-    setWatched(getModuleWatchedSections(levelId as any, moduleId));
-    const handler = () => setWatched(getModuleWatchedSections(levelId as any, moduleId));
+    loadProgress();
+    const handler = () => loadProgress();
     window.addEventListener('prepskul:progress-updated', handler as EventListener);
     return () => window.removeEventListener('prepskul:progress-updated', handler as EventListener);
-  }, [levelId, moduleId]);
-
-  const percent = getModuleCompletionPercentFromWatched(levelId as any, moduleId, totalVideos);
+  }, [levelId, moduleId, sections, totalVideos]);
 
   return (
     <aside className="w-full md:w-64 lg:w-72">
@@ -45,7 +63,7 @@ export default function ModuleSidebar({ levelId, moduleId, sections }: ModuleSid
               ← Return to Modules
             </Link>
             {sections.map(s => {
-              const sectionProgress = getSectionProgress(levelId as any, moduleId, s.id);
+              const sectionProgress = sectionProgressMap[s.id] || 0;
               return (
                 <Link key={s.id} href={`/academy/${levelId}/${moduleId}/sections/${s.id}`} className="block px-3 py-2 hover:bg-primary/5 border-b last:border-b-0">
                   <div className="flex items-center gap-2">
@@ -61,10 +79,10 @@ export default function ModuleSidebar({ levelId, moduleId, sections }: ModuleSid
             {/* Quiz Link */}
             <Link href={`/academy/${levelId}/${moduleId}`} className="block px-3 py-2 hover:bg-primary/5 border-b last:border-b-0">
               <div className="flex items-center gap-2">
-                <CircleProgress progress={getModuleQuizStatus(levelId as any, moduleId) ? 100 : 0} size={20} />
+                <CircleProgress progress={quizStatus ? 100 : 0} size={20} />
                 <div className="text-sm">Module Quiz</div>
                 <div className="ml-auto text-xs text-muted-foreground">
-                  {getModuleQuizStatus(levelId as any, moduleId) ? 'Passed' : 'Not completed'}
+                  {quizStatus ? 'Passed' : 'Not completed'}
                 </div>
               </div>
             </Link>
@@ -86,7 +104,7 @@ export default function ModuleSidebar({ levelId, moduleId, sections }: ModuleSid
               <span className="text-sm font-medium">Return to Modules</span>
             </Link>
             {sections.map(s => {
-              const sectionProgress = getSectionProgress(levelId as any, moduleId, s.id);
+              const sectionProgress = sectionProgressMap[s.id] || 0;
               return (
                 <Link key={s.id} href={`/academy/${levelId}/${moduleId}/sections/${s.id}`} className="flex items-center gap-3 px-2 py-2 rounded hover:bg-primary/5">
                   <CircleProgress progress={sectionProgress} size={20} />
@@ -99,10 +117,10 @@ export default function ModuleSidebar({ levelId, moduleId, sections }: ModuleSid
             })}
             {/* Quiz Link */}
             <Link href={`/academy/${levelId}/${moduleId}`} className="flex items-center gap-3 px-2 py-2 rounded hover:bg-primary/5">
-              <CircleProgress progress={getModuleQuizStatus(levelId as any, moduleId) ? 100 : 0} size={20} />
+              <CircleProgress progress={quizStatus ? 100 : 0} size={20} />
               <div className="text-sm">Module Quiz</div>
               <div className="ml-auto text-xs text-muted-foreground">
-                {getModuleQuizStatus(levelId as any, moduleId) ? 'Passed' : 'Not completed'}
+                {quizStatus ? 'Passed' : 'Not completed'}
               </div>
             </Link>
           </nav>

@@ -45,6 +45,14 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
   const ratingResult = calculateInitialRating(tutor);
   const pricingResult = calculatePricing(tutor);
 
+  // Helper function to validate and get a valid tier
+  const getValidTier = (tier: any): PricingTier => {
+    if (tier && typeof tier === 'string' && (tier === 'starter' || tier === 'standard' || tier === 'premium' || tier === 'elite')) {
+      return tier as PricingTier;
+    }
+    return pricingResult.suggestedTier;
+  };
+
   // State for admin-modified values
   const [adminRating, setAdminRating] = useState<number>(
     tutor.admin_approved_rating || ratingResult.suggestedRating
@@ -53,7 +61,7 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
     tutor.base_session_price || pricingResult.suggestedPrice
   );
   const [adminTier, setAdminTier] = useState<PricingTier>(
-    tutor.pricing_tier || pricingResult.suggestedTier
+    getValidTier(tutor.pricing_tier || pricingResult.suggestedTier)
   );
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -214,10 +222,13 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
                 <select
                   value={adminTier}
                   onChange={(e) => {
-                    setAdminTier(e.target.value as PricingTier);
-                    const tierInfo = PRICING_TIERS[e.target.value as PricingTier];
-                    // Auto-adjust price to middle of tier range
-                    setAdminPrice(Math.round((tierInfo.minPrice + tierInfo.maxPrice) / 2 / 500) * 500);
+                    const newTier = getValidTier(e.target.value);
+                    setAdminTier(newTier);
+                    const tierInfo = PRICING_TIERS[newTier];
+                    if (tierInfo) {
+                      // Auto-adjust price to middle of tier range
+                      setAdminPrice(Math.round((tierInfo.minPrice + tierInfo.maxPrice) / 2 / 500) * 500);
+                    }
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
@@ -234,8 +245,8 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
-                    min={PRICING_TIERS[adminTier].minPrice}
-                    max={PRICING_TIERS[adminTier].maxPrice}
+                    min={PRICING_TIERS[adminTier]?.minPrice || 3000}
+                    max={PRICING_TIERS[adminTier]?.maxPrice || 15000}
                     step="500"
                     value={adminPrice}
                     onChange={(e) => setAdminPrice(parseInt(e.target.value) || 3000)}
@@ -243,9 +254,11 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
                   />
                   <span className="text-sm text-gray-600">XAF</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Range: {formatPrice(PRICING_TIERS[adminTier].minPrice)} - {formatPrice(PRICING_TIERS[adminTier].maxPrice)}
-                </p>
+                {PRICING_TIERS[adminTier] && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Range: {formatPrice(PRICING_TIERS[adminTier].minPrice)} - {formatPrice(PRICING_TIERS[adminTier].maxPrice)}
+                  </p>
+                )}
                 {showWarning && priceDeviation > 2000 && (
                   <div className="flex items-center gap-2 mt-2 text-amber-600 text-xs">
                     <AlertCircle className="w-3.5 h-3.5" />

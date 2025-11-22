@@ -22,7 +22,7 @@ export function Typewriter({ words, className = "" }: TypewriterProps) {
           if (currentText.length < word.length) {
             setCurrentText(word.slice(0, currentText.length + 1))
           } else {
-            setTimeout(() => setIsDeleting(true), 2000)
+            setTimeout(() => setIsDeleting(true), 2500) // Longer pause before deleting
           }
         } else {
           if (currentText.length > 0) {
@@ -33,16 +33,24 @@ export function Typewriter({ words, className = "" }: TypewriterProps) {
           }
         }
       },
-      isDeleting ? 50 : 100,
+      isDeleting ? 40 : 80, // Faster, smoother typing
     )
 
     return () => clearTimeout(timeout)
   }, [currentText, isDeleting, currentWordIndex, words])
 
   return (
-    <span className={className}>
+    <span className={className} style={{ display: "inline-block", minWidth: "80px" }}>
       {currentText}
-      <span className="animate-pulse">|</span>
+      <span
+        className="inline-block ml-1"
+        style={{
+          animation: "blink 1s infinite",
+          color: "inherit",
+        }}
+      >
+        |
+      </span>
     </span>
   )
 }

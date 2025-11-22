@@ -5,13 +5,13 @@
  * Uses Resend for emails and Twilio for SMS (when configured)
  */
 
-import { Resend } from 'resend';
-
 // Initialize Resend at runtime (not module level) to avoid build-time errors
 async function getResend() {
   if (!process.env.RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY is not configured');
   }
+  // Dynamic import to avoid build-time errors if resend is not installed
+  const { Resend } = await import('resend');
   return new Resend(process.env.RESEND_API_KEY);
 }
 
