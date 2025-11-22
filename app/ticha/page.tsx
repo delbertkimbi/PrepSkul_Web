@@ -1,13 +1,14 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { motion, useInView } from "framer-motion"
 import { TichaHeader } from "@/components/ticha/header"
 import { TichaFooter } from "@/components/ticha/footer"
 import { InputField } from "@/components/ticha/input-field"
 import { TichaTypewriter } from "@/components/ticha/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
-import { Zap, Shield, Send } from "lucide-react"
+import { Zap, Shield, Send, Loader2, CheckCircle, AlertCircle, Download } from "lucide-react"
+import { tichaSupabase } from "@/lib/ticha-supabase"
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -45,9 +46,109 @@ export default function TichaPage() {
   const aboutInView = useInView(aboutRef, { once: true, amount: 0.3 })
   const featuresInView = useInView(featuresRef, { once: true, amount: 0.2 })
 
-  const handleSend = (text: string, file?: File) => {
-    console.log("Sending:", { text, file: file?.name })
-    // TODO: Implement submission logic
+  const [loading, setLoading] = useState(false)
+  const [status, setStatus] = useState<"idle" | "uploading" | "processing" | "success" | "error">("idle")
+  const [statusMessage, setStatusMessage] = useState("")
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSend = async (text: string, file?: File) => {
+    if (!file && !text.trim()) {
+      setError("Please upload a file or enter text")
+      return
+    }
+
+    setLoading(true)
+    setStatus("uploading")
+    setError(null)
+    setStatusMessage("")
+    setDownloadUrl(null)
+
+    try {
+      // Get current user (optional)
+      const { data: { user } } = await tichaSupabase.auth.getUser()
+      const userId = user?.id
+
+      let fileUrl: string | null = null
+
+      // Step 1: Upload file if provided
+      if (file) {
+        setStatusMessage("Uploading file...")
+        const formData = new FormData()
+        formData.append("file", file)
+        if (text.trim()) {
+          formData.append("prompt", text.trim())
+        }
+
+        const uploadResponse = await fetch("/api/ticha/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!uploadResponse.ok) {
+          let uploadError: any
+          try {
+            uploadError = await uploadResponse.json()
+          } catch (e) {
+            // If response is not JSON (might be HTML error page)
+            const text = await uploadResponse.text()
+            throw new Error(`Upload failed (${uploadResponse.status}): ${text.substring(0, 200)}`)
+          }
+          throw new Error(uploadError.error || uploadError.message || `Upload failed: ${uploadResponse.status}`)
+        }
+
+        const uploadData = await uploadResponse.json()
+        fileUrl = uploadData.fileUrl
+        setStatusMessage(`File uploaded! Processing...`)
+      }
+
+      // Step 2: Generate presentation
+      setStatus("processing")
+      setStatusMessage("Generating presentation...")
+
+      const generateResponse = await fetch("/api/ticha/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileUrl: fileUrl || undefined,
+          prompt: text.trim() || undefined,
+          userId: userId || undefined,
+        }),
+      })
+
+      if (!generateResponse.ok) {
+        let generateError: any
+        try {
+          generateError = await generateResponse.json()
+        } catch (e) {
+          // If response is not JSON (might be HTML error page)
+          const text = await generateResponse.text()
+          throw new Error(`Generation failed (${generateResponse.status}): ${text.substring(0, 200)}`)
+        }
+        throw new Error(generateError.error || generateError.message || `Generation failed: ${generateResponse.status}`)
+      }
+
+      const generateData = await generateResponse.json()
+
+      if (!generateData.success || !generateData.downloadUrl) {
+        throw new Error("Failed to generate presentation")
+      }
+
+      // Success!
+      setStatus("success")
+      setStatusMessage(`Presentation generated! ${generateData.slides || 0} slides created.`)
+      setDownloadUrl(generateData.downloadUrl)
+
+    } catch (err: any) {
+      console.error("Error:", err)
+      setStatus("error")
+      setError(err.message || "Something went wrong. Please try again.")
+      setStatusMessage("")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -81,6 +182,66 @@ export default function TichaPage() {
                 beautiful PowerPoint presentations.
               </motion.p>
             </motion.div>
+
+            {/* Status Messages */}
+            {(loading || status !== "idle" || error) && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-2xl mx-auto mb-6"
+              >
+                <Card
+                  className={`border-none rounded-xl ${
+                    status === "success"
+                      ? "bg-green-50"
+                      : status === "error"
+                      ? "bg-red-50"
+                      : "bg-blue-50"
+                  }`}
+                  style={{
+                    boxShadow: "3px 3px 8px rgba(190, 190, 190, 0.4), -3px -3px 8px rgba(255, 255, 255, 0.8)",
+                  }}
+                >
+                  <CardContent className="p-4 sm:p-6">
+                    <div className="flex items-start gap-4">
+                      {loading && <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 animate-spin flex-shrink-0 mt-0.5" />}
+                      {status === "success" && <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0 mt-0.5" />}
+                      {status === "error" && <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 flex-shrink-0 mt-0.5" />}
+                      <div className="flex-1 min-w-0">
+                        {loading && (
+                          <p className="font-medium text-sm sm:text-base text-blue-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                            {statusMessage || "Processing..."}
+                          </p>
+                        )}
+                        {status === "success" && (
+                          <>
+                            <p className="font-medium text-sm sm:text-base text-green-900 mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                              {statusMessage || "Presentation generated successfully!"}
+                            </p>
+                            {downloadUrl && (
+                              <a
+                                href={downloadUrl}
+                                download
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+                                style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                              >
+                                <Download className="h-4 w-4" />
+                                Download Presentation
+                              </a>
+                            )}
+                          </>
+                        )}
+                        {status === "error" && (
+                          <p className="font-medium text-sm sm:text-base text-red-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                            {error || "An error occurred"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
             {/* Input Field with Upload and Send */}
             <motion.div
