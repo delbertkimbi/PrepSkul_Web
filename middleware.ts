@@ -38,6 +38,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
+  // PRIORITY 2b: Handle /ticha routes (skip locale redirection)
+  if (pathname.startsWith('/ticha')) {
+    return NextResponse.next()
+  }
+  
   // PRIORITY 3: Handle locale redirection for main site only
   const pathnameIsMissingLocale = locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
