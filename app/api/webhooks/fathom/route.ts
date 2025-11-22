@@ -1,0 +1,315 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { fetchFathomMeetingData } from '@/lib/services/fathom-service';
+import { createAssignmentsFromActionItems } from '@/lib/services/assignment-service';
+import { analyzeSessionForFlags } from '@/lib/services/admin-flag-service';
+import { distributeSummaryToParticipants } from '@/lib/services/fathom-summary-service';
+
+/**
+ * Fathom AI Webhook Handler
+ * 
+ * Handles meeting content ready notifications from Fathom
+ * Processes transcripts, summaries, and action items
+ * 
+ * Webhook URL: https://www.prepskul.com/api/webhooks/fathom
+ * Configure this URL in Fathom dashboard
+ */
+export async function POST(request: NextRequest) {
+  try {
+    // Parse webhook payload
+    const body = await request.json();
+    
+    // Extract webhook data
+    const {
+      event_type,        // Event type (e.g., "recording.ready", "summary.ready")
+      recording_id,      // Fathom recording ID
+      meeting_id,        // Fathom meeting ID
+      timestamp,         // Webhook timestamp
+      data,             // Additional event data
+    } = body;
+
+    // Validate required fields
+    if (!event_type || !recording_id) {
+      console.error('❌ Invalid webhook payload:', body);
+      return NextResponse.json(
+        { error: 'Missing required fields: event_type, recording_id' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`🔔 Fathom webhook received: ${event_type}, recording_id: ${recording_id}`);
+
+    // Get Supabase client
+    const supabase = await createServerSupabaseClient();
+
+    // Handle different event types
+    if (event_type === 'recording.ready' || event_type === 'summary.ready') {
+      await handleRecordingReady({
+        supabase,
+        recordingId: recording_id,
+        meetingId: meeting_id,
+      });
+    } else {
+      console.log(`⚠️ Unhandled event type: ${event_type}`);
+    }
+
+    console.log(`✅ Fathom webhook processed successfully: ${recording_id}`);
+    
+    // Return success response
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Webhook processed successfully' 
+    });
+
+  } catch (error: any) {
+    console.error('❌ Error processing Fathom webhook:', error);
+    
+    // Return error but don't fail the webhook (Fathom will retry)
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: error.message || 'Internal server error' 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Handle recording ready event
+ * Fetches transcript, summary, and action items from Fathom
+ */
+async function handleRecordingReady({
+  supabase,
+  recordingId,
+  meetingId,
+}: {
+  supabase: any;
+  recordingId: number;
+  meetingId?: string;
+}) {
+  try {
+    console.log(`📹 Processing recording ready: ${recordingId}`);
+
+    // Fetch meeting data from Fathom
+    const meetingData = await fetchFathomMeetingData(recordingId);
+
+    if (!meetingData) {
+      throw new Error('Failed to fetch meeting data from Fathom');
+    }
+
+    // Find matching session in database
+    const sessionMatch = await findSessionByFathomData({
+      supabase,
+      recordingId,
+      meetingId,
+      meetingData,
+    });
+
+    if (!sessionMatch) {
+      console.log(`⚠️ No matching session found for recording ${recordingId}`);
+      return;
+    }
+
+    const { sessionId, sessionType } = sessionMatch;
+
+    // Store transcript and summary
+    const transcriptId = await storeTranscriptAndSummary({
+      supabase,
+      sessionId,
+      sessionType,
+      recordingId,
+      meetingData,
+    });
+
+    // Create assignments from action items
+    if (meetingData.actionItems && meetingData.actionItems.length > 0) {
+      await createAssignmentsFromActionItems({
+        supabase,
+        sessionId,
+        sessionType,
+        actionItems: meetingData.actionItems,
+      });
+    }
+
+    // Analyze for admin flags
+    const flags = await analyzeSessionForFlags({
+      supabase,
+      sessionId,
+      sessionType,
+      transcript: meetingData.transcript || '',
+      summary: meetingData.summary || '',
+    });
+
+    if (flags.length > 0) {
+      console.log(`🚩 ${flags.length} admin flag(s) detected for session ${sessionId}`);
+    }
+
+    // Distribute summary to participants
+    await distributeSummaryToParticipants({
+      supabase,
+      sessionId,
+      sessionType,
+      summaryText: meetingData.summary || '',
+      meetingTitle: meetingData.title || 'Session',
+    });
+
+    console.log(`✅ Recording processed successfully: ${recordingId}`);
+  } catch (error: any) {
+    console.error('❌ Error handling recording ready:', error);
+    throw error;
+  }
+}
+
+/**
+ * Find session by Fathom data
+ * Matches recording to trial_sessions or recurring_sessions
+ */
+async function findSessionByFathomData({
+  supabase,
+  recordingId,
+  meetingId,
+  meetingData,
+}: {
+  supabase: any;
+  recordingId: number;
+  meetingId?: string;
+  meetingData: any;
+}): Promise<{ sessionId: string; sessionType: 'trial' | 'recurring' } | null> {
+  try {
+    // Try to find by calendar event ID (if meeting has calendar link)
+    if (meetingData.calendarLink) {
+      // Extract calendar event ID from link or metadata
+      // This would need to be stored when creating the calendar event
+    }
+
+    // Try to find by recording ID in session_transcripts
+    const { data: existingTranscript } = await supabase
+      .from('session_transcripts')
+      .select('session_id, session_type')
+      .eq('recording_id', recordingId)
+      .maybeSingle();
+
+    if (existingTranscript) {
+      return {
+        sessionId: existingTranscript.session_id,
+        sessionType: existingTranscript.session_type as 'trial' | 'recurring',
+      };
+    }
+
+    // Try to find by meeting time and participants
+    // Match by scheduled date/time and tutor/student emails
+    if (meetingData.startTime && meetingData.attendees) {
+      const startTime = new Date(meetingData.startTime);
+      const scheduledDate = startTime.toISOString().split('T')[0];
+      const scheduledTime = startTime.toTimeString().split(' ')[0].substring(0, 5);
+
+      // Get attendee emails (excluding PrepSkul VA)
+      const attendeeEmails = meetingData.attendees
+        .filter((a: any) => !a.email?.includes('prepskul') && !a.email?.includes('deltechhub'))
+        .map((a: any) => a.email);
+
+      if (attendeeEmails.length >= 2) {
+        // Try trial_sessions
+        const { data: trialSession } = await supabase
+          .from('trial_sessions')
+          .select(`
+            id,
+            tutor_id,
+            learner_id,
+            profiles!trial_sessions_tutor_id_fkey(email),
+            profiles!trial_sessions_learner_id_fkey(email)
+          `)
+          .eq('scheduled_date', scheduledDate)
+          .eq('scheduled_time', scheduledTime)
+          .maybeSingle();
+
+        if (trialSession) {
+          const tutorEmail = (trialSession.profiles as any)?.email;
+          const studentEmail = (trialSession.profiles as any)?.email;
+          
+          if (attendeeEmails.includes(tutorEmail) && attendeeEmails.includes(studentEmail)) {
+            return {
+              sessionId: trialSession.id,
+              sessionType: 'trial',
+            };
+          }
+        }
+      }
+    }
+
+    return null;
+  } catch (error: any) {
+    console.error('❌ Error finding session by Fathom data:', error);
+    return null;
+  }
+}
+
+/**
+ * Store transcript and summary in database
+ */
+async function storeTranscriptAndSummary({
+  supabase,
+  sessionId,
+  sessionType,
+  recordingId,
+  meetingData,
+}: {
+  supabase: any;
+  sessionId: string;
+  sessionType: 'trial' | 'recurring';
+  recordingId: number;
+  meetingData: any;
+}): Promise<string> {
+  try {
+    // Insert or update transcript
+    const { data: transcript, error: transcriptError } = await supabase
+      .from('session_transcripts')
+      .upsert({
+        session_id: sessionId,
+        session_type: sessionType,
+        recording_id: recordingId,
+        transcript: meetingData.transcript || null,
+        summary: meetingData.summary || null,
+        summary_template: meetingData.summaryTemplate || 'general',
+        fathom_url: meetingData.url || null,
+        fathom_share_url: meetingData.shareUrl || null,
+        duration_minutes: meetingData.durationMinutes || null,
+        recording_start_time: meetingData.startTime ? new Date(meetingData.startTime).toISOString() : null,
+        recording_end_time: meetingData.endTime ? new Date(meetingData.endTime).toISOString() : null,
+        created_at: new Date().toISOString(),
+      }, {
+        onConflict: 'session_id,session_type',
+      })
+      .select('id')
+      .single();
+
+    if (transcriptError) throw transcriptError;
+
+    console.log(`✅ Transcript stored: ${transcript.id}`);
+
+    // If summary has detailed data, store in session_summaries
+    if (meetingData.summaryData) {
+      await supabase
+        .from('session_summaries')
+        .upsert({
+          transcript_id: transcript.id,
+          session_id: sessionId,
+          session_type: sessionType,
+          key_points: meetingData.summaryData.keyPoints || [],
+          student_progress: meetingData.summaryData.studentProgress || null,
+          tutor_feedback: meetingData.summaryData.tutorFeedback || null,
+          action_items_summary: meetingData.summaryData.actionItemsSummary || null,
+          created_at: new Date().toISOString(),
+        }, {
+          onConflict: 'session_id,session_type',
+        });
+    }
+
+    return transcript.id;
+  } catch (error: any) {
+    console.error('❌ Error storing transcript and summary:', error);
+    throw error;
+  }
+}
+
