@@ -48,7 +48,7 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Welcome to <strong>PrepSkul</strong> ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy applies to all information collected through our website (prepskul.com), our mobile application, the Ticha AI tool, and any related services (collectively, the "Services").
+              Welcome to <strong>PrepSkul</strong> ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy applies to all information collected through our website (prepskul.com), our mobile application, the Ticha AI tool, the SkulMate game, and any related services (collectively, the "Services").
             </p>
             <p className="text-gray-700 leading-relaxed">
                If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us at <a href="mailto:info@prepskul.com" className="text-blue-600 hover:underline">info@prepskul.com</a>.
@@ -96,7 +96,7 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
-                <span><strong>AI Features:</strong> To process your inputs in Ticha and generate educational materials (e.g., summaries, slides).</span>
+                <span><strong>AI & Interactive Features:</strong> To process your inputs in Ticha (for presentation generation) and SkulMate (converting notes into game questions) to provide the requested educational content.</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
