@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
               <p className="text-lg text-gray-600">
                 Your privacy is important to us. This policy explains how we handle your personal information.
               </p>
-              <div className="mt-6 inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">
+              <div className="mt-6 inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 Last Updated: November 22, 2025
               </div>
             </div>
@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
                   priority
                 />
               </div>
-              <span className="text-blue-600 font-bold text-xl md:text-2xl mt-2 tracking-tight">PrepSkul</span>
+              <span className="text-primary font-bold text-xl md:text-2xl mt-2 tracking-tight">PrepSkul</span>
             </div>
           </div>
         </div>
