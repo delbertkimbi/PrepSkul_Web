@@ -75,17 +75,21 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
   }, [])
 
   return (
-    <span className={className}>
-      {baseText}{" "}
-      <span style={{ color: "#000", fontWeight: 800 }}>
-        {currentText}
+    <span className={`relative inline-flex flex-wrap justify-center items-center gap-x-2 gap-y-1 ${className}`}>
+      <span className="whitespace-nowrap">{baseText}</span>
+      
+      <span className="relative inline-flex items-center justify-center">
+        <span className="relative z-10 font-extrabold px-0.5 text-black">
+          {currentText}
+        </span>
+        
         <span 
           className="inline-block ml-0.5 w-[2px] h-[1em] bg-black align-middle"
           style={{ opacity: showCursor ? 1 : 0 }} 
         />
-      </span>{" "}
-      <br className="sm:hidden" /> {/* Break on mobile if needed */}
-      {suffixText}
+      </span>
+
+      <span className="whitespace-nowrap">{suffixText}</span>
     </span>
   )
 }
