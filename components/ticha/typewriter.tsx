@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 
 interface TypewriterProps {
   className?: string
@@ -76,50 +76,50 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
   }, [])
 
   return (
-    <span className={`relative inline-flex flex-wrap justify-center items-center gap-2 ${className}`}>
-      <span>{baseText}</span>
+    <span className={`relative inline-flex flex-wrap justify-center items-center gap-x-2 gap-y-1 ${className}`}>
+      <span className="whitespace-nowrap">{baseText}</span>
       
-      <span className="relative inline-flex items-center justify-center min-w-[4ch] h-[1.2em]">
-        {/* Animated Blob Background */}
-        <AnimatePresence mode="wait">
-          {currentText.length > 0 && (
-            <motion.span
-              className="absolute inset-0 -z-10 bg-yellow-300/40 rounded-[30%_70%_70%_30%/30%_30%_70%_70%] blur-sm"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ 
-                opacity: 1, 
-                scale: 1.2,
-                borderRadius: ["30% 70% 70% 30% / 30% 30% 70% 70%", "60% 40% 30% 70% / 60% 30% 70% 40%", "30% 70% 70% 30% / 30% 30% 70% 70%"]
-              }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              transition={{ 
-                duration: 2, 
-                ease: "easeInOut", 
-                repeat: Infinity,
-                opacity: { duration: 0.2 },
-                scale: { duration: 0.2 }
-              }}
-              style={{
-                width: "120%",
-                height: "140%",
-                left: "-10%",
-                top: "-20%"
-              }}
-            />
-          )}
-        </AnimatePresence>
+      <span className="relative inline-flex items-center justify-center">
+        {/* Organic Highlight Background */}
+        <motion.span
+          className="absolute inset-0 bg-yellow-300/60 -z-10"
+          initial={false}
+          animate={{
+            borderRadius: [
+              "20% 80% 20% 80% / 50% 20% 80% 50%",
+              "80% 20% 80% 20% / 20% 80% 20% 80%",
+              "20% 80% 20% 80% / 50% 20% 80% 50%"
+            ],
+            scale: [0.95, 1.02, 0.95],
+            rotate: [-1, 1, -1]
+          }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          style={{
+            // Ensure it's hidden when text is empty to prevent artifacts
+            opacity: currentText ? 1 : 0,
+            // Make it slightly larger than the text
+            left: "-0.2em",
+            right: "-0.2em",
+            top: "0.1em",
+            bottom: "0.05em",
+          }}
+        />
 
-        <span className="relative z-10 text-black font-extrabold">
+        <span className="relative z-10 font-extrabold px-0.5">
           {currentText}
         </span>
         
         <span 
-          className="inline-block ml-0.5 w-[3px] h-[1em] bg-black align-middle"
+          className="inline-block ml-0.5 w-[2px] h-[1em] bg-black align-middle"
           style={{ opacity: showCursor ? 1 : 0 }} 
         />
       </span>
 
-      <span>{suffixText}</span>
+      <span className="whitespace-nowrap">{suffixText}</span>
     </span>
   )
 }
