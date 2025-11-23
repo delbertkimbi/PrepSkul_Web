@@ -24,7 +24,7 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
             </div>
             
             {/* PrepSkul Logo */}
-            <div className="flex flex-col items-center md:items-end mt-4 md:mt-0 shrink-0">
+            <div className="flex flex-col items-center justify-center mt-4 md:mt-0 shrink-0 md:mr-8">
               <div className="relative w-16 h-16 md:w-20 md:h-20">
                 <Image 
                   src="/app_logo(blue).png" 
