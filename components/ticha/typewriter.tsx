@@ -33,12 +33,10 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
           setIsDeleting(true)
         }, 2000)
       } else if (isDeleting && currentText === "") {
-        // Pause at START (empty) before typing next word
-        timeout = setTimeout(() => {
-          setIsPaused(false)
-          setIsDeleting(false)
-          setCurrentWordIndex((prev) => (prev + 1) % words.length)
-        }, 500)
+        // IMMEDIATELY switch to next word and start typing
+        setIsPaused(false)
+        setIsDeleting(false)
+        setCurrentWordIndex((prev) => (prev + 1) % words.length)
       }
     } else {
       // Typing or Deleting action
