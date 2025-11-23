@@ -97,10 +97,10 @@ function SignInContent() {
               <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-gray-900" />
             </div>
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 800 }}>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">
             Welcome Back
           </h1>
-          <p className="text-sm sm:text-base text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+          <p className="text-sm sm:text-base text-gray-600">
             Sign in to continue to TichaAI
           </p>
         </div>
@@ -131,7 +131,7 @@ function SignInContent() {
 
         <form onSubmit={handleSignIn} className="space-y-4 sm:space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-sm sm:text-base text-gray-900 font-medium" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <Label htmlFor="email" className="text-sm sm:text-base text-gray-900 font-medium">
               Email Address
             </Label>
             <Input
@@ -146,13 +146,12 @@ function SignInContent() {
                 background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                 boxShadow: "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)",
                 color: "#2d3748",
-                fontFamily: "'Inter', 'Poppins', sans-serif",
               }}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-sm sm:text-base text-gray-900 font-medium" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <Label htmlFor="password" className="text-sm sm:text-base text-gray-900 font-medium">
               Password
             </Label>
             <div className="relative">
@@ -168,7 +167,6 @@ function SignInContent() {
                   background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                   boxShadow: "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)",
                   color: "#2d3748",
-                  fontFamily: "'Inter', 'Poppins', sans-serif",
                 }}
               />
               <button
@@ -193,7 +191,6 @@ function SignInContent() {
                 ? "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)"
                 : "3px 3px 8px rgba(190, 190, 190, 0.4), -3px -3px 8px rgba(255, 255, 255, 0.8)",
               color: "#2d3748",
-              fontFamily: "'Inter', 'Poppins', sans-serif",
             }}
           >
             {loading ? "Signing In..." : "Sign In"}
@@ -201,12 +198,11 @@ function SignInContent() {
         </form>
 
         <div className="mt-5 sm:mt-6 text-center space-y-2">
-          <p className="text-xs sm:text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+          <p className="text-xs sm:text-sm text-gray-600">
             Don't have an account?{" "}
             <Link
               href="/ticha/signup"
               className="font-semibold text-gray-900 hover:underline"
-              style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
             >
               Sign Up
             </Link>
@@ -219,7 +215,7 @@ function SignInContent() {
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)", fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)" }}>
       <TichaHeader />
 
       <main className="flex-1 flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12">
