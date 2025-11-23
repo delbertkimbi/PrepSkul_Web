@@ -48,10 +48,10 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Welcome to <strong>PrepSkul</strong> ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us at <a href="mailto:info@prepskul.com" className="text-blue-600 hover:underline">info@prepskul.com</a>.
+              Welcome to <strong>PrepSkul</strong> ("we," "our," or "us"). We are committed to protecting your personal information and your right to privacy. This Privacy Policy applies to all information collected through our website (prepskul.com), our mobile application, the Ticha AI tool, and any related services (collectively, the "Services").
             </p>
             <p className="text-gray-700 leading-relaxed">
-              This Privacy Policy applies to all information collected through our website (prepskul.com), our mobile application, and any related services, sales, marketing, or events (collectively, the "Services").
+               If you have any questions or concerns about our policy, or our practices with regards to your personal information, please contact us at <a href="mailto:info@prepskul.com" className="text-blue-600 hover:underline">info@prepskul.com</a>.
             </p>
           </section>
 
@@ -59,24 +59,25 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Information We Collect</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              We collect personal information that you voluntarily provide to us when registering at the Services, expressing an interest in obtaining information about us or our products and services, when participating in activities on the Services, or otherwise contacting us.
+              We collect personal information that you voluntarily provide to us when registering at the Services, expressing an interest in obtaining information about us or our products and services, when participating in activities on the Services (such as using Ticha or booking a tutor), or otherwise contacting us.
             </p>
             <div className="space-y-4">
               <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                 <h3 className="font-semibold text-gray-900 mb-2">Personal Information Provided by You</h3>
                 <ul className="list-disc list-inside text-gray-700 space-y-2">
-                  <li>Name and Contact Data (Email, Phone Number)</li>
-                  <li>Credentials (Passwords, Security info)</li>
-                  <li>Payment Data (processed securely by our payment processors)</li>
-                  <li>Profile Data (User role, educational preferences)</li>
+                  <li><strong>Identity Data:</strong> Name, profile picture, date of birth.</li>
+                  <li><strong>Contact Data:</strong> Email address, phone number, billing address.</li>
+                  <li><strong>Financial Data:</strong> Payment details (processed securely by third-party payment processors; we do not store full credit card numbers).</li>
+                  <li><strong>Profile Data:</strong> User role (Tutor/Learner), educational subjects, biography, and session history.</li>
+                  <li><strong>Content Data:</strong> Files, presentations, and text input you upload for use with Ticha or during sessions.</li>
                 </ul>
               </div>
               <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
                 <h3 className="font-semibold text-gray-900 mb-2">Information Automatically Collected</h3>
                 <ul className="list-disc list-inside text-gray-700 space-y-2">
-                  <li>Device Information (Model, OS version, Unique Device Identifiers)</li>
-                  <li>Usage Data (Features used, time spent, crash logs)</li>
-                  <li>Location Data (IP address-based broad location)</li>
+                  <li><strong>Device Information:</strong> Device model, operating system, unique device identifiers, and mobile network information.</li>
+                  <li><strong>Usage Data:</strong> Information about how you use our Services, such as the date and time of your visit, features used, and crash logs.</li>
+                  <li><strong>Location Data:</strong> Approximate location based on IP address to provide localized content and tutor matching.</li>
                 </ul>
               </div>
             </div>
@@ -86,28 +87,24 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">3. How We Use Your Information</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              We use personal information collected via our Services for a variety of business purposes described below. We process your personal information for these purposes in reliance on our legitimate business interests, in order to enter into or perform a contract with you, with your consent, and/or for compliance with our legal obligations.
+              We use personal information collected via our Services for legitimate business purposes, to perform our contract with you, and to comply with our legal obligations. Specifically:
             </p>
             <ul className="space-y-3 text-gray-700">
               <li className="flex items-start">
                 <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
-                <span>To facilitate account creation and logon process.</span>
+                <span><strong>Service Provision:</strong> To facilitate account creation, login, session booking, and video conferencing.</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
-                <span>To send you administrative information (product updates, terms changes).</span>
+                <span><strong>AI Features:</strong> To process your inputs in Ticha and generate educational materials (e.g., summaries, slides).</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
-                <span>To fulfill and manage your orders and payments.</span>
+                <span><strong>Payments:</strong> To process tuition fees and tutor payouts.</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
-                <span>To enable user-to-user communications (between Tutors and Learners).</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
-                <span>To enforce our terms, conditions, and policies.</span>
+                <span><strong>Safety & Support:</strong> To detect fraud, monitor for inappropriate behavior during sessions, and respond to support inquiries.</span>
               </li>
             </ul>
           </section>
@@ -116,21 +113,20 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Sharing Your Information</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              We only share information with your consent, to comply with laws, to provide you with services, to protect your rights, or to fulfill business obligations.
+              We may share your data with the following categories of third parties:
             </p>
-            <p className="text-gray-700 leading-relaxed">
-              We may share your data with third-party vendors, service providers, contractors, or agents who perform services for us or on our behalf and require access to such information to do that work (e.g., Payment Processing, Data Analysis, Email Delivery, Hosting Services, Customer Service, and Marketing Efforts).
-            </p>
+            <ul className="mt-2 space-y-2 text-gray-700 list-disc list-inside">
+               <li><strong>Service Providers:</strong> Hosting services, payment processors (e.g., Stripe, Mobile Money providers), and email delivery services.</li>
+               <li><strong>AI Partners:</strong> We use third-party AI models (such as OpenAI via OpenRouter) to power Ticha. Your text inputs may be sent to these providers solely for the purpose of generating the requested content. We do not allow them to use your data to train their models.</li>
+               <li><strong>Legal Obligations:</strong> We may disclose your information where we are legally required to do so to comply with applicable law, governmental requests, or a judicial proceeding.</li>
+            </ul>
           </section>
 
           {/* Section 5 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Third-Party Logins</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Our Services offer you the ability to register and login using your third-party social media account details (like your Google or Facebook logins). Where you choose to do this, we will receive certain profile information about you from your social media provider.
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Cookies & Tracking Technologies</h2>
             <p className="text-gray-700 leading-relaxed">
-              We will use the information we receive only for the purposes that are described in this privacy policy or that are otherwise made clear to you on the Services.
+              We use cookies and similar tracking technologies (like web beacons and pixels) to access or store information. This helps us remember your login status, preferences (such as language), and analyze traffic. You can control the use of cookies at the individual browser level, but if you choose to disable cookies, it may limit your use of certain features or functions on our Services.
             </p>
           </section>
 
@@ -138,27 +134,32 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Data Retention & Security</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              We will only keep your personal information for as long as it is necessary for the purposes set out in this privacy policy, unless a longer retention period is required or permitted by law (such as tax, accounting, or other legal requirements).
+              We keep your personal information only for as long as necessary to fulfill the purposes outlined in this privacy policy. For example, we retain transaction records for accounting purposes as required by law.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              We have implemented appropriate technical and organizational security measures designed to protect the security of any personal information we process. However, please also remember that we cannot guarantee that the internet itself is 100% secure.
+              We have implemented appropriate technical and organizational security measures (such as encryption and access controls) designed to protect the security of any personal information we process. However, no electronic transmission over the Internet or information storage technology can be guaranteed to be 100% secure.
             </p>
           </section>
 
           {/* Section 7 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Your Privacy Rights</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              In some regions, you have certain rights under applicable data protection laws. These may include the right (i) to request access and obtain a copy of your personal information, (ii) to request rectification or erasure; (iii) to restrict the processing of your personal information; and (iv) if applicable, to data portability.
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. International Transfers</h2>
             <p className="text-gray-700 leading-relaxed">
-              To make such a request, please use the contact details provided below. We will consider and act upon any request in accordance with applicable data protection laws.
+              Our servers are located in multiple regions to ensure speed and reliability. If you are accessing our Services from outside Cameroon, please be aware that your information may be transferred to, stored, and processed by us in our facilities and by those third parties with whom we may share your personal information, in other countries.
             </p>
           </section>
 
           {/* Section 8 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Contact Us</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Children's Privacy</h2>
+            <p className="text-gray-700 leading-relaxed">
+              We do not knowingly solicit data from or market to children under 13 years of age without parental consent. If you become aware that any data has been collected from children under age 13 without verification of parental consent, please contact us at info@prepskul.com, and we will delete that information.
+            </p>
+          </section>
+
+          {/* Section 9 */}
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed mb-6">
               If you have questions or comments about this policy, you may email us or contact us by post at:
             </p>

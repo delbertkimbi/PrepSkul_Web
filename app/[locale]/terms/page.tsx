@@ -48,93 +48,115 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Agreement to Terms</h2>
             <p className="text-gray-700 leading-relaxed">
-              These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and <strong>PrepSkul</strong> ("we," "us" or "our"), concerning your access to and use of the prepskul.com website as well as any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site").
+              These Terms of Service constitute a legally binding agreement made between you, whether personally or on behalf of an entity ("you") and <strong>PrepSkul</strong> ("we," "us" or "our"), concerning your access to and use of the prepskul.com website, the PrepSkul mobile application, the Ticha AI tool, and any other media form, media channel, mobile website or mobile application related, linked, or otherwise connected thereto (collectively, the "Site" or "Platform").
             </p>
             <p className="mt-4 text-gray-700 leading-relaxed">
-              You agree that by accessing the Site, you have read, understood, and agree to be bound by all of these Terms of Service. If you do not agree with all of these Terms of Service, then you are expressly prohibited from using the Site and you must discontinue use immediately.
+              By accessing the Site, you acknowledge that you have read, understood, and agree to be bound by all of these Terms of Service. If you do not agree with all of these Terms of Service, then you are expressly prohibited from using the Site and you must discontinue use immediately.
             </p>
           </section>
 
           {/* Section 2 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Intellectual Property Rights</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Nature of the Platform</h2>
             <p className="text-gray-700 leading-relaxed">
-              Unless otherwise indicated, the Site is our proprietary property and all source code, databases, functionality, software, website designs, audio, video, text, photographs, and graphics on the Site (collectively, the "Content") and the trademarks, service marks, and logos contained therein (the "Marks") are owned or controlled by us or licensed to us, and are protected by copyright and trademark laws.
+              PrepSkul is a marketplace platform that connects learners ("Students" or "Learners") with independent tutors ("Tutors") for educational sessions. 
             </p>
+            <ul className="mt-4 space-y-2 text-gray-700 list-disc list-inside">
+              <li>We provide the infrastructure for booking, payment processing, and video conferencing.</li>
+              <li><strong>We are not an educational institution.</strong> Tutors are independent contractors, not employees of PrepSkul. We do not endorse or guarantee the quality of any specific Tutor, although we implement verification processes.</li>
+              <li>The "Ticha" feature is an AI-powered assistant provided as a tool to aid in content creation and study. It is not a substitute for professional human instruction.</li>
+            </ul>
           </section>
 
           {/* Section 3 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">3. User Representations</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              By using the Site, you represent and warrant that:
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Intellectual Property Rights</h2>
+            <p className="text-gray-700 leading-relaxed">
+              Unless otherwise indicated, the Site is our proprietary property and all source code, databases, functionality, software, website designs, audio, video, text, photographs, and graphics on the Site (collectively, the "Content") and the trademarks, service marks, and logos contained therein (the "Marks") are owned or controlled by us or licensed to us.
             </p>
-            <ul className="space-y-3 text-gray-700">
-              <li className="flex items-start">
-                <span className="mr-3 text-blue-500 flex-shrink-0">•</span>
-                <span>All registration information you submit will be true, accurate, current, and complete.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3 text-blue-500 flex-shrink-0">•</span>
-                <span>You will maintain the accuracy of such information and promptly update such registration information as necessary.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3 text-blue-500 flex-shrink-0">•</span>
-                <span>You have the legal capacity and you agree to comply with these Terms of Service.</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-3 text-blue-500 flex-shrink-0">•</span>
-                <span>You are not a minor in the jurisdiction in which you reside, or if a minor, you have received parental permission to use the Site.</span>
-              </li>
-            </ul>
+            <p className="mt-4 text-gray-700 leading-relaxed">
+              <strong>User Generated Content:</strong> Tutors retain ownership of the educational materials they upload. However, by uploading content to PrepSkul, you grant us a non-exclusive, worldwide, royalty-free license to host, display, and distribute such content for the purpose of operating the Service.
+            </p>
           </section>
 
           {/* Section 4 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">4. User Registration</h2>
-            <p className="text-gray-700 leading-relaxed">
-              You may be required to register with the Site. You agree to keep your password confidential and will be responsible for all use of your account and password. We reserve the right to remove, reclaim, or change a username you select if we determine, in our sole discretion, that such username is inappropriate, obscene, or otherwise objectionable.
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">4. User Representations & Conduct</h2>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              By using the Site, you represent that your registration information is accurate and you have the legal capacity to agree to these terms. You agree <strong>NOT</strong> to:
             </p>
+            <ul className="space-y-3 text-gray-700">
+              <li className="flex items-start">
+                <span className="mr-3 text-red-500 font-bold flex-shrink-0">✕</span>
+                <span>Circumvent the Platform by soliciting or accepting payments outside of PrepSkul for services found through PrepSkul.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3 text-red-500 font-bold flex-shrink-0">✕</span>
+                <span>Engage in academic dishonesty, cheating, or plagiarism.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3 text-red-500 font-bold flex-shrink-0">✕</span>
+                <span>Harass, abuse, or harm another person, including using hate speech or inappropriate language during sessions.</span>
+              </li>
+              <li className="flex items-start">
+                <span className="mr-3 text-red-500 font-bold flex-shrink-0">✕</span>
+                <span>Use the Ticha AI tool to generate content that is illegal, harmful, or violates third-party rights.</span>
+              </li>
+            </ul>
           </section>
 
           {/* Section 5 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Educational Services</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Educational Services & Booking</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              <strong>For Tutors:</strong> You are responsible for providing high-quality educational content and conducting sessions professionally. You must not solicit students to move off the PrepSkul platform.
+              <strong>For Tutors:</strong> You are responsible for setting your availability and delivering sessions as scheduled. Repeated cancellations or no-shows may result in account suspension.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              <strong>For Learners:</strong> You agree to treat tutors with respect and adhere to the booking and cancellation policies. We reserve the right to terminate access for any user who engages in harassment or inappropriate behavior.
+              <strong>For Learners:</strong> You agree to attend booked sessions on time. Sessions missed by the Learner without proper notice ("No-Show") are generally non-refundable, subject to our Cancellation Policy.
             </p>
           </section>
 
           {/* Section 6 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Purchases and Payment</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Purchases, Payments & Refunds</h2>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              <strong>Fees:</strong> PrepSkul charges a service fee on transactions to cover platform maintenance, support, and payment processing costs. This fee is deducted from the Tutor's set rate or added to the Learner's total, as displayed at checkout.
+            </p>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              <strong>Payouts:</strong> Tutors receive payouts via Mobile Money or Bank Transfer after the successful completion of a session, subject to a clearing period defined in the Tutor Dashboard.
+            </p>
             <p className="text-gray-700 leading-relaxed">
-              We accept various forms of payment including Mobile Money and Credit Cards. You agree to provide current, complete, and accurate purchase and account information for all purchases made via the Site. You further agree to promptly update account and payment information, including email address, payment method, and payment card expiration date, so that we can complete your transactions and contact you as needed.
+              <strong>Refunds:</strong> Refunds are not automatic. If a Tutor fails to show up or there is a significant technical failure attributable to the Platform, Learners may request a refund or credit. Disputes must be raised within 48 hours of the scheduled session.
             </p>
           </section>
 
           {/* Section 7 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Term and Termination</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. AI Tools (Ticha)</h2>
             <p className="text-gray-700 leading-relaxed">
-              These Terms of Service shall remain in full force and effect while you use the Site. WITHOUT LIMITING ANY OTHER PROVISION OF THESE TERMS OF SERVICE, WE RESERVE THE RIGHT TO, IN OUR SOLE DISCRETION AND WITHOUT NOTICE OR LIABILITY, DENY ACCESS TO AND USE OF THE SITE (INCLUDING BLOCKING CERTAIN IP ADDRESSES), TO ANY PERSON FOR ANY REASON OR FOR NO REASON.
+              The Ticha AI presentation and study tool is provided "as is." While we strive for accuracy, AI-generated content may contain errors or inaccuracies. You are responsible for verifying any information generated by Ticha before using it for academic or professional purposes.
             </p>
           </section>
 
           {/* Section 8 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Governing Law</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Limitation of Liability</h2>
             <p className="text-gray-700 leading-relaxed">
-              These Terms shall be governed by and defined following the laws of Cameroon. PrepSkul and yourself irrevocably consent that the courts of Cameroon shall have exclusive jurisdiction to resolve any dispute which may arise in connection with these terms.
+              IN NO EVENT WILL WE BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, EXEMPLARY, INCIDENTAL, SPECIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SITE. We do not guarantee specific educational outcomes or grades resulting from the use of our services.
             </p>
           </section>
 
           {/* Section 9 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Contact Us</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Governing Law & Dispute Resolution</h2>
+            <p className="text-gray-700 leading-relaxed">
+              These Terms shall be governed by and defined following the laws of the Republic of Cameroon. Any dispute arising out of or in connection with these terms shall first be attempted to be settled through amicable negotiation. If negotiation fails, the dispute shall be referred to the competent courts of Cameroon.
+            </p>
+          </section>
+
+          {/* Section 10 */}
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed mb-6">
               In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:
             </p>
