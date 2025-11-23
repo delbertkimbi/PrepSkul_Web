@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export const metadata = {
   title: 'Privacy Policy | PrepSkul',
@@ -9,14 +10,32 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="container mx-auto px-4 py-16 max-w-4xl">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
-          <p className="text-lg text-gray-600">
-            Your privacy is important to us. This policy explains how we handle your personal information.
-          </p>
-          <div className="mt-6 inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">
-            Last Updated: November 22, 2025
+      <div className="bg-white border-b border-gray-200 relative overflow-hidden">
+        <div className="container mx-auto px-4 py-16 max-w-4xl relative z-10">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
+            <div className="flex-1">
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Privacy Policy</h1>
+              <p className="text-lg text-gray-600">
+                Your privacy is important to us. This policy explains how we handle your personal information.
+              </p>
+              <div className="mt-6 inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm font-medium">
+                Last Updated: November 22, 2025
+              </div>
+            </div>
+
+            {/* PrepSkul Logo */}
+            <div className="flex flex-col items-center md:items-end mt-4 md:mt-0 shrink-0">
+              <div className="relative w-16 h-16 md:w-20 md:h-20">
+                <Image 
+                  src="/app_logo(blue).png" 
+                  alt="PrepSkul Logo" 
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="text-blue-600 font-bold text-xl md:text-2xl mt-2 tracking-tight">PrepSkul</span>
+            </div>
           </div>
         </div>
       </div>
