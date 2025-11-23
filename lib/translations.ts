@@ -272,7 +272,9 @@ export const translations = {
       hours: "Hours",
       minutes: "Minutes",
       seconds: "Seconds",
-      allRightsReserved: "All rights reserved."
+      allRightsReserved: "All rights reserved.",
+      privacyPolicy: "Privacy Policy",
+      termsOfService: "Terms of Service"
     },
     programs: {
       hero: {
@@ -855,7 +857,9 @@ export const translations = {
       hours: "Heures",
       minutes: "Minutes",
       seconds: "Secondes",
-      allRightsReserved: "Tous droits réservés."
+      allRightsReserved: "Tous droits réservés.",
+      privacyPolicy: "Politique de Confidentialité",
+      termsOfService: "Conditions d'Utilisation"
     },
     programs: {
       hero: {
