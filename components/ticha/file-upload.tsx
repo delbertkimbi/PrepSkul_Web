@@ -127,13 +127,13 @@ export function FileUpload({ onFileSelect, acceptedTypes = ["pdf", "txt", "docx"
                 <Upload className="h-7 w-7 sm:h-8 sm:w-8 text-gray-900" />
               </div>
             </div>
-            <p className="text-base sm:text-lg font-semibold mb-2 text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="text-base sm:text-lg font-semibold mb-2 text-gray-900" style={{  }}>
               Drop your file here
             </p>
-            <p className="text-sm mb-1 text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="text-sm mb-1 text-gray-600" style={{  }}>
               or click to browse
             </p>
-            <p className="text-xs mt-4 text-gray-500" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="text-xs mt-4 text-gray-500" style={{  }}>
               Supports {acceptedTypes.map((t) => t.toUpperCase()).join(", ")}
             </p>
           </>
@@ -148,10 +148,10 @@ export function FileUpload({ onFileSelect, acceptedTypes = ["pdf", "txt", "docx"
             >
               <File className="h-6 w-6 text-gray-900" />
               <div className="flex-1 text-left min-w-0">
-                <p className="font-medium text-sm truncate text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <p className="font-medium text-sm truncate text-gray-900" style={{  }}>
                   {selectedFile.name}
                 </p>
-                <p className="text-xs text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <p className="text-xs text-gray-600" style={{  }}>
                   {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
@@ -172,7 +172,7 @@ export function FileUpload({ onFileSelect, acceptedTypes = ["pdf", "txt", "docx"
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="text-sm text-gray-600" style={{  }}>
               Click to upload a different file
             </p>
           </div>

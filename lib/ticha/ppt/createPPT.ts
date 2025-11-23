@@ -4,7 +4,7 @@
  * Emphasizes templates, themes, and visual design
  */
 
-import PptxGenJS, { ShapeType } from 'pptxgenjs'
+import PptxGenJS from 'pptxgenjs'
 
 export interface SlideDesign {
   background_color: 'light-blue' | 'dark-blue' | 'white' | 'gray' | 'green'
@@ -72,11 +72,10 @@ export async function createPPT(options: PresentationOptions): Promise<Buffer> {
   })
   pptx.layout = 'TICHA_WIDE'
 
-  // Define master background and theme
-  pptx.defineMasterSlide({
-    title: 'TICHA_MASTER',
-    background: { color: 'FFFFFF' },
-  })
+  // Set the default slide background color directly as defineMasterSlide does not exist
+  // (see: https://gitbrent.github.io/PptxGenJS/docs/api-slaye/#background)
+  // Will apply per slide below as needed
+
 
   // Create slides
   for (let i = 0; i < options.slides.length; i++) {
@@ -116,7 +115,7 @@ export async function createPPT(options: PresentationOptions): Promise<Buffer> {
  * Title-only slide (for impactful opening/closing slides)
  */
 function createTitleOnlySlide(
-  slide: pptxgen.Slide,
+  slide: PptxGenJS.Slide,
   slideData: SlideData,
   colorTheme: { bg: string; text: string }
 ): void {
@@ -160,7 +159,7 @@ function createTitleOnlySlide(
  * Title and bullets slide (standard content)
  */
 function createTitleBulletsSlide(
-  slide: pptxgen.Slide,
+  slide: PptxGenJS.Slide,
   slideData: SlideData,
   colorTheme: { bg: string; text: string }
 ): void {
@@ -223,7 +222,7 @@ function createTitleBulletsSlide(
  * Two-column slide (for comparisons or side-by-side content)
  */
 function createTwoColumnSlide(
-  slide: pptxgen.Slide,
+  slide: PptxGenJS.Slide,
   slideData: SlideData,
   colorTheme: { bg: string; text: string }
 ): void {
@@ -274,7 +273,7 @@ function createTwoColumnSlide(
   }
 
   // Add divider line
-  slide.addShape(ShapeType.rect, {
+  slide.addShape('rect', {
     x: 4.95,
     y: 1.6,
     w: 0.1,
@@ -289,7 +288,7 @@ function createTwoColumnSlide(
  * Image-left slide (visual-heavy with supporting text)
  */
 function createImageLeftSlide(
-  slide: pptxgen.Slide,
+  slide: PptxGenJS.Slide,
   slideData: SlideData,
   colorTheme: { bg: string; text: string }
 ): void {
@@ -306,7 +305,7 @@ function createImageLeftSlide(
   })
 
   // Placeholder for image (left side)
-  slide.addShape(ShapeType.rect, {
+  slide.addShape('rect', {
     x: 0.5,
     y: 1.6,
     w: 4,
@@ -352,7 +351,7 @@ function createImageLeftSlide(
  * Image-right slide (content-first with supporting visual)
  */
 function createImageRightSlide(
-  slide: pptxgen.Slide,
+  slide: PptxGenJS.Slide,
   slideData: SlideData,
   colorTheme: { bg: string; text: string }
 ): void {
@@ -385,7 +384,7 @@ function createImageRightSlide(
   }
 
   // Placeholder for image (right side)
-  slide.addShape(ShapeType.rect, {
+  slide.addShape('rect', {
     x: 5.5,
     y: 1.6,
     w: 4,
@@ -414,11 +413,11 @@ function createImageRightSlide(
  * Add decorative elements for visual polish
  */
 function addDecorativeElements(
-  slide: pptxgen.Slide,
+  slide: PptxGenJS.Slide,
   colorTheme: { bg: string; text: string }
 ): void {
   // Subtle corner accent (top-right)
-  slide.addShape(ShapeType.rect, {
+  slide.addShape('rect', {
     x: 9.5,
     y: 0,
     w: 0.5,
@@ -428,7 +427,7 @@ function addDecorativeElements(
   })
 
   // Subtle bottom border
-  slide.addShape(ShapeType.rect, {
+  slide.addShape('rect', {
     x: 0,
     y: 5.3,
     w: 10,

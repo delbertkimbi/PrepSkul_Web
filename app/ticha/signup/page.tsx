@@ -213,7 +213,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)", fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",  }}>
       <TichaHeader />
 
       <main className="flex-1 flex items-center justify-center px-3 sm:px-4 lg:px-8 py-6 sm:py-12">
@@ -237,10 +237,10 @@ export default function SignUpPage() {
                   <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-gray-900" />
                 </div>
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 800 }}>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-1 sm:mb-2" style={{  fontWeight: 800 }}>
                 Create Account
               </h1>
-              <p className="text-sm sm:text-base text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+              <p className="text-sm sm:text-base text-gray-600" style={{  }}>
                 Start creating amazing presentations
               </p>
             </div>
@@ -264,14 +264,14 @@ export default function SignUpPage() {
                     <Mail className="h-5 w-5 text-green-700" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm sm:text-base text-gray-900 mb-1.5" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                    <p className="font-semibold text-sm sm:text-base text-gray-900 mb-1.5" style={{  }}>
                       Check your email
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-3" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                    <p className="text-xs sm:text-sm text-gray-600 leading-relaxed mb-3" style={{  }}>
                       We sent a confirmation link to <span className="font-medium text-gray-900 break-all">{email}</span>
                     </p>
                     {emailResent && (
-                      <p className="text-xs text-green-700 mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                      <p className="text-xs text-green-700 mb-2" style={{  }}>
                         ✓ Email resent successfully!
                       </p>
                     )}
@@ -279,7 +279,7 @@ export default function SignUpPage() {
                       onClick={handleResendEmail}
                       disabled={loading}
                       className="text-xs sm:text-sm text-gray-700 hover:text-gray-900 underline font-medium"
-                      style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                      style={{  }}
                     >
                       {loading ? "Sending..." : "Resend email"}
                     </button>
@@ -302,7 +302,7 @@ export default function SignUpPage() {
 
             <form onSubmit={handleSignUp} className="space-y-4 sm:space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-sm sm:text-base text-gray-900 font-medium" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <Label htmlFor="fullName" className="text-sm sm:text-base text-gray-900 font-medium" style={{  }}>
                   Full Name
                 </Label>
                 <Input
@@ -316,13 +316,13 @@ export default function SignUpPage() {
                     background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                     boxShadow: "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)",
                     color: "#2d3748",
-                    fontFamily: "'Inter', 'Poppins', sans-serif",
+                    
                   }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm sm:text-base text-gray-900 font-medium" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <Label htmlFor="email" className="text-sm sm:text-base text-gray-900 font-medium" style={{  }}>
                   Email Address
                 </Label>
                 <Input
@@ -337,13 +337,13 @@ export default function SignUpPage() {
                     background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                     boxShadow: "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)",
                     color: "#2d3748",
-                    fontFamily: "'Inter', 'Poppins', sans-serif",
+                    
                   }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm sm:text-base text-gray-900 font-medium" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <Label htmlFor="password" className="text-sm sm:text-base text-gray-900 font-medium" style={{  }}>
                   Password
                 </Label>
                 <div className="relative">
@@ -360,7 +360,7 @@ export default function SignUpPage() {
                       background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                       boxShadow: "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)",
                       color: "#2d3748",
-                      fontFamily: "'Inter', 'Poppins', sans-serif",
+                      
                     }}
                   />
                   <button
@@ -371,7 +371,7 @@ export default function SignUpPage() {
                     {showPassword ? <EyeOff className="h-4 w-4 sm:h-5 sm:w-5" /> : <Eye className="h-4 w-4 sm:h-5 sm:w-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <p className="text-xs text-gray-500" style={{  }}>
                   Must be at least 6 characters
                 </p>
               </div>
@@ -388,7 +388,7 @@ export default function SignUpPage() {
                     ? "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)"
                     : "3px 3px 8px rgba(190, 190, 190, 0.4), -3px -3px 8px rgba(255, 255, 255, 0.8)",
                   color: "#2d3748",
-                  fontFamily: "'Inter', 'Poppins', sans-serif",
+                  
                 }}
               >
                 {loading ? "Creating..." : success ? "Email Sent!" : "Create Account"}
@@ -396,12 +396,12 @@ export default function SignUpPage() {
             </form>
 
             <div className="mt-5 sm:mt-6 text-center">
-              <p className="text-xs sm:text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+              <p className="text-xs sm:text-sm text-gray-600" style={{  }}>
                 Already have an account?{" "}
                 <Link
                   href="/ticha/signin"
                   className="font-semibold text-gray-900 hover:underline"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   Sign In
                 </Link>

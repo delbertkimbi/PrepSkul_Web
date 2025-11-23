@@ -8,12 +8,12 @@ Create or update `.env.local` with these variables:
 
 ```env
 # OpenRouter API (Required)
-OPENROUTER_API_KEY=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
+OPENROUTER_API_KEY=your_openrouter_api_key_here
 
 # TichaAI Supabase (Required)
-NEXT_PUBLIC_TICHA_SUPABASE_URL=https://olrjjctddhlvnwclcich.supabase.co
+NEXT_PUBLIC_TICHA_SUPABASE_URL=https://your-supabase-url.supabase.co
 NEXT_PUBLIC_TICHA_SUPABASE_ANON_KEY=your_anon_key_here
-TICHA_SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9scmpqY3RkZGhsdm53Y2xjaWNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzU4NjA4NywiZXhwIjoyMDc5MTYyMDg3fQ.UWMHebsrBEg2UBf5UkfeBFR_QfeYjPKiqdGrOcMmujk
+TICHA_SUPABASE_SERVICE_KEY=your_service_role_key_here
 
 # Optional: Site URL for OpenRouter headers
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
