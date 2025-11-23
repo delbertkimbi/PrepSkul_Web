@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
 
 interface TypewriterProps {
   className?: string
@@ -80,36 +79,7 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
       <span className="whitespace-nowrap">{baseText}</span>
       
       <span className="relative inline-flex items-center justify-center">
-        {/* Organic Highlight Background */}
-        <motion.span
-          className="absolute inset-0 bg-yellow-300/60 -z-10"
-          initial={false}
-          animate={{
-            borderRadius: [
-              "20% 80% 20% 80% / 50% 20% 80% 50%",
-              "80% 20% 80% 20% / 20% 80% 20% 80%",
-              "20% 80% 20% 80% / 50% 20% 80% 50%"
-            ],
-            scale: [0.95, 1.02, 0.95],
-            rotate: [-1, 1, -1]
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-          style={{
-            // Ensure it's hidden when text is empty to prevent artifacts
-            opacity: currentText ? 1 : 0,
-            // Make it slightly larger than the text
-            left: "-0.2em",
-            right: "-0.2em",
-            top: "0.1em",
-            bottom: "0.05em",
-          }}
-        />
-
-        <span className="relative z-10 font-extrabold px-0.5">
+        <span className="relative z-10 font-extrabold px-0.5 text-black">
           {currentText}
         </span>
         
