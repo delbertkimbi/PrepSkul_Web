@@ -40,7 +40,7 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
       }
     } else {
       // Typing or Deleting action
-      const speed = isDeleting ? 50 : 100
+      const speed = isDeleting ? 100 : 200
       
       timeout = setTimeout(() => {
         if (!isDeleting) {
