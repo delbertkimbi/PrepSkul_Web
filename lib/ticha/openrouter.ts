@@ -5,6 +5,18 @@
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
+
+/**
+ * Get OpenRouter API key (lazy evaluation to avoid build-time errors)
+ */
+function getOpenRouterApiKey(): string {
+  const key = process.env.OPENROUTER_API_KEY
+  if (!key) {
+    throw new Error('Missing OPENROUTER_API_KEY environment variable')
+  }
+  return key
+}
+
 interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant'
   content: string | Array<{ type: 'text' | 'image_url'; text?: string; image_url?: { url: string } }>
@@ -39,7 +51,10 @@ interface OpenRouterOptions {
  * Call OpenRouter API
  */
 async function callOpenRouter(options: OpenRouterOptions): Promise<OpenRouterResponse> {
-  const apiKey = process.env.OPENROUTER_API_KEY
+
+  const apiKey = getOpenRouterApiKey()
+
+  //const apiKey = process.env.OPENROUTER_API_KEY
   
   if (!apiKey) {
     throw new Error('Missing OPENROUTER_API_KEY environment variable')

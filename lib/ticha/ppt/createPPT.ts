@@ -273,7 +273,9 @@ function createTwoColumnSlide(
   }
 
   // Add divider line
-  slide.addShape('rect', {
+
+  slide.addShape('rect' as any, {
+
     x: 4.95,
     y: 1.6,
     w: 0.1,
@@ -305,7 +307,9 @@ function createImageLeftSlide(
   })
 
   // Placeholder for image (left side)
-  slide.addShape('rect', {
+
+  slide.addShape('rect' as any, {
+
     x: 0.5,
     y: 1.6,
     w: 4,
@@ -384,7 +388,9 @@ function createImageRightSlide(
   }
 
   // Placeholder for image (right side)
-  slide.addShape('rect', {
+
+  slide.addShape('rect' as any, {
+
     x: 5.5,
     y: 1.6,
     w: 4,
@@ -417,7 +423,10 @@ function addDecorativeElements(
   colorTheme: { bg: string; text: string }
 ): void {
   // Subtle corner accent (top-right)
-  slide.addShape('rect', {
+
+  slide.addShape('rect' as any, {
+=======
+
     x: 9.5,
     y: 0,
     w: 0.5,
@@ -426,8 +435,8 @@ function addDecorativeElements(
     rotate: 45,
   })
 
-  // Subtle bottom border
-  slide.addShape('rect', {
+
+  slide.addShape('rect' as any, {
     x: 0,
     y: 5.3,
     w: 10,
