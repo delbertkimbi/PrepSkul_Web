@@ -467,10 +467,7 @@ function addDecorativeElements(
   colorTheme: { bg: string; text: string }
 ): void {
   // Subtle corner accent (top-right)
-
   slide.addShape('rect' as any, {
-=======
-
     x: 9.5,
     y: 0,
     w: 0.5,
@@ -478,7 +475,6 @@ function addDecorativeElements(
     fill: { color: colorTheme.text, transparency: 20 },
     rotate: 45,
   })
-
 
   slide.addShape('rect' as any, {
     x: 0,
