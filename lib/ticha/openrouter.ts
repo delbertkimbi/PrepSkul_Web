@@ -1,5 +1,5 @@
 /**
- * OpenRouter API Client for TichaAI
+ * OpenRouter API Client for Tichar AI
  * Handles all AI model interactions with design-focused prompts
  */
 
@@ -65,7 +65,7 @@ async function callOpenRouter(options: OpenRouterOptions): Promise<OpenRouterRes
     headers: {
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-      'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://ticha.prepskul.com',
+      'HTTP-Referer': process.env.NEXT_PUBLIC_SITE_URL || 'https://tichar.prepskul.com',
       'X-Title': 'Ticha AI',
     },
     body: JSON.stringify({
@@ -159,14 +159,24 @@ Rules:
  */
 export async function generateOutline(
   cleanedText: string,
-  userPrompt?: string
+  userPrompt?: string,
+  options?: {
+    designPreset?: string
+    customDesignPrompt?: string
+    refinementPrompt?: string
+    existingSlides?: Array<{
+      slide_title: string
+      bullets: string[]
+      design: any
+    }>
+  }
 ): Promise<{
   slides: Array<{
     slide_title: string
     bullets: string[]
     design: {
-      background_color: 'light-blue' | 'dark-blue' | 'white' | 'gray' | 'green'
-      text_color: 'black' | 'white'
+      background_color: 'light-blue' | 'dark-blue' | 'white' | 'gray' | 'green' | string
+      text_color: 'black' | 'white' | string
       layout: 'title-only' | 'title-and-bullets' | 'two-column' | 'image-left' | 'image-right'
       icon: 'none' | 'book' | 'idea' | 'warning' | 'check'
     }
@@ -176,25 +186,27 @@ export async function generateOutline(
 
 Your task is to analyze content and create a structured presentation outline with detailed design specifications for each slide.
 
-DESIGN PRINCIPLES:
-1. **Visual Hierarchy**: Use varied layouts to create visual interest and guide attention
-2. **Color Psychology**: Choose background colors that enhance readability and convey appropriate tone
-3. **Theme Consistency**: Maintain visual coherence while allowing slide-specific design choices
-4. **Content Balance**: Match layout complexity to content density
+DESIGN PRINCIPLES (PREMIUM QUALITY):
+1. **Visual Excellence**: Create stunning, modern designs that impress and engage
+2. **Professional Aesthetics**: Use sophisticated color gradients, elegant typography, and balanced spacing
+3. **Visual Hierarchy**: Use varied layouts to create visual interest and guide attention
+4. **Color Psychology**: Choose beautiful gradient backgrounds that enhance readability and convey appropriate tone
+5. **Theme Consistency**: Maintain visual coherence while allowing slide-specific design choices
+6. **Content Balance**: Match layout complexity to content density
 
 LAYOUT OPTIONS:
-- **title-only**: For impactful opening/closing slides, quotes, or single key messages
-- **title-and-bullets**: Standard content slides with 3-6 bullet points
+- **title-only**: For impactful opening/closing slides, quotes, or single key messages (use dramatic colors)
+- **title-and-bullets**: Standard content slides with 3-6 bullet points (most common)
 - **two-column**: For comparisons, before/after, or side-by-side concepts
 - **image-left**: Visual-heavy slides where image supports main content
 - **image-right**: Content-first slides with supporting visuals
 
-BACKGROUND COLORS (choose strategically):
-- **light-blue**: Friendly, professional, modern - great for most content
-- **dark-blue**: Authoritative, trustworthy, serious topics
-- **white**: Clean, minimalist, high contrast
-- **gray**: Neutral, balanced, corporate
-- **green**: Growth, success, positive outcomes
+BACKGROUND COLORS (PREMIUM GRADIENTS - choose strategically):
+- **light-blue**: Modern purple-blue gradient (#667eea to #764ba2) - Friendly, professional, modern, WOW factor
+- **dark-blue**: Deep professional blue gradient (#1e3c72 to #2a5298) - Authoritative, trustworthy, serious topics
+- **white**: Soft elegant gradient (#f5f7fa to #c3cfe2) - Clean, minimalist, sophisticated
+- **gray**: Elegant gray gradient (#e0e0e0 to #bdbdbd) - Neutral, balanced, corporate excellence
+- **green**: Modern teal-green gradient (#11998e to #38ef7d) - Growth, success, positive outcomes, vibrant
 
 ICON SELECTION (use sparingly):
 - **none**: Clean, text-focused slides
@@ -230,9 +242,14 @@ GUIDELINES:
 - Ensure bullets are concise (max 15 words each)
 - Make slide titles compelling and clear`
 
-  const userMessage = userPrompt
-    ? `Create a presentation outline from this content with design specifications:\n\n${cleanedText}\n\nUser preference: ${userPrompt}`
-    : `Create a presentation outline from this content with design specifications:\n\n${cleanedText}`
+  let userMessage = ''
+  if (options?.refinementPrompt && options?.existingSlides) {
+    userMessage = `Refine this presentation based on the user's feedback:\n\n${options.refinementPrompt}\n\nOriginal content:\n${cleanedText}`
+  } else {
+    userMessage = userPrompt
+      ? `Create a presentation outline from this content with design specifications:\n\n${cleanedText}\n\nUser preference: ${userPrompt}`
+      : `Create a presentation outline from this content with design specifications:\n\n${cleanedText}`
+  }
 
   const messages: OpenRouterMessage[] = [
     {

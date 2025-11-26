@@ -12,6 +12,8 @@ export function middleware(request: NextRequest) {
   const isAdminSubdomain = hostname.startsWith('admin.')
   // Detect if request is from academy subdomain
   const isAcademySubdomain = hostname.startsWith('academy.') || hostname.startsWith('academy.localhost')
+  // Detect if request is from tichar subdomain
+  const isTicharSubdomain = hostname.startsWith('tichar.') || hostname.startsWith('tichar.localhost')
   
   // PRIORITY 1: Handle admin subdomain requests
   if (isAdminSubdomain) {
@@ -33,13 +35,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL(`/academy${pathname}`, request.url))
   }
   
+  // PRIORITY 1c: Handle tichar subdomain requests
+  if (isTicharSubdomain) {
+    // If already on /tichar path, let it through
+    if (pathname.startsWith('/tichar')) {
+      return NextResponse.next()
+    }
+    // Rewrite root and other paths to /tichar
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.rewrite(new URL('/tichar', request.url))
+    }
+    // Rewrite all other paths to /tichar subtree
+    return NextResponse.rewrite(new URL(`/tichar${pathname}`, request.url))
+  }
+  
   // PRIORITY 2: Handle /admin routes on main domain (non-admin subdomain)
   if (pathname.startsWith('/admin')) {
     return NextResponse.next()
   }
   
-  // PRIORITY 2b: Handle /ticha routes (skip locale redirection)
-  if (pathname.startsWith('/ticha')) {
+  // PRIORITY 2b: Handle /tichar routes (skip locale redirection)
+  if (pathname.startsWith('/tichar')) {
     return NextResponse.next()
   }
   

@@ -1,5 +1,5 @@
 /**
- * Supabase Service Role Client for TichaAI
+ * Supabase Service Role Client for Tichar AI
  * Use this for admin operations (Storage, direct DB access)
  * NEVER expose service role key to client-side code
  */
@@ -12,12 +12,12 @@ const tichaSupabaseServiceKey = process.env.TICHA_SUPABASE_SERVICE_KEY || proces
 // Don't throw at module load - check in functions instead
 function validateCredentials() {
   if (!tichaSupabaseUrl || !tichaSupabaseServiceKey) {
-    throw new Error('Missing TichaAI Supabase credentials. Please set NEXT_PUBLIC_TICHA_SUPABASE_URL and TICHA_SUPABASE_SERVICE_KEY environment variables.')
+    throw new Error('Missing Tichar AI Supabase credentials. Please set NEXT_PUBLIC_TICHA_SUPABASE_URL and TICHA_SUPABASE_SERVICE_KEY environment variables.')
   }
 }
 
 /**
- * Get service role Supabase client for TichaAI
+ * Get service role Supabase client for Tichar AI
  * This bypasses RLS and has full admin access
  * Use ONLY in API routes, never in client components
  */
@@ -60,15 +60,23 @@ export async function uploadFileToStorage(
   validateCredentials()
   const supabase = getTichaSupabaseAdmin()
   
+  // Convert Buffer/ArrayBuffer to Blob for Supabase
+  const blob = file instanceof Buffer 
+    ? new Blob([file], { type: contentType })
+    : file instanceof ArrayBuffer
+    ? new Blob([file], { type: contentType })
+    : file
+
   const { data, error } = await supabase.storage
     .from(bucket)
-    .upload(path, file, {
+    .upload(path, blob, {
       contentType,
       upsert: true,
     })
 
   if (error) {
-    throw new Error(`Failed to upload file: ${error.message}`)
+    console.error(`[Storage] Upload error details:`, error)
+    throw new Error(`Failed to upload file: ${error.message || JSON.stringify(error)}`)
   }
 
   const { data: { publicUrl } } = supabase.storage

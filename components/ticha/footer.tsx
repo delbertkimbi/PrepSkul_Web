@@ -27,7 +27,7 @@ export function TichaFooter() {
                 <Zap className="h-5 w-5 text-gray-900" />
               </div>
               <span className="text-lg sm:text-xl font-bold text-gray-900" style={{  letterSpacing: "-0.02em" }}>
-                TichaAI
+                Tichar AI
               </span>
             </div>
             <p className="leading-relaxed text-xs sm:text-sm text-gray-700" style={{  }}>
@@ -42,13 +42,13 @@ export function TichaFooter() {
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/ticha" className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900" style={{  }}>
+                <Link href="/tichar" className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900" style={{  }}>
                   Home
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/ticha#about"
+                  href="/tichar#about"
                   className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900"
                   style={{  }}
                 >
@@ -57,7 +57,7 @@ export function TichaFooter() {
               </li>
               <li>
                 <Link
-                  href="/ticha/dashboard"
+                  href="/tichar/dashboard"
                   className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900"
                   style={{  }}
                 >
@@ -92,7 +92,7 @@ export function TichaFooter() {
             
           }}
         >
-          <p>&copy; {new Date().getFullYear()} TichaAI. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Tichar AI. All rights reserved.</p>
         </div>
       </div>
     </footer>

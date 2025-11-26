@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS ticha_users (
 -- TichaAI Presentations Table
 CREATE TABLE IF NOT EXISTS ticha_presentations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES ticha_users(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES ticha_users(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   description TEXT,
   file_url TEXT, -- Original file URL if uploaded
@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS ticha_presentations (
   prompt TEXT, -- User's prompt/instructions
   status TEXT NOT NULL DEFAULT 'processing', -- processing, completed, failed
   presentation_url TEXT, -- Generated presentation URL
+  presentation_data JSONB, -- Full slide structure and design specs for editor
+  refinement_history JSONB DEFAULT '[]'::jsonb, -- Array of refinement iterations
+  design_preset TEXT, -- Selected design preset (corporate, creative, minimalist, academic, marketing)
+  design_customizations JSONB, -- User customizations to design
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   completed_at TIMESTAMP WITH TIME ZONE
@@ -137,9 +141,12 @@ BEGIN
     LOWER(NEW.email),
     COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1))
   )
-  ON CONFLICT (id) DO NOTHING
-  ON CONFLICT (email) DO NOTHING;
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
+EXCEPTION
+  WHEN unique_violation THEN
+    -- If email conflict, just return NEW without error
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -169,4 +176,44 @@ CREATE TRIGGER update_ticha_presentations_updated_at
   BEFORE UPDATE ON ticha_presentations
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- TichaAI Design Templates Table
+CREATE TABLE IF NOT EXISTS ticha_design_templates (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  category TEXT NOT NULL, -- corporate, creative, minimalist, academic, marketing
+  preset_data JSONB NOT NULL, -- Full preset definition with colors, fonts, layouts
+  thumbnail_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- TichaAI Design Inspiration Table
+CREATE TABLE IF NOT EXISTS ticha_design_inspiration (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  source_url TEXT NOT NULL,
+  design_data JSONB NOT NULL, -- Extracted design patterns (colors, layouts, typography)
+  category TEXT, -- corporate, creative, minimalist, academic, marketing
+  scraped_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+);
+
+-- Create indexes for new tables
+CREATE INDEX IF NOT EXISTS idx_ticha_design_templates_category ON ticha_design_templates(category);
+CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_category ON ticha_design_inspiration(category);
+CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_scraped_at ON ticha_design_inspiration(scraped_at DESC);
+
+-- Enable RLS on new tables
+ALTER TABLE ticha_design_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ticha_design_inspiration ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for Design Templates (public read, admin write)
+CREATE POLICY "Anyone can view design templates"
+  ON ticha_design_templates FOR SELECT
+  USING (true);
+
+-- RLS Policies for Design Inspiration (public read, admin write)
+CREATE POLICY "Anyone can view design inspiration"
+  ON ticha_design_inspiration FOR SELECT
+  USING (true);
 
