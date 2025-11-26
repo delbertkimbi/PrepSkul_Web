@@ -81,7 +81,7 @@ export default function TichaDashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)", fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",  }}>
         <TichaHeader />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-gray-600">Loading...</p>
@@ -92,17 +92,17 @@ export default function TichaDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)", fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",  }}>
       <TichaHeader />
 
       <main className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="max-w-6xl mx-auto">
           {/* Welcome Section */}
           <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 800 }}>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2" style={{  fontWeight: 800 }}>
               Welcome back{userProfile?.full_name ? `, ${userProfile.full_name}` : ""}!
             </h1>
-            <p className="text-sm sm:text-base text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="text-sm sm:text-base text-gray-600" style={{  }}>
               {user?.email}
             </p>
           </div>
@@ -127,10 +127,10 @@ export default function TichaDashboardPage() {
                   >
                     <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-gray-900" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2" style={{  fontWeight: 700 }}>
                     No presentations yet
                   </h3>
-                  <p className="text-sm sm:text-base text-gray-600 mb-6" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                  <p className="text-sm sm:text-base text-gray-600 mb-6" style={{  }}>
                     Start creating your first presentation by going to the home page
                   </p>
                   <Button
@@ -140,7 +140,7 @@ export default function TichaDashboardPage() {
                       background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                       boxShadow: "2px 2px 4px rgba(209, 209, 209, 0.4), -2px -2px 4px rgba(255, 255, 255, 0.8)",
                       color: "#2d3748",
-                      fontFamily: "'Inter', 'Poppins', sans-serif",
+                      
                     }}
                   >
                     Create Presentation
@@ -163,7 +163,7 @@ export default function TichaDashboardPage() {
                       : "text-gray-600 hover:text-gray-900"
                   }`}
                   style={{
-                    fontFamily: "'Inter', 'Poppins', sans-serif",
+                    
                     background: activeTab === "stats" ? "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)" : "transparent",
                     boxShadow: activeTab === "stats" ? "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)" : "none",
                   }}
@@ -185,10 +185,10 @@ export default function TichaDashboardPage() {
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1" style={{  }}>
                           Total Presentations
                         </p>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900" style={{  }}>
                           {totalPresentations}
                         </p>
                       </div>
@@ -215,10 +215,10 @@ export default function TichaDashboardPage() {
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1" style={{  }}>
                           Processing
                         </p>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900" style={{  }}>
                           {processingCount}
                         </p>
                       </div>
@@ -245,10 +245,10 @@ export default function TichaDashboardPage() {
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-1" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-1" style={{  }}>
                           Completed
                         </p>
-                        <p className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xl sm:text-2xl font-bold text-gray-900" style={{  }}>
                           {completedCount}
                         </p>
                       </div>
@@ -270,7 +270,7 @@ export default function TichaDashboardPage() {
           {/* Presentations List (If user has presentations) */}
           {!hasNoPresentations && (
             <div className="mt-8">
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4" style={{  fontWeight: 700 }}>
                 Your Presentations
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
@@ -286,7 +286,7 @@ export default function TichaDashboardPage() {
                     <CardContent className="p-5 sm:p-6">
                       <div className="space-y-3">
                         <div className="flex items-start justify-between">
-                          <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                          <h3 className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2" style={{  fontWeight: 700 }}>
                             {presentation.title || "Untitled Presentation"}
                           </h3>
                           <span
@@ -302,11 +302,11 @@ export default function TichaDashboardPage() {
                           </span>
                         </div>
                         {presentation.description && (
-                          <p className="text-sm text-gray-600 line-clamp-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                          <p className="text-sm text-gray-600 line-clamp-2" style={{  }}>
                             {presentation.description}
                           </p>
                         )}
-                        <p className="text-xs text-gray-500" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-xs text-gray-500" style={{  }}>
                           {new Date(presentation.created_at).toLocaleDateString()}
                         </p>
                       </div>

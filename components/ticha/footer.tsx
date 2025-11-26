@@ -26,23 +26,23 @@ export function TichaFooter() {
               >
                 <Zap className="h-5 w-5 text-gray-900" />
               </div>
-              <span className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", letterSpacing: "-0.02em" }}>
+              <span className="text-lg sm:text-xl font-bold text-gray-900" style={{  letterSpacing: "-0.02em" }}>
                 TichaAI
               </span>
             </div>
-            <p className="leading-relaxed text-xs sm:text-sm text-gray-700" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="leading-relaxed text-xs sm:text-sm text-gray-700" style={{  }}>
               Transform your notes into stunning presentations with the power of AI.
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-3">
-            <h4 className="font-bold text-base sm:text-lg text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+            <h4 className="font-bold text-base sm:text-lg text-gray-900" style={{  fontWeight: 700 }}>
               QUICK LINKS
             </h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/ticha" className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                <Link href="/ticha" className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900" style={{  }}>
                   Home
                 </Link>
               </li>
@@ -50,7 +50,7 @@ export function TichaFooter() {
                 <Link
                   href="/ticha#about"
                   className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   About
                 </Link>
@@ -59,7 +59,7 @@ export function TichaFooter() {
                 <Link
                   href="/ticha/dashboard"
                   className="transition-colors text-xs sm:text-sm text-gray-600 hover:text-gray-900"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   Dashboard
                 </Link>
@@ -69,15 +69,15 @@ export function TichaFooter() {
 
           {/* Contact Us */}
           <div className="space-y-3">
-            <h4 className="font-bold text-base sm:text-lg text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+            <h4 className="font-bold text-base sm:text-lg text-gray-900" style={{  fontWeight: 700 }}>
               CONTACT US
             </h4>
             <ul className="space-y-2">
-              <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+              <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600" style={{  }}>
                 <Phone className="h-4 w-4 flex-shrink-0" />
                 <span>+237 674 208 573</span>
               </li>
-              <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+              <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600" style={{  }}>
                 <Mail className="h-4 w-4 flex-shrink-0" />
                 <span>info@prepskul.com</span>
               </li>
@@ -89,7 +89,7 @@ export function TichaFooter() {
           className="pt-6 text-center text-xs sm:text-sm text-gray-600"
           style={{
             borderTop: "1px solid rgba(0, 0, 0, 0.1)",
-            fontFamily: "'Inter', 'Poppins', sans-serif",
+            
           }}
         >
           <p>&copy; {new Date().getFullYear()} TichaAI. All rights reserved.</p>

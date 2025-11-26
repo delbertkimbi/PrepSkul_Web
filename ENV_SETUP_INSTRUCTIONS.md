@@ -32,14 +32,14 @@ Your file should look like this:
 # Supabase Configuration (PrepSkul - existing)
 # Get these from: https://supabase.com/dashboard/project/_/settings/api
 NEXT_PUBLIC_SUPABASE_URL=https://cpzaxdfxbamdsshdgjyg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwemF4ZGZ4YmFtZHNzaGRnanlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE1MDUwMDYsImV4cCI6MjA3NzA4MTAwNn0.FWBFrseEeYqFaJ7FGRUAYtm10sz0JqPyerJ0BfoYnCU
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_prepskul_anon_key_here
 
 # TichaAI Supabase Configuration (NEW - add these)
 NEXT_PUBLIC_TICHA_SUPABASE_URL=https://your-ticha-project-id.supabase.co
 NEXT_PUBLIC_TICHA_SUPABASE_ANON_KEY=your-ticha-anon-key-here
 
 # Other existing vars
-RESEND_API_KEY=re_TR8La2Cz_NPaDo8YektBvwiM8URFSGYoe
+RESEND_API_KEY=your_resend_api_key_here
 FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 ```
 

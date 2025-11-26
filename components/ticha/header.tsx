@@ -74,7 +74,7 @@ export function TichaHeader() {
             >
               <Zap className="h-5 w-5 text-gray-900" />
             </div>
-            <span className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", letterSpacing: "-0.02em" }}>
+            <span className="text-xl sm:text-2xl font-bold text-gray-900" style={{  letterSpacing: "-0.02em" }}>
               TichaAI
             </span>
           </Link>
@@ -86,7 +86,7 @@ export function TichaHeader() {
                 <Link
                   href="/ticha/dashboard#stats"
                   className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   Stats
                 </Link>
@@ -98,7 +98,7 @@ export function TichaHeader() {
                     background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                     boxShadow: "2px 2px 4px rgba(209, 209, 209, 0.4), -2px -2px 4px rgba(255, 255, 255, 0.8)",
                     color: "#2d3748",
-                    fontFamily: "'Inter', 'Poppins', sans-serif",
+                    
                   }}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
@@ -113,7 +113,7 @@ export function TichaHeader() {
                   background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
                   boxShadow: "2px 2px 4px rgba(209, 209, 209, 0.4), -2px -2px 4px rgba(255, 255, 255, 0.8)",
                   color: "#2d3748",
-                  fontFamily: "'Inter', 'Poppins', sans-serif",
+                  
                 }}
                 asChild
               >
@@ -155,14 +155,14 @@ export function TichaHeader() {
                   href="/ticha/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   Dashboard
                 </Link>
                 <button
                   onClick={handleStatsClick}
                   className="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   Stats
                 </button>
@@ -170,7 +170,7 @@ export function TichaHeader() {
                 <button
                   onClick={handleLogout}
                   className="w-full text-left px-4 py-2 text-sm font-medium text-red-700 hover:text-red-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-                  style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                  style={{  }}
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
@@ -181,7 +181,7 @@ export function TichaHeader() {
                 href="/ticha/signin"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-                style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                style={{  }}
               >
                 <User className="h-4 w-4" />
                 Sign In

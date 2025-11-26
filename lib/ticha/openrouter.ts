@@ -5,6 +5,7 @@
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
+
 /**
  * Get OpenRouter API key (lazy evaluation to avoid build-time errors)
  */
@@ -50,7 +51,15 @@ interface OpenRouterOptions {
  * Call OpenRouter API
  */
 async function callOpenRouter(options: OpenRouterOptions): Promise<OpenRouterResponse> {
+
   const apiKey = getOpenRouterApiKey()
+
+  //const apiKey = process.env.OPENROUTER_API_KEY
+  
+  if (!apiKey) {
+    throw new Error('Missing OPENROUTER_API_KEY environment variable')
+  }
+
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {

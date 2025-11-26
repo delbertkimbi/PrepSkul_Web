@@ -14,37 +14,59 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [currentText, setCurrentText] = useState("")
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
   const [showCursor, setShowCursor] = useState(true)
 
   useEffect(() => {
     if (typeof window === 'undefined' || !words.length) return
 
     const word = words[currentWordIndex]
-    
-    const timeout = setTimeout(
-      () => {
+    let timeout: NodeJS.Timeout
+
+    // Typing logic
+    if (isPaused) {
+      // If paused (either fully typed or fully deleted)
+      if (!isDeleting && currentText === word) {
+        // Pause at END of word before deleting
+        timeout = setTimeout(() => {
+          setIsPaused(false)
+          setIsDeleting(true)
+        }, 2000)
+      } else if (isDeleting && currentText === "") {
+        // IMMEDIATELY switch to next word and start typing
+        setIsPaused(false)
+        setIsDeleting(false)
+        setCurrentWordIndex((prev) => (prev + 1) % words.length)
+      }
+    } else {
+      // Typing or Deleting action
+      const speed = isDeleting ? 100 : 200
+      
+      timeout = setTimeout(() => {
         if (!isDeleting) {
-          if (currentText.length < word.length) {
-            setCurrentText(word.slice(0, currentText.length + 1))
-          } else {
-            setTimeout(() => setIsDeleting(true), 2000) // Pause before deleting
+          // Typing
+          const nextText = word.slice(0, currentText.length + 1)
+          setCurrentText(nextText)
+          
+          if (nextText === word) {
+            setIsPaused(true)
           }
         } else {
-          if (currentText.length > 0) {
-            setCurrentText(word.slice(0, currentText.length - 1))
-          } else {
-            setIsDeleting(false)
-            setCurrentWordIndex((prev) => (prev + 1) % words.length)
+          // Deleting
+          const nextText = word.slice(0, currentText.length - 1)
+          setCurrentText(nextText)
+          
+          if (nextText === "") {
+            setIsPaused(true)
           }
         }
-      },
-      isDeleting ? 50 : 100, // Typing speed
-    )
+      }, speed)
+    }
 
     return () => clearTimeout(timeout)
-  }, [currentText, isDeleting, currentWordIndex])
+  }, [currentText, isDeleting, isPaused, currentWordIndex])
 
-  // Blink cursor
+  // Blink cursor independent of typing
   useEffect(() => {
     const interval = setInterval(() => {
       setShowCursor((prev) => !prev)
@@ -53,14 +75,21 @@ export function TichaTypewriter({ className = "" }: TypewriterProps) {
   }, [])
 
   return (
-    <span className={className}>
-      {baseText}{" "}
-      <span style={{ color: "#000", fontWeight: 800 }}>
-        {currentText}
-        {showCursor && <span className="inline-block ml-0.5">|</span>}
-      </span>{" "}
-      {suffixText}
+    <span className={`relative inline-flex flex-wrap justify-center items-center gap-x-2 gap-y-1 ${className}`}>
+      <span className="whitespace-nowrap">{baseText}</span>
+      
+      <span className="relative inline-flex items-center justify-center">
+        <span className="relative z-10 font-extrabold px-0.5 text-black">
+          {currentText}
+        </span>
+        
+        <span 
+          className="inline-block ml-0.5 w-[2px] h-[1em] bg-black align-middle"
+          style={{ opacity: showCursor ? 1 : 0 }} 
+        />
+      </span>
+
+      <span className="whitespace-nowrap">{suffixText}</span>
     </span>
   )
 }
-

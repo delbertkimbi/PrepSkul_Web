@@ -64,10 +64,10 @@ export function InputField({ onSend }: InputFieldProps) {
         >
           <File className="h-5 w-5 text-gray-900 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="font-medium text-sm truncate text-gray-900" style={{  }}>
               {selectedFile.name}
             </p>
-            <p className="text-xs text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+            <p className="text-xs text-gray-600" style={{  }}>
               {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
             </p>
           </div>
@@ -127,7 +127,7 @@ export function InputField({ onSend }: InputFieldProps) {
             background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",
             boxShadow: "inset 2px 2px 4px rgba(209, 209, 209, 0.4), inset -2px -2px 4px rgba(255, 255, 255, 0.8)",
             color: "#2d3748",
-            fontFamily: "'Inter', 'Poppins', sans-serif",
+            
           }}
         />
 

@@ -152,7 +152,7 @@ export default function TichaPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)", fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",  }}>
       <TichaHeader />
 
       <main className="flex-1">
@@ -169,14 +169,14 @@ export default function TichaPage() {
               <motion.h1
                 variants={fadeInUp}
                 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-gray-900"
-                style={{ fontFamily: "'Inter', 'Poppins', sans-serif", letterSpacing: "-0.03em", fontWeight: 800 }}
+                style={{  letterSpacing: "-0.03em", fontWeight: 800 }}
               >
                 <TichaTypewriter />
               </motion.h1>
               <motion.p
                 variants={fadeInUp}
                 className="text-base sm:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed text-gray-700"
-                style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 400 }}
+                style={{  fontWeight: 400 }}
               >
                 Upload your handwritten notes, PDFs, or text documents. Our AI instantly converts them into structured,
                 beautiful PowerPoint presentations.
@@ -209,13 +209,13 @@ export default function TichaPage() {
                       {status === "error" && <AlertCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600 flex-shrink-0 mt-0.5" />}
                       <div className="flex-1 min-w-0">
                         {loading && (
-                          <p className="font-medium text-sm sm:text-base text-blue-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                          <p className="font-medium text-sm sm:text-base text-blue-900" style={{  }}>
                             {statusMessage || "Processing..."}
                           </p>
                         )}
                         {status === "success" && (
                           <>
-                            <p className="font-medium text-sm sm:text-base text-green-900 mb-2" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                            <p className="font-medium text-sm sm:text-base text-green-900 mb-2" style={{  }}>
                               {statusMessage || "Presentation generated successfully!"}
                             </p>
                             {downloadUrl && (
@@ -223,7 +223,7 @@ export default function TichaPage() {
                                 href={downloadUrl}
                                 download
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-                                style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}
+                                style={{  }}
                               >
                                 <Download className="h-4 w-4" />
                                 Download Presentation
@@ -232,7 +232,7 @@ export default function TichaPage() {
                           </>
                         )}
                         {status === "error" && (
-                          <p className="font-medium text-sm sm:text-base text-red-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                          <p className="font-medium text-sm sm:text-base text-red-900" style={{  }}>
                             {error || "An error occurred"}
                           </p>
                         )}
@@ -284,13 +284,13 @@ export default function TichaPage() {
                               color: "#2d3748",
                             }}
                           >
-                            <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>1</span>
+                            <span className="text-xl sm:text-2xl font-bold" style={{  }}>1</span>
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{  fontWeight: 700 }}>
                           Upload
                         </h3>
-                        <p className="text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-sm text-gray-600" style={{  }}>
                           Drop your notes or documents
                         </p>
                       </CardContent>
@@ -316,13 +316,13 @@ export default function TichaPage() {
                               color: "#2d3748",
                             }}
                           >
-                            <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>2</span>
+                            <span className="text-xl sm:text-2xl font-bold" style={{  }}>2</span>
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{  fontWeight: 700 }}>
                           AI Processing
                         </h3>
-                        <p className="text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-sm text-gray-600" style={{  }}>
                           We structure and design slides
                         </p>
                       </CardContent>
@@ -348,13 +348,13 @@ export default function TichaPage() {
                               color: "#2d3748",
                             }}
                           >
-                            <span className="text-xl sm:text-2xl font-bold" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>3</span>
+                            <span className="text-xl sm:text-2xl font-bold" style={{  }}>3</span>
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{  fontWeight: 700 }}>
                           Present
                         </h3>
-                        <p className="text-sm text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-sm text-gray-600" style={{  }}>
                           Download or present instantly
                         </p>
                       </CardContent>
@@ -375,10 +375,10 @@ export default function TichaPage() {
             >
               <div className="container mx-auto max-w-3xl">
                 <div className="text-center space-y-4">
-                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 800, letterSpacing: "-0.02em" }}>
+                  <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900" style={{  fontWeight: 800, letterSpacing: "-0.02em" }}>
                     About TichaAI
                   </h2>
-                  <p className="text-base sm:text-lg leading-relaxed max-w-2xl mx-auto text-gray-700" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                  <p className="text-base sm:text-lg leading-relaxed max-w-2xl mx-auto text-gray-700" style={{  }}>
                     TichaAI is your intelligent presentation assistant, designed to transform any content into
                     professional, engaging presentations in seconds.
                   </p>
@@ -417,10 +417,10 @@ export default function TichaPage() {
                             <Zap className="h-7 w-7 sm:h-8 sm:w-8 text-gray-900" />
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{  fontWeight: 700 }}>
                           Lightning Fast
                         </h3>
-                        <p className="text-sm leading-relaxed text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-sm leading-relaxed text-gray-600" style={{  }}>
                           Generate complete presentations in under a minute with our advanced AI technology.
                         </p>
                       </CardContent>
@@ -448,10 +448,10 @@ export default function TichaPage() {
                             <Shield className="h-7 w-7 sm:h-8 sm:w-8 text-gray-900" />
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{  fontWeight: 700 }}>
                           Secure & Private
                         </h3>
-                        <p className="text-sm leading-relaxed text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-sm leading-relaxed text-gray-600" style={{  }}>
                           Your documents are processed securely and never shared. Your data stays yours.
                         </p>
                       </CardContent>
@@ -479,10 +479,10 @@ export default function TichaPage() {
                             <Send className="h-7 w-7 sm:h-8 sm:w-8 text-gray-900" />
                           </div>
                         </div>
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{ fontFamily: "'Inter', 'Poppins', sans-serif", fontWeight: 700 }}>
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900" style={{  fontWeight: 700 }}>
                           Export Ready
                         </h3>
-                        <p className="text-sm leading-relaxed text-gray-600" style={{ fontFamily: "'Inter', 'Poppins', sans-serif" }}>
+                        <p className="text-sm leading-relaxed text-gray-600" style={{  }}>
                           Download as PowerPoint or present directly from your browser. No software needed.
                         </p>
                       </CardContent>
