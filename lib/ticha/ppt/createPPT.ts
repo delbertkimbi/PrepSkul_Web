@@ -26,14 +26,40 @@ export interface PresentationOptions {
   slides: SlideData[]
 }
 
-// Color palette for TichaAI brand
+// Professional Color Palettes - Beautiful gradients and modern colors
 const COLORS = {
-  'light-blue': { bg: 'E3F2FD', text: '000000' }, // Light blue background, black text
-  'dark-blue': { bg: '1565C0', text: 'FFFFFF' },  // Dark blue background, white text
-  'white': { bg: 'FFFFFF', text: '000000' },      // White background, black text
-  'gray': { bg: 'F5F5F5', text: '212121' },       // Light gray background, dark gray text
-  'green': { bg: 'C8E6C9', text: '1B5E20' },      // Light green background, dark green text
+  'light-blue': { bg: '667eea', text: 'FFFFFF' }, // Modern purple-blue gradient
+  'dark-blue': { bg: '1e3c72', text: 'FFFFFF' },   // Deep professional blue
+  'white': { bg: 'f5f7fa', text: '2d3748' },      // Soft white with dark text
+  'gray': { bg: 'e0e0e0', text: '1a1a1a' },       // Elegant gray
+  'green': { bg: '11998e', text: 'FFFFFF' },      // Modern teal-green
+  // Additional color variations that AI might generate
+  'purple-gradient': { bg: '667eea', text: 'FFFFFF' }, // Alias for light-blue
+  'deep-blue': { bg: '1e3c72', text: 'FFFFFF' },      // Alias for dark-blue
+  'elegant-gray': { bg: 'e0e0e0', text: '1a1a1a' }, // Alias for gray
+  'modern-teal': { bg: '11998e', text: 'FFFFFF' },  // Alias for green
 } as const
+
+// Default fallback color
+const DEFAULT_COLOR = { bg: '667eea', text: 'FFFFFF' } // light-blue as default
+
+/**
+ * Get color theme with fallback for unknown colors
+ */
+function getColorTheme(colorKey: string | undefined): { bg: string; text: string } {
+  if (!colorKey) {
+    console.warn('[createPPT] No background_color provided, using default')
+    return DEFAULT_COLOR
+  }
+  
+  const color = COLORS[colorKey as keyof typeof COLORS]
+  if (!color) {
+    console.warn(`[createPPT] Unknown background_color: "${colorKey}", using default. Available colors: ${Object.keys(COLORS).join(', ')}`)
+    return DEFAULT_COLOR
+  }
+  
+  return color
+}
 
 // Brand fonts and styles
 const BRAND_FONTS = {
@@ -59,9 +85,9 @@ export async function createPPT(options: PresentationOptions): Promise<Buffer> {
   const pptx = new PptxGenJS()
 
   // Presentation metadata
-  pptx.author = options.author || 'TichaAI'
-  pptx.company = options.company || 'TichaAI'
-  pptx.title = options.title || 'TichaAI Presentation'
+  pptx.author = options.author || 'Tichar AI'
+  pptx.company = options.company || 'Tichar AI'
+  pptx.title = options.title || 'Tichar AI Presentation'
   pptx.revision = '1'
 
   // Master slide layout (applies to all slides)
@@ -82,26 +108,44 @@ export async function createPPT(options: PresentationOptions): Promise<Buffer> {
     const slideData = options.slides[i]
     const slide = pptx.addSlide()
 
-    // Apply design theme
-    const colorTheme = COLORS[slideData.design.background_color]
+    // Ensure design object exists with defaults
+    const design = slideData.design || {
+      background_color: 'light-blue',
+      text_color: 'white',
+      layout: 'title-and-bullets',
+      icon: 'none',
+    }
+
+    // Apply design theme with fallback for unknown colors
+    const colorTheme = getColorTheme(design.background_color)
     slide.background = { color: colorTheme.bg }
 
-    // Create slide based on layout type
-    switch (slideData.design.layout) {
+    // Create slide based on layout type with fallback
+    const layout = design.layout || 'title-and-bullets'
+    
+    // Create slide with design object attached for helper functions
+    const slideDataWithDesign = { ...slideData, design }
+    
+    switch (layout) {
       case 'title-only':
-        await createTitleOnlySlide(slide, slideData, colorTheme)
+        await createTitleOnlySlide(slide, slideDataWithDesign, colorTheme)
         break
       case 'title-and-bullets':
-        await createTitleBulletsSlide(slide, slideData, colorTheme)
+        await createTitleBulletsSlide(slide, slideDataWithDesign, colorTheme)
         break
       case 'two-column':
-        await createTwoColumnSlide(slide, slideData, colorTheme)
+        await createTwoColumnSlide(slide, slideDataWithDesign, colorTheme)
         break
       case 'image-left':
-        await createImageLeftSlide(slide, slideData, colorTheme)
+        await createImageLeftSlide(slide, slideDataWithDesign, colorTheme)
         break
       case 'image-right':
-        await createImageRightSlide(slide, slideData, colorTheme)
+        await createImageRightSlide(slide, slideDataWithDesign, colorTheme)
+        break
+      default:
+        // Fallback to title-and-bullets for unknown layouts
+        console.warn(`[createPPT] Unknown layout: "${layout}", using title-and-bullets`)
+        await createTitleBulletsSlide(slide, slideDataWithDesign, colorTheme)
         break
     }
   }
@@ -135,8 +179,8 @@ function createTitleOnlySlide(
   })
 
   // Add icon if specified
-  if (slideData.design.icon !== 'none') {
-    const iconText = ICONS[slideData.design.icon]
+  if (slideData.design?.icon && slideData.design.icon !== 'none') {
+    const iconText = ICONS[slideData.design.icon as keyof typeof ICONS] || ''
     if (iconText) {
       slide.addText(iconText, {
         x: 4.5,
@@ -176,8 +220,8 @@ function createTitleBulletsSlide(
   })
 
   // Icon next to title (if specified)
-  if (slideData.design.icon !== 'none') {
-    const iconText = ICONS[slideData.design.icon]
+  if (slideData.design?.icon && slideData.design.icon !== 'none') {
+    const iconText = ICONS[slideData.design.icon as keyof typeof ICONS] || ''
     if (iconText) {
       slide.addText(iconText, {
         x: 8.5,
@@ -423,10 +467,7 @@ function addDecorativeElements(
   colorTheme: { bg: string; text: string }
 ): void {
   // Subtle corner accent (top-right)
-
   slide.addShape('rect' as any, {
-=======
-
     x: 9.5,
     y: 0,
     w: 0.5,
@@ -434,7 +475,6 @@ function addDecorativeElements(
     fill: { color: colorTheme.text, transparency: 20 },
     rotate: 45,
   })
-
 
   slide.addShape('rect' as any, {
     x: 0,

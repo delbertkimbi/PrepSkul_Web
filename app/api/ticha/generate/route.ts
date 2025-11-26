@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request
     const body: GenerateRequest = await request.json()
-    const { fileUrl, prompt, userId } = body
+    const { fileUrl, prompt, userId, designPreset, customDesignPrompt } = body
 
     if (!fileUrl) {
       return NextResponse.json(
@@ -57,6 +57,18 @@ export async function POST(request: NextRequest) {
     const filePath = urlMatch[1]
 
     console.log(`[Generate] Starting generation for file: ${filePath}`)
+
+    // Get user session if available
+    let sessionUserId: string | undefined
+    try {
+      const session = await getTichaServerSession()
+      sessionUserId = session?.user?.id
+    } catch (error) {
+      console.log(`[Generate] No session found, continuing without user`)
+    }
+
+    // Use provided userId or session userId
+    const finalUserId = userId || sessionUserId
 
     // Step 1: Download file from Storage
     console.log(`[Generate] Step 1: Downloading file...`)
@@ -135,7 +147,10 @@ export async function POST(request: NextRequest) {
     console.log(`[Generate] Step 4: Generating outline with design specs...`)
     let outline
     try {
-      outline = await generateOutline(cleanedText, prompt)
+      outline = await generateOutline(cleanedText, prompt, {
+        designPreset,
+        customDesignPrompt,
+      })
       console.log(`[Generate] Generated ${outline.slides.length} slides`)
     } catch (error) {
       console.error(`[Generate] Failed to generate outline:`, error)
@@ -207,28 +222,78 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 7: Create database record (optional)
-    if (userId) {
-      try {
-        const { error: dbError } = await tichaSupabaseAdmin
-          .from('ticha_presentations')
-          .insert({
-            user_id: userId,
-            title: prompt || 'Untitled Presentation',
-            description: `Generated from ${filePath.split('/').pop()}`,
-            file_url: fileUrl,
-            presentation_url: pptUrl,
-            status: 'completed',
-            completed_at: new Date().toISOString(),
-          })
+    // Prepare presentation data for storage
+    const presentationData = {
+      id: '', // Will be set by database
+      title: prompt ? `Presentation: ${prompt.substring(0, 50)}` : 'TichaAI Presentation',
+      author: userId || 'TichaAI User',
+      company: 'TichaAI',
+      slides: outline.slides.map((slide, index) => ({
+        id: `slide-${index + 1}`,
+        slide_number: index + 1,
+        slide_title: slide.slide_title,
+        bullets: slide.bullets,
+        design: slide.design,
+      })),
+      metadata: {
+        version: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    }
 
-        if (dbError) {
-          console.warn(`[Generate] Failed to create DB record:`, dbError)
-          // Don't fail the request if DB record creation fails
-        }
-      } catch (dbError) {
-        console.warn(`[Generate] DB record creation error:`, dbError)
-        // Continue anyway
+    // Always create database record (even without userId for anonymous users)
+    try {
+      const insertData: any = {
+        title: prompt || 'Untitled Presentation',
+        description: `Generated from ${filePath.split('/').pop()}`,
+        file_url: fileUrl,
+        presentation_url: pptUrl,
+        presentation_data: presentationData,
+        refinement_history: [],
+        status: 'completed',
+        completed_at: new Date().toISOString(),
       }
+
+      // Only add user_id if we have one
+      if (finalUserId) {
+        insertData.user_id = finalUserId
+      } else {
+        // For anonymous users, we need to handle this differently
+        // Check if user_id can be nullable, if not, create a placeholder user
+        insertData.user_id = null // This will work if user_id is nullable, otherwise we need a default user
+      }
+
+      const { data: insertedData, error: dbError } = await tichaSupabaseAdmin
+        .from('ticha_presentations')
+        .insert(insertData)
+        .select('id')
+        .single()
+
+      if (dbError) {
+        console.warn(`[Generate] Failed to create DB record:`, dbError)
+        // Try without user_id if it failed
+        if (dbError.code === '23503' && finalUserId) { // Foreign key constraint
+          const { data: retryData, error: retryError } = await tichaSupabaseAdmin
+            .from('ticha_presentations')
+            .insert({
+              ...insertData,
+              user_id: null,
+            })
+            .select('id')
+            .single()
+          
+          if (!retryError && retryData) {
+            presentationData.id = retryData.id
+          }
+        }
+      } else if (insertedData) {
+        // Update presentation data with actual ID
+        presentationData.id = insertedData.id
+      }
+    } catch (dbError) {
+      console.warn(`[Generate] DB record creation error:`, dbError)
+      // Continue anyway - presentation is still generated
     }
 
     const processingTime = Date.now() - startTime
@@ -239,7 +304,10 @@ export async function POST(request: NextRequest) {
       success: true,
       downloadUrl: pptUrl,
       slides: outline.slides.length,
+      slidesData: presentationData.slides, // Return slides for viewer
       processingTime: `${(processingTime / 1000).toFixed(2)}s`,
+      presentationId: presentationData.id || null,
+      presentationData: presentationData.id ? presentationData : null,
     })
 
   } catch (error) {

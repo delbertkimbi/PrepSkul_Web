@@ -35,13 +35,13 @@ export function TichaHeader() {
   const handleLogout = async () => {
     await tichaSupabase.auth.signOut()
     setMobileMenuOpen(false)
-    router.push("/ticha")
+    router.push("/tichar")
     router.refresh()
   }
 
   const handleStatsClick = () => {
     setMobileMenuOpen(false)
-    if (pathname === "/ticha/dashboard") {
+    if (pathname === "/tichar/dashboard") {
       // Scroll to stats section
       setTimeout(() => {
         const statsElement = document.getElementById("stats")
@@ -50,7 +50,7 @@ export function TichaHeader() {
         }
       }, 100)
     } else {
-      router.push("/ticha/dashboard#stats")
+      router.push("/tichar/dashboard#stats")
     }
   }
 
@@ -64,7 +64,7 @@ export function TichaHeader() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/ticha" className="flex items-center gap-2">
+          <Link href="/tichar" className="flex items-center gap-2">
             <div
               className="p-1.5 rounded-lg"
               style={{
@@ -75,7 +75,7 @@ export function TichaHeader() {
               <Zap className="h-5 w-5 text-gray-900" />
             </div>
             <span className="text-xl sm:text-2xl font-bold text-gray-900" style={{  letterSpacing: "-0.02em" }}>
-              TichaAI
+              Tichar AI
             </span>
           </Link>
 
@@ -84,7 +84,7 @@ export function TichaHeader() {
             {isAuthenticated ? (
               <>
                 <Link
-                  href="/ticha/dashboard#stats"
+                  href="/tichar/dashboard#stats"
                   className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
                   style={{  }}
                 >
@@ -117,7 +117,7 @@ export function TichaHeader() {
                 }}
                 asChild
               >
-                <Link href="/ticha/signin" className="flex items-center gap-2">
+                <Link href="/tichar/signin" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Sign In
                 </Link>
@@ -152,7 +152,7 @@ export function TichaHeader() {
             {isAuthenticated ? (
               <>
                 <Link
-                  href="/ticha/dashboard"
+                  href="/tichar/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   style={{  }}
@@ -178,7 +178,7 @@ export function TichaHeader() {
               </>
             ) : (
               <Link
-                href="/ticha/signin"
+                href="/tichar/signin"
                 onClick={() => setMobileMenuOpen(false)}
                 className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
                 style={{  }}

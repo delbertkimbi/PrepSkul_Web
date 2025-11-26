@@ -7,8 +7,14 @@ import { TichaFooter } from "@/components/ticha/footer"
 import { InputField } from "@/components/ticha/input-field"
 import { TichaTypewriter } from "@/components/ticha/typewriter"
 import { Card, CardContent } from "@/components/ui/card"
-import { Zap, Shield, Send, Loader2, CheckCircle, AlertCircle, Download } from "lucide-react"
+import { Zap, Shield, Send, Loader2, CheckCircle, AlertCircle, Download, RefreshCw, Eye } from "lucide-react"
 import { tichaSupabase } from "@/lib/ticha-supabase"
+import { DesignPresetSelector } from "@/components/ticha/DesignPresetSelector"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { SlideViewer } from "@/components/ticha/SlideViewer"
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -34,6 +40,7 @@ const staggerContainer = {
 }
 
 export default function TichaPage() {
+  const router = useRouter()
   const heroRef = useRef(null)
   const inputRef = useRef(null)
   const stepsRef = useRef(null)
@@ -51,6 +58,13 @@ export default function TichaPage() {
   const [statusMessage, setStatusMessage] = useState("")
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [presentationId, setPresentationId] = useState<string | null>(null)
+  const [showRefineModal, setShowRefineModal] = useState(false)
+  const [refinementPrompt, setRefinementPrompt] = useState("")
+  const [selectedPreset, setSelectedPreset] = useState<string>("")
+  const [customDesignPrompt, setCustomDesignPrompt] = useState("")
+  const [slidesData, setSlidesData] = useState<any[]>([])
+  const [showViewer, setShowViewer] = useState(false)
 
   const handleSend = async (text: string, file?: File) => {
     if (!file && !text.trim()) {
@@ -137,9 +151,16 @@ export default function TichaPage() {
       }
 
       // Success!
+      console.log('[Ticha] Generation response:', generateData)
       setStatus("success")
       setStatusMessage(`Presentation generated! ${generateData.slides || 0} slides created.`)
       setDownloadUrl(generateData.downloadUrl)
+      setPresentationId(generateData.presentationId || null)
+      setSlidesData(generateData.slidesData || [])
+      
+      if (!generateData.presentationId) {
+        console.warn('[Ticha] No presentationId returned - refinement features will not be available')
+      }
 
     } catch (err: any) {
       console.error("Error:", err)
@@ -152,7 +173,7 @@ export default function TichaPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)",  }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%)" }}>
       <TichaHeader />
 
       <main className="flex-1">
@@ -219,15 +240,136 @@ export default function TichaPage() {
                               {statusMessage || "Presentation generated successfully!"}
                             </p>
                             {downloadUrl && (
-                              <a
-                                href={downloadUrl}
-                                download
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-                                style={{  }}
-                              >
-                                <Download className="h-4 w-4" />
-                                Download Presentation
-                              </a>
+                              <div className="flex flex-wrap gap-2 justify-center">
+                                <button
+                                  onClick={() => setShowViewer(true)}
+                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                  View Presentation
+                                </button>
+                                <a
+                                  href={downloadUrl}
+                                  download
+                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+                                >
+                                  <Download className="h-4 w-4" />
+                                  Download Presentation
+                                </a>
+                                {presentationId ? (
+                                  <Dialog open={showRefineModal} onOpenChange={setShowRefineModal}>
+                                      <DialogTrigger asChild>
+                                        <button 
+                                          type="button"
+                                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors"
+                                        >
+                                          <RefreshCw className="h-4 w-4" />
+                                          Refine Presentation
+                                        </button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                        <DialogHeader>
+                                          <DialogTitle>Refine Presentation</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="space-y-4 mt-4">
+                                          <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                              Refinement Instructions
+                                            </label>
+                                            <Textarea
+                                              placeholder="e.g., Make it more colorful, add more slides about benefits, use a corporate style..."
+                                              value={refinementPrompt}
+                                              onChange={(e) => setRefinementPrompt(e.target.value)}
+                                              rows={4}
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                              Design Preset (Optional)
+                                            </label>
+                                            <DesignPresetSelector
+                                              selectedPreset={selectedPreset}
+                                              onSelect={setSelectedPreset}
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                              Custom Design Instructions (Optional)
+                                            </label>
+                                            <Textarea
+                                              placeholder="e.g., Use blue and white colors, make fonts larger, add more spacing..."
+                                              value={customDesignPrompt}
+                                              onChange={(e) => setCustomDesignPrompt(e.target.value)}
+                                              rows={3}
+                                            />
+                                          </div>
+                                          <div className="flex gap-2 justify-end">
+                                            <Button
+                                              variant="outline"
+                                              onClick={() => {
+                                                setShowRefineModal(false)
+                                                setRefinementPrompt("")
+                                                setSelectedPreset("")
+                                                setCustomDesignPrompt("")
+                                              }}
+                                            >
+                                              Cancel
+                                            </Button>
+                                            <Button
+                                              onClick={async () => {
+                                                if (!refinementPrompt.trim()) {
+                                                  alert("Please enter refinement instructions")
+                                                  return
+                                                }
+                                                
+                                                setLoading(true)
+                                                setStatus("processing")
+                                                setStatusMessage("Refining presentation...")
+                                                
+                                                try {
+                                                  const response = await fetch("/api/ticha/refine", {
+                                                    method: "POST",
+                                                    headers: {
+                                                      "Content-Type": "application/json",
+                                                    },
+                                                    body: JSON.stringify({
+                                                      presentationId,
+                                                      refinementPrompt,
+                                                      designPreset: selectedPreset || undefined,
+                                                      customDesignPrompt: customDesignPrompt || undefined,
+                                                    }),
+                                                  })
+                                                  
+                                                  if (!response.ok) {
+                                                    const error = await response.json()
+                                                    throw new Error(error.error || "Refinement failed")
+                                                  }
+                                                  
+                                                  const data = await response.json()
+                                                  setDownloadUrl(data.downloadUrl)
+                                                  setStatus("success")
+                                                  setStatusMessage(`Presentation refined! ${data.slides} slides.`)
+                                                  setShowRefineModal(false)
+                                                  setRefinementPrompt("")
+                                                  setSelectedPreset("")
+                                                  setCustomDesignPrompt("")
+                                                } catch (err: any) {
+                                                  setStatus("error")
+                                                  setError(err.message || "Failed to refine presentation")
+                                                } finally {
+                                                  setLoading(false)
+                                                }
+                                              }}
+                                              disabled={loading || !refinementPrompt.trim()}
+                                            >
+                                              {loading ? "Refining..." : "Refine"}
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                ) : null}
+                              </div>
                             )}
                           </>
                         )}
@@ -241,6 +383,20 @@ export default function TichaPage() {
                   </CardContent>
                 </Card>
               </motion.div>
+            )}
+
+            {/* Slide Viewer Modal */}
+            {showViewer && slidesData.length > 0 && (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+                <div className="w-full max-w-7xl max-h-[90vh]">
+                  <SlideViewer
+                    slides={slidesData}
+                    presentationId={presentationId || ''}
+                    downloadUrl={downloadUrl || undefined}
+                    onClose={() => setShowViewer(false)}
+                  />
+                </div>
+              </div>
             )}
 
             {/* Input Field with Upload and Send */}
@@ -376,10 +532,10 @@ export default function TichaPage() {
               <div className="container mx-auto max-w-3xl">
                 <div className="text-center space-y-4">
                   <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900" style={{  fontWeight: 800, letterSpacing: "-0.02em" }}>
-                    About TichaAI
+                    About Tichar AI
                   </h2>
                   <p className="text-base sm:text-lg leading-relaxed max-w-2xl mx-auto text-gray-700" style={{  }}>
-                    TichaAI is your intelligent presentation assistant, designed to transform any content into
+                    Tichar AI is your intelligent presentation assistant, designed to transform any content into
                     professional, engaging presentations in seconds.
                   </p>
                 </div>
