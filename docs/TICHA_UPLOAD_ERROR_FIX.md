@@ -10,11 +10,11 @@ The most common cause is missing or incorrect environment variables.
 
 ```env
 # Required - TichaAI Supabase
-NEXT_PUBLIC_TICHA_SUPABASE_URL=https://olrjjctddhlvnwclcich.supabase.co
-TICHA_SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9scmpqY3RkZGhsdm53Y2xjaWNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzU4NjA4NywiZXhwIjoyMDc5MTYyMDg3fQ.UWMHebsrBEg2UBf5UkfeBFR_QfeYjPKiqdGrOcMmujk
+NEXT_PUBLIC_TICHA_SUPABASE_URL=https://your-ticha-project-id.supabase.co
+TICHA_SUPABASE_SERVICE_KEY=your-ticha-service-role-key-here
 
 # Required - OpenRouter API
-OPENROUTER_API_KEY=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
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-api-key-here
 ```
 
 **After adding/changing env vars:**
@@ -80,9 +80,9 @@ Look at the terminal where `pnpm dev` is running for detailed error messages:
 Create or update `.env.local` in the project root:
 
 ```env
-NEXT_PUBLIC_TICHA_SUPABASE_URL=https://olrjjctddhlvnwclcich.supabase.co
-TICHA_SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9scmpqY3RkZGhsdm53Y2xjaWNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzU4NjA4NywiZXhwIjoyMDc5MTYyMDg3fQ.UWMHebsrBEg2UBf5UkfeBFR_QfeYjPKiqdGrOcMmujk
-OPENROUTER_API_KEY=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
+NEXT_PUBLIC_TICHA_SUPABASE_URL=https://your-ticha-project-id.supabase.co
+TICHA_SUPABASE_SERVICE_KEY=your-ticha-service-role-key-here
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-api-key-here
 ```
 
 **Get your ANON_KEY**:
