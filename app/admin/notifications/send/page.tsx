@@ -26,6 +26,7 @@ export default function SendNotificationPage() {
     message: '',
     priority: 'normal',
     sendEmail: true,
+    sendPush: true, // Enable push by default
     actionUrl: '',
     actionText: '',
   });
@@ -64,14 +65,23 @@ export default function SendNotificationPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          sendPush: formData.sendPush ?? true, // Ensure push is included
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        const result = data.channels || {};
+        const inAppStatus = result.inApp?.success ? '✅' : '❌';
+        const emailStatus = result.email?.sent ? '✅' : '❌';
+        const pushStatus = result.push?.sent > 0 ? `✅ (${result.push.sent} device${result.push.sent > 1 ? 's' : ''})` : '❌';
+        
         toast.success('Notification sent successfully!', {
-          description: `In-app: ${data.inAppSent ? 'Yes' : 'No'}, Email: ${data.emailSent ? 'Yes' : 'No'}, Push: ${data.pushSent ? 'Yes' : 'No'}`,
+          description: `In-app: ${inAppStatus} | Email: ${emailStatus} | Push: ${pushStatus}`,
+          duration: 5000,
         });
         
         // Reset form
@@ -82,6 +92,7 @@ export default function SendNotificationPage() {
           message: '',
           priority: 'normal',
           sendEmail: true,
+          sendPush: true,
           actionUrl: '',
           actionText: '',
         });
@@ -240,6 +251,21 @@ export default function SendNotificationPage() {
               />
               <Label htmlFor="sendEmail">Send email notification</Label>
             </div>
+
+            {/* Send Push Notification */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="sendPush"
+                checked={formData.sendPush ?? true}
+                onChange={(e) => setFormData({ ...formData, sendPush: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <Label htmlFor="sendPush">Send push notification</Label>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Push notifications require FCM token to be stored for the user. Check fcm_tokens table in Supabase.
+            </p>
 
             {/* Submit Button */}
             <div className="flex gap-4">

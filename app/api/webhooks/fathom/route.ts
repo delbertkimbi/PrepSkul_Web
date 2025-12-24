@@ -111,7 +111,17 @@ async function handleRecordingReady({
       return;
     }
 
-    const { sessionId, sessionType } = sessionMatch;
+        const { sessionId, sessionType } = sessionMatch;
+
+    // Detect and update student attendance from Fathom attendee data
+    await detectAndUpdateStudentAttendance({
+      supabase,
+      sessionId,
+      sessionType,
+      meetingData,
+    });
+
+
 
     // Store transcript and summary
     const transcriptId = await storeTranscriptAndSummary({
@@ -232,6 +242,46 @@ async function findSessionByFathomData({
             return {
               sessionId: trialSession.id,
               sessionType: 'trial',
+                    // Try individual_sessions
+                    const { data: individualSessions } = await supabase
+                      .from('individual_sessions')
+                      .select(`
+                        id,
+                        tutor_id,
+                        learner_id,
+                        parent_id,
+                        scheduled_date,
+                        scheduled_time,
+                        profiles!individual_sessions_tutor_id_fkey(email),
+                        profiles!individual_sessions_learner_id_fkey(email)
+                      `)
+                      .eq('scheduled_date', scheduledDate)
+                      .eq('scheduled_time', scheduledTime)
+                      .limit(10);
+
+                    if (individualSessions && individualSessions.length > 0) {
+                      // Find matching session by tutor and student emails
+                      for (const session of individualSessions) {
+                        const tutorEmail = session.profiles?.email;
+                        // Get student email (learner or parent)
+                        const { data: learnerProfile } = await supabase
+                          .from('profiles')
+                          .select('email')
+                          .eq('id', session.learner_id || session.parent_id)
+                          .single();
+                        
+                        const studentEmail = learnerProfile?.email;
+                        
+                        if (tutorEmail && studentEmail && 
+                            attendeeEmails.includes(tutorEmail.toLowerCase()) && 
+                            attendeeEmails.includes(studentEmail.toLowerCase())) {
+                          return {
+                            sessionId: session.id,
+                            sessionType: 'recurring',
+                          };
+                        }
+                      }
+                    }
             };
           }
         }
@@ -310,6 +360,221 @@ async function storeTranscriptAndSummary({
   } catch (error: any) {
     console.error('❌ Error storing transcript and summary:', error);
     throw error;
+  }
+}
+
+/**
+ * Detect and update student attendance from Fathom attendee data
+ * 
+ * When Fathom records a meeting, it provides attendee information.
+ * We can use this to detect when students joined and update attendance records.
+ */
+async function detectAndUpdateStudentAttendance({
+  supabase,
+  sessionId,
+  sessionType,
+  meetingData,
+}: {
+  supabase: any;
+  sessionId: string;
+  sessionType: 'trial' | 'recurring';
+  meetingData: any;
+}) {
+  try {
+    if (!meetingData.attendees || meetingData.attendees.length === 0) {
+      console.log('⚠️ No attendees data in meeting');
+      return;
+    }
+
+    // Get attendee emails (excluding PrepSkul VA)
+    const attendeeEmails = meetingData.attendees
+      .filter((a: any) => 
+        a.email && 
+        !a.email.toLowerCase().includes('prepskul') && 
+        !a.email.toLowerCase().includes('deltechhub') &&
+        !a.email.toLowerCase().includes('fathom')
+      )
+      .map((a: any) => a.email.toLowerCase());
+
+    if (attendeeEmails.length === 0) {
+      console.log('⚠️ No valid attendee emails found');
+      return;
+    }
+
+    console.log(`👥 Detected ${attendeeEmails.length} attendees: ${attendeeEmails.join(', ')}`);
+
+    // Get session details to find learner/parent emails
+    let sessionData: any;
+    let learnerId: string | null = null;
+    let parentId: string | null = null;
+    let tutorId: string | null = null;
+
+    if (sessionType === 'trial') {
+      const { data: trialSession } = await supabase
+        .from('trial_sessions')
+        .select(`
+          id,
+          tutor_id,
+          learner_id,
+          parent_id,
+          scheduled_date,
+          scheduled_time
+        `)
+        .eq('id', sessionId)
+        .single();
+
+      if (!trialSession) {
+        console.log(`⚠️ Trial session not found: ${sessionId}`);
+        return;
+      }
+
+      sessionData = trialSession;
+      learnerId = trialSession.learner_id;
+      parentId = trialSession.parent_id;
+      tutorId = trialSession.tutor_id;
+    } else {
+      // For recurring sessions, find the individual session
+      const { data: individualSession } = await supabase
+        .from('individual_sessions')
+        .select(`
+          id,
+          tutor_id,
+          learner_id,
+          parent_id,
+          scheduled_date,
+          scheduled_time
+        `)
+        .eq('id', sessionId)
+        .single();
+
+      if (!individualSession) {
+        console.log(`⚠️ Individual session not found: ${sessionId}`);
+        return;
+      }
+
+      sessionData = individualSession;
+      learnerId = individualSession.learner_id;
+      parentId = individualSession.parent_id;
+      tutorId = individualSession.tutor_id;
+    }
+
+    // Get emails for learner and parent
+    const emailPromises = [];
+    if (learnerId) {
+      emailPromises.push(
+        supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', learnerId)
+          .single()
+          .then(({ data }: any) => ({ type: 'learner', id: learnerId, email: data?.email }))
+      );
+    }
+    if (parentId) {
+      emailPromises.push(
+        supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', parentId)
+          .single()
+          .then(({ data }: any) => ({ type: 'parent', id: parentId, email: data?.email }))
+      );
+    }
+
+    const emailResults = await Promise.all(emailPromises);
+    const studentEmails = emailResults
+      .filter((r: any) => r && r.email)
+      .map((r: any) => ({ ...r, email: r.email.toLowerCase() }));
+
+    // Check which students are in the attendee list
+    const joinedStudents = studentEmails.filter((s: any) => 
+      attendeeEmails.includes(s.email)
+    );
+
+    if (joinedStudents.length === 0) {
+      console.log('⚠️ No students detected in meeting attendees');
+      return;
+    }
+
+    console.log(`✅ Detected ${joinedStudents.length} student(s) in meeting: ${joinedStudents.map((s: any) => s.email).join(', ')}`);
+
+    // Use recording start time as join time (approximation)
+    const joinTime = meetingData.startTime 
+      ? new Date(meetingData.startTime).toISOString()
+      : new Date().toISOString();
+
+    // Update individual_sessions if this is a recurring session
+    if (sessionType === 'recurring') {
+      // Find or create individual session record
+      const { data: existingSession } = await supabase
+        .from('individual_sessions')
+        .select('id, learner_joined_at')
+        .eq('id', sessionId)
+        .single();
+
+      if (existingSession && !existingSession.learner_joined_at) {
+        // Update learner_joined_at for the first joined student
+        const firstStudent = joinedStudents[0];
+        await supabase
+          .from('individual_sessions')
+          .update({
+            learner_joined_at: joinTime,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', sessionId);
+
+        console.log(`✅ Updated learner_joined_at for session ${sessionId}`);
+      }
+    }
+
+    // Create or update attendance records for each joined student
+    for (const student of joinedStudents) {
+      // Check if attendance record exists
+      const { data: existingAttendance } = await supabase
+        .from('session_attendance')
+        .select('id, joined_at')
+        .eq('session_id', sessionId)
+        .eq('user_id', student.id)
+        .maybeSingle();
+
+      if (existingAttendance) {
+        // Update existing record if join time not set
+        if (!existingAttendance.joined_at) {
+          await supabase
+            .from('session_attendance')
+            .update({
+              joined_at: joinTime,
+              attendance_status: 'present',
+              meet_link_used: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', existingAttendance.id);
+
+          console.log(`✅ Updated attendance record for ${student.email}`);
+        }
+      } else {
+        // Create new attendance record
+        await supabase
+          .from('session_attendance')
+          .insert({
+            session_id: sessionId,
+            user_id: student.id,
+            user_type: student.type === 'learner' ? 'student' : 'parent',
+            joined_at: joinTime,
+            attendance_status: 'present',
+            meet_link_used: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+
+        console.log(`✅ Created attendance record for ${student.email}`);
+      }
+    }
+
+    console.log(`✅ Student attendance detection completed for session ${sessionId}`);
+  } catch (error: any) {
+    console.error('❌ Error detecting student attendance:', error);
+    // Don't throw - this is a non-critical operation
   }
 }
 

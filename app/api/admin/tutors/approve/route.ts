@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // First, fetch tutor profile to get contact info and check rating/pricing
     const { data: tutorProfile, error: fetchError } = await supabase
       .from('tutor_profiles')
-      .select('user_id, full_name, admin_approved_rating, base_session_price, pricing_tier, rating_justification')
+      .select('user_id, full_name, admin_approved_rating, base_session_price, hourly_rate, pricing_tier, rating_justification, status')
       .eq('id', tutorId)
       .maybeSingle();
 
@@ -40,19 +40,92 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Tutor profile not found' }, { status: 404 });
     }
 
-    // Check if rating and pricing are set before approval
-    if (!tutorProfile.admin_approved_rating || !tutorProfile.base_session_price) {
+    // Validate rating before approval
+    const missingFields: string[] = [];
+    const invalidFields: string[] = [];
+
+    if (!tutorProfile.admin_approved_rating) {
+      missingFields.push('admin_approved_rating');
+    } else {
+      // Validate rating range (3.0 - 4.5)
+      const rating = Number(tutorProfile.admin_approved_rating);
+      if (isNaN(rating) || rating < 3.0 || rating > 4.5) {
+        invalidFields.push(`admin_approved_rating (value: ${tutorProfile.admin_approved_rating} is outside valid range 3.0-4.5)`);
+      }
+    }
+
+    // Validate pricing before approval
+    if (!tutorProfile.base_session_price) {
+      missingFields.push('base_session_price');
+      
+      // If base_session_price is missing, check if hourly_rate is valid as fallback
+      if (tutorProfile.hourly_rate) {
+        const hourlyRate = Number(tutorProfile.hourly_rate);
+        if (isNaN(hourlyRate) || hourlyRate < 1000 || hourlyRate > 50000) {
+          invalidFields.push(`hourly_rate (value: ${tutorProfile.hourly_rate} is corrupted or outside valid range 1000-50000)`);
+        } else if (hourlyRate < 3000 || hourlyRate > 15000) {
+          console.warn(`⚠️ Tutor ${tutorId} has hourly_rate ${hourlyRate} which is valid but outside typical session price range (3000-15000)`);
+        }
+      }
+    } else {
+      // Validate base_session_price range (3000 - 15000)
+      const price = Number(tutorProfile.base_session_price);
+      if (isNaN(price) || price < 3000 || price > 15000) {
+        invalidFields.push(`base_session_price (value: ${tutorProfile.base_session_price} is outside valid range 3000-15000)`);
+      }
+    }
+
+    // Check for corrupted hourly_rate even if base_session_price exists
+    if (tutorProfile.hourly_rate) {
+      const hourlyRate = Number(tutorProfile.hourly_rate);
+      if (!isNaN(hourlyRate) && (hourlyRate < 1000 || hourlyRate > 50000)) {
+        invalidFields.push(`hourly_rate (value: ${tutorProfile.hourly_rate} is corrupted)`);
+      }
+    }
+
+    // Return detailed error if validation fails
+    if (missingFields.length > 0 || invalidFields.length > 0) {
+      const errorMessages: string[] = [];
+      
+      if (missingFields.length > 0) {
+        errorMessages.push(`Missing required fields: ${missingFields.join(', ')}`);
+        errorMessages.push('Please set rating and pricing in the tutor detail page before approval.');
+      }
+      
+      if (invalidFields.length > 0) {
+        errorMessages.push(`Invalid field values: ${invalidFields.join('; ')}`);
+        errorMessages.push('Please correct these values before approval.');
+      }
+
+      console.error(`❌ Cannot approve tutor ${tutorId}:`, {
+        missingFields,
+        invalidFields,
+        tutorProfile: {
+          admin_approved_rating: tutorProfile.admin_approved_rating,
+          base_session_price: tutorProfile.base_session_price,
+          hourly_rate: tutorProfile.hourly_rate,
+        }
+      });
+
       return NextResponse.json(
         { 
-          error: 'Rating and pricing must be set before approval. Please set them in the tutor detail page.',
-          missingFields: {
-            rating: !tutorProfile.admin_approved_rating,
-            pricing: !tutorProfile.base_session_price
-          }
+          error: errorMessages.join(' '),
+          missingFields: missingFields.reduce((acc, field) => {
+            acc[field] = true;
+            return acc;
+          }, {} as Record<string, boolean>),
+          invalidFields: invalidFields,
         },
         { status: 400 }
       );
     }
+
+    // Log successful validation
+    console.log(`✅ Tutor ${tutorId} validation passed:`, {
+      admin_approved_rating: tutorProfile.admin_approved_rating,
+      base_session_price: tutorProfile.base_session_price,
+      hourly_rate: tutorProfile.hourly_rate,
+    });
 
     // Get user profile for email/phone
     const { data: userProfile, error: profileError } = await supabase

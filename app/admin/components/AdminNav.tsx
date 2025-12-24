@@ -15,6 +15,7 @@ export default function AdminNav() {
     { name: 'Dashboard', href: '/admin' },
     { name: 'Active Users', href: '/admin/users/active' },
     { name: 'Tutors', href: '/admin/tutors' },
+    { name: 'Tutor Requests', href: '/admin/tutor-requests' },
     { name: 'Sessions', href: '/admin/sessions' },
     { name: 'Revenue', href: '/admin/revenue' },
     { name: 'Pricing', href: '/admin/pricing' },

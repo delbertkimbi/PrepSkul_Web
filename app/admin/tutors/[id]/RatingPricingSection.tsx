@@ -33,6 +33,7 @@ interface TutorData {
   hourly_rate?: number;
   payment_method?: string;
   payment_details?: any;
+  status?: string;
 }
 
 interface RatingPricingSectionProps {
@@ -107,6 +108,40 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
   const priceDeviation = Math.abs(adminPrice - pricingResult.suggestedPrice);
   const showWarning = ratingDeviation > 0.3 || priceDeviation > 2000;
 
+  // Data quality checks
+  const tutorStatus = tutor.status || 'pending';
+  const isApproved = tutorStatus === 'approved';
+  
+  const dataQualityIssues: string[] = [];
+  const dataQualityWarnings: string[] = [];
+
+  // Check for missing admin_approved_rating (for approved tutors)
+  if (isApproved && !tutor.admin_approved_rating) {
+    dataQualityIssues.push('Missing admin_approved_rating - Required for approved tutors');
+  }
+
+  // Check for missing base_session_price (for approved tutors)
+  if (isApproved && !tutor.base_session_price) {
+    dataQualityIssues.push('Missing base_session_price - Required for approved tutors');
+  }
+
+  // Check for corrupted hourly_rate
+  if (tutor.hourly_rate) {
+    const hourlyRate = typeof tutor.hourly_rate === 'number' 
+      ? tutor.hourly_rate 
+      : parseFloat(String(tutor.hourly_rate));
+    if (isNaN(hourlyRate) || hourlyRate < 1000 || hourlyRate > 50000) {
+      dataQualityIssues.push(`Corrupted hourly_rate: ${tutor.hourly_rate} (should be 1000-50000)`);
+    } else if (isApproved && tutor.base_session_price) {
+      const basePrice = typeof tutor.base_session_price === 'number'
+        ? tutor.base_session_price
+        : parseFloat(String(tutor.base_session_price));
+      if (!isNaN(basePrice) && Math.abs(hourlyRate - basePrice) > 100) {
+        dataQualityWarnings.push(`hourly_rate (${hourlyRate}) differs from base_session_price (${basePrice})`);
+      }
+    }
+  }
+
   // Handle expected_rate - might be stored as TEXT, NUMERIC, or null
   const parseRate = (rate: any): number => {
     if (!rate) return 0;
@@ -128,6 +163,42 @@ export default function RatingPricingSection({ tutor, tutorId }: RatingPricingSe
         <h2 className="text-lg font-semibold text-gray-900">Rating & Pricing</h2>
         <p className="text-sm text-gray-500 mt-0.5">Set the tutor's rating and session price</p>
       </div>
+
+      {/* Data Quality Warnings */}
+      {dataQualityIssues.length > 0 && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-red-800 mb-2">Data Quality Issues</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                {dataQualityIssues.map((issue, idx) => (
+                  <li key={idx}>{issue}</li>
+                ))}
+              </ul>
+              <p className="text-xs text-red-600 mt-2">
+                Please fix these issues before approving the tutor or update the values below.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {dataQualityWarnings.length > 0 && (
+        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
+          <div className="flex items-start">
+            <AlertCircle className="w-5 h-5 text-amber-500 mt-0.5 mr-3 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-amber-800 mb-2">Data Quality Warnings</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-amber-700">
+                {dataQualityWarnings.map((warning, idx) => (
+                  <li key={idx}>{warning}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tutor's Desired Payment Range - Compact & Subtle Reference */}
       {tutorRequestedRate > 0 && (
