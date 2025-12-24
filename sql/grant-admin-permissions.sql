@@ -63,6 +63,6 @@ WHERE email = 'prepskul@gmail.com';
 -- DONE! 
 -- Now try logging in at /admin/login
 -- Email: prepskul@gmail.com
--- Password: ***REMOVED*** (or whatever you set)
+-- Password: [Your password set in Supabase Auth]
 -- ============================================
 

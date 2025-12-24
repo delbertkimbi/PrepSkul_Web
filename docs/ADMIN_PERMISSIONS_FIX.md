@@ -81,7 +81,7 @@ After running the SQL:
 2. **Try logging in again:**
    - Go to: `/admin/login`
    - Email: `prepskul@gmail.com`
-   - Password: `***REMOVED***` (or whatever you set)
+   - Password: [Your password set in Supabase Auth]
 3. **You should now be able to access the admin dashboard!** 🎉
 
 ---
@@ -104,7 +104,7 @@ After running the SQL:
 1. Go to **Supabase Dashboard** → **Authentication** → **Users**
 2. Click **"Add User"**
 3. Create user with email `prepskul@gmail.com`
-4. Set password: `***REMOVED***` (or your preferred password)
+4. Set password: [Your preferred password - keep it secure!]
 5. ✅ Check **"Auto Confirm User"**
 6. Then run the SQL scripts above
 
