@@ -1,18 +1,31 @@
 /**
- * OpenRouter API Client for Tichar AI
+ * OpenRouter API Client for Tichar AI and skulMate
  * Handles all AI model interactions with design-focused prompts
+ * 
+ * Supports separate API keys for TichaAI and skulMate for usage tracking
  */
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 
+/**
+ * Get OpenRouter API key for TichaAI (lazy evaluation to avoid build-time errors)
+ */
+function getTichaOpenRouterApiKey(): string {
+  // Try TichaAI-specific key first, fallback to general key for backward compatibility
+  const key = process.env.TICHA_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
+  if (!key) {
+    throw new Error('Missing TICHA_OPENROUTER_API_KEY or OPENROUTER_API_KEY environment variable')
+  }
+  return key
+}
 
 /**
- * Get OpenRouter API key (lazy evaluation to avoid build-time errors)
+ * Get OpenRouter API key for skulMate (lazy evaluation to avoid build-time errors)
  */
-function getOpenRouterApiKey(): string {
-  const key = process.env.OPENROUTER_API_KEY
+function getSkulMateOpenRouterApiKey(): string {
+  const key = process.env.SKULMATE_OPENROUTER_API_KEY
   if (!key) {
-    throw new Error('Missing OPENROUTER_API_KEY environment variable')
+    throw new Error('Missing SKULMATE_OPENROUTER_API_KEY environment variable')
   }
   return key
 }
@@ -48,16 +61,24 @@ interface OpenRouterOptions {
 }
 
 /**
- * Call OpenRouter API
+ * Call OpenRouter API (for TichaAI - uses TichaAI-specific key)
  */
-async function callOpenRouter(options: OpenRouterOptions): Promise<OpenRouterResponse> {
-
-  const apiKey = getOpenRouterApiKey()
-
-  //const apiKey = process.env.OPENROUTER_API_KEY
+export async function callOpenRouter(options: OpenRouterOptions): Promise<OpenRouterResponse> {
+  const apiKey = getTichaOpenRouterApiKey()
   
   if (!apiKey) {
-    throw new Error('Missing OPENROUTER_API_KEY environment variable')
+    throw new Error('Missing TICHA_OPENROUTER_API_KEY or OPENROUTER_API_KEY environment variable')
+  }
+  
+  return callOpenRouterWithKey(apiKey, options)
+}
+
+/**
+ * Call OpenRouter API with a specific API key (for skulMate)
+ */
+export async function callOpenRouterWithKey(apiKey: string, options: OpenRouterOptions): Promise<OpenRouterResponse> {
+  if (!apiKey) {
+    throw new Error('API key is required')
   }
 
   const response = await fetch(`${OPENROUTER_BASE_URL}/chat/completions`, {

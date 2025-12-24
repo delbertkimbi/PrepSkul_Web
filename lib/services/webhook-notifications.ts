@@ -56,17 +56,18 @@ export async function createPaymentNotification({
           is_read: false,
         });
 
-        // Notify tutor
+        // Notify tutor with Meet link
         await supabase.from('notifications').insert({
           user_id: trial.tutor_id,
           type: 'trial_payment_received',
           notification_type: 'trial_payment_received',
-          title: 'Trial Payment Received',
-          message: `Payment for trial session in ${trial.subject} has been confirmed.`,
+          title: 'Trial Payment Received - Session Ready',
+          message: `Payment for trial session in ${trial.subject} has been confirmed. ${trial.meet_link ? 'Meet link is ready!' : ''}`,
           data: {
             session_id: trialSessionId,
             session_type: 'trial',
             subject: trial.subject,
+            meet_link: trial.meet_link, // Include Meet link for tutor
           },
           is_read: false,
         });

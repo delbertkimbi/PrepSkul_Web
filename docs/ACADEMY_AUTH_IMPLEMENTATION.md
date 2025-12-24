@@ -9,7 +9,7 @@ This document describes the implementation of user authentication and Supabase-b
 - **Signup Page** (`/academy/signup`): Users can create accounts with email and password
 - **Login Page** (`/academy/login`): Users can sign in to access academy content
 - **Auth Protection**: All academy pages (except landing, signup, and login) require authentication
-- **Session Management**: Uses Supabase Auth with automatic session handling
+- **Session Management**: Uses Supabase Auth with automatic session handling. ok
 
 ### 2. Supabase Integration
 - **Separate Supabase Project**: Academy uses its own Supabase project (isolated from main PrepSkul)
