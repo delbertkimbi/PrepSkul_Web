@@ -5,7 +5,7 @@
 GitGuardian detected a hardcoded password in git history:
 - **File:** `sql/grant-admin-permissions.sql`
 - **Commit:** `305cf919b3cebda9492b133bac5ab49022bee2b8`
-- **Secret:** `***REMOVED***` (password)
+- **Secret:** `DE12$kimb` (password)
 - **Status:** ✅ Removed from current file, ⚠️ Still in git history
 
 ---
@@ -129,7 +129,7 @@ You can mark it as a false positive in GitGuardian:
 ### **For This Specific Case:**
 
 1. **Rotate the password** (Option 2) - ✅ **Do this first**
-   - The password `***REMOVED***` is exposed
+   - The password `DE12$kimb` is exposed
    - Change it in Supabase immediately
    - Takes 2 minutes
 

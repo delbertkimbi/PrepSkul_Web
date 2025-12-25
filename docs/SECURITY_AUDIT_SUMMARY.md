@@ -12,7 +12,7 @@ All files have been checked for exposed secrets. All hardcoded secrets have been
 
 1. ✅ **Password in SQL File**
    - **File:** `PrepSkul_Web/sql/grant-admin-permissions.sql`
-   - **Fixed:** Replaced `***REMOVED***` with placeholder
+   - **Fixed:** Replaced `DE12$kimb` with placeholder
 
 2. ✅ **Supabase Service Role Key**
    - **Files:** `TICHA_UPLOAD_ERROR_FIX.md`, `TICHA_BACKEND_SETUP.md`

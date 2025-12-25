@@ -118,15 +118,17 @@ export async function GET(request: NextRequest) {
               .maybeSingle();
 
             if (userProfile?.email) {
-              await sendCustomEmail({
-                to: userProfile.email,
-                subject: scheduled.title,
-                html: `
-                  <h2>${scheduled.title}</h2>
-                  <p>${scheduled.message}</p>
-                  ${metadata.action_url ? `<p><a href="${process.env.NEXT_PUBLIC_APP_URL}${metadata.action_url}">${metadata.action_text || 'View Details'}</a></p>` : ''}
-                `,
-              });
+              const emailBody = `
+                <h2>${scheduled.title}</h2>
+                <p>${scheduled.message}</p>
+                ${metadata.action_url ? `<p><a href="${process.env.NEXT_PUBLIC_APP_URL}${metadata.action_url}">${metadata.action_text || 'View Details'}</a></p>` : ''}
+              `;
+              await sendCustomEmail(
+                userProfile.email,
+                userProfile.full_name || 'User',
+                scheduled.title,
+                emailBody
+              );
             }
           } catch (emailError: any) {
             console.error(`⚠️ Failed to send email for scheduled notification ${scheduled.id}:`, emailError);

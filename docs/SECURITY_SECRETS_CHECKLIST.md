@@ -10,7 +10,7 @@ This document tracks all secrets that have been checked and secured.
 
 ### 1. ✅ **Password in SQL File** - FIXED
 - **File:** `PrepSkul_Web/sql/grant-admin-permissions.sql`
-- **Issue:** Hardcoded password `***REMOVED***`
+- **Issue:** Hardcoded password `DE12$kimb`
 - **Fix:** Replaced with placeholder `[Your password set in Supabase Auth]`
 - **Status:** ✅ Fixed
 
