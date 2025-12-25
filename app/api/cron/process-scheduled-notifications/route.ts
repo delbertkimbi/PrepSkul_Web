@@ -5,28 +5,40 @@ import { sendCustomEmail } from '@/lib/notifications';
 /**
  * Process Scheduled Notifications Cron Job
  * 
- * This endpoint should be called periodically (e.g., every 5 minutes) to process
- * scheduled notifications that are due to be sent.
+ * This endpoint processes scheduled notifications that are due to be sent.
  * 
- * In Vercel, configure this as a cron job in vercel.json:
- * {
- *   "crons": [{
- *     "path": "/api/cron/process-scheduled-notifications",
- *     "schedule": "every 5 minutes"
- *   }]
- * }
+ * ⚠️ VERCEL PLAN LIMITATIONS:
+ * - Hobby Plan: Only runs once per day (schedule: "0 0 * * *")
+ * - Pro Plan: Can run every 5 minutes (schedule: "*/5 * * * *")
+ * 
+ * Current configuration (vercel.json):
+ * - Schedule: "0 0 * * *" (runs once per day at midnight UTC)
+ * - Processes up to 100 notifications per run
+ * 
+ * For more frequent processing, upgrade to Pro plan or use external cron service.
+ * See: docs/VERCEL_CRON_JOB_SETUP.md
  */
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret (optional but recommended for security)
+    // Allows both Vercel cron (no auth) and external cron services (with Bearer token)
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
     
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    // If CRON_SECRET is set, require authentication
+    // Vercel cron jobs don't send auth headers, so we allow them if no secret is set
+    // External cron services should send: Authorization: Bearer YOUR_CRON_SECRET
+    if (cronSecret) {
+      const isVercelCron = request.headers.get('user-agent')?.includes('vercel-cron') || 
+                          request.headers.get('x-vercel-cron') === '1';
+      
+      // Allow Vercel cron without auth, but require auth for external services
+      if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
+        return NextResponse.json(
+          { error: 'Unauthorized. Please provide Authorization: Bearer YOUR_CRON_SECRET header.' },
+          { status: 401 }
+        );
+      }
     }
 
     const supabase = await createServerSupabaseClient();
