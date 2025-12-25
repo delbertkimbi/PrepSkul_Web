@@ -242,47 +242,48 @@ async function findSessionByFathomData({
             return {
               sessionId: trialSession.id,
               sessionType: 'trial',
-                    // Try individual_sessions
-                    const { data: individualSessions } = await supabase
-                      .from('individual_sessions')
-                      .select(`
-                        id,
-                        tutor_id,
-                        learner_id,
-                        parent_id,
-                        scheduled_date,
-                        scheduled_time,
-                        profiles!individual_sessions_tutor_id_fkey(email),
-                        profiles!individual_sessions_learner_id_fkey(email)
-                      `)
-                      .eq('scheduled_date', scheduledDate)
-                      .eq('scheduled_time', scheduledTime)
-                      .limit(10);
-
-                    if (individualSessions && individualSessions.length > 0) {
-                      // Find matching session by tutor and student emails
-                      for (const session of individualSessions) {
-                        const tutorEmail = session.profiles?.email;
-                        // Get student email (learner or parent)
-                        const { data: learnerProfile } = await supabase
-                          .from('profiles')
-                          .select('email')
-                          .eq('id', session.learner_id || session.parent_id)
-                          .single();
-                        
-                        const studentEmail = learnerProfile?.email;
-                        
-                        if (tutorEmail && studentEmail && 
-                            attendeeEmails.includes(tutorEmail.toLowerCase()) && 
-                            attendeeEmails.includes(studentEmail.toLowerCase())) {
-                          return {
-                            sessionId: session.id,
-                            sessionType: 'recurring',
-                          };
-                        }
-                      }
-                    }
             };
+          }
+        }
+
+        // Try individual_sessions if trial_sessions didn't match
+        const { data: individualSessions } = await supabase
+          .from('individual_sessions')
+          .select(`
+            id,
+            tutor_id,
+            learner_id,
+            parent_id,
+            scheduled_date,
+            scheduled_time,
+            profiles!individual_sessions_tutor_id_fkey(email),
+            profiles!individual_sessions_learner_id_fkey(email)
+          `)
+          .eq('scheduled_date', scheduledDate)
+          .eq('scheduled_time', scheduledTime)
+          .limit(10);
+
+        if (individualSessions && individualSessions.length > 0) {
+          // Find matching session by tutor and student emails
+          for (const session of individualSessions) {
+            const tutorEmail = session.profiles?.email;
+            // Get student email (learner or parent)
+            const { data: learnerProfile } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', session.learner_id || session.parent_id)
+              .single();
+            
+            const studentEmail = learnerProfile?.email;
+            
+            if (tutorEmail && studentEmail && 
+                attendeeEmails.includes(tutorEmail.toLowerCase()) && 
+                attendeeEmails.includes(studentEmail.toLowerCase())) {
+              return {
+                sessionId: session.id,
+                sessionType: 'recurring',
+              };
+            }
           }
         }
       }

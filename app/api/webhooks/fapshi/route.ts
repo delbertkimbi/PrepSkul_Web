@@ -339,7 +339,7 @@ async function handleSessionPayment({
     // First, try to find payment by transaction ID (most reliable)
     let { data: payment, error: findError } = await supabase
       .from('session_payments')
-      .select(\`
+      .select(`
         id,
         session_id,
         tutor_earnings,
@@ -349,7 +349,7 @@ async function handleSessionPayment({
           learner_id,
           parent_id
         )
-      \`)
+      `)
       .eq('fapshi_trans_id', transactionId)
       .maybeSingle();
 
