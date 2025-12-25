@@ -357,7 +357,7 @@ async function handleSessionPayment({
     if (!payment && !findError) {
       const result = await supabase
         .from('session_payments')
-        .select(\`
+        .select(`
           id,
           session_id,
           tutor_earnings,
@@ -367,7 +367,7 @@ async function handleSessionPayment({
             learner_id,
             parent_id
           )
-        \`)
+        `)
         .eq('session_id', sessionId)
         .maybeSingle();
       
@@ -377,7 +377,7 @@ async function handleSessionPayment({
 
     if (findError) throw findError;
     if (!payment) {
-      console.log(\`⚠️ Session payment not found for session: \${sessionId} or transaction: \${transactionId}\`);
+      console.log(`⚠️ Session payment not found for session: \${sessionId} or transaction: \${transactionId}`);
       return;
     }
 
@@ -436,7 +436,7 @@ async function handleSessionPayment({
           type: 'payment_confirmed',
           notification_type: 'payment_confirmed',
           title: '💰 Payment Received',
-          message: \`Payment of \${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings are now available.\`,
+          message: `Payment of \${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings are now available.`,
           priority: 'normal',
           action_url: '/earnings',
           action_text: 'View Earnings',
@@ -459,7 +459,7 @@ async function handleSessionPayment({
             title: '✅ Payment Confirmed',
             message: 'Your session payment has been confirmed.',
             priority: 'normal',
-            action_url: \`/sessions/\${sessionId}\`,
+            action_url: `/sessions/\${sessionId}`,
             action_text: 'View Session',
             icon: '✅',
             metadata: {
@@ -475,7 +475,7 @@ async function handleSessionPayment({
         // Don't fail the webhook if notifications fail
       }
 
-      console.log(\`✅ Session payment confirmed: \${paymentId} for session: \${sessionId}\`);
+      console.log(`✅ Session payment confirmed: \${paymentId} for session: \${sessionId}`);
     } else if (status === 'FAILED' || status === 'EXPIRED') {
       // Payment failed
       const { error: failError } = await supabase
@@ -498,9 +498,9 @@ async function handleSessionPayment({
             type: 'payment_failed',
             notification_type: 'payment_failed',
             title: '⚠️ Payment Failed',
-            message: \`Your session payment failed.\${failureReason ? \` Reason: \${failureReason}\` : ''} Please try again.\`,
+            message: `Your session payment failed.${failureReason ? ` Reason: ${failureReason}` : ''} Please try again.`,
             priority: 'high',
-            action_url: \`/sessions/\${sessionId}/payment\`,
+            action_url: `/sessions/\${sessionId}/payment`,
             action_text: 'Retry Payment',
             icon: '⚠️',
             metadata: {
@@ -516,7 +516,7 @@ async function handleSessionPayment({
         console.error('⚠️ Error sending failure notification:', notifError);
       }
 
-      console.log(\`⚠️ Session payment failed: \${paymentId} for session: \${sessionId}\`);
+      console.log(`⚠️ Session payment failed: \${paymentId} for session: \${sessionId}`);
     }
   } catch (error) {
     console.error('❌ Error handling session payment webhook:', error);
