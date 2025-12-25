@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { sendCustomEmail } from '@/lib/notifications';
-import { sendPushNotification } from '@/lib/services/firebase-admin';
 
 /**
  * Send Notification API
@@ -118,6 +117,8 @@ export async function POST(request: NextRequest) {
     // Send push notification
     if (shouldSendPush) {
       try {
+        // Dynamically import firebase-admin to avoid build errors if not available
+        const { sendPushNotification } = await import('@/lib/services/firebase-admin');
         const pushResult = await sendPushNotification({
           userId,
           title,

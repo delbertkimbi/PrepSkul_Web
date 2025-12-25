@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { sendCustomEmail } from '@/lib/notifications';
-import { sendPushNotification } from '@/lib/services/firebase-admin';
 
 /**
  * Process Scheduled Notifications Cron Job
@@ -13,7 +12,7 @@ import { sendPushNotification } from '@/lib/services/firebase-admin';
  * {
  *   "crons": [{
  *     "path": "/api/cron/process-scheduled-notifications",
- *     "schedule": "*/5 * * * *"
+ *     "schedule": "every 5 minutes"
  *   }]
  * }
  */
@@ -126,6 +125,8 @@ export async function GET(request: NextRequest) {
         // Send push notification if enabled
         if (shouldSendPush && notification) {
           try {
+            // Dynamically import firebase-admin to avoid build errors if not available
+            const { sendPushNotification } = await import('@/lib/services/firebase-admin');
             await sendPushNotification({
               userId: scheduled.user_id,
               title: scheduled.title,
