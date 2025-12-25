@@ -160,6 +160,26 @@ export async function sendTutorApprovalEmail(
 
     if (error) {
       console.error('❌ Resend error:', error);
+      
+      // Check for rate limit errors
+      const errorMsg = error.message || error.toString().toLowerCase();
+      if (
+        errorMsg.includes('429') ||
+        errorMsg.includes('rate limit') ||
+        errorMsg.includes('too many requests') ||
+        errorMsg.includes('quota exceeded')
+      ) {
+        console.warn('⚠️ Rate limit hit for email sending. User should retry later.');
+        return {
+          success: false,
+          error: {
+            ...error,
+            isRateLimit: true,
+            userMessage: 'Email service is temporarily busy. Please try again in a few minutes.',
+          },
+        };
+      }
+      
       return { success: false, error };
     }
 
@@ -253,6 +273,26 @@ export async function sendTutorRejectionEmail(
 
     if (error) {
       console.error('❌ Resend error:', error);
+      
+      // Check for rate limit errors
+      const errorMsg = error.message || error.toString().toLowerCase();
+      if (
+        errorMsg.includes('429') ||
+        errorMsg.includes('rate limit') ||
+        errorMsg.includes('too many requests') ||
+        errorMsg.includes('quota exceeded')
+      ) {
+        console.warn('⚠️ Rate limit hit for email sending. User should retry later.');
+        return {
+          success: false,
+          error: {
+            ...error,
+            isRateLimit: true,
+            userMessage: 'Email service is temporarily busy. Please try again in a few minutes.',
+          },
+        };
+      }
+      
       return { success: false, error };
     }
 
@@ -574,22 +614,82 @@ export async function sendCustomEmail(
     // Set reply-to to business email so replies go to info@prepskul.com
     const replyTo = process.env.RESEND_REPLY_TO || 'info@prepskul.com';
     
-    // Send email via Resend
-    const { data, error } = await resend.emails.send({
-      from: fromEmail,
-      to: tutorEmail,
-      replyTo: replyTo,
-      subject: subject,
-      html: body,
-    });
+    // Send email via Resend with retry logic for rate limits
+    let lastError: any = null;
+    const maxRetries = 3;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const { data, error } = await resend.emails.send({
+          from: fromEmail,
+          to: tutorEmail,
+          replyTo: replyTo,
+          subject: subject,
+          html: body,
+        });
 
-    if (error) {
-      console.error('❌ Resend error:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to send email',
-      };
+        if (error) {
+          lastError = error;
+          
+          // Check for rate limit errors
+          const errorMsg = error.message || error.toString().toLowerCase();
+          const isRateLimit = 
+            errorMsg.includes('429') ||
+            errorMsg.includes('rate limit') ||
+            errorMsg.includes('too many requests') ||
+            errorMsg.includes('quota exceeded');
+          
+          if (isRateLimit && attempt < maxRetries - 1) {
+            // Exponential backoff: 2s, 4s, 8s
+            const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+            console.warn(`⚠️ Rate limit hit, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue; // Retry
+          }
+          
+          // Non-rate-limit error or last attempt
+          console.error('❌ Resend error:', error);
+          return {
+            success: false,
+            error: isRateLimit
+              ? 'Email service is temporarily busy due to rate limits. Please try again in a few minutes.'
+              : (error.message || 'Failed to send email'),
+          };
+        }
+
+        // Success
+        console.log('✅ Custom email sent successfully:', data);
+        return { success: true };
+      } catch (error: any) {
+        lastError = error;
+        const errorMsg = error.message || error.toString().toLowerCase();
+        const isRateLimit = 
+          errorMsg.includes('429') ||
+          errorMsg.includes('rate limit') ||
+          errorMsg.includes('too many requests');
+        
+        if (isRateLimit && attempt < maxRetries - 1) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 8000);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // Last attempt or non-rate-limit error
+        console.error('❌ Error sending custom email:', error);
+        return {
+          success: false,
+          error: isRateLimit
+            ? 'Email service is temporarily busy. Please try again in a few minutes.'
+            : (error.message || 'Failed to send email'),
+        };
+      }
     }
+    
+    // Fallback (shouldn't reach here)
+    return {
+      success: false,
+      error: lastError?.message || 'Failed to send email after multiple attempts',
+    };
 
     console.log('✅ Custom email sent successfully:', data);
     return { success: true };

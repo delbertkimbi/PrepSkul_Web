@@ -37,10 +37,12 @@ export default async function AdminDashboard() {
     .select('*', { count: 'exact', head: true })
     .eq('user_type', 'tutor');
   
+  // Fix learner count - check for case variations and null values
   const { count: learnerCount } = await supabase
     .from('profiles')
     .select('*', { count: 'exact', head: true })
-    .eq('user_type', 'learner');
+    .or('user_type.eq.learner,user_type.eq.Learner,user_type.eq.LEARNER')
+    .not('user_type', 'is', null);
   
   const { count: parentCount } = await supabase
     .from('profiles')
@@ -212,6 +214,10 @@ export default async function AdminDashboard() {
             <a href="/admin/tutors?tab=pending" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-orange-500 transition">
               <h3 className="font-semibold text-gray-900">Pending Tutors</h3>
               <p className="text-sm text-gray-600 mt-1">Review tutor applications</p>
+            </a>
+            <a href="/admin/tutor-requests" className="bg-white p-6 rounded-lg border border-gray-200 hover:border-purple-500 transition">
+              <h3 className="font-semibold text-gray-900">Tutor Requests</h3>
+              <p className="text-sm text-gray-600 mt-1">Manage custom requests</p>
             </a>
           </div>
 

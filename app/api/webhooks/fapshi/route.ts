@@ -330,11 +330,62 @@ async function handleSessionPayment({
   supabase: any;
   transactionId: string;
   status: string;
-  sessionId: string;
+  sessionId: string; // This is the individual_session_id from externalId
   failureReason?: string;
 }) {
   try {
-    console.log(`📚 Processing session payment: ${sessionId}`);
+    console.log(`📚 Processing session payment for session: ${sessionId}`);
+
+    // First, try to find payment by transaction ID (most reliable)
+    let { data: payment, error: findError } = await supabase
+      .from('session_payments')
+      .select(`
+        id,
+        session_id,
+        tutor_earnings,
+        payment_status,
+        individual_sessions!inner(
+          tutor_id,
+          learner_id,
+          parent_id
+        )
+      `)
+      .eq('fapshi_trans_id', transactionId)
+      .maybeSingle();
+
+    // If not found by transaction ID, find by session_id
+    if (!payment && !findError) {
+      const result = await supabase
+        .from('session_payments')
+        .select(`
+          id,
+          session_id,
+          tutor_earnings,
+          payment_status,
+          individual_sessions!inner(
+            tutor_id,
+            learner_id,
+            parent_id
+          )
+        `)
+        .eq('session_id', sessionId)
+        .maybeSingle();
+      
+      payment = result.data;
+      findError = result.error;
+    }
+
+    if (findError) throw findError;
+    if (!payment) {
+      console.log(`⚠️ Session payment not found for session: \${sessionId} or transaction: \${transactionId}`);
+      return;
+    }
+
+    const paymentId = payment.id;
+    const tutorId = payment.individual_sessions.tutor_id;
+    const tutorEarnings = payment.tutor_earnings as number;
+    const learnerId = payment.individual_sessions.learner_id as string | null;
+    const parentId = payment.individual_sessions.parent_id as string | null;
 
     if (status === 'SUCCESS') {
       // Update session payment status
@@ -344,33 +395,128 @@ async function handleSessionPayment({
           payment_status: 'paid',
           fapshi_trans_id: transactionId,
           paid_at: new Date().toISOString(),
+          payment_confirmed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', sessionId);
+        .eq('id', paymentId);
 
       if (updateError) throw updateError;
 
       // Update tutor earnings status to 'active'
-      await supabase
+      const { error: earningsError } = await supabase
         .from('tutor_earnings')
         .update({
           earnings_status: 'active',
+          added_to_active_balance: true,
+          active_balance_added_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('session_payment_id', sessionId);
+        .eq('session_payment_id', paymentId);
 
-      console.log(`✅ Session payment confirmed: ${sessionId}`);
-    } else if (status === 'FAILED' || status === 'EXPIRED') {
-      // Payment failed
+      if (earningsError) {
+        console.error('⚠️ Error updating tutor earnings:', earningsError);
+        // Don't throw - continue with other updates
+      }
+
+      // Update session_payments to mark earnings added to wallet
       await supabase
         .from('session_payments')
         .update({
-          payment_status: 'unpaid',
+          earnings_added_to_wallet: true,
+          wallet_updated_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('id', sessionId);
+        .eq('id', paymentId);
 
-      console.log(`⚠️ Session payment failed: ${sessionId}`);
+      // Send notifications to tutor and student/parent
+      try {
+        // Notify tutor
+        await supabase.from('notifications').insert({
+          user_id: tutorId,
+          type: 'payment_confirmed',
+          notification_type: 'payment_confirmed',
+          title: '💰 Payment Received',
+          message: `Payment of \${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings are now available.`,
+          priority: 'normal',
+          action_url: '/earnings',
+          action_text: 'View Earnings',
+          icon: '💰',
+          metadata: {
+            session_id: sessionId,
+            payment_id: paymentId,
+            earnings: tutorEarnings,
+          },
+          is_read: false,
+        });
+
+        // Notify student/parent
+        const studentUserId = learnerId || parentId;
+        if (studentUserId) {
+          await supabase.from('notifications').insert({
+            user_id: studentUserId,
+            type: 'payment_confirmed',
+            notification_type: 'payment_confirmed',
+            title: '✅ Payment Confirmed',
+            message: 'Your session payment has been confirmed.',
+            priority: 'normal',
+            action_url: `/sessions/\${sessionId}`,
+            action_text: 'View Session',
+            icon: '✅',
+            metadata: {
+              session_id: sessionId,
+              payment_id: paymentId,
+              user_type: parentId ? 'parent' : 'student',
+            },
+            is_read: false,
+          });
+        }
+      } catch (notifError) {
+        console.error('⚠️ Error sending notifications:', notifError);
+        // Don't fail the webhook if notifications fail
+      }
+
+      console.log(`✅ Session payment confirmed: \${paymentId} for session: \${sessionId}`);
+    } else if (status === 'FAILED' || status === 'EXPIRED') {
+      // Payment failed
+      const { error: failError } = await supabase
+        .from('session_payments')
+        .update({
+          payment_status: 'failed',
+          payment_failed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', paymentId);
+
+      if (failError) throw failError;
+
+      // Send failure notification to student/parent
+      try {
+        const studentUserId = learnerId || parentId;
+        if (studentUserId) {
+          await supabase.from('notifications').insert({
+            user_id: studentUserId,
+            type: 'payment_failed',
+            notification_type: 'payment_failed',
+            title: '⚠️ Payment Failed',
+            message: `Your session payment failed.${failureReason ? ` Reason: ${failureReason}` : ''} Please try again.`,
+            priority: 'high',
+            action_url: `/sessions/\${sessionId}/payment`,
+            action_text: 'Retry Payment',
+            icon: '⚠️',
+            metadata: {
+              session_id: sessionId,
+              payment_id: paymentId,
+              failure_reason: failureReason,
+              user_type: parentId ? 'parent' : 'student',
+            },
+            is_read: false,
+          });
+        }
+      } catch (notifError) {
+        console.error('⚠️ Error sending failure notification:', notifError);
+      }
+
+      console.log(`⚠️ Session payment failed: \${paymentId} for session: \${sessionId}`);
     }
   } catch (error) {
     console.error('❌ Error handling session payment webhook:', error);

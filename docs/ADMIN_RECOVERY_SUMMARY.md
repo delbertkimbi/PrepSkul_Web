@@ -109,7 +109,7 @@
 
 ### **Environment Variables (`.env.local`)**
 ```bash
-RESEND_API_KEY=re_TR8La2Cz_NPaDo8YektBvwiM8URFSGYoe
+RESEND_API_KEY=your_resend_api_key_here
 RESEND_FROM_EMAIL=PrepSkul <noreply@mail.prepskul.com>
 ```
 
