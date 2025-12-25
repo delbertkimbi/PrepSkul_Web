@@ -7,9 +7,9 @@ import { sendCustomEmail } from '@/lib/notifications';
  * 
  * This endpoint processes scheduled notifications that are due to be sent.
  * 
- * ⚠️ VERCEL PLAN LIMITATIONS:
+ * VERCEL PLAN LIMITATIONS:
  * - Hobby Plan: Only runs once per day (schedule: "0 0 * * *")
- * - Pro Plan: Can run every 5 minutes (schedule: "*/5 * * * *")
+ * - Pro Plan: Can run every 5 minutes (schedule: every 5 minutes)
  * 
  * Current configuration (vercel.json):
  * - Schedule: "0 0 * * *" (runs once per day at midnight UTC)

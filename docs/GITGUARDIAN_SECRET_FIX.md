@@ -2,7 +2,7 @@
 
 ## 🚨 Issue
 
-GitGuardian detected an API key in git history: `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`
+GitGuardian detected an API key in git history: `sk-or-v1-[exposed-api-key-here]`
 
 **Status:** The secret has been removed from all current files, but it still exists in git history.
 
@@ -52,7 +52,7 @@ git push origin --force --tags
 cd PrepSkul_Web
 
 # Create a file with the secret to remove
-echo "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" > secrets.txt
+echo "sk-or-v1-[your-exposed-api-key]" > secrets.txt
 
 # Remove the secret
 bfg --replace-text secrets.txt
@@ -81,13 +81,13 @@ After removing from history:
 1. **Check GitGuardian** - The secret should no longer be detected
 2. **Verify current files** - Ensure no secrets in current codebase:
    ```bash
-   grep -r "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" PrepSkul_Web --exclude-dir=node_modules
+   grep -r "sk-or-v1-[your-exposed-api-key]" PrepSkul_Web --exclude-dir=node_modules
    ```
    Should return: **No matches found**
 
 3. **Check git history** (after cleanup):
    ```bash
-   git log --all --source -S "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"
+   git log --all --source -S "sk-or-v1-[your-exposed-api-key]"
    ```
    Should return: **No commits found**
 
