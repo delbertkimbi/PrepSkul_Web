@@ -7,6 +7,7 @@ import { extractPdf } from './extractPdf'
 import { extractDocx } from './extractDocx'
 import { extractImage } from './extractImage'
 import { extractText } from './extractText'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export interface ExtractedContent {
   text: string
@@ -80,11 +81,17 @@ export function detectFileType(buffer: Buffer, mimeType?: string): {
 
 /**
  * Extract text from any file type
+ * 
+ * @param buffer - File buffer to extract text from
+ * @param mimeType - MIME type of the file
+ * @param fileName - Optional file name
+ * @param supabaseClient - Optional Supabase client for image extraction (for skulMate, pass main Supabase admin client)
  */
 export async function extractFile(
   buffer: Buffer,
   mimeType?: string,
-  fileName?: string
+  fileName?: string,
+  supabaseClient?: SupabaseClient<any, 'public', any>
 ): Promise<ExtractedContent> {
   const fileInfo = detectFileType(buffer, mimeType)
 
@@ -106,7 +113,7 @@ export async function extractFile(
       }
 
     case 'image':
-      const imageResult = await extractImage(buffer, mimeType || `image/${fileInfo.extension}`)
+      const imageResult = await extractImage(buffer, mimeType || `image/${fileInfo.extension}`, true, supabaseClient)
       return {
         text: imageResult.text,
         method: imageResult.method,

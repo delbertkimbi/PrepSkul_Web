@@ -4,9 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { extractFile } from '@/lib/ticha/extract'
+import { extractFile } from '@/lib/skulmate/extract'
 import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
-import { getTichaServerSession } from '@/lib/ticha-supabase-server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 
@@ -145,7 +144,7 @@ interface GameData {
 
 /**
  * Generate game content using AI
- * Uses model fallback chain like ticha - tries cheaper models first
+ * Uses model fallback chain - tries cheaper models first
  */
 async function generateGameContent(
   text: string,
@@ -187,7 +186,7 @@ Return ONLY valid JSON in this format:
   }
 }`;
 
-  // Try multiple models - prioritize free/cheap models first (like ticha)
+  // Try multiple models - prioritize free/cheap models first
   const gameModels = [
     'qwen/qwen-2-7b-instruct',      // Free/cheap
     'qwen/qwen-2-14b-instruct',     // Slightly more expensive
@@ -296,11 +295,9 @@ export async function POST(request: NextRequest) {
   };
   
   logDebug('skulmate/generate/route.ts:POST', 'API route entry', {
-    hasNextPublicTichaUrl: !!process.env.NEXT_PUBLIC_TICHA_SUPABASE_URL,
     hasNextPublicSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasTichaServiceKey: !!process.env.TICHA_SUPABASE_SERVICE_KEY,
     hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    allSupabaseEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('TICHA')),
+    hasSkulMateApiKey: !!process.env.SKULMATE_OPENROUTER_API_KEY,
   });
   // #endregion
 
@@ -350,11 +347,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user session if available
+    // Get user session from main Supabase (not Ticha)
     let sessionUserId: string | undefined
     try {
-      const session = await getTichaServerSession()
-      sessionUserId = session?.user?.id
+      const supabase = await createServerSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      sessionUserId = user?.id
     } catch (error) {
       console.log('[skulMate] No session found, continuing without user')
     }
@@ -455,9 +453,10 @@ export async function POST(request: NextRequest) {
       // Extract text from file
       console.log('[skulMate] Step 2: Extracting text...')
       try {
+        // Extract using skulMate-specific extraction (uses ONLY main Supabase, not Ticha)
         const extractedContent = await extractFile(fileBuffer, mimeType)
         extractedText = extractedContent.text
-        console.log(`[skulMate] Extracted ${extractedText.length} characters`)
+        console.log(`[skulMate] Extracted ${extractedText.length} characters using ${extractedContent.method}`)
       } catch (error) {
         console.error('[skulMate] Failed to extract text:', error)
         return NextResponse.json(
