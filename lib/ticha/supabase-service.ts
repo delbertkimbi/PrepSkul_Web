@@ -6,12 +6,59 @@
 
 import { createClient } from '@supabase/supabase-js'
 
+// #region agent log
+const logDebug = (location: string, message: string, data: any) => {
+  fetch('http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+      sessionId: 'debug-session',
+      runId: 'run1',
+    }),
+  }).catch(() => {});
+};
+// #endregion
+
 const tichaSupabaseUrl = process.env.NEXT_PUBLIC_TICHA_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 const tichaSupabaseServiceKey = process.env.TICHA_SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
+// #region agent log
+logDebug('supabase-service.ts:10', 'Module load - env vars check', {
+  hasNextPublicTichaUrl: !!process.env.NEXT_PUBLIC_TICHA_SUPABASE_URL,
+  hasNextPublicSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+  hasTichaServiceKey: !!process.env.TICHA_SUPABASE_SERVICE_KEY,
+  hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  tichaUrlLength: tichaSupabaseUrl?.length || 0,
+  serviceKeyLength: tichaSupabaseServiceKey?.length || 0,
+  tichaUrlPrefix: tichaSupabaseUrl?.substring(0, 20) || 'null',
+});
+// #endregion
+
 // Don't throw at module load - check in functions instead
 function validateCredentials() {
+  // #region agent log
+  logDebug('supabase-service.ts:validateCredentials', 'validateCredentials called', {
+    hasTichaUrl: !!tichaSupabaseUrl,
+    hasServiceKey: !!tichaSupabaseServiceKey,
+    tichaUrlLength: tichaSupabaseUrl?.length || 0,
+    serviceKeyLength: tichaSupabaseServiceKey?.length || 0,
+    tichaUrlPrefix: tichaSupabaseUrl?.substring(0, 30) || 'null',
+    serviceKeyPrefix: tichaSupabaseServiceKey?.substring(0, 20) || 'null',
+  });
+  // #endregion
+  
   if (!tichaSupabaseUrl || !tichaSupabaseServiceKey) {
+    // #region agent log
+    logDebug('supabase-service.ts:validateCredentials', 'Validation failed', {
+      missingUrl: !tichaSupabaseUrl,
+      missingKey: !tichaSupabaseServiceKey,
+      allEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('TICHA')),
+    });
+    // #endregion
     throw new Error('Missing Tichar AI Supabase credentials. Please set NEXT_PUBLIC_TICHA_SUPABASE_URL and TICHA_SUPABASE_SERVICE_KEY environment variables.')
   }
 }

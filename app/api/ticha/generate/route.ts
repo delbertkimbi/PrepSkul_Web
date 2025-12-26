@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
         .from('ticha_presentations')
         .insert(insertData)
         .select('id')
-        .single()
+        .maybeSingle()
 
       if (dbError) {
         console.warn(`[Generate] Failed to create DB record:`, dbError)
@@ -281,7 +281,7 @@ export async function POST(request: NextRequest) {
               user_id: null,
             })
             .select('id')
-            .single()
+            .maybeSingle()
           
           if (!retryError && retryData) {
             presentationData.id = retryData.id

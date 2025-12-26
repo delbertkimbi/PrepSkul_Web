@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       .from('ticha_presentations')
       .select('*')
       .eq('id', presentationId)
-      .single()
+      .maybeSingle()
 
     if (fetchError || !presentation) {
       return NextResponse.json(

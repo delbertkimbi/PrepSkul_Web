@@ -42,7 +42,7 @@ export default function EditorPage() {
           .from('ticha_presentations')
           .select('*')
           .eq('id', presentationId)
-          .single()
+          .maybeSingle()
 
         if (fetchError || !data) {
           throw new Error('Presentation not found')

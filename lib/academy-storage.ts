@@ -200,7 +200,7 @@ export async function markSectionVideoWatched(levelId: AcademyLevelId, moduleId:
 			.eq('user_id', userId)
 			.eq('level_id', levelId)
 			.eq('module_id', moduleId)
-			.single();
+			.maybeSingle();
 
 		const watchedSections = new Set(existing?.watched_sections || []);
 		watchedSections.add(sectionId);
@@ -349,7 +349,7 @@ export async function updateSectionProgress(levelId: AcademyLevelId, moduleId: s
 			.eq('user_id', userId)
 			.eq('level_id', levelId)
 			.eq('module_id', moduleId)
-			.single();
+			.maybeSingle();
 
 		const sectionProgress: Record<string, number> = (existing?.section_progress as Record<string, number>) || {};
 		sectionProgress[sectionId] = progress;

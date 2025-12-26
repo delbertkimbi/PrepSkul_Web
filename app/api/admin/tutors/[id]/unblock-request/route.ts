@@ -24,7 +24,7 @@ export async function POST(
       .from('tutor_profiles')
       .select('user_id, status')
       .eq('id', params.id)
-      .single();
+      .maybeSingle();
 
     if (tutorError || !tutorProfile) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function POST(
         created_at: new Date().toISOString(),
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (requestError) {
       console.error('Error creating unblock request:', requestError);

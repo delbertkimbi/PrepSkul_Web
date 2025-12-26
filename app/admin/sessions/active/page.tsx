@@ -75,14 +75,14 @@ export default async function ActiveSessionsPage() {
           .from('profiles')
           .select('full_name, email, phone_number')
           .eq('id', session.tutor_id)
-          .single();
+          .maybeSingle();
 
         const learnerId = session.learner_id || session.parent_id;
         const { data: learnerProfile } = await supabase
           .from('profiles')
           .select('full_name, email, phone_number')
           .eq('id', learnerId)
-          .single();
+          .maybeSingle();
 
         // Calculate progress and time remaining
         const startDateTime = new Date(`${session.scheduled_date}T${session.scheduled_time}`);
@@ -114,14 +114,14 @@ export default async function ActiveSessionsPage() {
           .from('profiles')
           .select('full_name, email')
           .eq('id', session.tutor_id)
-          .single();
+          .maybeSingle();
 
         const learnerId = session.learner_id || session.parent_id;
         const { data: learnerProfile } = await supabase
           .from('profiles')
           .select('full_name, email')
           .eq('id', learnerId)
-          .single();
+          .maybeSingle();
 
         // Calculate minutes until start
         const startDateTime = new Date(`${session.scheduled_date}T${session.scheduled_time}`);

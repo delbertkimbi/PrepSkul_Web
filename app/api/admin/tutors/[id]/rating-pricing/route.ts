@@ -157,7 +157,7 @@ export async function POST(
       .update(updateData)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error updating tutor rating/pricing:', error);

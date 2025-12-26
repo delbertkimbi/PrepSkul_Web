@@ -37,7 +37,7 @@ export async function createPaymentNotification({
         .from('trial_sessions')
         .select('learner_id, tutor_id, subject, meet_link')
         .eq('id', trialSessionId)
-        .single();
+        .maybeSingle();
 
       if (trial) {
         // Notify learner
@@ -78,7 +78,7 @@ export async function createPaymentNotification({
         .from('trial_sessions')
         .select('learner_id, subject')
         .eq('id', trialSessionId)
-        .single();
+        .maybeSingle();
 
       if (trial) {
         await supabase.from('notifications').insert({

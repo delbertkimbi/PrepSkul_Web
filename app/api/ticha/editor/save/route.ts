@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       .from('ticha_presentations')
       .select('user_id, refinement_history')
       .eq('id', presentationId)
-      .single()
+      .maybeSingle()
 
     if (fetchError || !existing) {
       return NextResponse.json(

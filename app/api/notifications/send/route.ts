@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       .from('notifications')
       .insert(notificationData)
       .select()
-      .single();
+      .maybeSingle();
 
     if (notifError) {
       console.error('Error creating in-app notification:', notifError);

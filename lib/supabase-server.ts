@@ -38,7 +38,7 @@ export async function isAdmin(userId: string) {
     .from('profiles')
     .select('is_admin')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
   
   return data?.is_admin === true;
 }
