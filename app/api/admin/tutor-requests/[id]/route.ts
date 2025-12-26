@@ -39,7 +39,7 @@ export async function PATCH(
       .update(updateData)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error updating tutor request:', error);

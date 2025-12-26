@@ -203,3 +203,5 @@ NEXT_PUBLIC_TICHA_SUPABASE_ANON_KEY=...
 
 **Need help?** Check Vercel docs: https://vercel.com/docs/concepts/projects/environment-variables
 
+
+

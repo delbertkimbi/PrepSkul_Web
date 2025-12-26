@@ -6,23 +6,107 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { extractFile } from '@/lib/ticha/extract'
 import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
-import {
-  downloadFileFromStorage,
-  tichaSupabaseAdmin,
-} from '@/lib/ticha/supabase-service'
 import { getTichaServerSession } from '@/lib/ticha-supabase-server'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { createClient } from '@supabase/supabase-js'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
 
 /**
+ * Download file from Supabase Storage using the signed/public URL
+ * This avoids needing service role key - we just fetch the file via HTTP
+ */
+async function downloadFileFromUrl(fileUrl: string): Promise<Buffer> {
+  // #region agent log
+  const logDebug = (location: string, message: string, data: any) => {
+    fetch('http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location,
+        message,
+        data,
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+      }),
+    }).catch(() => {});
+  };
+  
+  logDebug('skulmate/generate:downloadFileFromUrl', 'Starting download', {
+    fileUrlLength: fileUrl.length,
+    fileUrlPrefix: fileUrl.substring(0, 100),
+    isSignedUrl: fileUrl.includes('token='),
+    isPublicUrl: fileUrl.includes('/public/'),
+  });
+  // #endregion
+  
+  console.log(`[skulMate Storage] Downloading file from URL: ${fileUrl.substring(0, 100)}...`)
+  
+  try {
+    // #region agent log
+    logDebug('skulmate/generate:downloadFileFromUrl', 'Before fetch', {
+      url: fileUrl.substring(0, 150),
+    });
+    // #endregion
+    
+    const response = await fetch(fileUrl)
+    
+    // #region agent log
+    logDebug('skulmate/generate:downloadFileFromUrl', 'Fetch response received', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      contentType: response.headers.get('content-type'),
+      contentLength: response.headers.get('content-length'),
+    });
+    // #endregion
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Could not read error response')
+      // #region agent log
+      logDebug('skulmate/generate:downloadFileFromUrl', 'Fetch failed', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 200),
+      });
+      // #endregion
+      throw new Error(`Failed to download file: HTTP ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`)
+    }
+    
+    const arrayBuffer = await response.arrayBuffer()
+    
+    // #region agent log
+    logDebug('skulmate/generate:downloadFileFromUrl', 'Download succeeded', {
+      bufferSize: arrayBuffer.byteLength,
+    });
+    // #endregion
+    
+    return Buffer.from(arrayBuffer)
+  } catch (error) {
+    // #region agent log
+    logDebug('skulmate/generate:downloadFileFromUrl', 'Download error caught', {
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      errorMessage: error instanceof Error ? error.message : String(error),
+      errorStack: error instanceof Error ? error.stack?.substring(0, 300) : undefined,
+    });
+    // #endregion
+    
+    console.error(`[skulMate Storage] Download error:`, error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to download file from URL: ${errorMessage}`)
+  }
+}
+
+/**
  * Get skulMate OpenRouter API key
+ * Falls back to OPENROUTER_API_KEY if SKULMATE_OPENROUTER_API_KEY is not set
  */
 function getSkulMateApiKey(): string {
-  const key = process.env.SKULMATE_OPENROUTER_API_KEY
+  const key = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
   if (!key) {
-    throw new Error('Missing SKULMATE_OPENROUTER_API_KEY environment variable')
+    throw new Error('Missing SKULMATE_OPENROUTER_API_KEY or OPENROUTER_API_KEY environment variable')
   }
   return key
 }
@@ -61,6 +145,7 @@ interface GameData {
 
 /**
  * Generate game content using AI
+ * Uses model fallback chain like ticha - tries cheaper models first
  */
 async function generateGameContent(
   text: string,
@@ -102,54 +187,89 @@ Return ONLY valid JSON in this format:
   }
 }`;
 
-  try {
-    // Use skulMate-specific API key for usage tracking
-    const skulMateApiKey = getSkulMateApiKey()
-    const response = await callOpenRouterWithKey(skulMateApiKey, {
-      model: 'openai/gpt-4o-mini', // Using cheaper model for games
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-    })
+  // Try multiple models - prioritize free/cheap models first (like ticha)
+  const gameModels = [
+    'qwen/qwen-2-7b-instruct',      // Free/cheap
+    'qwen/qwen-2-14b-instruct',     // Slightly more expensive
+    'meta-llama/llama-3.2-3b-instruct', // Free tier
+    'mistralai/mistral-7b-instruct', // Cheap
+    'google/gemini-flash-1.5',       // Google model
+    'openai/gpt-4o-mini',            // OpenAI (fallback)
+  ]
 
-    if (!response.choices || response.choices.length === 0) {
-      throw new Error('No response from AI')
-    }
+  const skulMateApiKey = getSkulMateApiKey()
+  let response
+  let lastError: Error | null = null
 
-    const content = response.choices[0].message?.content || ''
-    
-    // Extract JSON from response (handle markdown code blocks)
-    let jsonContent = content.trim()
-    if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/^```json\n?/, '').replace(/\n?```$/, '')
+  for (const model of gameModels) {
+    try {
+      console.log(`[skulMate] Trying model: ${model}`)
+      response = await callOpenRouterWithKey(skulMateApiKey, {
+        model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+        response_format: { type: 'json_object' }, // Request JSON format
+      })
+      console.log(`[skulMate] Success with model: ${model}`)
+      break
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error))
+      console.warn(`[skulMate] Model ${model} failed:`, lastError.message)
+      
+      // If it's a credits error, stop trying (all will fail)
+      if (lastError.message.includes('402') || lastError.message.includes('credits')) {
+        throw new Error('OpenRouter credits required. Please purchase credits at https://openrouter.ai/settings/credits')
+      }
+      continue
     }
-    if (jsonContent.startsWith('```')) {
-      jsonContent = jsonContent.replace(/^```\n?/, '').replace(/\n?```$/, '')
-    }
-
-    const gameData: GameData = JSON.parse(jsonContent)
-    
-    // Validate game data
-    if (!gameData.gameType || !gameData.items || gameData.items.length === 0) {
-      throw new Error('Invalid game data structure')
-    }
-
-    // Add metadata
-    gameData.metadata = {
-      ...gameData.metadata,
-      source: 'document',
-      generatedAt: new Date().toISOString(),
-      totalItems: gameData.items.length,
-    }
-
-    return gameData
-  } catch (error) {
-    console.error('[skulMate] AI generation error:', error)
-    throw new Error(`Failed to generate game: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
+
+  if (!response) {
+    throw new Error(`Failed to generate game. All models failed. Last error: ${lastError?.message || 'Unknown error'}`)
+  }
+
+  if (!response.choices || response.choices.length === 0) {
+    throw new Error('No response from AI')
+  }
+
+  const content = response.choices[0].message?.content || ''
+  
+  // Extract JSON from response (handle markdown code blocks)
+  let jsonContent = content.trim()
+  if (jsonContent.startsWith('```')) {
+    jsonContent = jsonContent.replace(/^```json\n?/, '').replace(/\n?```$/, '')
+  }
+  if (jsonContent.startsWith('```')) {
+    jsonContent = jsonContent.replace(/^```\n?/, '').replace(/\n?```$/, '')
+  }
+
+  let gameData: GameData
+  try {
+    gameData = JSON.parse(jsonContent)
+  } catch (parseError) {
+    console.error('[skulMate] JSON parse error:', parseError)
+    console.error('[skulMate] Raw content:', jsonContent.substring(0, 500))
+    throw new Error(`Failed to parse game data: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`)
+  }
+  
+  // Validate game data
+  if (!gameData.gameType || !gameData.items || gameData.items.length === 0) {
+    throw new Error('Invalid game data structure')
+  }
+
+  // Add metadata
+  gameData.metadata = {
+    ...gameData.metadata,
+    source: 'document',
+    generatedAt: new Date().toISOString(),
+    totalItems: gameData.items.length,
+  }
+
+  return gameData
 }
 
 /**
@@ -159,6 +279,58 @@ Return ONLY valid JSON in this format:
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
+  // #region agent log
+  const logDebug = (location: string, message: string, data: any) => {
+    fetch('http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        location,
+        message,
+        data,
+        timestamp: Date.now(),
+        sessionId: 'debug-session',
+        runId: 'run1',
+      }),
+    }).catch(() => {});
+  };
+  
+  logDebug('skulmate/generate/route.ts:POST', 'API route entry', {
+    hasNextPublicTichaUrl: !!process.env.NEXT_PUBLIC_TICHA_SUPABASE_URL,
+    hasNextPublicSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasTichaServiceKey: !!process.env.TICHA_SUPABASE_SERVICE_KEY,
+    hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    allSupabaseEnvVars: Object.keys(process.env).filter(k => k.includes('SUPABASE') || k.includes('TICHA')),
+  });
+  // #endregion
+
+  // Handle CORS for Flutter Web
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+  
+  console.log('[skulMate] POST request received')
+  console.log('[skulMate] Origin:', origin || 'none')
+  console.log('[skulMate] Referer:', referer || 'none')
+  console.log('[skulMate] User-Agent:', request.headers.get('user-agent') || 'none')
+  
+  // CORS headers - when using credentials, must specify exact origin (not *)
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
+  }
+  
+  // Set origin - if credentials are needed, use specific origin; otherwise allow all
+  if (origin) {
+    corsHeaders['Access-Control-Allow-Origin'] = origin
+    corsHeaders['Access-Control-Allow-Credentials'] = 'true'
+    console.log('[skulMate] CORS: Allowing origin with credentials:', origin)
+  } else {
+    // No origin header (e.g., same-origin request) - allow all
+    corsHeaders['Access-Control-Allow-Origin'] = '*'
+    console.log('[skulMate] CORS: No origin header, allowing all origins')
+  }
+
   try {
     // Parse request
     const body: GenerateRequest = await request.json()
@@ -167,14 +339,14 @@ export async function POST(request: NextRequest) {
     if (!fileUrl && !text) {
       return NextResponse.json(
         { error: 'Either fileUrl or text is required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
     if (text && text.trim().length < 50) {
       return NextResponse.json(
         { error: 'Text must be at least 50 characters long' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -221,7 +393,7 @@ export async function POST(request: NextRequest) {
           } else {
             return NextResponse.json(
               { error: 'Invalid fileUrl format. Expected Supabase Storage URL.' },
-              { status: 400 }
+              { status: 400, headers: corsHeaders }
             )
           }
         }
@@ -229,33 +401,54 @@ export async function POST(request: NextRequest) {
 
       console.log(`[skulMate] Extracted bucket: ${bucket}, path: ${filePath}`)
 
-      // Download file from Storage
+      // Download file from Storage using the URL directly (no service role key needed)
       let fileBuffer: Buffer
       let mimeType: string
 
       try {
-        fileBuffer = await downloadFileFromStorage(bucket, filePath)
+        // #region agent log
+        logDebug('skulmate/generate/route.ts:download', 'Before downloadFileFromUrl', {
+          fileUrl: fileUrl.substring(0, 100),
+          bucket,
+          filePath,
+        });
+        // #endregion
+        
+        // Download file directly from the signed/public URL (uses main Supabase, not Ticha)
+        // This avoids needing service role key - the URL already has access token
+        fileBuffer = await downloadFileFromUrl(fileUrl)
+        
+        // #region agent log
+        logDebug('skulmate/generate/route.ts:download', 'downloadFileFromUrl succeeded', {
+          bufferSize: fileBuffer.length,
+        });
+        // #endregion
 
-        const { data: fileData } = await tichaSupabaseAdmin.storage
-          .from(bucket)
-          .list(filePath.split('/').slice(0, -1).join('/'), {
-            limit: 1,
-            search: filePath.split('/').pop() || '',
-          })
-
-        mimeType = fileData?.[0]?.metadata?.mimetype || 'application/octet-stream'
+        // Determine MIME type from file extension or URL
+        const urlLower = fileUrl.toLowerCase()
+        if (urlLower.includes('.pdf')) {
+          mimeType = 'application/pdf'
+        } else if (urlLower.includes('.png')) {
+          mimeType = 'image/png'
+        } else if (urlLower.includes('.jpg') || urlLower.includes('.jpeg')) {
+          mimeType = 'image/jpeg'
+        } else if (urlLower.includes('.docx')) {
+          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        } else {
+          mimeType = 'application/octet-stream'
+        }
 
         if (fileBuffer.length > MAX_FILE_SIZE) {
           return NextResponse.json(
             { error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
-            { status: 400 }
+            { status: 400, headers: corsHeaders }
           )
         }
       } catch (error) {
         console.error('[skulMate] Failed to download file:', error)
         return NextResponse.json(
           { error: `Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}` },
-          { status: 500 }
+          { status: 500, headers: corsHeaders }
         )
       }
 
@@ -269,14 +462,14 @@ export async function POST(request: NextRequest) {
         console.error('[skulMate] Failed to extract text:', error)
         return NextResponse.json(
           { error: `Failed to extract text: ${error instanceof Error ? error.message : 'Unsupported file type'}` },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         )
       }
 
       if (!extractedText || extractedText.trim().length < 50) {
         return NextResponse.json(
           { error: 'Extracted text is too short. Please ensure the file contains readable text.' },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         )
       }
     }
@@ -303,7 +496,7 @@ export async function POST(request: NextRequest) {
             source_type: fileUrl ? (fileUrl.endsWith('.pdf') ? 'pdf' : 'image') : 'text',
           })
           .select()
-          .single()
+          .maybeSingle()
 
         if (gameError) {
           console.error('[skulMate] Failed to save game:', gameError)
@@ -336,7 +529,7 @@ export async function POST(request: NextRequest) {
         ...gameData,
       },
       processingTime,
-    })
+    }, { headers: corsHeaders })
   } catch (error: any) {
     console.error('[skulMate] Error:', error)
     
@@ -344,14 +537,54 @@ export async function POST(request: NextRequest) {
     if (error.message?.includes('402') || error.message?.includes('credits') || error.message?.includes('Insufficient credits')) {
       return NextResponse.json(
         { error: 'OpenRouter credits required. Please purchase credits at https://openrouter.ai/settings/credits to generate games. Minimum $10 recommended for testing.' },
-        { status: 402 }
+        { status: 402, headers: corsHeaders }
       )
     }
 
     return NextResponse.json(
       { error: error.message || 'Failed to generate game' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     )
   }
+}
+
+/**
+ * OPTIONS /api/skulmate/generate
+ * Handle CORS preflight requests
+ */
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin')
+  const requestedMethod = request.headers.get('access-control-request-method')
+  const requestedHeaders = request.headers.get('access-control-request-headers')
+  
+  console.log('[skulMate] OPTIONS preflight request received')
+  console.log('[skulMate] Origin:', origin || 'none')
+  console.log('[skulMate] Requested method:', requestedMethod || 'none')
+  console.log('[skulMate] Requested headers:', requestedHeaders || 'none')
+  
+  // CORS headers - when using credentials, must specify exact origin (not *)
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS, GET',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
+  }
+  
+  // Set origin - if credentials are needed, use specific origin; otherwise allow all
+  if (origin) {
+    corsHeaders['Access-Control-Allow-Origin'] = origin
+    corsHeaders['Access-Control-Allow-Credentials'] = 'true'
+    console.log('[skulMate] CORS preflight: Allowing origin with credentials:', origin)
+  } else {
+    // No origin header (e.g., same-origin request) - allow all
+    corsHeaders['Access-Control-Allow-Origin'] = '*'
+    console.log('[skulMate] CORS preflight: No origin header, allowing all origins')
+  }
+  
+  console.log('[skulMate] CORS headers:', corsHeaders)
+  
+  return new NextResponse(null, { 
+    status: 204,
+    headers: corsHeaders 
+  })
 }
 

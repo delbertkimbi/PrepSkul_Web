@@ -41,7 +41,7 @@ export async function POST(
       .from('tutor_unblock_requests')
       .select('*, tutor_profiles!inner(id, user_id, status)')
       .eq('id', params.requestId)
-      .single();
+      .maybeSingle();
 
     if (requestError || !requestRecord) {
       return NextResponse.json(

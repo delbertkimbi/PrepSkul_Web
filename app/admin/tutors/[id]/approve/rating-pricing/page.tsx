@@ -22,7 +22,7 @@ export default async function RatingPricingPage({
     .from('tutor_profiles')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (!tutor) {
     return (

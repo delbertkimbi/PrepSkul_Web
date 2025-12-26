@@ -34,7 +34,7 @@ export default function TichaDashboardPage() {
         .from("ticha_users")
         .select("*")
         .eq("id", user.id)
-        .single()
+        .maybeSingle()
 
       setUserProfile(profile)
 

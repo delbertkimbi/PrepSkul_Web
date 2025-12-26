@@ -367,3 +367,5 @@ await logEmailAttempt(emailLog);
 - **Supabase SMTP Settings:** https://app.supabase.com → Authentication → SMTP
 - **Resend Domain Setup:** https://resend.com/domains
 
+
+

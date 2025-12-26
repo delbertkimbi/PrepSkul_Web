@@ -272,7 +272,7 @@ async function findSessionByFathomData({
               .from('profiles')
               .select('email')
               .eq('id', session.learner_id || session.parent_id)
-              .single();
+              .maybeSingle();
             
             const studentEmail = learnerProfile?.email;
             
@@ -333,7 +333,7 @@ async function storeTranscriptAndSummary({
         onConflict: 'session_id,session_type',
       })
       .select('id')
-      .single();
+      .maybeSingle();
 
     if (transcriptError) throw transcriptError;
 
@@ -422,7 +422,7 @@ async function detectAndUpdateStudentAttendance({
           scheduled_time
         `)
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (!trialSession) {
         console.log(`⚠️ Trial session not found: ${sessionId}`);
@@ -446,7 +446,7 @@ async function detectAndUpdateStudentAttendance({
           scheduled_time
         `)
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (!individualSession) {
         console.log(`⚠️ Individual session not found: ${sessionId}`);
@@ -467,7 +467,7 @@ async function detectAndUpdateStudentAttendance({
           .from('profiles')
           .select('email')
           .eq('id', learnerId)
-          .single()
+          .maybeSingle()
           .then(({ data }: any) => ({ type: 'learner', id: learnerId, email: data?.email }))
       );
     }
@@ -477,7 +477,7 @@ async function detectAndUpdateStudentAttendance({
           .from('profiles')
           .select('email')
           .eq('id', parentId)
-          .single()
+          .maybeSingle()
           .then(({ data }: any) => ({ type: 'parent', id: parentId, email: data?.email }))
       );
     }
@@ -511,7 +511,7 @@ async function detectAndUpdateStudentAttendance({
         .from('individual_sessions')
         .select('id, learner_joined_at')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (existingSession && !existingSession.learner_joined_at) {
         // Update learner_joined_at for the first joined student

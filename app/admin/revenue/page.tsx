@@ -63,7 +63,7 @@ export default async function RevenuePage() {
           .from('profiles')
           .select('full_name, email')
           .eq('id', payment.payer_id)
-          .single();
+          .maybeSingle();
 
         let sessionInfo = null;
         if (payment.session_id) {
@@ -141,7 +141,7 @@ export default async function RevenuePage() {
       .from('profiles')
       .select('full_name')
       .eq('id', tutorId)
-      .single();
+      .maybeSingle();
 
     topTutorsWithNames.push({
       tutorId,

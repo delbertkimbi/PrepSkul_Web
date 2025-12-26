@@ -26,7 +26,7 @@ export async function POST(
       })
       .eq('id', params.id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('❌ Error resolving flag:', error);

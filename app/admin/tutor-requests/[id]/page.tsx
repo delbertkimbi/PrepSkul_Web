@@ -36,7 +36,7 @@ export default async function TutorRequestDetailPage({ params }: PageProps) {
     .from('tutor_requests')
     .select('*')
     .eq('id', id)
-    .single();
+    .maybeSingle();
 
   if (requestError || !request) {
     return (

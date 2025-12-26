@@ -165,9 +165,10 @@ async function handleTrialSessionPayment({
           .from('trial_sessions')
           .select('location, tutor_id, learner_id, scheduled_date, scheduled_time, duration_minutes, subject')
           .eq('id', trialSessionId)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
+        if (!trial) throw new Error(`Trial session not found: ${trialSessionId}`);
 
         if (trial && trial.location === 'online') {
           // Generate Meet link
@@ -264,7 +265,7 @@ async function handlePaymentRequestPayment({
         .from('payment_requests')
         .select('booking_request_id, student_id, tutor_id, amount')
         .eq('id', paymentRequestId)
-        .single();
+        .maybeSingle();
 
       if (!fetchError && paymentRequest) {
         // Send success notifications
@@ -297,7 +298,7 @@ async function handlePaymentRequestPayment({
         .from('payment_requests')
         .select('student_id')
         .eq('id', paymentRequestId)
-        .single();
+        .maybeSingle();
 
       if (paymentRequest) {
         await createPaymentNotification({

@@ -28,7 +28,7 @@ export const saveCertificateData = async (data: Omit<CertificateData, 'id'>) => 
     .from('certificates')
     .insert([{ ...data, id }])
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) {
     throw new Error('Failed to save certificate data');
@@ -42,7 +42,7 @@ export const getCertificate = async (userId: string, levelId: string) => {
     .from('certificates')
     .select('*')
     .match({ userId, levelId })
-    .single();
+    .maybeSingle();
 
   if (error) {
     return null;

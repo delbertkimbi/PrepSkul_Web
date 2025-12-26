@@ -242,3 +242,5 @@ curl https://www.prepskul.com/api/cron/process-scheduled-notifications \
 
 Your cron job is now set up and will run every 5 minutes (or your chosen interval) to process scheduled notifications!
 
+
+

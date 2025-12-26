@@ -60,7 +60,7 @@ export async function createAssignmentsFromActionItems({
           created_at: new Date().toISOString(),
         })
         .select('id')
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error(`⚠️ Error creating assignment: ${error.message}`);

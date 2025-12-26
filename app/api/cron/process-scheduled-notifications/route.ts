@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
           .from('notifications')
           .insert(notificationData)
           .select()
-          .single();
+          .maybeSingle();
 
         if (notifError) {
           throw new Error(`Failed to create in-app notification: ${notifError.message}`);

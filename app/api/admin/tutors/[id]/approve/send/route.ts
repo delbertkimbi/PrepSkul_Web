@@ -38,7 +38,7 @@ export async function POST(
       .from('tutor_profiles')
       .select('user_id, admin_approved_rating, base_session_price, pricing_tier')
       .eq('id', id)
-      .single();
+      .maybeSingle();
 
     if (!tutor) {
       return NextResponse.json({ error: 'Tutor not found' }, { status: 404 });
