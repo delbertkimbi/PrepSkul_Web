@@ -231,16 +231,3 @@ export default async function AdminDashboard() {
     </div>
   );
 }
-
-
-      </main>
-    </div>
-  );
-}
-
-
-      </main>
-    </div>
-  );
-}
-

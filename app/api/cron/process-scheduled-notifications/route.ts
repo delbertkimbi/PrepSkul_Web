@@ -202,11 +202,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-
-
-
-import { sendCustomEmail } from '@/lib/notifications';
-
 /**
  * Process Scheduled Notifications Cron Job
  * 

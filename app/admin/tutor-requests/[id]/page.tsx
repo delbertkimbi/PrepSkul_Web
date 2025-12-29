@@ -162,11 +162,6 @@ export default async function TutorRequestDetailPage({ params }: PageProps) {
   );
 }
 
-
-
-
-import AdminNav from '../../components/AdminNav';
-import Link from 'next/link';
 import TutorMatchingClient from './TutorMatchingClient';
 
 interface PageProps {
