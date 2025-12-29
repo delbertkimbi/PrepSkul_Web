@@ -8,6 +8,7 @@ import { extractFile } from '@/lib/skulmate/extract'
 import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import { extractEntities } from '../extract-entities/route'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
@@ -143,17 +144,47 @@ interface GameData {
 }
 
 /**
- * Generate game content using AI
- * Uses model fallback chain - tries cheaper models first
+ * Generate game content using AI with multi-model pipeline
+ * 1. Extract entities (cheaper model) - done before calling this
+ * 2. Generate game content (creative model) - this function
+ * 3. Validate logic (reasoning model - optional)
  */
 async function generateGameContent(
   text: string,
   gameType: string,
   difficulty: 'easy' | 'medium' | 'hard' = 'medium',
   topic?: string,
-  numQuestions?: number
+  numQuestions?: number,
+  extractedEntities?: { entities: any[], relationships: any[], conflicts: any[], progression: any[] }
 ): Promise<GameData> {
+  // Build world context from extracted entities
+  let worldContext = ''
+  if (extractedEntities) {
+    const entitiesList = extractedEntities.entities.map(e => `- ${e.name} (${e.type}): ${e.context}`).join('\n')
+    const relationshipsList = extractedEntities.relationships.map(r => `- ${r.from} ${r.type} ${r.to}`).join('\n')
+    const conflictsList = extractedEntities.conflicts.map(c => `- ${c.entity}: ${c.issue} → ${c.consequence}`).join('\n')
+    
+    worldContext = `\n\nWORLD-BUILDING CONTEXT (from content analysis):
+ENTITIES:
+${entitiesList}
+
+RELATIONSHIPS:
+${relationshipsList}
+
+POTENTIAL CONFLICTS/MISCONCEPTIONS:
+${conflictsList}
+
+Use these entities, relationships, and conflicts to build an immersive game world. Think: "Notes → World → Gameplay", not "Notes → Questions → Answers".
+Wrong understanding should lead to consequences, not just "incorrect" feedback.`
+  }
+
   const systemPrompt = `You are a creative educational game designer. Transform learning content into FUN, engaging, and interactive games that make learning addictive and enjoyable.
+
+MENTAL MODEL: Notes → World → Gameplay
+- Don't just create questions and answers
+- Build a world with entities, relationships, conflicts, and progression
+- Make decisions matter - wrong understanding leads to consequences, not just "wrong"
+- Create immersive experiences, not tests${worldContext}
 
 CRITICAL RULES - READ CAREFULLY:
 1. You MUST use ONLY the content provided by the user - do NOT generate generic or made-up content
@@ -168,11 +199,17 @@ CRITICAL RULES - READ CAREFULLY:
 
 CONTENT ANALYSIS:
 Before generating games, analyze the content type:
-- **Diagrams** (biology, physics, anatomy): Focus on visual relationships, parts labeling, processes
-- **Formulas** (math, physics, chemistry): Create formula-based questions, variable matching, application scenarios
+- **Diagrams** (biology, physics, anatomy): Focus on visual relationships, parts labeling, processes. These often need images - add `needsImage: true` and `imagePrompt: "description of what to visualize"` to relevant items.
+- **Formulas** (math, physics, chemistry): Create formula-based questions, variable matching, application scenarios. Complex formulas may need visual representation.
 - **Tables** (data, comparisons, classifications): Use matching, categorization, data interpretation
 - **Graphs** (charts, trends, relationships): Focus on interpretation, pattern recognition, predictions
-- **Text** (notes, definitions, concepts): Standard quiz/flashcard/matching games
+- **Text** (notes, definitions, concepts): Standard quiz/flashcard/matching games. Concepts that benefit from visual explanation should have `needsImage: true`.
+
+IMAGE GENERATION GUIDELINES:
+- For diagram_label games: Always add `needsImage: true` and `imagePrompt` describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
+- For puzzle_pieces games: Add `needsImage: true` for visual concepts that need illustration
+- For flashcards: Add `needsImage: true` for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
+- Image prompts should be descriptive and educational: "A labeled diagram of [concept] showing [key features]"
 
 Game Types (think beyond traditional quizzes):
 - quiz: Interactive multiple choice challenges with 4 options each
@@ -271,6 +308,12 @@ DO NOT generate a quiz. DO NOT generate flashcards. DO NOT generate matching.
 You MUST generate a "${recommendedGameType}" game.
 If you generate any other game type (especially quiz), your response will be REJECTED and you will be asked to regenerate.
 The gameType field in your JSON response MUST be exactly "${recommendedGameType}" (not "quiz", not "flashcards", not anything else).` : ''}
+
+${extractedEntities ? `\n🌍 WORLD-BUILDING APPROACH:
+Use the extracted entities, relationships, and conflicts to build an immersive game world.
+Think about how these elements interact and create gameplay that reflects real understanding, not just memorization.
+Wrong understanding should lead to consequences that teach, not just "incorrect" feedback.
+Build scenarios, mysteries, or escape rooms that require understanding the relationships and consequences.\n` : ''}
 
 Convert the following ${contentType} content into a ${gameType === 'auto' ? `${recommendedGameType} game` : gameType} game.
 
@@ -998,11 +1041,17 @@ CRITICAL RULES - READ CAREFULLY:
 
 CONTENT ANALYSIS:
 Before generating games, analyze the content type:
-- **Diagrams** (biology, physics, anatomy): Focus on visual relationships, parts labeling, processes
-- **Formulas** (math, physics, chemistry): Create formula-based questions, variable matching, application scenarios
+- **Diagrams** (biology, physics, anatomy): Focus on visual relationships, parts labeling, processes. These often need images - add `needsImage: true` and `imagePrompt: "description of what to visualize"` to relevant items.
+- **Formulas** (math, physics, chemistry): Create formula-based questions, variable matching, application scenarios. Complex formulas may need visual representation.
 - **Tables** (data, comparisons, classifications): Use matching, categorization, data interpretation
 - **Graphs** (charts, trends, relationships): Focus on interpretation, pattern recognition, predictions
-- **Text** (notes, definitions, concepts): Standard quiz/flashcard/matching games
+- **Text** (notes, definitions, concepts): Standard quiz/flashcard/matching games. Concepts that benefit from visual explanation should have `needsImage: true`.
+
+IMAGE GENERATION GUIDELINES:
+- For diagram_label games: Always add `needsImage: true` and `imagePrompt` describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
+- For puzzle_pieces games: Add `needsImage: true` for visual concepts that need illustration
+- For flashcards: Add `needsImage: true` for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
+- Image prompts should be descriptive and educational: "A labeled diagram of [concept] showing [key features]"
 
 Game Types (think beyond traditional quizzes):
 - quiz: Interactive multiple choice challenges with 4 options each
@@ -1101,6 +1150,12 @@ DO NOT generate a quiz. DO NOT generate flashcards. DO NOT generate matching.
 You MUST generate a "${recommendedGameType}" game.
 If you generate any other game type (especially quiz), your response will be REJECTED and you will be asked to regenerate.
 The gameType field in your JSON response MUST be exactly "${recommendedGameType}" (not "quiz", not "flashcards", not anything else).` : ''}
+
+${extractedEntities ? `\n🌍 WORLD-BUILDING APPROACH:
+Use the extracted entities, relationships, and conflicts to build an immersive game world.
+Think about how these elements interact and create gameplay that reflects real understanding, not just memorization.
+Wrong understanding should lead to consequences that teach, not just "incorrect" feedback.
+Build scenarios, mysteries, or escape rooms that require understanding the relationships and consequences.\n` : ''}
 
 Convert the following ${contentType} content into a ${gameType === 'auto' ? `${recommendedGameType} game` : gameType} game.
 

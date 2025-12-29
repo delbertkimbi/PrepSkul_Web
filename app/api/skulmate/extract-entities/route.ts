@@ -65,8 +65,9 @@ function getSkulMateApiKey(): string {
 
 /**
  * Extract entities and relationships from text using cheaper model
+ * Exported for use in other routes
  */
-async function extractEntities(text: string): Promise<EntityExtractionResult> {
+export async function extractEntities(text: string): Promise<EntityExtractionResult> {
   const systemPrompt = `You are an expert at analyzing educational content and extracting structured knowledge.
 
 Your task is to analyze the provided text and extract:
