@@ -199,16 +199,16 @@ CRITICAL RULES - READ CAREFULLY:
 
 CONTENT ANALYSIS:
 Before generating games, analyze the content type:
-- **Diagrams** (biology, physics, anatomy): Focus on visual relationships, parts labeling, processes. These often need images - add `needsImage: true` and `imagePrompt: "description of what to visualize"` to relevant items.
+- **Diagrams** (biology, physics, anatomy): Focus on visual relationships, parts labeling, processes. These often need images - add needsImage: true and imagePrompt: "description of what to visualize" to relevant items.
 - **Formulas** (math, physics, chemistry): Create formula-based questions, variable matching, application scenarios. Complex formulas may need visual representation.
 - **Tables** (data, comparisons, classifications): Use matching, categorization, data interpretation
 - **Graphs** (charts, trends, relationships): Focus on interpretation, pattern recognition, predictions
-- **Text** (notes, definitions, concepts): Standard quiz/flashcard/matching games. Concepts that benefit from visual explanation should have `needsImage: true`.
+- **Text** (notes, definitions, concepts): Standard quiz/flashcard/matching games. Concepts that benefit from visual explanation should have needsImage: true.
 
 IMAGE GENERATION GUIDELINES:
-- For diagram_label games: Always add `needsImage: true` and `imagePrompt` describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
-- For puzzle_pieces games: Add `needsImage: true` for visual concepts that need illustration
-- For flashcards: Add `needsImage: true` for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
+- For diagram_label games: Always add needsImage: true and imagePrompt describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
+- For puzzle_pieces games: Add needsImage: true for visual concepts that need illustration
+- For flashcards: Add needsImage: true for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
 - Image prompts should be descriptive and educational: "A labeled diagram of [concept] showing [key features]"
 
 Game Types (think beyond traditional quizzes):
@@ -427,8 +427,7 @@ Return ONLY valid JSON in this format:
   ],
   "metadata": {
     "difficulty": "${difficulty}",
-    "totalItems": ${numQuestions || 'number of items generated'},
-    ${topic ? `"topic": "${topic}",` : ''}
+    "totalItems": ${numQuestions || 'number of items generated'}${topic ? `,\n    "topic": "${topic}"` : ''},
     "source": "document|image|text"
   }
 }`;
