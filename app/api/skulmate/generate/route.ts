@@ -427,7 +427,8 @@ Return ONLY valid JSON in this format:
   ],
   "metadata": {
     "difficulty": "${difficulty}",
-    "totalItems": ${numQuestions || 'number of items generated'}${topic ? `,\n    "topic": "${topic}"` : ''},
+    "totalItems": ${numQuestions || 'number of items generated'},
+    ${topic ? `"topic": "${topic}",` : ''}
     "source": "document|image|text"
   }
 }`;
