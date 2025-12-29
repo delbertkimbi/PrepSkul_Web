@@ -7,3 +7,13 @@
   ]
 }
 
+
+
+
+    {
+      "path": "/api/cron/process-scheduled-notifications",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
+
