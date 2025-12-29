@@ -117,6 +117,9 @@ interface GenerateRequest {
   userId?: string
   childId?: string // For parents creating games for children
   gameType?: 'quiz' | 'flashcards' | 'matching' | 'fill_blank' | 'auto' | 'match3' | 'bubble_pop' | 'word_search' | 'crossword' | 'diagram_label' | 'drag_drop' | 'puzzle_pieces' | 'simulation' | 'mystery' | 'escape_room' // auto = AI decides
+  difficulty?: 'easy' | 'medium' | 'hard'
+  topic?: string
+  numQuestions?: number
 }
 
 interface GameItem {
@@ -256,7 +259,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
                      hasGraphs ? 'graph' : 'text';
   
   // Determine recommended game type for auto mode - prioritize interactive game types
-  let recommendedGameType = 'quiz'; // Default fallback
+  let recommendedGameType: string = 'quiz'; // Default fallback
   if (gameType === 'auto') {
     // Smart game type selection based on content - prioritize interactive game types
     if (contentType === 'diagram') {
@@ -301,137 +304,330 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     recommendedGameType = gameType;
   }
 
-  const userPrompt = `🚨🚨🚨 YOU MUST GENERATE A ${gameType === 'auto' ? recommendedGameType.toUpperCase() : gameType.toUpperCase()} GAME 🚨🚨🚨
+  // Build metadata section separately to avoid template string interpolation issues
+  const totalItemsValue = numQuestions || 'number of items generated';
+  const metadataSection = topic 
+    ? '  "metadata": {\n    "difficulty": "' + difficulty + '",\n    "totalItems": ' + totalItemsValue + ',\n    "topic": "' + topic + '",\n    "source": "document|image|text"\n  }'
+    : '  "metadata": {\n    "difficulty": "' + difficulty + '",\n    "totalItems": ' + totalItemsValue + ',\n    "source": "document|image|text"\n  }';
+  
+  // Build the JSON closing part separately to avoid parser confusion
+  const jsonClosing = '  ],\n' + metadataSection + '\n}';
 
-${gameType === 'auto' ? `⚠️ CRITICAL INSTRUCTION: The system has determined that "${recommendedGameType}" is the BEST game type for this content.
-DO NOT generate a quiz. DO NOT generate flashcards. DO NOT generate matching.
-You MUST generate a "${recommendedGameType}" game.
-If you generate any other game type (especially quiz), your response will be REJECTED and you will be asked to regenerate.
-The gameType field in your JSON response MUST be exactly "${recommendedGameType}" (not "quiz", not "flashcards", not anything else).` : ''}
+  // Build nested template string sections separately to avoid parser confusion
+  const criticalInstruction = gameType === 'auto' 
+    ? '⚠️ CRITICAL INSTRUCTION: The system has determined that "' + recommendedGameType + '" is the BEST game type for this content.\nDO NOT generate a quiz. DO NOT generate flashcards. DO NOT generate matching.\nYou MUST generate a "' + recommendedGameType + '" game.\nIf you generate any other game type (especially quiz), your response will be REJECTED and you will be asked to regenerate.\nThe gameType field in your JSON response MUST be exactly "' + recommendedGameType + '" (not "quiz", not "flashcards", not anything else).'
+    : '';
 
-${extractedEntities ? `\n🌍 WORLD-BUILDING APPROACH:
-Use the extracted entities, relationships, and conflicts to build an immersive game world.
-Think about how these elements interact and create gameplay that reflects real understanding, not just memorization.
-Wrong understanding should lead to consequences that teach, not just "incorrect" feedback.
-Build scenarios, mysteries, or escape rooms that require understanding the relationships and consequences.\n` : ''}
+  const worldBuildingApproach = extractedEntities
+    ? '\n🌍 WORLD-BUILDING APPROACH:\nUse the extracted entities, relationships, and conflicts to build an immersive game world.\nThink about how these elements interact and create gameplay that reflects real understanding, not just memorization.\nWrong understanding should lead to consequences that teach, not just "incorrect" feedback.\nBuild scenarios, mysteries, or escape rooms that require understanding the relationships and consequences.\n'
+    : '';
 
-Convert the following ${contentType} content into a ${gameType === 'auto' ? `${recommendedGameType} game` : gameType} game.
+  const gameTypeName = gameType === 'auto' ? recommendedGameType + ' game' : gameType;
 
-CRITICAL RULES - MUST FOLLOW:
-1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.
-2. All questions, answers, and terms must be based on what the user actually provided.
-3. ${gameType === 'auto' ? `🚨🚨🚨 ABSOLUTE REQUIREMENT: The gameType in your JSON response MUST be "${recommendedGameType}". 
-   - If you write "quiz", your response will be REJECTED
-   - If you write "flashcards", your response will be REJECTED  
-   - If you write "matching", your response will be REJECTED
-   - You MUST write "${recommendedGameType}" exactly as shown
-   - The content type (${contentType}) requires ${recommendedGameType}, NOT quiz
-   - Generate ${recommendedGameType} game items, NOT quiz questions` : ''}
-4. 🚨 TITLE REQUIREMENT: The game title MUST be VERY SHORT (10-15 characters max), directly related to the main topic in the content, and GAMMY (fun, catchy, game-like). Extract the main subject/topic and create a punchy arcade-style name. Examples: "Math Match", "Bio Blitz", "Word Hunt", "Formula Pop". DO NOT use long descriptive titles like "Understanding Mathematics" or "Biology Study Game".
-4. For quiz games: Each question must have 4 REAL, meaningful answer options derived from the actual content.
-5. DO NOT use placeholder text like "Option 1", "Option 2", "Option A", "Option B", etc.
-6. Each option must be a complete, meaningful statement or answer related to the question and the actual content.
-7. The correct answer must be clearly identifiable from the content provided.
-8. All options should be plausible but only one should be correct based on the content.
-
-User's Actual Content:
-${text}
-
-CONTENT TYPE DETECTED: ${contentType.toUpperCase()}
-${gameType === 'auto' ? `RECOMMENDED GAME TYPE: ${recommendedGameType.toUpperCase()} (best suited for ${contentType} content)` : ''}
-${difficulty ? `\nDIFFICULTY LEVEL: ${difficulty.toUpperCase()}\n- ${difficulty === 'easy' ? 'Use straightforward questions/concepts with clear, direct answers. Keep language simple and avoid complex terminology.' : difficulty === 'medium' ? 'Use moderately challenging content requiring understanding and application. Include some nuanced questions.' : 'Use complex content requiring deep analysis, critical thinking, and advanced application. Challenge the player with sophisticated questions.'}` : ''}
-${topic ? `\nTOPIC/SUBJECT FOCUS: ${topic}\n- CRITICAL: All game content MUST focus on this specific topic: ${topic}\n- Ensure all questions/terms/concepts relate directly to ${topic}\n- If the content doesn't relate to ${topic}, adapt it to focus on ${topic} while staying true to the source material` : ''}
-${numQuestions ? `\nNUMBER OF ITEMS REQUIRED: ${numQuestions}\n- Generate exactly ${numQuestions} questions/items (or as close as possible given the content)\n- Do not generate fewer than ${Math.max(5, numQuestions - 2)} or more than ${numQuestions + 2} items` : ''}
-
-${contentType === 'diagram' ? 'DIAGRAM ANALYSIS:\n- Identify all labeled parts, components, or structures\n- Note relationships between elements\n- Focus on visual-spatial learning\n- BEST GAME TYPES: diagramLabel (label parts), dragDrop (categorize components), matching (parts to labels)\n- DO NOT use quiz unless specifically requested' : ''}
-${contentType === 'formula' ? 'FORMULA ANALYSIS:\n- Extract all formulas and equations\n- Identify variables and their meanings\n- Note formula applications and contexts\n- BEST GAME TYPES: fill_blank (complete formulas), matching (match variables to meanings), dragDrop (sort formulas)\n- DO NOT use quiz unless specifically requested' : ''}
-${contentType === 'table' ? 'TABLE ANALYSIS:\n- Extract all data rows and columns\n- Identify relationships and patterns\n- Note categories and classifications\n- BEST GAME TYPES: matching (match related entries), dragDrop (categorize data), wordSearch (find terms)\n- DO NOT use quiz unless specifically requested' : ''}
-${contentType === 'graph' ? 'GRAPH ANALYSIS:\n- Identify trends, patterns, and relationships\n- Note key data points and interpretations\n- Focus on analytical thinking\n- BEST GAME TYPES: quiz (interpret trends), fill_blank (complete analysis), crossword (define concepts)' : ''}
-${contentType === 'text' && gameType === 'auto' ? 'TEXT ANALYSIS:\n- For short text (< 500 chars): Use flashcards, bubblePop, or wordSearch\n- For structured text (many lines): Use matching or dragDrop\n- For narrative/explanatory text: Use crossword, wordSearch, or match3 (NOT quiz)\n- For vocabulary-heavy content: Use wordSearch, crossword, or match3\n- DO NOT use quiz - prioritize interactive games like wordSearch, match3, bubblePop, crossword' : ''}
-
-Requirements for ${gameType === 'auto' ? recommendedGameType : gameType} game:
-${recommendedGameType === 'quiz' ? `- Generate ${numQuestions || '10-15'} multiple choice questions based ONLY on the content provided
-${difficulty ? `- Difficulty: ${difficulty} - ${difficulty === 'easy' ? 'Use straightforward questions with clear, direct answers. Keep language simple.' : difficulty === 'medium' ? 'Use moderately challenging questions requiring understanding.' : 'Use complex questions requiring deep analysis and critical thinking.'}\n` : ''}${topic ? `- Topic Focus: All questions MUST relate to ${topic}\n` : ''}\n- Each question must have 4 REAL, meaningful options derived from the actual content\n- DO NOT use placeholder text like "Option 1", "Option 2", etc.\n- Each option must be a plausible answer related to the question and content\n- The correct answer must be clearly identifiable from the content\n- Include correct answer (0-3 index) and brief explanation based on the content\n- For ${contentType}s: Focus on interpretation, identification, or application from the actual ${contentType}' : ''}
-${recommendedGameType === 'flashcards' ? `- Generate ${numQuestions || '15-20'} term-definition pairs based ONLY on the content provided
-${difficulty ? `- Difficulty: ${difficulty} - ${difficulty === 'easy' ? 'Use basic terms with simple definitions.' : difficulty === 'medium' ? 'Use intermediate terms with detailed definitions.' : 'Use advanced terms with comprehensive definitions.'}\n` : ''}${topic ? `- Topic Focus: All terms MUST relate to ${topic}\n` : ''}\n- Terms should be key concepts extracted from the actual content\n- Definitions should be clear and educational, based on the actual content\n- DO NOT make up terms or definitions that are not in the content\n- For ${contentType}s: Include visual/spatial concepts where relevant' : ''}
-${recommendedGameType === 'matching' ? `- Generate ${numQuestions || '10-12'} matching pairs based ONLY on the content provided
-${difficulty ? `- Difficulty: ${difficulty} - ${difficulty === 'easy' ? 'Use obvious relationships.' : difficulty === 'medium' ? 'Use moderately challenging relationships.' : 'Use complex, nuanced relationships.'}\n` : ''}${topic ? `- Topic Focus: All pairs MUST relate to ${topic}\n` : ''}\n- Pairs should be related concepts from the actual content\n- Make it educational and challenging\n- DO NOT create generic pairs - use actual relationships from the content\n- For ${contentType}s: Match parts to labels, variables to meanings, or related data points from the actual ${contentType}' : ''}
-${recommendedGameType === 'fill_blank' ? `- Generate ${numQuestions || '10-15'} fill-in-the-blank sentences based ONLY on the content provided
-${difficulty ? `- Difficulty: ${difficulty} - ${difficulty === 'easy' ? 'Remove obvious key terms.' : difficulty === 'medium' ? 'Remove moderately important terms.' : 'Remove complex, nuanced terms requiring deep understanding.'}\n` : ''}${topic ? `- Topic Focus: All sentences MUST relate to ${topic}\n` : ''}\n- Remove key terms/concepts from the actual content\n- Provide correct answers that are in the content\n- DO NOT create generic blanks - use actual terms from the content\n- For ${contentType}s: Focus on completing formulas, labels, or key terms from the actual ${contentType}' : ''}
-${recommendedGameType === 'match3' ? `- Generate ${numQuestions || '20-30'} items/concepts from the actual content
-${topic ? `- Topic Focus: All items MUST relate to ${topic}\n` : ''}\n- Create a grid-based match-3 game where players match 3+ identical items\n- Items should be key terms, concepts, or visual elements from the content\n- Include gridData as a 2D array (8x8 or 10x10) with item identifiers\n- DO NOT create generic items - use actual concepts from the content' : ''}
-${recommendedGameType === 'bubblePop' ? `- Generate ${numQuestions || '15-25'} bubbles with terms/concepts from the actual content
-${topic ? `- Topic Focus: All bubbles MUST relate to ${topic}\n` : ''}\n- Each bubble should contain a key term or concept from the content\n- Include target words that players need to pop\n- Create bubbles array with text, position, and target information\n- DO NOT create generic terms - use actual vocabulary from the content' : ''}
-${recommendedGameType === 'wordSearch' ? `- Extract ${numQuestions || '10-15'} key words/terms from the actual content
-${topic ? `- Topic Focus: All words MUST relate to ${topic}\n` : ''}\n- Create a word search grid (12x12 or 15x15) with words hidden\n- Words should be key concepts, terms, or vocabulary from the content\n- Include words array with the terms to find\n- Include gridData as a 2D array showing the word search grid\n- DO NOT create generic words - use actual terms from the content' : ''}
-${recommendedGameType === 'crossword' ? `- Generate ${numQuestions || '10-15'} crossword clues based ONLY on the actual content
-${difficulty ? `- Difficulty: ${difficulty} - ${difficulty === 'easy' ? 'Use straightforward clues.' : difficulty === 'medium' ? 'Use moderately challenging clues.' : 'Use complex, nuanced clues.'}\n` : ''}${topic ? `- Topic Focus: All clues MUST relate to ${topic}\n` : ''}\n- Each clue should reference a term or concept from the content\n- Include answers that are actual words/terms from the content\n- Create clues array with clue text and answer\n- Include gridData as a 2D array showing the crossword grid layout\n- DO NOT create generic clues - use actual concepts from the content' : ''}
-${recommendedGameType === 'diagramLabel' ? `- Identify ${numQuestions || '8-12'} key parts/components from the diagram in the content
-${topic ? `- Topic Focus: All labels MUST relate to ${topic}\n` : ''}\n- Create labels for each part based on the actual diagram\n- Include diagramLabels array with label text and position coordinates\n- If imageUrl is available, use it for the diagram\n- DO NOT create generic labels - use actual parts from the diagram' : ''}
-${recommendedGameType === 'dragDrop' ? `- Generate ${numQuestions || '8-12'} items to drag and 3-5 drop zones based on the content
-${topic ? `- Topic Focus: All items MUST relate to ${topic}\n` : ''}\n- Items should be key concepts, terms, or elements from the content\n- Drop zones should represent categories, groups, or classifications from the content\n- Include dragItems array with item text and correct drop zone\n- Include dropZones array with zone names and positions\n- DO NOT create generic items - use actual concepts from the content' : ''}
-${recommendedGameType === 'puzzlePieces' ? `- Break down the content into ${numQuestions || '6-12'} puzzle pieces
-${topic ? `- Topic Focus: All pieces MUST relate to ${topic}\n` : ''}\n- Each piece should represent a key concept, step, or element from the content\n- Create puzzlePieces array with piece data and correct positions\n- Pieces should form a complete picture/concept when assembled\n- DO NOT create generic pieces - use actual concepts from the content' : ''}
-${recommendedGameType === 'simulation' ? `- Generate a decision-based simulation game based ONLY on the content provided
-${topic ? `- Topic Focus: All scenarios MUST relate to ${topic}\n` : ''}\n- Create a role for the learner (e.g., "Public Health Officer", "Business Manager", "Historical Leader")
-- Generate ${numQuestions || '3-5'} scenarios where the learner must make decisions
-- Each scenario should have:
-  * situation: Description of the scenario from the content
-  * actions: 3-4 possible actions (each action should use concepts from the notes)
-  * consequences: What happens for each action (based on understanding/misunderstanding)
-- Wrong understanding → consequences, not instant failure
-- Include debrief explanations: "This failed because [deep reason from content]"
-- DO NOT create generic scenarios - use actual content and concepts' : ''}
-${recommendedGameType === 'mystery' ? `- Generate a mystery/detective game based ONLY on the content provided
-${topic ? `- Topic Focus: The mystery MUST relate to ${topic}\n` : ''}\n- Create a case/mystery (e.g., "The Failed Experiment", "The Unreliable Narrator")
-- Generate ${numQuestions || '5-8'} clues that reference the notes:
-  * noteReference: Which part of the notes this clue comes from
-  * reveals: What this clue reveals (must be from the actual content)
-- Wrong interpretation = false lead (not instant failure)
-- Final solution requires synthesis of all clues
-- Include solution: The answer that synthesizes all clues
-- DO NOT create generic mysteries - use actual problems/issues from the content' : ''}
-${recommendedGameType === 'escape_room' ? `- Generate an escape room game based ONLY on the content provided
-${topic ? `- Topic Focus: All rooms MUST relate to ${topic}\n` : ''}\n- Create ${numQuestions || '3-5'} rooms, each locked by a concept from the content
-- Each room should have:
-  * lockedBy: The concept that locks this room (e.g., "Ohm's Law", "Photosynthesis")
-  * puzzle: A puzzle that requires applying this concept
-    - type: "logic" | "calculation" | "matching" | "sequence"
-    - prompt: The puzzle description using actual content
-    - solution: The answer based on the content
-- Keys = applying knowledge correctly
-- Hints come from the notes
-- DO NOT create generic puzzles - use actual concepts and relationships from the content' : ''}
-
-${gameType === 'auto' && recommendedGameType !== 'quiz' ? `⚠️ FINAL REMINDER: gameType MUST be "${recommendedGameType}". NOT "quiz". NOT "flashcards". NOT "matching". EXACTLY "${recommendedGameType}".` : ''}
-
-Return ONLY valid JSON in this format:
-{
-  "gameType": "${recommendedGameType}", // 🚨🚨🚨 MUST be EXACTLY "${recommendedGameType}" - DO NOT write "quiz" here unless "${recommendedGameType}" is "quiz"
-  "title": "VERY SHORT game title (10-15 chars max) - extract main topic, make it gammy and fun! Examples: 'Math Match', 'Bio Blitz', 'Word Hunt'",
-  "items": [
-    ${recommendedGameType === 'quiz' ? '{"question": "Question based on actual content", "options": ["Real option 1 from content", "Real option 2 from content", "Real option 3 from content", "Real option 4 from content"], "correctAnswer": 0, "explanation": "Explanation based on content"}' : ''}
-    ${recommendedGameType === 'flashcards' ? '{"term": "Term from actual content", "definition": "Definition from actual content"}' : ''}
-    ${recommendedGameType === 'matching' ? '{"leftItem": "Item from actual content", "rightItem": "Matching item from actual content"}' : ''}
-    ${recommendedGameType === 'fill_blank' ? '{"blankText": "Sentence with blank from actual content", "correctAnswer": "Answer from actual content"}' : ''}
-    ${recommendedGameType === 'match3' ? '{"gridData": [["item1", "item2", ...], ...], "items": ["item1", "item2", ...]}' : ''}
-    ${recommendedGameType === 'bubblePop' ? '{"bubbles": [{"text": "Term from content", "x": 100, "y": 200, "isTarget": true}, ...], "words": ["Term1", "Term2", ...]}' : ''}
-    ${recommendedGameType === 'wordSearch' ? '{"gridData": [["A", "B", ...], ...], "words": ["Term1", "Term2", ...]}' : ''}
-    ${recommendedGameType === 'crossword' ? '{"gridData": [["A", "B", ...], ...], "clues": [{"clue": "Clue from content", "answer": "Answer from content", "x": 0, "y": 0}, ...]}' : ''}
-    ${recommendedGameType === 'diagramLabel' ? '{"imageUrl": "url if available", "diagramLabels": [{"label": "Part name from content", "x": 100, "y": 200}, ...]}' : ''}
-    ${recommendedGameType === 'dragDrop' ? '{"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}' : ''}
-    ${recommendedGameType === 'puzzlePieces' ? '{"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctX": 100, "correctY": 200, "imageUrl": "url if available"}, ...]}' : ''}
-    ${recommendedGameType === 'simulation' ? '{"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}' : ''}
-    ${recommendedGameType === 'mystery' ? '{"case": "Case name from content", "clues": [{"noteReference": "Reference to notes", "reveals": "What this reveals"}, ...], "solution": "Solution synthesizing all clues"}' : ''}
-    ${recommendedGameType === 'escape_room' ? '{"rooms": [{"lockedBy": "Concept from content", "puzzle": {"type": "logic", "prompt": "Puzzle from content", "solution": "Solution from content"}}, ...]}' : ''}
-  ],
-  "metadata": {
-    "difficulty": "${difficulty}",
-    "totalItems": ${numQuestions || 'number of items generated'},
-    ${topic ? `"topic": "${topic}",` : ''}
-    "source": "document|image|text"
+  // Build prompt using string concatenation to avoid parser issues with nested template strings
+  let userPrompt = '🚨🚨🚨 YOU MUST GENERATE A ' + (gameType === 'auto' ? recommendedGameType.toUpperCase() : gameType.toUpperCase()) + ' GAME 🚨🚨🚨\n\n';
+  
+  if (criticalInstruction) {
+    userPrompt += criticalInstruction + '\n\n';
   }
-}`;
+  
+  if (worldBuildingApproach) {
+    userPrompt += worldBuildingApproach;
+  }
+  
+  userPrompt += 'Convert the following ' + contentType + ' content into a ' + gameTypeName + ' game.\n\n';
+  userPrompt += 'CRITICAL RULES - MUST FOLLOW:\n';
+  userPrompt += '1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.\n';
+  userPrompt += '2. All questions, answers, and terms must be based on what the user actually provided.\n';
+  
+  if (gameType === 'auto') {
+    userPrompt += '3. 🚨🚨🚨 ABSOLUTE REQUIREMENT: The gameType in your JSON response MUST be "' + recommendedGameType + '".\n';
+    userPrompt += '   - If you write "quiz", your response will be REJECTED\n';
+    userPrompt += '   - If you write "flashcards", your response will be REJECTED\n';
+    userPrompt += '   - If you write "matching", your response will be REJECTED\n';
+    userPrompt += '   - You MUST write "' + recommendedGameType + '" exactly as shown\n';
+    userPrompt += '   - The content type (' + contentType + ') requires ' + recommendedGameType + ', NOT quiz\n';
+    userPrompt += '   - Generate ' + recommendedGameType + ' game items, NOT quiz questions\n';
+  }
+  
+  userPrompt += '4. 🚨 TITLE REQUIREMENT: The game title MUST be VERY SHORT (10-15 characters max), directly related to the main topic in the content, and GAMMY (fun, catchy, game-like). Extract the main subject/topic and create a punchy arcade-style name. Examples: "Math Match", "Bio Blitz", "Word Hunt", "Formula Pop". DO NOT use long descriptive titles like "Understanding Mathematics" or "Biology Study Game".\n';
+  userPrompt += '4. For quiz games: Each question must have 4 REAL, meaningful answer options derived from the actual content.\n';
+  userPrompt += '5. DO NOT use placeholder text like "Option 1", "Option 2", "Option A", "Option B", etc.\n';
+  userPrompt += '6. Each option must be a complete, meaningful statement or answer related to the question and the actual content.\n';
+  userPrompt += '7. The correct answer must be clearly identifiable from the content provided.\n';
+  userPrompt += '8. All options should be plausible but only one should be correct based on the content.\n\n';
+  
+  userPrompt += 'User\'s Actual Content:\n' + text + '\n\n';
+  userPrompt += 'CONTENT TYPE DETECTED: ' + contentType.toUpperCase() + '\n';
+  
+  if (gameType === 'auto') {
+    userPrompt += 'RECOMMENDED GAME TYPE: ' + recommendedGameType.toUpperCase() + ' (best suited for ' + contentType + ' content)\n';
+  }
+  
+  if (difficulty) {
+    userPrompt += '\nDIFFICULTY LEVEL: ' + difficulty.toUpperCase() + '\n';
+    if (difficulty === 'easy') {
+      userPrompt += '- Use straightforward questions/concepts with clear, direct answers. Keep language simple and avoid complex terminology.\n';
+    } else if (difficulty === 'medium') {
+      userPrompt += '- Use moderately challenging content requiring understanding and application. Include some nuanced questions.\n';
+    } else {
+      userPrompt += '- Use complex content requiring deep analysis, critical thinking, and advanced application. Challenge the player with sophisticated questions.\n';
+    }
+  }
+  
+  if (topic) {
+    userPrompt += '\nTOPIC/SUBJECT FOCUS: ' + topic + '\n';
+    userPrompt += '- CRITICAL: All game content MUST focus on this specific topic: ' + topic + '\n';
+    userPrompt += '- Ensure all questions/terms/concepts relate directly to ' + topic + '\n';
+    userPrompt += '- If the content doesn\'t relate to ' + topic + ', adapt it to focus on ' + topic + ' while staying true to the source material\n';
+  }
+  
+  if (numQuestions) {
+    userPrompt += '\nNUMBER OF ITEMS REQUIRED: ' + numQuestions + '\n';
+    userPrompt += '- Generate exactly ' + numQuestions + ' questions/items (or as close as possible given the content)\n';
+    userPrompt += '- Do not generate fewer than ' + Math.max(5, numQuestions - 2) + ' or more than ' + (numQuestions + 2) + ' items\n';
+  }
+  
+  userPrompt += '\n';
+  
+  // Content type analysis
+  if (contentType === 'diagram') {
+    userPrompt += 'DIAGRAM ANALYSIS:\n';
+    userPrompt += '- Identify all labeled parts, components, or structures\n';
+    userPrompt += '- Note relationships between elements\n';
+    userPrompt += '- Focus on visual-spatial learning\n';
+    userPrompt += '- BEST GAME TYPES: diagramLabel (label parts), dragDrop (categorize components), matching (parts to labels)\n';
+    userPrompt += '- DO NOT use quiz unless specifically requested\n\n';
+  } else if (contentType === 'formula') {
+    userPrompt += 'FORMULA ANALYSIS:\n';
+    userPrompt += '- Extract all formulas and equations\n';
+    userPrompt += '- Identify variables and their meanings\n';
+    userPrompt += '- Note formula applications and contexts\n';
+    userPrompt += '- BEST GAME TYPES: fill_blank (complete formulas), matching (match variables to meanings), dragDrop (sort formulas)\n';
+    userPrompt += '- DO NOT use quiz unless specifically requested\n\n';
+  } else if (contentType === 'table') {
+    userPrompt += 'TABLE ANALYSIS:\n';
+    userPrompt += '- Extract all data rows and columns\n';
+    userPrompt += '- Identify relationships and patterns\n';
+    userPrompt += '- Note categories and classifications\n';
+    userPrompt += '- BEST GAME TYPES: matching (match related entries), dragDrop (categorize data), wordSearch (find terms)\n';
+    userPrompt += '- DO NOT use quiz unless specifically requested\n\n';
+  } else if (contentType === 'graph') {
+    userPrompt += 'GRAPH ANALYSIS:\n';
+    userPrompt += '- Identify trends, patterns, and relationships\n';
+    userPrompt += '- Note key data points and interpretations\n';
+    userPrompt += '- Focus on analytical thinking\n';
+    userPrompt += '- BEST GAME TYPES: quiz (interpret trends), fill_blank (complete analysis), crossword (define concepts)\n\n';
+  } else if (contentType === 'text' && gameType === 'auto') {
+    userPrompt += 'TEXT ANALYSIS:\n';
+    userPrompt += '- For short text (< 500 chars): Use flashcards, bubblePop, or wordSearch\n';
+    userPrompt += '- For structured text (many lines): Use matching or dragDrop\n';
+    userPrompt += '- For narrative/explanatory text: Use crossword, wordSearch, or match3 (NOT quiz)\n';
+    userPrompt += '- For vocabulary-heavy content: Use wordSearch, crossword, or match3\n';
+    userPrompt += '- DO NOT use quiz - prioritize interactive games like wordSearch, match3, bubblePop, crossword\n\n';
+  }
+  
+  userPrompt += 'Requirements for ' + (gameType === 'auto' ? recommendedGameType : gameType) + ' game:\n';
+  
+  // Game-specific requirements builder
+  const gameTypeStr = (gameType === 'auto' ? recommendedGameType : gameType) as string;
+  
+  if (gameTypeStr === 'quiz') {
+    userPrompt += '- Generate ' + (numQuestions || '10-15') + ' multiple choice questions based ONLY on the content provided\n';
+    if (difficulty) {
+      userPrompt += '- Difficulty: ' + difficulty + ' - ';
+      if (difficulty === 'easy') userPrompt += 'Use straightforward questions with clear, direct answers. Keep language simple.\n';
+      else if (difficulty === 'medium') userPrompt += 'Use moderately challenging questions requiring understanding.\n';
+      else userPrompt += 'Use complex questions requiring deep analysis and critical thinking.\n';
+    }
+    if (topic) userPrompt += '- Topic Focus: All questions MUST relate to ' + topic + '\n';
+    userPrompt += '- Each question must have 4 REAL, meaningful options derived from the actual content\n';
+    userPrompt += '- DO NOT use placeholder text like "Option 1", "Option 2", etc.\n';
+    userPrompt += '- Each option must be a plausible answer related to the question and content\n';
+    userPrompt += '- The correct answer must be clearly identifiable from the content\n';
+    userPrompt += '- Include correct answer (0-3 index) and brief explanation based on the content\n';
+    userPrompt += '- For ' + contentType + 's: Focus on interpretation, identification, or application from the actual ' + contentType + '\n';
+  } else if (gameTypeStr === 'flashcards') {
+    userPrompt += '- Generate ' + (numQuestions || '15-20') + ' term-definition pairs based ONLY on the content provided\n';
+    if (difficulty) {
+      userPrompt += '- Difficulty: ' + difficulty + ' - ';
+      if (difficulty === 'easy') userPrompt += 'Use basic terms with simple definitions.\n';
+      else if (difficulty === 'medium') userPrompt += 'Use intermediate terms with detailed definitions.\n';
+      else userPrompt += 'Use advanced terms with comprehensive definitions.\n';
+    }
+    if (topic) userPrompt += '- Topic Focus: All terms MUST relate to ' + topic + '\n';
+    userPrompt += '- Terms should be key concepts extracted from the actual content\n';
+    userPrompt += '- Definitions should be clear and educational, based on the actual content\n';
+    userPrompt += '- DO NOT make up terms or definitions that are not in the content\n';
+    userPrompt += '- For ' + contentType + 's: Include visual/spatial concepts where relevant\n';
+  } else if (gameTypeStr === 'matching') {
+    userPrompt += '- Generate ' + (numQuestions || '10-12') + ' matching pairs based ONLY on the content provided\n';
+    if (difficulty) {
+      userPrompt += '- Difficulty: ' + difficulty + ' - ';
+      if (difficulty === 'easy') userPrompt += 'Use obvious relationships.\n';
+      else if (difficulty === 'medium') userPrompt += 'Use moderately challenging relationships.\n';
+      else userPrompt += 'Use complex, nuanced relationships.\n';
+    }
+    if (topic) userPrompt += '- Topic Focus: All pairs MUST relate to ' + topic + '\n';
+    userPrompt += '- Pairs should be related concepts from the actual content\n';
+    userPrompt += '- Make it educational and challenging\n';
+    userPrompt += '- DO NOT create generic pairs - use actual relationships from the content\n';
+    userPrompt += '- For ' + contentType + 's: Match parts to labels, variables to meanings, or related data points from the actual ' + contentType + '\n';
+  } else if (gameTypeStr === 'fill_blank') {
+    userPrompt += '- Generate ' + (numQuestions || '10-15') + ' fill-in-the-blank sentences based ONLY on the content provided\n';
+    if (difficulty) {
+      userPrompt += '- Difficulty: ' + difficulty + ' - ';
+      if (difficulty === 'easy') userPrompt += 'Remove obvious key terms.\n';
+      else if (difficulty === 'medium') userPrompt += 'Remove moderately important terms.\n';
+      else userPrompt += 'Remove complex, nuanced terms requiring deep understanding.\n';
+    }
+    if (topic) userPrompt += '- Topic Focus: All sentences MUST relate to ' + topic + '\n';
+    userPrompt += '- Remove key terms/concepts from the actual content\n';
+    userPrompt += '- Provide correct answers that are in the content\n';
+    userPrompt += '- DO NOT create generic blanks - use actual terms from the content\n';
+    userPrompt += '- For ' + contentType + 's: Focus on completing formulas, labels, or key terms from the actual ' + contentType + '\n';
+  } else if (gameTypeStr === 'match3') {
+    userPrompt += '- Generate ' + (numQuestions || '20-30') + ' items/concepts from the actual content\n';
+    if (topic) userPrompt += '- Topic Focus: All items MUST relate to ' + topic + '\n';
+    userPrompt += '- Create a grid-based match-3 game where players match 3+ identical items\n';
+    userPrompt += '- Items should be key terms, concepts, or visual elements from the content\n';
+    userPrompt += '- Include gridData as a 2D array (8x8 or 10x10) with item identifiers\n';
+    userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
+  } else if (gameTypeStr === 'bubblePop') {
+    userPrompt += '- Generate ' + (numQuestions || '15-25') + ' bubbles with terms/concepts from the actual content\n';
+    if (topic) userPrompt += '- Topic Focus: All bubbles MUST relate to ' + topic + '\n';
+    userPrompt += '- Each bubble should contain a key term or concept from the content\n';
+    userPrompt += '- Include target words that players need to pop\n';
+    userPrompt += '- Create bubbles array with text, position, and target information\n';
+    userPrompt += '- DO NOT create generic terms - use actual vocabulary from the content\n';
+  } else if (gameTypeStr === 'wordSearch') {
+    userPrompt += '- Extract ' + (numQuestions || '10-15') + ' key words/terms from the actual content\n';
+    if (topic) userPrompt += '- Topic Focus: All words MUST relate to ' + topic + '\n';
+    userPrompt += '- Create a word search grid (12x12 or 15x15) with words hidden\n';
+    userPrompt += '- Words should be key concepts, terms, or vocabulary from the content\n';
+    userPrompt += '- Include words array with the terms to find\n';
+    userPrompt += '- Include gridData as a 2D array showing the word search grid\n';
+    userPrompt += '- DO NOT create generic words - use actual terms from the content\n';
+  } else if (gameTypeStr === 'crossword') {
+    userPrompt += '- Generate ' + (numQuestions || '10-15') + ' crossword clues based ONLY on the actual content\n';
+    if (difficulty) {
+      userPrompt += '- Difficulty: ' + difficulty + ' - ';
+      if (difficulty === 'easy') userPrompt += 'Use straightforward clues.\n';
+      else if (difficulty === 'medium') userPrompt += 'Use moderately challenging clues.\n';
+      else userPrompt += 'Use complex, nuanced clues.\n';
+    }
+    if (topic) userPrompt += '- Topic Focus: All clues MUST relate to ' + topic + '\n';
+    userPrompt += '- Each clue should reference a term or concept from the content\n';
+    userPrompt += '- Include answers that are actual words/terms from the content\n';
+    userPrompt += '- Create clues array with clue text and answer\n';
+    userPrompt += '- Include gridData as a 2D array showing the crossword grid layout\n';
+    userPrompt += '- DO NOT create generic clues - use actual concepts from the content\n';
+  } else if (gameTypeStr === 'diagramLabel') {
+    userPrompt += '- Identify ' + (numQuestions || '8-12') + ' key parts/components from the diagram in the content\n';
+    if (topic) userPrompt += '- Topic Focus: All labels MUST relate to ' + topic + '\n';
+    userPrompt += '- Create labels for each part based on the actual diagram\n';
+    userPrompt += '- Include diagramLabels array with label text and position coordinates\n';
+    userPrompt += '- If imageUrl is available, use it for the diagram\n';
+    userPrompt += '- DO NOT create generic labels - use actual parts from the diagram\n';
+  } else if (gameTypeStr === 'dragDrop') {
+    userPrompt += '- Generate ' + (numQuestions || '8-12') + ' items to drag and 3-5 drop zones based on the content\n';
+    if (topic) userPrompt += '- Topic Focus: All items MUST relate to ' + topic + '\n';
+    userPrompt += '- Items should be key concepts, terms, or elements from the content\n';
+    userPrompt += '- Drop zones should represent categories, groups, or classifications from the content\n';
+    userPrompt += '- Include dragItems array with item text and correct drop zone\n';
+    userPrompt += '- Include dropZones array with zone names and positions\n';
+    userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
+  } else if (gameTypeStr === 'puzzlePieces') {
+    userPrompt += '- Break down the content into ' + (numQuestions || '6-12') + ' puzzle pieces\n';
+    if (topic) userPrompt += '- Topic Focus: All pieces MUST relate to ' + topic + '\n';
+    userPrompt += '- Each piece should represent a key concept, step, or element from the content\n';
+    userPrompt += '- Create puzzlePieces array with piece data and correct positions\n';
+    userPrompt += '- Pieces should form a complete picture/concept when assembled\n';
+    userPrompt += '- DO NOT create generic pieces - use actual concepts from the content\n';
+  } else if (gameTypeStr === 'simulation') {
+    userPrompt += '- Generate a decision-based simulation game based ONLY on the content provided\n';
+    if (topic) userPrompt += '- Topic Focus: All scenarios MUST relate to ' + topic + '\n';
+    userPrompt += '- Create a role for the learner (e.g., "Public Health Officer", "Business Manager", "Historical Leader")\n';
+    userPrompt += '- Generate ' + (numQuestions || '3-5') + ' scenarios where the learner must make decisions\n';
+    userPrompt += '- Each scenario should have:\n';
+    userPrompt += '  * situation: Description of the scenario from the content\n';
+    userPrompt += '  * actions: 3-4 possible actions (each action should use concepts from the notes)\n';
+    userPrompt += '  * consequences: What happens for each action (based on understanding/misunderstanding)\n';
+    userPrompt += '- Wrong understanding → consequences, not instant failure\n';
+    userPrompt += '- Include debrief explanations: "This failed because [deep reason from content]"\n';
+    userPrompt += '- DO NOT create generic scenarios - use actual content and concepts\n';
+  } else if (gameTypeStr === 'mystery') {
+    userPrompt += '- Generate a mystery/detective game based ONLY on the content provided\n';
+    if (topic) userPrompt += '- Topic Focus: The mystery MUST relate to ' + topic + '\n';
+    userPrompt += '- Create a case/mystery (e.g., "The Failed Experiment", "The Unreliable Narrator")\n';
+    userPrompt += '- Generate ' + (numQuestions || '5-8') + ' clues that reference the notes:\n';
+    userPrompt += '  * noteReference: Which part of the notes this clue comes from\n';
+    userPrompt += '  * reveals: What this clue reveals (must be from the actual content)\n';
+    userPrompt += '- Wrong interpretation = false lead (not instant failure)\n';
+    userPrompt += '- Final solution requires synthesis of all clues\n';
+    userPrompt += '- Include solution: The answer that synthesizes all clues\n';
+    userPrompt += '- DO NOT create generic mysteries - use actual problems/issues from the content\n';
+  } else if (gameTypeStr === 'escape_room') {
+    userPrompt += '- Generate an escape room game based ONLY on the content provided\n';
+    if (topic) userPrompt += '- Topic Focus: All rooms MUST relate to ' + topic + '\n';
+    userPrompt += '- Create ' + (numQuestions || '3-5') + ' rooms, each locked by a concept from the content\n';
+    userPrompt += '- Each room should have:\n';
+    userPrompt += '  * lockedBy: The concept that locks this room (e.g., "Ohm\'s Law", "Photosynthesis")\n';
+    userPrompt += '  * puzzle: A puzzle that requires applying this concept\n';
+    userPrompt += '    - type: "logic" | "calculation" | "matching" | "sequence"\n';
+    userPrompt += '    - prompt: The puzzle description using actual content\n';
+    userPrompt += '    - solution: The answer based on the content\n';
+    userPrompt += '- Keys = applying knowledge correctly\n';
+    userPrompt += '- Hints come from the notes\n';
+    userPrompt += '- DO NOT create generic puzzles - use actual concepts and relationships from the content\n';
+  }
+  
+  userPrompt += '\n';
+  
+  if (gameType === 'auto' && recommendedGameType !== 'quiz') {
+    userPrompt += '⚠️ FINAL REMINDER: gameType MUST be "' + recommendedGameType + '". NOT "quiz". NOT "flashcards". NOT "matching". EXACTLY "' + recommendedGameType + '".\n\n';
+  }
+  
+  userPrompt += 'Return ONLY valid JSON in this format:\n';
+  userPrompt += '{\n';
+  userPrompt += '  "gameType": "' + recommendedGameType + '", // 🚨🚨🚨 MUST be EXACTLY "' + recommendedGameType + '" - DO NOT write "quiz" here unless "' + recommendedGameType + '" is "quiz"\n';
+  userPrompt += '  "title": "VERY SHORT game title (10-15 chars max) - extract main topic, make it gammy and fun! Examples: \'Math Match\', \'Bio Blitz\', \'Word Hunt\'",\n';
+  userPrompt += '  "items": [\n';
+  
+  // Add example item based on game type
+  if (gameTypeStr === 'quiz') {
+    userPrompt += '    {"question": "Question based on actual content", "options": ["Real option 1 from content", "Real option 2 from content", "Real option 3 from content", "Real option 4 from content"], "correctAnswer": 0, "explanation": "Explanation based on content"}\n';
+  } else if (gameTypeStr === 'flashcards') {
+    userPrompt += '    {"term": "Term from actual content", "definition": "Definition from actual content"}\n';
+  } else if (gameTypeStr === 'matching') {
+    userPrompt += '    {"leftItem": "Item from actual content", "rightItem": "Matching item from actual content"}\n';
+  } else if (gameTypeStr === 'fill_blank') {
+    userPrompt += '    {"blankText": "Sentence with blank from actual content", "correctAnswer": "Answer from actual content"}\n';
+  } else if (gameTypeStr === 'match3') {
+    userPrompt += '    {"gridData": [["item1", "item2", ...], ...], "items": ["item1", "item2", ...]}\n';
+  } else if (gameTypeStr === 'bubblePop') {
+    userPrompt += '    {"bubbles": [{"text": "Term from content", "x": 100, "y": 200, "isTarget": true}, ...], "words": ["Term1", "Term2", ...]}\n';
+  } else if (gameTypeStr === 'wordSearch') {
+    userPrompt += '    {"gridData": [["A", "B", ...], ...], "words": ["Term1", "Term2", ...]}\n';
+  } else if (gameTypeStr === 'crossword') {
+    userPrompt += '    {"gridData": [["A", "B", ...], ...], "clues": [{"clue": "Clue from content", "answer": "Answer from content", "x": 0, "y": 0}, ...]}\n';
+  } else if (gameTypeStr === 'diagramLabel') {
+    userPrompt += '    {"imageUrl": "url if available", "diagramLabels": [{"label": "Part name from content", "x": 100, "y": 200}, ...]}\n';
+  } else if (gameTypeStr === 'dragDrop') {
+    userPrompt += '    {"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}\n';
+  } else if (gameTypeStr === 'puzzlePieces') {
+    userPrompt += '    {"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctX": 100, "correctY": 200, "imageUrl": "url if available"}, ...]}\n';
+  } else if (gameTypeStr === 'simulation') {
+    userPrompt += '    {"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}\n';
+  } else if (gameTypeStr === 'mystery') {
+    userPrompt += '    {"case": "Case name from content", "clues": [{"noteReference": "Reference to notes", "reveals": "What this reveals"}, ...], "solution": "Solution synthesizing all clues"}\n';
+  } else if (gameTypeStr === 'escape_room') {
+    userPrompt += '    {"rooms": [{"lockedBy": "Concept from content", "puzzle": {"type": "logic", "prompt": "Puzzle from content", "solution": "Solution from content"}}, ...]}\n';
+  }
+  
+  userPrompt += '  ],\n';
+  userPrompt += metadataSection + '\n';
+  userPrompt += '}\n';
 
   // Try multiple models - prioritize free/cheap models first
   const gameModels = [
