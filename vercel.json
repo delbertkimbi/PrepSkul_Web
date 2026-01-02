@@ -6,30 +6,3 @@
     }
   ]
 }
-
-
-
-
-    {
-      "path": "/api/cron/process-scheduled-notifications",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
-
-    {
-      "path": "/api/cron/process-scheduled-notifications",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
-
-
-
-
-    {
-      "path": "/api/cron/process-scheduled-notifications",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
