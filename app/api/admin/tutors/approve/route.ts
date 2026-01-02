@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     // First, fetch tutor profile to get contact info and check rating/pricing
     const { data: tutorProfile, error: fetchError } = await supabase
       .from('tutor_profiles')
-      .select('user_id, full_name, admin_approved_rating, base_session_price, hourly_rate, pricing_tier, rating_justification, status')
+      .select('user_id, full_name, admin_approved_rating, base_session_price, hourly_rate, pricing_tier, rating_justification, status, video_url, video_link, video_intro')
       .eq('id', tutorId)
       .maybeSingle();
 
@@ -136,15 +136,27 @@ export async function POST(request: NextRequest) {
 
     if (profileError) throw profileError;
 
+    // Sync video fields: ensure video_url is populated from video_link or video_intro
+    const videoUrl = tutorProfile.video_url || tutorProfile.video_link || 
+      (typeof tutorProfile.video_intro === 'string' ? tutorProfile.video_intro : tutorProfile.video_intro?.url || tutorProfile.video_intro?.link || null);
+    
     // Update tutor status to approved with optional notes
+    // Also sync video_url if it's empty but video_link or video_intro exists
+    const updateData: any = {
+      status: 'approved',
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      admin_review_notes: notes || null,
+    };
+    
+    // Sync video_url if needed
+    if (videoUrl && !tutorProfile.video_url) {
+      updateData.video_url = videoUrl;
+    }
+    
     const { error } = await supabase
       .from('tutor_profiles')
-      .update({
-        status: 'approved',
-        reviewed_by: user.id,
-        reviewed_at: new Date().toISOString(),
-        admin_review_notes: notes || null,
-      })
+      .update(updateData)
       .eq('id', tutorId);
 
     if (error) throw error;
