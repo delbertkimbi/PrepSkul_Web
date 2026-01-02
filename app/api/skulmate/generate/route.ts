@@ -249,7 +249,8 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
 
   // Analyze content type from text
   const hasFormulas = /[A-Za-z]\s*=\s*[^=]+|\\[a-zA-Z]+|∑|∫|√|π|α|β|γ|θ|Δ/.test(text);
-  const hasTables = /\|.*\|.*\|/s.test(text) || /^\s*[A-Z][^|]*\|/m.test(text);
+  // Remove 's' flag for ES2018 compatibility
+  const hasTables = /\|.*\|.*\|/.test(text) || /^\s*[A-Z][^|]*\|/m.test(text);
   const hasGraphs = /graph|chart|plot|axis|coordinate|trend|slope|intercept/i.test(text);
   const hasDiagrams = /diagram|figure|illustration|label|component|part|structure|process/i.test(text);
   
@@ -370,7 +371,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
       userPrompt += '- Use straightforward questions/concepts with clear, direct answers. Keep language simple and avoid complex terminology.\n';
     } else if (difficulty === 'medium') {
       userPrompt += '- Use moderately challenging content requiring understanding and application. Include some nuanced questions.\n';
-    } else {
+          } else {
       userPrompt += '- Use complex content requiring deep analysis, critical thinking, and advanced application. Challenge the player with sophisticated questions.\n';
     }
   }
@@ -629,15 +630,45 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   userPrompt += metadataSection + '\n';
   userPrompt += '}\n';
 
-  // Try multiple models - prioritize free/cheap models first
-  const gameModels = [
+  // Multi-Model Pipeline: Use task-specific models for cost efficiency
+  // Entity Extraction: Already done in extract-entities route (uses cheaper models)
+  // Story/Simulation Generation: Use creative models for immersive games
+  // Game Logic Validation: Use reasoning models for validation
+  // Difficulty Adaptation: Use fast lightweight models
+  
+  // Determine model selection based on game type
+  let gameModels: string[]
+  const isCreativeGame = recommendedGameType === 'simulation' || recommendedGameType === 'mystery' || recommendedGameType === 'escape_room'
+  const needsReasoning = recommendedGameType === 'quiz' || recommendedGameType === 'crossword' || recommendedGameType === 'fill_blank'
+  
+  if (isCreativeGame) {
+    // Creative games: Use models optimized for storytelling and world-building
+    gameModels = [
+      'qwen/qwen-2-14b-instruct',     // Creative model for stories/simulations
+      'meta-llama/llama-3.2-11b-instruct', // Alternative creative model
+      'qwen/qwen-2-7b-instruct',      // Fallback
+      'google/gemini-flash-1.5',      // Google model
+      'openai/gpt-4o-mini',           // OpenAI fallback
+    ]
+  } else if (needsReasoning) {
+    // Reasoning games: Use models optimized for logic and validation
+    gameModels = [
+      'openai/gpt-4o-mini',           // Reasoning model
+      'google/gemini-flash-1.5',      // Google reasoning model
+      'qwen/qwen-2-14b-instruct',     // Fallback
+      'qwen/qwen-2-7b-instruct',      // Cheaper fallback
+    ]
+  } else {
+    // Fast games: Use lightweight models for quick generation
+    gameModels = [
+      'mistralai/mistral-7b-instruct', // Fast lightweight model
     'qwen/qwen-2-7b-instruct',      // Free/cheap
-    'qwen/qwen-2-14b-instruct',     // Slightly more expensive
     'meta-llama/llama-3.2-3b-instruct', // Free tier
-    'mistralai/mistral-7b-instruct', // Cheap
+      'qwen/qwen-2-14b-instruct',     // Slightly more expensive
     'google/gemini-flash-1.5',       // Google model
-    'openai/gpt-4o-mini',            // OpenAI (fallback)
+      'openai/gpt-4o-mini',           // OpenAI (fallback)
   ]
+  }
 
   const skulMateApiKey = getSkulMateApiKey()
   let response
@@ -837,6 +868,27 @@ If you generate quiz again, your response will be rejected.`
   // Ensure title is very short (max 15 characters for AppBar display)
   if (gameData.title && gameData.title.length > 15) {
     gameData.title = gameData.title.substring(0, 12) + '...'
+  }
+
+  // Phase 3: Image Generation (if needed)
+  // Check items with needsImage flag and generate images
+  if (gameData.items && Array.isArray(gameData.items)) {
+    console.log('[skulMate] Checking for items that need images...')
+    for (const item of gameData.items) {
+      if (item.needsImage && item.imagePrompt && !item.imageUrl) {
+        try {
+          console.log(`[skulMate] Generating image for: ${item.imagePrompt}`)
+          // TODO: Implement image generation API call
+          // For now, image generation is handled client-side via ImageGenerationService
+          // Server-side generation would require a separate image generation API endpoint
+          // or integration with image generation models through OpenRouter
+          console.log(`[skulMate] Image generation requested for: ${item.imagePrompt}`)
+        } catch (e) {
+          console.warn(`[skulMate] Image generation failed for item: ${e}`)
+          // Continue without image - games work fine without generated images
+        }
+      }
+    }
   }
 
   // Add metadata
@@ -1084,14 +1136,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate game content
-    console.log('[skulMate] Step 3: Generating game...')
+    // Phase 5.6: Multi-Model Pipeline
+    // Step 1: Extract entities & relationships (cheaper model)
+    console.log('[skulMate] Step 3a: Extracting entities and relationships...')
+    let extractedEntities
+    try {
+      extractedEntities = await extractEntities(extractedText)
+      console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
+    } catch (error) {
+      console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
+      // Continue without entities - not critical for game generation
+      extractedEntities = undefined
+    }
+
+    // Step 2: Analyze content type & determine game type (already done in generateGameContent)
+    // Step 3: Generate game world/structure (creative model for simulations/mysteries/escape rooms)
+    console.log('[skulMate] Step 3b: Generating game content...')
     const gameData = await generateGameContent(
       extractedText, 
       gameType,
       difficulty,
       topic,
-      numQuestions
+      numQuestions,
+      extractedEntities // Pass extracted entities for world-building
     )
 
     // Save to database if userId provided

@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
                 Your privacy is important to us. This policy explains how we handle your personal information.
               </p>
               <div className="mt-6 inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                Last Updated: November 22, 2025
+                Last Updated: January 2, 2026
               </div>
             </div>
 
@@ -122,17 +122,80 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
             </ul>
           </section>
 
-          {/* Section 5 */}
+          {/* Section 5 - Google Calendar Integration */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Cookies & Tracking Technologies</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Google Calendar Integration</h2>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              PrepSkul uses Google Calendar API exclusively for the following purposes:
+            </p>
+            <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 mb-4">
+              <h3 className="font-semibold text-gray-900 mb-3">What We Use Google Calendar For:</h3>
+              <ul className="space-y-2 text-gray-700 list-disc list-inside">
+                <li><strong>Session Scheduling:</strong> To create calendar events for tutoring sessions you book</li>
+                <li><strong>Meet Link Generation:</strong> To generate Google Meet links for online tutoring sessions</li>
+                <li><strong>Calendar Invitations:</strong> To send calendar invitations to tutors and students for scheduled sessions</li>
+              </ul>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 mb-4">
+              <h3 className="font-semibold text-gray-900 mb-3">What We Access:</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-start">
+                  <span className="mr-3 text-blue-500 flex-shrink-0">✓</span>
+                  <span>We only create calendar events for tutoring sessions you book</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3 text-red-500 flex-shrink-0">✕</span>
+                  <span>We do NOT read your existing calendar events</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3 text-red-500 flex-shrink-0">✕</span>
+                  <span>We do NOT access any other calendar data</span>
+                </li>
+              </ul>
+            </div>
+            <div className="bg-orange-50 p-6 rounded-xl border border-orange-100 mb-4">
+              <h3 className="font-semibold text-gray-900 mb-3">What We Do NOT Do:</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li className="flex items-start">
+                  <span className="mr-3 text-red-500 flex-shrink-0">✕</span>
+                  <span>We do NOT sell your Google Calendar data</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3 text-red-500 flex-shrink-0">✕</span>
+                  <span>We do NOT use your calendar data for advertising</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3 text-red-500 flex-shrink-0">✕</span>
+                  <span>We do NOT use your calendar data for analytics beyond app functionality</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-3 text-red-500 flex-shrink-0">✕</span>
+                  <span>We do NOT share your calendar data with third parties (except tutors/students for session coordination)</span>
+                </li>
+              </ul>
+            </div>
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
+              <h3 className="font-semibold text-gray-900 mb-3">Data Storage & Control:</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li>We only store calendar event IDs and Meet links necessary for session management</li>
+                <li>You can revoke access at any time through your Google Account settings</li>
+                <li>This access is required solely to provide the core functionality of PrepSkul - scheduling and managing tutoring sessions</li>
+                <li>Without this access, we cannot create calendar events or generate Meet links for your sessions</li>
+              </ul>
+            </div>
+          </section>
+
+          {/* Section 6 */}
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Cookies & Tracking Technologies</h2>
             <p className="text-gray-700 leading-relaxed">
               We use cookies and similar tracking technologies (like web beacons and pixels) to access or store information. This helps us remember your login status, preferences (such as language), and analyze traffic. You can control the use of cookies at the individual browser level, but if you choose to disable cookies, it may limit your use of certain features or functions on our Services.
             </p>
           </section>
 
-          {/* Section 6 */}
+          {/* Section 7 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Data Retention & Security</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Data Retention & Security</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
               We keep your personal information only for as long as necessary to fulfill the purposes outlined in this privacy policy. For example, we retain transaction records for accounting purposes as required by law.
             </p>
@@ -141,25 +204,25 @@ export default function PrivacyPolicyPage({ params }: { params: { locale: string
             </p>
           </section>
 
-          {/* Section 7 */}
+          {/* Section 8 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">7. International Transfers</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. International Transfers</h2>
             <p className="text-gray-700 leading-relaxed">
               Our servers are located in multiple regions to ensure speed and reliability. If you are accessing our Services from outside Cameroon, please be aware that your information may be transferred to, stored, and processed by us in our facilities and by those third parties with whom we may share your personal information, in other countries.
             </p>
           </section>
 
-          {/* Section 8 */}
+          {/* Section 9 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Children's Privacy</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Children's Privacy</h2>
             <p className="text-gray-700 leading-relaxed">
               We do not knowingly solicit data from or market to children under 13 years of age without parental consent. If you become aware that any data has been collected from children under age 13 without verification of parental consent, please contact us at info@prepskul.com, and we will delete that information.
             </p>
           </section>
 
-          {/* Section 9 */}
+          {/* Section 10 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Contact Us</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed mb-6">
               If you have questions or comments about this policy, you may email us or contact us by post at:
             </p>
