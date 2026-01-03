@@ -16,6 +16,7 @@ interface TutorCardProps {
     teaching_duration?: string | null;
     status: string;
     is_hidden?: boolean;
+    has_pending_update?: boolean | null;
     created_at: string;
   };
 }
@@ -54,7 +55,12 @@ export default function TutorCard({ tutor }: TutorCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-2">
             <h3 className="font-semibold text-gray-900 text-lg truncate">{displayName}</h3>
-            <TutorStatusBadge status={tutor.status} isHidden={tutor.is_hidden} className="flex-shrink-0" />
+            <TutorStatusBadge 
+              status={tutor.status} 
+              isHidden={tutor.is_hidden} 
+              hasPendingUpdate={tutor.has_pending_update === true}
+              className="flex-shrink-0" 
+            />
           </div>
           
           <p className="text-sm text-gray-600 mb-2 line-clamp-2">{subjects}</p>
@@ -76,10 +82,14 @@ export default function TutorCard({ tutor }: TutorCardProps) {
       {/* Action Button */}
       <div className="mt-4 pt-4 border-t border-gray-200">
         <Link 
-          href={`/admin/tutors/${tutor.id}`}
+          href={
+            tutor.has_pending_update 
+              ? `/admin/tutors/${tutor.id}/pending-update`
+              : `/admin/tutors/${tutor.id}`
+          }
           className="block w-full text-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
         >
-          View Details
+          {tutor.has_pending_update ? 'Review Updates' : 'View Details'}
         </Link>
       </div>
     </div>

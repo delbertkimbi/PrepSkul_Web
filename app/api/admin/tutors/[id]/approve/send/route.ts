@@ -85,11 +85,12 @@ export async function POST(
       );
     }
 
-    // Update tutor status to approved
+    // Update tutor status to approved and clear pending update flag
     await supabase
       .from('tutor_profiles')
       .update({
         status: 'approved',
+        has_pending_update: false, // Clear pending update flag when approving
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
       })
@@ -109,8 +110,6 @@ export async function POST(
           title: '🎉 Profile Approved!',
           message: 'Your PrepSkul tutor profile has been approved. Your profile is now live and students can book sessions with you!',
           priority: 'high',
-          actionUrl: '/tutor/dashboard',
-          actionText: 'View Dashboard',
           sendEmail: false, // Email already sent above
         }),
       });

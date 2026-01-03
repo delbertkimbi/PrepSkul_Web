@@ -59,7 +59,7 @@ function SignInContent() {
         throw new Error("No user returned")
       }
 
-      router.push("/tichar/dashboard")
+      router.push("/ticha/dashboard")
       router.refresh()
     } catch (err: any) {
       // Provide better error messages
@@ -201,7 +201,7 @@ function SignInContent() {
           <p className="text-xs sm:text-sm text-gray-600">
             Don't have an account?{" "}
             <Link
-              href="/tichar/signup"
+              href="/ticha/signup"
               className="font-semibold text-gray-900 hover:underline"
             >
               Sign Up

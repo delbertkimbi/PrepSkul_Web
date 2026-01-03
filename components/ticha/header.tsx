@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Zap, User, Menu, X, LogOut } from "lucide-react"
+import { Zap, User, Menu, X, LogOut, Settings } from "lucide-react"
 import { tichaSupabase } from "@/lib/ticha-supabase"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
@@ -13,6 +13,7 @@ export function TichaHeader() {
   const pathname = usePathname()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const isAuthenticated = !!user
 
@@ -20,6 +21,18 @@ export function TichaHeader() {
     const checkUser = async () => {
       const { data: { user } } = await tichaSupabase.auth.getUser()
       setUser(user)
+      
+      // Check if user is admin
+      if (user) {
+        try {
+          const response = await fetch('/api/ticha/admin/check')
+          const data = await response.json()
+          setIsAdmin(data.isAdmin || false)
+        } catch (error) {
+          setIsAdmin(false)
+        }
+      }
+      
       setLoading(false)
     }
 
@@ -27,6 +40,15 @@ export function TichaHeader() {
 
     const { data: { subscription } } = tichaSupabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        // Re-check admin status on auth change
+        fetch('/api/ticha/admin/check')
+          .then(res => res.json())
+          .then(data => setIsAdmin(data.isAdmin || false))
+          .catch(() => setIsAdmin(false))
+      } else {
+        setIsAdmin(false)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -35,13 +57,13 @@ export function TichaHeader() {
   const handleLogout = async () => {
     await tichaSupabase.auth.signOut()
     setMobileMenuOpen(false)
-    router.push("/tichar")
+    router.push("/ticha")
     router.refresh()
   }
 
   const handleStatsClick = () => {
     setMobileMenuOpen(false)
-    if (pathname === "/tichar/dashboard") {
+    if (pathname === "/ticha/dashboard") {
       // Scroll to stats section
       setTimeout(() => {
         const statsElement = document.getElementById("stats")
@@ -50,7 +72,7 @@ export function TichaHeader() {
         }
       }, 100)
     } else {
-      router.push("/tichar/dashboard#stats")
+      router.push("/ticha/dashboard#stats")
     }
   }
 
@@ -64,7 +86,7 @@ export function TichaHeader() {
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          <Link href="/tichar" className="flex items-center gap-2">
+          <Link href="/ticha" className="flex items-center gap-2">
             <div
               className="p-1.5 rounded-lg"
               style={{
@@ -83,8 +105,18 @@ export function TichaHeader() {
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <>
+                {isAdmin && (
+                  <Link
+                    href="/ticha/admin/designs"
+                    className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100 flex items-center gap-2"
+                    style={{  }}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Design Inspo Training
+                  </Link>
+                )}
                 <Link
-                  href="/tichar/dashboard#stats"
+                  href="/ticha/dashboard#stats"
                   className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors px-3 py-2 rounded-lg hover:bg-gray-100"
                   style={{  }}
                 >
@@ -117,7 +149,7 @@ export function TichaHeader() {
                 }}
                 asChild
               >
-                <Link href="/tichar/signin" className="flex items-center gap-2">
+                <Link href="/ticha/signin" className="flex items-center gap-2">
                   <User className="h-4 w-4" />
                   Sign In
                 </Link>
@@ -152,13 +184,24 @@ export function TichaHeader() {
             {isAuthenticated ? (
               <>
                 <Link
-                  href="/tichar/dashboard"
+                  href="/ticha/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
                   style={{  }}
                 >
                   Dashboard
                 </Link>
+                {isAdmin && (
+                  <Link
+                    href="/ticha/admin/designs"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                    style={{  }}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Design Inspo Training
+                  </Link>
+                )}
                 <button
                   onClick={handleStatsClick}
                   className="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
@@ -177,15 +220,15 @@ export function TichaHeader() {
                 </button>
               </>
             ) : (
-              <Link
-                href="/tichar/signin"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-                style={{  }}
-              >
-                <User className="h-4 w-4" />
-                Sign In
-              </Link>
+                <Link
+                  href="/ticha/signin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                  style={{  }}
+                >
+                  <User className="h-4 w-4" />
+                  Sign In
+                </Link>
             )}
           </div>
         )}
