@@ -97,9 +97,10 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
       lastError = error instanceof Error ? error : new Error(String(error))
       console.warn(`[skulMate OCR] Model ${model} failed:`, lastError.message)
       
-      // If it's a 401 (invalid API key), stop trying
-      if (lastError.message.includes('401') || lastError.message.includes('User not found')) {
-        throw new Error(`Invalid OpenRouter API key. Please check SKULMATE_OPENROUTER_API_KEY in your environment variables.`)
+      // If it's a 401 (invalid API key), stop trying immediately
+      if (lastError.message.includes('401') || lastError.message.includes('User not found') || lastError.message.includes('Invalid API key')) {
+        console.error('[skulMate OCR] Invalid API key detected. Stopping all model attempts.')
+        throw new Error(`Invalid OpenRouter API key. Please check SKULMATE_OPENROUTER_API_KEY in your environment variables. The API key must be valid and have credits.`)
       }
       
       continue
@@ -286,4 +287,3 @@ export async function extractFile(
       throw new Error(`Unsupported file type: ${fileInfo.type}. Supported types: PDF, DOCX, Images (JPG/PNG/GIF), TXT`)
   }
 }
-

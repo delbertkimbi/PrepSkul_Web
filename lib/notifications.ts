@@ -690,9 +690,6 @@ export async function sendCustomEmail(
       success: false,
       error: lastError?.message || 'Failed to send email after multiple attempts',
     };
-
-    console.log('✅ Custom email sent successfully:', data);
-    return { success: true };
   } catch (error: any) {
     console.error('❌ Error sending custom email:', error);
     return {

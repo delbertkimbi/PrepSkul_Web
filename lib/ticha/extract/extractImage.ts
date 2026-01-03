@@ -120,4 +120,3 @@ async function extractWithTesseract(imageBuffer: Buffer): Promise<ExtractedText>
     throw new Error(`OCR failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please check OpenRouter Vision model configuration.`)
   }
 }
-
