@@ -53,10 +53,10 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Validate file size (2MB max)
-        if (profileImage.size > 2 * 1024 * 1024) {
+        // Validate file size (5MB max)
+        if (profileImage.size > 5 * 1024 * 1024) {
           return NextResponse.json(
-            { error: "Profile image must be less than 2MB" },
+            { error: "Profile image must be less than 5MB. Please compress your image and try again." },
             { status: 400 }
           )
         }
@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
 
         profileImageUrl = publicUrl
       } catch (error) {
-        console.error("[Ambassadors] Image upload error:", error)
+        const errorMessage = error instanceof Error ? error.message : "Unknown error"
         return NextResponse.json(
-          { error: "Failed to upload profile image" },
+          { error: `Failed to upload profile image: ${errorMessage}. Please try again or use a smaller image.` },
           { status: 500 }
         )
       }
@@ -107,9 +107,23 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("[Ambassadors] Database error:", error)
+      // Provide user-friendly error messages based on error type
+      let errorMessage = "Failed to submit application"
+      
+      if (error.code === '23505') { // Unique constraint violation
+        errorMessage = "An application with this email already exists. Please use a different email or contact support if you believe this is an error."
+      } else if (error.code === '23503') { // Foreign key violation
+        errorMessage = "There was an issue with the form data. Please refresh the page and try again."
+      } else if (error.code === '23502') { // Not null violation
+        errorMessage = "Please fill in all required fields before submitting."
+      } else if (error.message?.includes('column') || error.message?.includes('does not exist')) {
+        errorMessage = "There was a database configuration issue. Our team has been notified. Please try again in a few minutes."
+      } else {
+        errorMessage = `Unable to save your application: ${error.message || 'Unknown error'}. Please try again or contact support.`
+      }
+      
       return NextResponse.json(
-        { error: "Failed to submit application", details: error.message },
+        { error: errorMessage, details: error.message },
         { status: 500 }
       )
     }
@@ -120,9 +134,12 @@ export async function POST(request: NextRequest) {
       message: "Application submitted successfully",
     })
   } catch (error) {
-    console.error("[Ambassadors] Error:", error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
     return NextResponse.json(
-      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { 
+        error: "We encountered an unexpected error while processing your application. Please try again in a few moments. If the problem persists, contact our support team.",
+        details: errorMessage 
+      },
       { status: 500 }
     )
   }
