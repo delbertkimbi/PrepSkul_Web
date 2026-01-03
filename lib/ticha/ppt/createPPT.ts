@@ -1,16 +1,23 @@
 /**
  * PowerPoint Presentation Generation
  * Creates beautiful, design-focused presentations using pptxgenjs
- * Emphasizes templates, themes, and visual design
+ * Uses Business Template (Orange/Dark Blue) as default
  */
 
 import PptxGenJS from 'pptxgenjs'
 
 export interface SlideDesign {
-  background_color: 'light-blue' | 'dark-blue' | 'white' | 'gray' | 'green'
-  text_color: 'black' | 'white'
+  background_color: string // Hex code or color name
+  text_color: 'black' | 'white' | string
   layout: 'title-only' | 'title-and-bullets' | 'two-column' | 'image-left' | 'image-right'
   icon: 'none' | 'book' | 'idea' | 'warning' | 'check'
+  fontFamily?: string
+  fontSize?: number
+  customColors?: {
+    primary?: string
+    secondary?: string
+    accent?: string
+  }
 }
 
 export interface SlideData {
@@ -26,144 +33,162 @@ export interface PresentationOptions {
   slides: SlideData[]
 }
 
-// Professional Color Palettes - Beautiful gradients and modern colors
-const COLORS = {
-  'light-blue': { bg: '667eea', text: 'FFFFFF' }, // Modern purple-blue gradient
-  'dark-blue': { bg: '1e3c72', text: 'FFFFFF' },   // Deep professional blue
-  'white': { bg: 'f5f7fa', text: '2d3748' },      // Soft white with dark text
-  'gray': { bg: 'e0e0e0', text: '1a1a1a' },       // Elegant gray
-  'green': { bg: '11998e', text: 'FFFFFF' },      // Modern teal-green
-  // Additional color variations that AI might generate
-  'purple-gradient': { bg: '667eea', text: 'FFFFFF' }, // Alias for light-blue
-  'deep-blue': { bg: '1e3c72', text: 'FFFFFF' },      // Alias for dark-blue
-  'elegant-gray': { bg: 'e0e0e0', text: '1a1a1a' }, // Alias for gray
-  'modern-teal': { bg: '11998e', text: 'FFFFFF' },  // Alias for green
+// Business Template Color Palette
+const BUSINESS_COLORS = {
+  orange: '#FF8A00',
+  darkBlue: '#2D3542',
+  white: '#FFFFFF',
+  black: '#000000',
 } as const
 
-// Default fallback color
-const DEFAULT_COLOR = { bg: '667eea', text: 'FFFFFF' } // light-blue as default
+// Business Template Fonts
+const BUSINESS_FONTS = {
+  title: { name: 'Montserrat', size: 48, bold: true },
+  subtitle: { name: 'Montserrat', size: 32, bold: true },
+  body: { name: 'Open Sans', size: 18, bold: false },
+  bullet: { name: 'Open Sans', size: 16, bold: false },
+} as const
 
 /**
- * Get color theme with fallback for unknown colors
+ * Get color from design spec - defaults to business template
  */
-function getColorTheme(colorKey: string | undefined): { bg: string; text: string } {
-  if (!colorKey) {
-    console.warn('[createPPT] No background_color provided, using default')
-    return DEFAULT_COLOR
+function getColorTheme(background_color: string | undefined): { bg: string; text: string } {
+  if (!background_color) {
+    return { bg: BUSINESS_COLORS.orange, text: BUSINESS_COLORS.white }
   }
-  
-  const color = COLORS[colorKey as keyof typeof COLORS]
-  if (!color) {
-    console.warn(`[createPPT] Unknown background_color: "${colorKey}", using default. Available colors: ${Object.keys(COLORS).join(', ')}`)
-    return DEFAULT_COLOR
+
+  // Handle hex codes
+  if (background_color.startsWith('#')) {
+    const hex = background_color.replace('#', '')
+    const brightness = getBrightness(hex)
+    const textColor = brightness > 128 ? BUSINESS_COLORS.black : BUSINESS_COLORS.white
+    return { bg: hex, text: textColor }
   }
-  
-  return color
-}
 
-// Brand fonts and styles
-const BRAND_FONTS = {
-  title: { name: 'Poppins', size: 44, bold: true },
-  subtitle: { name: 'Poppins', size: 32, bold: true },
-  body: { name: 'Inter', size: 18 },
-  bullet: { name: 'Inter', size: 16 },
-}
+  // Map old color names to business template
+  const colorMap: Record<string, { bg: string; text: string }> = {
+    'light-blue': { bg: BUSINESS_COLORS.orange, text: BUSINESS_COLORS.white },
+    'dark-blue': { bg: BUSINESS_COLORS.darkBlue, text: BUSINESS_COLORS.white },
+    'white': { bg: BUSINESS_COLORS.white, text: BUSINESS_COLORS.black },
+    'gray': { bg: BUSINESS_COLORS.white, text: BUSINESS_COLORS.black },
+    'green': { bg: BUSINESS_COLORS.orange, text: BUSINESS_COLORS.white },
+    'orange': { bg: BUSINESS_COLORS.orange, text: BUSINESS_COLORS.white },
+    'dark-gray-blue': { bg: BUSINESS_COLORS.darkBlue, text: BUSINESS_COLORS.white },
+  }
 
-// Icon Unicode characters (fallback if icons can't be used)
-const ICONS = {
-  'none': '',
-  'book': '📚',
-  'idea': '💡',
-  'warning': '⚠️',
-  'check': '✓',
-} as const
+  return colorMap[background_color] || { bg: BUSINESS_COLORS.orange, text: BUSINESS_COLORS.white }
+}
 
 /**
- * Create a PowerPoint presentation with rich design and themes
+ * Calculate brightness of a hex color
+ */
+function getBrightness(hex: string): number {
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  return (r * 299 + g * 587 + b * 114) / 1000
+}
+
+/**
+ * Get font configuration - defaults to business template
+ */
+function getFontConfig(design: SlideDesign, type: 'title' | 'subtitle' | 'body' | 'bullet'): { name: string; size: number; bold: boolean } {
+  const defaultFont = BUSINESS_FONTS[type]
+  
+  // Use design font if specified, otherwise use business template defaults
+  if (design.fontFamily) {
+    return {
+      name: design.fontFamily,
+      size: design.fontSize || defaultFont.size,
+      bold: type === 'title' || type === 'subtitle' ? true : defaultFont.bold,
+    }
+  }
+  
+  return defaultFont
+}
+
+/**
+ * Create PowerPoint presentation
  */
 export async function createPPT(options: PresentationOptions): Promise<Buffer> {
   const pptx = new PptxGenJS()
 
-  // Presentation metadata
-  pptx.author = options.author || 'Tichar AI'
-  pptx.company = options.company || 'Tichar AI'
-  pptx.title = options.title || 'Tichar AI Presentation'
+  pptx.author = options.author || 'TichaAI'
+  pptx.company = options.company || 'TichaAI'
+  pptx.title = options.title || 'TichaAI Presentation'
   pptx.revision = '1'
 
-  // Master slide layout (applies to all slides)
   pptx.defineLayout({
     name: 'TICHA_WIDE',
     width: 10,
-    height: 5.625, // 16:9 aspect ratio
+    height: 5.625, // 16:9
   })
   pptx.layout = 'TICHA_WIDE'
-
-  // Set the default slide background color directly as defineMasterSlide does not exist
-  // (see: https://gitbrent.github.io/PptxGenJS/docs/api-slaye/#background)
-  // Will apply per slide below as needed
-
 
   // Create slides
   for (let i = 0; i < options.slides.length; i++) {
     const slideData = options.slides[i]
     const slide = pptx.addSlide()
 
-    // Ensure design object exists with defaults
+    // Get design with business template defaults
     const design = slideData.design || {
-      background_color: 'light-blue',
-      text_color: 'white',
+      background_color: BUSINESS_COLORS.orange,
+      text_color: BUSINESS_COLORS.white,
       layout: 'title-and-bullets',
       icon: 'none',
+      fontFamily: BUSINESS_FONTS.title.name,
+      fontSize: BUSINESS_FONTS.title.size,
     }
 
-    // Apply design theme with fallback for unknown colors
-    const colorTheme = getColorTheme(design.background_color)
+    // Force business template colors if old colors detected
+    let bgColor = design.background_color
+    if (bgColor === 'light-blue' || bgColor === 'dark-blue' || 
+        bgColor?.includes('667eea') || bgColor?.includes('764ba2') ||
+        bgColor?.includes('1e3c72')) {
+      bgColor = i === 0 ? BUSINESS_COLORS.orange : (i % 2 === 0 ? BUSINESS_COLORS.darkBlue : BUSINESS_COLORS.white)
+    }
+
+    const colorTheme = getColorTheme(bgColor)
     slide.background = { color: colorTheme.bg }
 
-    // Create slide based on layout type with fallback
+    // Force business template fonts
+    const finalFontFamily = design.fontFamily || BUSINESS_FONTS.title.name
+    const titleFont = getFontConfig({ ...design, fontFamily: finalFontFamily }, 'title')
+    const bodyFont = getFontConfig({ ...design, fontFamily: finalFontFamily }, 'body')
+
     const layout = design.layout || 'title-and-bullets'
-    
-    // Create slide with design object attached for helper functions
-    const slideDataWithDesign = { ...slideData, design }
-    
+
     switch (layout) {
       case 'title-only':
-        await createTitleOnlySlide(slide, slideDataWithDesign, colorTheme)
+        createTitleOnlySlide(slide, slideData, colorTheme, titleFont)
         break
       case 'title-and-bullets':
-        await createTitleBulletsSlide(slide, slideDataWithDesign, colorTheme)
+        createTitleBulletsSlide(slide, slideData, colorTheme, titleFont, bodyFont)
         break
       case 'two-column':
-        await createTwoColumnSlide(slide, slideDataWithDesign, colorTheme)
+        createTwoColumnSlide(slide, slideData, colorTheme, titleFont, bodyFont)
         break
       case 'image-left':
-        await createImageLeftSlide(slide, slideDataWithDesign, colorTheme)
+        createImageLeftSlide(slide, slideData, colorTheme, titleFont, bodyFont)
         break
       case 'image-right':
-        await createImageRightSlide(slide, slideDataWithDesign, colorTheme)
+        createImageRightSlide(slide, slideData, colorTheme, titleFont, bodyFont)
         break
       default:
-        // Fallback to title-and-bullets for unknown layouts
-        console.warn(`[createPPT] Unknown layout: "${layout}", using title-and-bullets`)
-        await createTitleBulletsSlide(slide, slideDataWithDesign, colorTheme)
-        break
+        createTitleBulletsSlide(slide, slideData, colorTheme, titleFont, bodyFont)
     }
   }
 
-  // Generate and return as buffer
   const buffer = await pptx.write({ outputType: 'nodebuffer' })
   return Buffer.from(buffer as ArrayBuffer)
 }
 
-/**
- * Title-only slide (for impactful opening/closing slides)
- */
 function createTitleOnlySlide(
   slide: PptxGenJS.Slide,
   slideData: SlideData,
-  colorTheme: { bg: string; text: string }
+  colorTheme: { bg: string; text: string },
+  titleFont: { name: string; size: number; bold: boolean }
 ): void {
-  // Large centered title
   slide.addText(slideData.slide_title, {
     x: 0.5,
     y: 2.0,
@@ -171,41 +196,20 @@ function createTitleOnlySlide(
     h: 1.5,
     align: 'center',
     valign: 'middle',
-    fontSize: BRAND_FONTS.title.size,
-    fontFace: BRAND_FONTS.title.name,
-    bold: BRAND_FONTS.title.bold,
+    fontSize: titleFont.size,
+    fontFace: titleFont.name,
+    bold: titleFont.bold,
     color: colorTheme.text,
     lineSpacing: 32,
   })
-
-  // Add icon if specified
-  if (slideData.design?.icon && slideData.design.icon !== 'none') {
-    const iconText = ICONS[slideData.design.icon as keyof typeof ICONS] || ''
-    if (iconText) {
-      slide.addText(iconText, {
-        x: 4.5,
-        y: 0.5,
-        w: 1,
-        h: 1,
-        align: 'center',
-        valign: 'middle',
-        fontSize: 72,
-        color: colorTheme.text,
-      })
-    }
-  }
-
-  // Add subtle decorative elements
-  addDecorativeElements(slide, colorTheme)
 }
 
-/**
- * Title and bullets slide (standard content)
- */
 function createTitleBulletsSlide(
   slide: PptxGenJS.Slide,
   slideData: SlideData,
-  colorTheme: { bg: string; text: string }
+  colorTheme: { bg: string; text: string },
+  titleFont: { name: string; size: number; bold: boolean },
+  bodyFont: { name: string; size: number; bold: boolean }
 ): void {
   // Title
   slide.addText(slideData.slide_title, {
@@ -213,275 +217,138 @@ function createTitleBulletsSlide(
     y: 0.5,
     w: 9,
     h: 0.8,
-    fontSize: BRAND_FONTS.subtitle.size,
-    fontFace: BRAND_FONTS.subtitle.name,
-    bold: BRAND_FONTS.subtitle.bold,
+    fontSize: titleFont.size,
+    fontFace: titleFont.name,
+    bold: titleFont.bold,
     color: colorTheme.text,
   })
 
-  // Icon next to title (if specified)
-  if (slideData.design?.icon && slideData.design.icon !== 'none') {
-    const iconText = ICONS[slideData.design.icon as keyof typeof ICONS] || ''
-    if (iconText) {
-      slide.addText(iconText, {
-        x: 8.5,
-        y: 0.5,
-        w: 1,
-        h: 0.8,
-        align: 'center',
-        valign: 'middle',
-        fontSize: 36,
-        color: colorTheme.text,
-      })
-    }
-  }
-
-  // Bullet points
-  if (slideData.bullets.length > 0) {
-    const bulletYStart = 1.6
-    const bulletHeight = 3.5
-    const maxBullets = Math.min(slideData.bullets.length, 6)
-
-    slideData.bullets.slice(0, maxBullets).forEach((bullet, index) => {
-      const yPos = bulletYStart + (index * (bulletHeight / maxBullets))
-      
+  // Bullets
+  if (slideData.bullets && Array.isArray(slideData.bullets) && slideData.bullets.length > 0) {
+    const bulletY = 1.8
+    const lineHeight = 0.4
+    
+    slideData.bullets.forEach((bullet, index) => {
       slide.addText(`• ${bullet}`, {
         x: 0.8,
-        y: yPos,
-        w: 8.5,
-        h: bulletHeight / maxBullets - 0.1,
-        fontSize: BRAND_FONTS.bullet.size,
-        fontFace: BRAND_FONTS.bullet.name,
+        y: bulletY + (index * lineHeight),
+        w: 8.4,
+        h: lineHeight,
+        fontSize: bodyFont.size,
+        fontFace: bodyFont.name,
+        bold: bodyFont.bold,
         color: colorTheme.text,
-        bullet: { type: 'number', code: '1.' },
-        lineSpacing: 24,
+        lineSpacing: 28,
       })
     })
   }
-
-  addDecorativeElements(slide, colorTheme)
 }
 
-/**
- * Two-column slide (for comparisons or side-by-side content)
- */
 function createTwoColumnSlide(
   slide: PptxGenJS.Slide,
   slideData: SlideData,
-  colorTheme: { bg: string; text: string }
+  colorTheme: { bg: string; text: string },
+  titleFont: { name: string; size: number; bold: boolean },
+  bodyFont: { name: string; size: number; bold: boolean }
 ): void {
-  // Title
   slide.addText(slideData.slide_title, {
     x: 0.5,
     y: 0.5,
     w: 9,
-    h: 0.8,
-    fontSize: BRAND_FONTS.subtitle.size,
-    fontFace: BRAND_FONTS.subtitle.name,
-    bold: BRAND_FONTS.subtitle.bold,
+    h: 0.6,
+    fontSize: titleFont.size,
+    fontFace: titleFont.name,
+    bold: titleFont.bold,
     color: colorTheme.text,
-    align: 'center',
   })
 
-  // Split bullets into two columns
-  const midPoint = Math.ceil(slideData.bullets.length / 2)
-  const leftBullets = slideData.bullets.slice(0, midPoint)
-  const rightBullets = slideData.bullets.slice(midPoint)
+  const midPoint = slideData.bullets.length / 2
+  const leftBullets = slideData.bullets.slice(0, Math.ceil(midPoint))
+  const rightBullets = slideData.bullets.slice(Math.ceil(midPoint))
 
-  // Left column
-  if (leftBullets.length > 0) {
-    slide.addText(leftBullets.map(b => `• ${b}`).join('\n'), {
-      x: 0.5,
-      y: 1.6,
-      w: 4.25,
-      h: 3.5,
-      fontSize: BRAND_FONTS.bullet.size,
-      fontFace: BRAND_FONTS.bullet.name,
+  leftBullets.forEach((bullet, index) => {
+    slide.addText(`• ${bullet}`, {
+      x: 0.8,
+      y: 1.5 + (index * 0.4),
+      w: 4.2,
+      h: 0.35,
+      fontSize: bodyFont.size,
+      fontFace: bodyFont.name,
       color: colorTheme.text,
-      lineSpacing: 20,
     })
-  }
-
-  // Right column
-  if (rightBullets.length > 0) {
-    slide.addText(rightBullets.map(b => `• ${b}`).join('\n'), {
-      x: 5.25,
-      y: 1.6,
-      w: 4.25,
-      h: 3.5,
-      fontSize: BRAND_FONTS.bullet.size,
-      fontFace: BRAND_FONTS.bullet.name,
-      color: colorTheme.text,
-      lineSpacing: 20,
-    })
-  }
-
-  // Add divider line
-
-  slide.addShape('rect' as any, {
-
-    x: 4.95,
-    y: 1.6,
-    w: 0.1,
-    h: 3.5,
-    fill: { color: colorTheme.text, transparency: 50 },
   })
 
-  addDecorativeElements(slide, colorTheme)
+  rightBullets.forEach((bullet, index) => {
+    slide.addText(`• ${bullet}`, {
+      x: 5.3,
+      y: 1.5 + (index * 0.4),
+      w: 4.2,
+      h: 0.35,
+      fontSize: bodyFont.size,
+      fontFace: bodyFont.name,
+      color: colorTheme.text,
+    })
+  })
 }
 
-/**
- * Image-left slide (visual-heavy with supporting text)
- */
 function createImageLeftSlide(
   slide: PptxGenJS.Slide,
   slideData: SlideData,
-  colorTheme: { bg: string; text: string }
+  colorTheme: { bg: string; text: string },
+  titleFont: { name: string; size: number; bold: boolean },
+  bodyFont: { name: string; size: number; bold: boolean }
 ): void {
-  // Title
   slide.addText(slideData.slide_title, {
-    x: 5.5,
+    x: 0.5,
     y: 0.5,
-    w: 4,
-    h: 0.8,
-    fontSize: BRAND_FONTS.subtitle.size,
-    fontFace: BRAND_FONTS.subtitle.name,
-    bold: BRAND_FONTS.subtitle.bold,
+    w: 9,
+    h: 0.6,
+    fontSize: titleFont.size,
+    fontFace: titleFont.name,
+    bold: titleFont.bold,
     color: colorTheme.text,
   })
 
-  // Placeholder for image (left side)
-
-  slide.addShape('rect' as any, {
-
-    x: 0.5,
-    y: 1.6,
-    w: 4,
-    h: 3.5,
-    fill: { color: colorTheme.bg, transparency: 20 },
-    line: { color: colorTheme.text, width: 2, dashType: 'dash' },
-  })
-
-  slide.addText('[Image Placeholder]', {
-    x: 0.5,
-    y: 3.35,
-    w: 4,
-    h: 0.5,
-    fontSize: 12,
-    color: colorTheme.text,
-    align: 'center',
-    valign: 'middle',
-    italic: true,
-    transparency: 50,
-  })
-
-  // Bullets on right side
-  if (slideData.bullets.length > 0) {
-    const bulletYStart = 1.6
-    const bulletText = slideData.bullets.map(b => `• ${b}`).join('\n')
-
-    slide.addText(bulletText, {
+  slideData.bullets.forEach((bullet, index) => {
+    slide.addText(`• ${bullet}`, {
       x: 5.5,
-      y: bulletYStart,
+      y: 1.5 + (index * 0.4),
       w: 4,
-      h: 3.5,
-      fontSize: BRAND_FONTS.bullet.size,
-      fontFace: BRAND_FONTS.bullet.name,
+      h: 0.35,
+      fontSize: bodyFont.size,
+      fontFace: bodyFont.name,
       color: colorTheme.text,
-      lineSpacing: 20,
     })
-  }
-
-  addDecorativeElements(slide, colorTheme)
+  })
 }
 
-/**
- * Image-right slide (content-first with supporting visual)
- */
 function createImageRightSlide(
   slide: PptxGenJS.Slide,
   slideData: SlideData,
-  colorTheme: { bg: string; text: string }
+  colorTheme: { bg: string; text: string },
+  titleFont: { name: string; size: number; bold: boolean },
+  bodyFont: { name: string; size: number; bold: boolean }
 ): void {
-  // Title
   slide.addText(slideData.slide_title, {
     x: 0.5,
     y: 0.5,
-    w: 4,
-    h: 0.8,
-    fontSize: BRAND_FONTS.subtitle.size,
-    fontFace: BRAND_FONTS.subtitle.name,
-    bold: BRAND_FONTS.subtitle.bold,
+    w: 9,
+    h: 0.6,
+    fontSize: titleFont.size,
+    fontFace: titleFont.name,
+    bold: titleFont.bold,
     color: colorTheme.text,
   })
 
-  // Bullets on left side
-  if (slideData.bullets.length > 0) {
-    const bulletText = slideData.bullets.map(b => `• ${b}`).join('\n')
-
-    slide.addText(bulletText, {
-      x: 0.5,
-      y: 1.6,
+  slideData.bullets.forEach((bullet, index) => {
+    slide.addText(`• ${bullet}`, {
+      x: 0.8,
+      y: 1.5 + (index * 0.4),
       w: 4,
-      h: 3.5,
-      fontSize: BRAND_FONTS.bullet.size,
-      fontFace: BRAND_FONTS.bullet.name,
+      h: 0.35,
+      fontSize: bodyFont.size,
+      fontFace: bodyFont.name,
       color: colorTheme.text,
-      lineSpacing: 20,
     })
-  }
-
-  // Placeholder for image (right side)
-
-  slide.addShape('rect' as any, {
-
-    x: 5.5,
-    y: 1.6,
-    w: 4,
-    h: 3.5,
-    fill: { color: colorTheme.bg, transparency: 20 },
-    line: { color: colorTheme.text, width: 2, dashType: 'dash' },
-  })
-
-  slide.addText('[Image Placeholder]', {
-    x: 5.5,
-    y: 3.35,
-    w: 4,
-    h: 0.5,
-    fontSize: 12,
-    color: colorTheme.text,
-    align: 'center',
-    valign: 'middle',
-    italic: true,
-    transparency: 50,
-  })
-
-  addDecorativeElements(slide, colorTheme)
-}
-
-/**
- * Add decorative elements for visual polish
- */
-function addDecorativeElements(
-  slide: PptxGenJS.Slide,
-  colorTheme: { bg: string; text: string }
-): void {
-  // Subtle corner accent (top-right)
-  slide.addShape('rect' as any, {
-    x: 9.5,
-    y: 0,
-    w: 0.5,
-    h: 0.3,
-    fill: { color: colorTheme.text, transparency: 20 },
-    rotate: 45,
-  })
-
-  slide.addShape('rect' as any, {
-    x: 0,
-    y: 5.3,
-    w: 10,
-    h: 0.05,
-    fill: { color: colorTheme.text, transparency: 30 },
   })
 }
-

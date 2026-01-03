@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const token_hash = requestUrl.searchParams.get("token_hash")
   const type = requestUrl.searchParams.get("type")
-  const next = requestUrl.searchParams.get("next") || "/tichar/dashboard"
+  const next = requestUrl.searchParams.get("next") || "/ticha/dashboard"
 
   if (token_hash && type) {
     const supabase = await createTichaServerSupabaseClient()
@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       // Email confirmed successfully - redirect to dashboard
-      return NextResponse.redirect(new URL(`/tichar/dashboard?confirmed=true`, requestUrl.origin))
+      return NextResponse.redirect(new URL(`/ticha/dashboard?confirmed=true`, requestUrl.origin))
     }
   }
 
   // If there's an error or missing params, redirect to sign in with error
-  return NextResponse.redirect(new URL(`/tichar/signin?error=confirmation_failed`, requestUrl.origin))
+  return NextResponse.redirect(new URL(`/ticha/signin?error=confirmation_failed`, requestUrl.origin))
 }
 

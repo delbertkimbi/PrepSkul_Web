@@ -3,15 +3,25 @@
 interface TutorStatusBadgeProps {
   status: string;
   isHidden?: boolean;
+  hasPendingUpdate?: boolean;
   className?: string;
 }
 
-export default function TutorStatusBadge({ status, isHidden = false, className = '' }: TutorStatusBadgeProps) {
+export default function TutorStatusBadge({ status, isHidden = false, hasPendingUpdate = false, className = '' }: TutorStatusBadgeProps) {
   // If hidden, show hidden badge regardless of status
   if (isHidden) {
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ${className}`}>
         Hidden
+      </span>
+    );
+  }
+
+  // If approved tutor has pending update, show "Pending Update" badge
+  if (status === 'approved' && hasPendingUpdate) {
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ${className}`}>
+        🔄 Pending Update
       </span>
     );
   }

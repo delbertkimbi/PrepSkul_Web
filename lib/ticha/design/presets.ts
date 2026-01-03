@@ -1,156 +1,156 @@
 /**
- * Design Presets for Tichar AI
- * Predefined design templates for different presentation styles
+ * Design Presets for TichaAI
+ * Three stunning presets: Business, Academic, Kids
  */
 
-import { DesignPreset } from '../types'
+export type DesignPreset = 'business' | 'academic' | 'kids'
 
-export const DESIGN_PRESETS: Record<string, DesignPreset> = {
-  corporate: {
-    id: 'corporate',
-    name: 'Corporate',
-    category: 'corporate',
-    description: 'Professional, clean, and authoritative. Perfect for business presentations.',
-    colorPalette: {
-      primary: '1565C0', // Dark blue
-      secondary: '424242', // Dark gray
-      accent: '1976D2', // Medium blue
-      background: ['FFFFFF', 'F5F5F5', 'E3F2FD', '424242'], // White, light gray, light blue, dark gray
-      text: ['212121', 'FFFFFF'], // Dark gray, white
+export interface DesignPresetConfig {
+  colors: {
+    primary: string
+    secondary: string
+    accent: string
+    text: { light: string; dark: string }
+  }
+  fonts: {
+    title: { name: string; size: number; weight: number }
+    body: { name: string; size: number; weight: number }
+  }
+  getBackgroundColor: (index: number) => string
+  getTextColor: (bgColor: string) => string
+}
+
+export const DESIGN_PRESETS: Record<DesignPreset, DesignPresetConfig> = {
+  business: {
+    colors: {
+      primary: '#FF8A00',      // Vibrant orange
+      secondary: '#2D3542',     // Dark blue-gray
+      accent: '#FFFFFF',        // White
+      text: { light: '#FFFFFF', dark: '#000000' },
     },
     fonts: {
-      title: 'Poppins',
-      body: 'Inter',
+      title: { name: 'Montserrat', size: 48, weight: 700 },
+      body: { name: 'Open Sans', size: 18, weight: 400 },
     },
-    layoutPreferences: {
-      preferred: ['title-and-bullets', 'two-column'],
-      avoid: ['image-left', 'image-right'],
+    getBackgroundColor: (index: number) => {
+      return index === 0 ? '#FF8A00' : (index % 2 === 0 ? '#2D3542' : '#FFFFFF')
     },
-    iconStyle: 'outlined',
-  },
-  creative: {
-    id: 'creative',
-    name: 'Creative',
-    category: 'creative',
-    description: 'Colorful, modern, and bold. Great for design portfolios and creative pitches.',
-    colorPalette: {
-      primary: 'E91E63', // Pink
-      secondary: '9C27B0', // Purple
-      accent: 'FF5722', // Orange
-      background: ['FFFFFF', 'F3E5F5', 'FFF3E0', 'E1BEE7', 'FFE0B2'], // White, light purple, light orange, light purple, light orange
-      text: ['212121', 'FFFFFF'], // Dark gray, white
+    getTextColor: (bgColor: string) => {
+      return bgColor === '#FFFFFF' ? '#000000' : '#FFFFFF'
     },
-    fonts: {
-      title: 'Poppins',
-      body: 'Inter',
-    },
-    layoutPreferences: {
-      preferred: ['title-only', 'image-left', 'image-right'],
-      avoid: ['two-column'],
-    },
-    iconStyle: 'filled',
-  },
-  minimalist: {
-    id: 'minimalist',
-    name: 'Minimalist',
-    category: 'minimalist',
-    description: 'Clean, simple, and elegant. Focus on content with minimal distractions.',
-    colorPalette: {
-      primary: '212121', // Dark gray
-      secondary: '757575', // Medium gray
-      accent: '000000', // Black
-      background: ['FFFFFF', 'FAFAFA'], // White, off-white
-      text: ['212121', '000000'], // Dark gray, black
-    },
-    fonts: {
-      title: 'Inter',
-      body: 'Inter',
-    },
-    layoutPreferences: {
-      preferred: ['title-only', 'title-and-bullets'],
-      avoid: ['image-left', 'image-right', 'two-column'],
-    },
-    iconStyle: 'minimal',
   },
   academic: {
-    id: 'academic',
-    name: 'Academic',
-    category: 'academic',
-    description: 'Formal, structured, and scholarly. Ideal for research and educational content.',
-    colorPalette: {
-      primary: '1A237E', // Deep indigo
-      secondary: '37474F', // Blue gray
-      accent: '0277BD', // Blue
-      background: ['FFFFFF', 'ECEFF1', 'E3F2FD'], // White, light blue-gray, light blue
-      text: ['212121', '37474F'], // Dark gray, blue-gray
+    colors: {
+      primary: '#1a365d',       // Deep blue
+      secondary: '#2d4a5c',      // Slate blue
+      accent: '#f7fafc',        // Light gray
+      text: { light: '#FFFFFF', dark: '#1a202c' },
     },
     fonts: {
-      title: 'Poppins',
-      body: 'Inter',
+      title: { name: 'Georgia', size: 44, weight: 600 },
+      body: { name: 'Merriweather', size: 16, weight: 400 },
     },
-    layoutPreferences: {
-      preferred: ['title-and-bullets', 'two-column'],
-      avoid: ['image-left', 'image-right'],
+    getBackgroundColor: (index: number) => {
+      return index === 0 ? '#1a365d' : (index % 2 === 0 ? '#2d4a5c' : '#f7fafc')
     },
-    iconStyle: 'outlined',
+    getTextColor: (bgColor: string) => {
+      return bgColor === '#f7fafc' ? '#1a202c' : '#FFFFFF'
+    },
   },
-  marketing: {
-    id: 'marketing',
-    name: 'Marketing',
-    category: 'marketing',
-    description: 'Vibrant, attention-grabbing, and energetic. Perfect for sales and marketing pitches.',
-    colorPalette: {
-      primary: 'FF6F00', // Orange
-      secondary: 'D32F2F', // Red
-      accent: 'FBC02D', // Yellow
-      background: ['FFFFFF', 'FFF3E0', 'FFE0B2', 'FBC02D'], // White, light orange, light orange, yellow
-      text: ['212121', 'FFFFFF'], // Dark gray, white
+  kids: {
+    colors: {
+      primary: '#FF6B9D',       // Pink
+      secondary: '#4ECDC4',     // Turquoise
+      accent: '#FFE66D',       // Yellow
+      text: { light: '#FFFFFF', dark: '#2d3748' },
     },
     fonts: {
-      title: 'Poppins',
-      body: 'Inter',
+      title: { name: 'Comic Sans MS', size: 42, weight: 700 },
+      body: { name: 'Nunito', size: 20, weight: 500 },
     },
-    layoutPreferences: {
-      preferred: ['title-only', 'image-left', 'image-right'],
-      avoid: ['two-column'],
+    getBackgroundColor: (index: number) => {
+      const colors = ['#FF6B9D', '#4ECDC4', '#FFE66D']
+      return colors[index % colors.length]
     },
-    iconStyle: 'bold',
+    getTextColor: (bgColor: string) => {
+      return bgColor === '#FFE66D' ? '#2d3748' : '#FFFFFF'
+    },
   },
 }
 
 /**
- * Get preset by ID
+ * Get all presets as an array with metadata
  */
-export function getPreset(presetId: string): DesignPreset | undefined {
-  return DESIGN_PRESETS[presetId]
-}
-
-/**
- * Get all presets
- */
-export function getAllPresets(): DesignPreset[] {
-  return Object.values(DESIGN_PRESETS)
-}
-
-/**
- * Get presets by category
- */
-export function getPresetsByCategory(category: string): DesignPreset[] {
-  return Object.values(DESIGN_PRESETS).filter((p) => p.category === category)
-}
-
-/**
- * Get preset color palette as hex array
- */
-export function getPresetColors(presetId: string): string[] {
-  const preset = getPreset(presetId)
-  if (!preset) return []
-  
+export function getAllPresets() {
   return [
-    preset.colorPalette.primary,
-    preset.colorPalette.secondary,
-    preset.colorPalette.accent,
-    ...preset.colorPalette.background,
+    {
+      id: 'business',
+      name: 'Business',
+      description: 'Professional, modern, and energetic. Perfect for corporate presentations and business proposals.',
+      category: 'Professional',
+      colorPalette: {
+        primary: 'FF8A00',
+        secondary: '2D3542',
+        accent: 'FFFFFF',
+      },
+    },
+    {
+      id: 'academic',
+      name: 'Academic',
+      description: 'Scholarly and structured. Ideal for research presentations, thesis defenses, and educational content.',
+      category: 'Educational',
+      colorPalette: {
+        primary: '1a365d',
+        secondary: '2d4a5c',
+        accent: 'f7fafc',
+      },
+    },
+    {
+      id: 'kids',
+      name: 'Kids',
+      description: 'Colorful, fun, and engaging. Perfect for children\'s presentations with emojis and vibrant colors.',
+      category: 'Fun',
+      colorPalette: {
+        primary: 'FF6B9D',
+        secondary: '4ECDC4',
+        accent: 'FFE66D',
+      },
+    },
   ]
 }
 
+/**
+ * Get a specific preset by ID
+ */
+export function getPreset(id: string): DesignPresetConfig | null {
+  if (id in DESIGN_PRESETS) {
+    return DESIGN_PRESETS[id as DesignPreset]
+  }
+  return null
+}
+
+/**
+ * Apply design preset to slides
+ */
+export function applyDesignPreset(
+  slides: Array<{ slide_title: string; bullets: string[]; design: any }>,
+  preset: DesignPreset
+): Array<{ slide_title: string; bullets: string[]; design: any }> {
+  const config = DESIGN_PRESETS[preset]
+  
+  return slides.map((slide, index) => {
+    const bgColor = config.getBackgroundColor(index)
+    const textColor = config.getTextColor(bgColor)
+    
+    return {
+      ...slide,
+      design: {
+        ...slide.design,
+        background_color: bgColor,
+        text_color: textColor,
+        fontFamily: config.fonts.title.name,
+        fontSize: index === 0 ? config.fonts.title.size : config.fonts.title.size - 8,
+      },
+    }
+  })
+}

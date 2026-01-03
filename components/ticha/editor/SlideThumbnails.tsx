@@ -27,15 +27,31 @@ export function SlideThumbnails() {
     )
   }
 
-  const getBackgroundColor = (color: string): string => {
-    const colorMap: Record<string, string> = {
-      'light-blue': '#E3F2FD',
-      'dark-blue': '#1565C0',
-      white: '#FFFFFF',
-      gray: '#F5F5F5',
-      green: '#C8E6C9',
+  const getBackgroundColor = (color: string | undefined): string => {
+    if (!color) return '#FF8A00' // Business template orange default
+    
+    // Handle hex codes
+    if (color.startsWith('#')) {
+      return color
     }
-    return colorMap[color] || (color.startsWith('#') ? color : `#${color}`)
+
+    // Map old colors to business template
+    const colorMap: Record<string, string> = {
+      'light-blue': '#FF8A00', // Business orange
+      'dark-blue': '#2D3542',   // Business dark blue
+      'white': '#FFFFFF',
+      'gray': '#FFFFFF',
+      'green': '#FF8A00',       // Business orange
+      'orange': '#FF8A00',
+      'dark-gray-blue': '#2D3542',
+    }
+    
+    // If it's an old gradient color, use business template
+    if (color.includes('667eea') || color.includes('764ba2') || color.includes('1e3c72')) {
+      return '#FF8A00'
+    }
+    
+    return colorMap[color] || '#FF8A00'
   }
 
   return (

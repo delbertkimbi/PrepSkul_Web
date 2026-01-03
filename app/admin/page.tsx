@@ -49,11 +49,20 @@ export default async function AdminDashboard() {
     .select('*', { count: 'exact', head: true })
     .eq('user_type', 'parent');
   
-  // Pending tutors
-  const { count: pendingTutors } = await supabase
+  // Pending tutors - separate counts for new applications and pending updates
+  const { count: newApplications } = await supabase
     .from('tutor_profiles')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'pending');
+    .eq('status', 'pending')
+    .or('has_pending_update.is.null,has_pending_update.eq.false');
+
+  const { count: pendingUpdates } = await supabase
+    .from('tutor_profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'approved')
+    .eq('has_pending_update', true);
+
+  const pendingTutors = (newApplications || 0) + (pendingUpdates || 0);
   
   // Active sessions (happening now) - check both individual_sessions and trial_sessions
   const now = new Date();
@@ -160,9 +169,12 @@ export default async function AdminDashboard() {
               </a>
             </div>
             <div className="bg-white p-6 rounded-lg border border-gray-200">
-              <p className="text-sm text-gray-600">Pending Tutors</p>
+              <p className="text-sm text-gray-600">Pending Reviews</p>
               <p className="text-3xl font-bold text-orange-600 mt-2">{pendingTutors || 0}</p>
-              <a href="/admin/tutors?tab=pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
+              <p className="text-xs text-gray-500 mt-2">
+                {newApplications || 0} new • {pendingUpdates || 0} updates
+              </p>
+              <a href="/admin/tutors/pending" className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block">
                 Review applications →
               </a>
             </div>

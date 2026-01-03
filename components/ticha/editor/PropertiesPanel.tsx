@@ -6,7 +6,7 @@
 'use client'
 
 import { useEditorStore } from '@/lib/ticha/editor/state'
-import { DESIGN_PRESETS, getPreset } from '@/lib/ticha/design/presets'
+import { getAllPresets, getPreset } from '@/lib/ticha/design/presets'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -70,15 +70,20 @@ export function PropertiesPanel() {
     const preset = getPreset(presetId)
     if (!preset || !currentSlide) return
 
-    // Apply preset colors
-    const primaryColor = `#${preset.colorPalette.primary}`
+    // Apply preset colors - use first slide color pattern
+    const slideIndex = presentation?.slides.findIndex((s) => s.id === currentSlide.id) || 0
+    const bgColor = preset.getBackgroundColor(slideIndex)
+    const textColor = preset.getTextColor(bgColor)
+    
     updateSlide(
-      presentation?.slides.findIndex((s) => s.id === currentSlide.id) || 0,
+      slideIndex,
       {
         design: {
           ...currentSlide.design,
-          background_color: preset.colorPalette.background[0] || currentSlide.design.background_color,
-          text_color: preset.colorPalette.text[0] || currentSlide.design.text_color,
+          background_color: bgColor,
+          text_color: textColor,
+          fontFamily: preset.fonts.title.name,
+          fontSize: slideIndex === 0 ? preset.fonts.title.size : preset.fonts.title.size - 8,
         },
       }
     )
@@ -101,6 +106,8 @@ export function PropertiesPanel() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Montserrat">Montserrat (Business Template)</SelectItem>
+                  <SelectItem value="Open Sans">Open Sans (Business Template)</SelectItem>
                   <SelectItem value="Poppins">Poppins</SelectItem>
                   <SelectItem value="Inter">Inter</SelectItem>
                   <SelectItem value="Arial">Arial</SelectItem>
@@ -162,7 +169,7 @@ export function PropertiesPanel() {
                 value={
                   currentSlide?.design.background_color.startsWith('#')
                     ? currentSlide.design.background_color
-                    : `#${getPreset(currentSlide?.design.background_color || 'white')?.colorPalette.background[0] || 'FFFFFF'}`
+                    : currentSlide?.design.background_color || '#FFFFFF'
                 }
                 onChange={(e) => handleBackgroundColorChange(e.target.value.replace('#', ''))}
               />
@@ -171,14 +178,14 @@ export function PropertiesPanel() {
             <div>
               <Label htmlFor="design-preset">Design Preset</Label>
               <Select
-                value={presentation?.metadata?.designPreset || ''}
+                value={(presentation?.metadata as any)?.designPreset || ''}
                 onValueChange={handlePresetChange}
               >
                 <SelectTrigger id="design-preset">
                   <SelectValue placeholder="Select preset" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.values(DESIGN_PRESETS).map((preset) => (
+                  {getAllPresets().map((preset) => (
                     <SelectItem key={preset.id} value={preset.id}>
                       {preset.name}
                     </SelectItem>

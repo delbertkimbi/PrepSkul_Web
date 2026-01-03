@@ -81,6 +81,14 @@ export function Footer() {
                     {t.tutors.hero.title}
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/ambassadors"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
+                  >
+                    Ambassadors
+                  </Link>
+                </li>
               </ul>
             </div>
 

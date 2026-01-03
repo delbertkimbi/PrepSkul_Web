@@ -65,7 +65,14 @@ CREATE TABLE IF NOT EXISTS ticha_design_inspiration (
   design_data JSONB NOT NULL, -- Extracted design patterns (colors, layouts, typography)
   category TEXT, -- corporate, creative, minimalist, academic, marketing
   scraped_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
+  -- New columns for design learning system
+  image_url TEXT, -- URL to uploaded design image
+  keywords TEXT[], -- Array of keywords for matching
+  extracted_design_spec JSONB, -- Detailed design extraction (colors, fonts, spacing, etc.)
+  quality_score NUMERIC(5,2), -- AI-assessed design quality (0-100)
+  usage_count INTEGER DEFAULT 0, -- How many times this design was used
+  uploaded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL -- Admin user who uploaded it
 );
 
 -- Create indexes for better performance
@@ -77,6 +84,9 @@ CREATE INDEX IF NOT EXISTS idx_ticha_slides_slide_number ON ticha_slides(present
 CREATE INDEX IF NOT EXISTS idx_ticha_design_templates_category ON ticha_design_templates(category);
 CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_category ON ticha_design_inspiration(category);
 CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_scraped_at ON ticha_design_inspiration(scraped_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_keywords ON ticha_design_inspiration USING GIN(keywords); -- GIN index for array search
+CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_quality_score ON ticha_design_inspiration(quality_score DESC);
+CREATE INDEX IF NOT EXISTS idx_ticha_design_inspiration_usage_count ON ticha_design_inspiration(usage_count DESC);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE ticha_users ENABLE ROW LEVEL SECURITY;
@@ -99,6 +109,10 @@ DROP POLICY IF EXISTS "Users can update own slides" ON ticha_slides;
 DROP POLICY IF EXISTS "Users can delete own slides" ON ticha_slides;
 DROP POLICY IF EXISTS "Anyone can view design templates" ON ticha_design_templates;
 DROP POLICY IF EXISTS "Anyone can view design inspiration" ON ticha_design_inspiration;
+DROP POLICY IF EXISTS "Admins can manage design inspiration" ON ticha_design_inspiration;
+DROP POLICY IF EXISTS "Admins can insert design inspiration" ON ticha_design_inspiration;
+DROP POLICY IF EXISTS "Admins can update design inspiration" ON ticha_design_inspiration;
+DROP POLICY IF EXISTS "Admins can delete design inspiration" ON ticha_design_inspiration;
 
 -- RLS Policies: Users can only see/edit their own data
 
@@ -178,10 +192,25 @@ CREATE POLICY "Anyone can view design templates"
   ON ticha_design_templates FOR SELECT
   USING (true);
 
--- Design Inspiration Policies (public read)
+-- Design Inspiration Policies (public read, admin write)
 CREATE POLICY "Anyone can view design inspiration"
   ON ticha_design_inspiration FOR SELECT
   USING (true);
+
+-- Admin policies for design inspiration management
+-- Note: You'll need to create a function to check admin status or use a role-based approach
+-- For now, we'll allow authenticated users to manage (you can restrict further based on your admin system)
+CREATE POLICY "Admins can insert design inspiration"
+  ON ticha_design_inspiration FOR INSERT
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Admins can update design inspiration"
+  ON ticha_design_inspiration FOR UPDATE
+  USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Admins can delete design inspiration"
+  ON ticha_design_inspiration FOR DELETE
+  USING (auth.role() = 'authenticated');
 
 -- Function to automatically create user profile when auth user is created
 CREATE OR REPLACE FUNCTION public.handle_new_ticha_user()

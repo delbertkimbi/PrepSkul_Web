@@ -36,7 +36,7 @@ export default function SignUpPage() {
         type: "signup",
         email: email,
         options: {
-          emailRedirectTo: `${window.location.origin}/tichar/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/ticha/auth/callback`,
         },
       })
 
@@ -119,7 +119,7 @@ export default function SignUpPage() {
           data: {
             full_name: fullName || normalizedEmail.split("@")[0],
           },
-          emailRedirectTo: `${window.location.origin}/tichar/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/ticha/auth/callback`,
         },
       })
 
@@ -399,7 +399,7 @@ export default function SignUpPage() {
               <p className="text-xs sm:text-sm text-gray-600" style={{  }}>
                 Already have an account?{" "}
                 <Link
-                  href="/tichar/signin"
+                  href="/ticha/signin"
                   className="font-semibold text-gray-900 hover:underline"
                   style={{  }}
                 >

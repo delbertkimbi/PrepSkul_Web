@@ -111,5 +111,68 @@ export interface DesignInspiration {
   }
   category: string
   scrapedAt: string
+  imageUrl?: string
+  keywords?: string[]
+  extractedDesignSpec?: ExtractedDesign
+  qualityScore?: number
+  usageCount?: number
+  uploadedBy?: string
+}
+
+export interface TypographySpec {
+  fonts: string[]
+  sizes: number[]
+  weights: string[]
+}
+
+export interface SpacingSpec {
+  margins: number[]
+  padding: number[]
+}
+
+export interface ExtractedDesign {
+  colorPalette: string[]
+  typography: TypographySpec
+  layoutPattern: string
+  spacing: SpacingSpec
+  styleKeywords: string[]
+  qualityScore: number
+  designSpec: DesignSpec
+}
+
+// Aggregated spec computed from multiple slides in a design set
+export interface AggregatedDesignSpec {
+  colorPalette: string[]
+  typography: TypographySpec
+  layoutPatterns: string[]
+  spacing: SpacingSpec
+  styleKeywords: string[]
+  qualityScore: number
+  designSpec: DesignSpec
+}
+
+// Static, hand-authored slide templates for fixed sequences
+export interface ManualSlideTemplate {
+  slideNumber: number
+  role: 'title' | 'agenda' | 'section' | 'content' | 'image' | 'summary'
+  design: DesignSpec
+  imageQueryHint?: string
+}
+
+export interface ManualDesignSet {
+  id: string
+  name: string
+  preset: 'business' | 'academic' | 'kids'
+  topicKeywords: string[]
+  description: string
+  slides: ManualSlideTemplate[]
+}
+
+export interface MatchedDesign {
+  designId: string
+  matchScore: number
+  keywords: string[]
+  extractedDesign: ExtractedDesign | null
+  category?: string
 }
 
