@@ -79,47 +79,62 @@ export default function AmbassadorsPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 lg:py-28 overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10"></div>
+      <section className="relative py-20 sm:py-24 lg:py-32 overflow-hidden">
+        {/* Soft background with subtle patterns */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30"></div>
+        
+        {/* Decorative elements - soft and non-distracting */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-blue-200/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-200/15 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}></div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Become a <span className="text-primary">PrepSkul Ambassador</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 leading-tight tracking-tight">
+                Become a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">PrepSkul Ambassador</span>
               </h1>
             </motion.div>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
-            >
-              Join a growing community of passionate individuals helping PrepSkul expand access to learning opportunities.
-            </motion.p>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed"
-            >
-              PrepSkul Ambassadors represent our mission in schools, communities, and online — helping students, parents, and tutors discover meaningful opportunities.
-            </motion.p>
             
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="pt-4"
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              className="space-y-4"
             >
-              <Button size="lg" asChild className="text-lg font-semibold px-8 h-12 shadow-lg hover:shadow-xl transition-all">
-                <Link href="/ambassadors/apply">Apply as an Ambassador</Link>
+              <p className="text-xl sm:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium">
+                Join a growing community of passionate individuals helping PrepSkul expand access to learning opportunities.
+              </p>
+              
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                PrepSkul Ambassadors represent our mission in schools, communities, and online — helping students, parents, and tutors discover meaningful opportunities.
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 200 }}
+              className="pt-6"
+            >
+              <Button 
+                size="lg" 
+                asChild 
+                className="text-lg font-semibold px-10 h-14 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+              >
+                <Link href="/ambassadors/apply" prefetch={true}>
+                  Apply as an Ambassador
+                </Link>
               </Button>
             </motion.div>
           </div>

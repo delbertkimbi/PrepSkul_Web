@@ -56,16 +56,16 @@ export default function HomePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button size="lg" asChild className="w-full sm:w-auto text-base font-semibold h-12 px-8">
-                  <Link href={`/${locale}/contact`}>{t.home.hero.getStarted}</Link>
+                <Button size="lg" asChild className="w-full sm:w-auto text-base font-semibold h-12 px-8 transition-all duration-200">
+                  <Link href={`/${locale}/contact`} prefetch={true}>{t.home.hero.getStarted}</Link>
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   asChild
-                  className="w-full sm:w-auto text-base font-semibold h-12 px-8 bg-transparent"
+                  className="w-full sm:w-auto text-base font-semibold h-12 px-8 bg-transparent transition-all duration-200"
                 >
-                  <Link href={`/${locale}/programs`}>{t.home.hero.viewSubjects}</Link>
+                  <Link href={`/${locale}/programs`} prefetch={true}>{t.home.hero.viewSubjects}</Link>
                 </Button>
               </div>
             </div>
@@ -232,8 +232,8 @@ export default function HomePage() {
                     </span>
                   </li>
                 </ul>
-                <Button size="lg" asChild className="w-full text-base font-semibold">
-                  <Link href={`/${locale}/programs`}>{t.home.hero.viewSubjects}</Link>
+                <Button size="lg" asChild className="w-full text-base font-semibold transition-all duration-200">
+                  <Link href={`/${locale}/programs`} prefetch={true}>{t.home.hero.viewSubjects}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -277,8 +277,8 @@ export default function HomePage() {
                     </span>
                   </li>
                 </ul>
-                <Button size="lg" variant="outline" asChild className="w-full text-base font-semibold bg-transparent">
-                  <Link href={`/${locale}/programs`}>{t.home.hero.viewSubjects}</Link>
+                <Button size="lg" variant="outline" asChild className="w-full text-base font-semibold bg-transparent transition-all duration-200">
+                  <Link href={`/${locale}/programs`} prefetch={true}>{t.home.hero.viewSubjects}</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -296,8 +296,8 @@ export default function HomePage() {
           <p className="text-base mb-8 max-w-3xl mx-auto opacity-95 leading-relaxed">
             {t.home.cta.subtitle}
           </p>
-          <Button size="lg" variant="secondary" asChild className="text-base font-semibold px-8 h-11">
-            <Link href={`/${locale}/contact`}>{t.home.cta.button}</Link>
+          <Button size="lg" variant="secondary" asChild className="text-base font-semibold px-8 h-11 transition-all duration-200">
+            <Link href={`/${locale}/contact`} prefetch={true}>{t.home.cta.button}</Link>
           </Button>
         </div>
       </section>
