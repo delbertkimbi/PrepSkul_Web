@@ -142,8 +142,10 @@ export async function POST(request: NextRequest) {
     
     // Update tutor status to approved with optional notes
     // Also sync video_url if it's empty but video_link or video_intro exists
+    // Clear pending update flag when approving
     const updateData: any = {
       status: 'approved',
+      has_pending_update: false, // Clear pending update flag when approving
       reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),
       admin_review_notes: notes || null,
@@ -156,3 +158,33 @@ export async function POST(request: NextRequest) {
     
     const { error } = await supabase
       .from('tutor_profiles')
+      .update(updateData)
+      .eq('id', tutorId);
+
+    if (error) throw error;
+
+    // Send notification to tutor (email/SMS/in-app) with rating and pricing info
+    const tutorName = userProfile?.full_name || tutorProfile.full_name || 'Tutor';
+    const notificationResult = await notifyTutorApproval(
+      userProfile?.email || null,
+      userProfile?.phone_number || null,
+      tutorName,
+      tutorProfile.user_id, // Pass userId for in-app notifications
+      notes || undefined,
+      {
+        rating: tutorProfile.admin_approved_rating,
+        sessionPrice: tutorProfile.base_session_price,
+        pricingTier: tutorProfile.pricing_tier,
+        ratingJustification: tutorProfile.rating_justification
+      }
+    );
+
+    console.log('📧 Notification results:', notificationResult);
+
+    // Redirect back to pending tutors page
+    return NextResponse.redirect(new URL('/admin/tutors/pending', request.url));
+  } catch (error: any) {
+    console.error('Error approving tutor:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
