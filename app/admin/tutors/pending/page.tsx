@@ -21,12 +21,26 @@ export default async function PendingTutors() {
 
   const supabase = await createServerSupabaseClient();
   
-  // Fetch pending tutor applications with profile data
-  const { data: tutors, error } = await supabase
+  // Fetch both new applications and pending updates
+  // New applications: status = 'pending' AND (has_pending_update IS NULL OR has_pending_update = FALSE)
+  // Pending updates: status = 'approved' AND has_pending_update = TRUE
+  const { data: newApplications, error: newAppsError } = await supabase
     .from('tutor_profiles')
     .select('*')
     .eq('status', 'pending')
+    .or('has_pending_update.is.null,has_pending_update.eq.false')
     .order('created_at', { ascending: false });
+
+  const { data: pendingUpdates, error: updatesError } = await supabase
+    .from('tutor_profiles')
+    .select('*')
+    .eq('status', 'approved')
+    .eq('has_pending_update', true)
+    .order('updated_at', { ascending: false });
+
+  // Combine both lists
+  const tutors = [...(newApplications || []), ...(pendingUpdates || [])];
+  const error = newAppsError || updatesError;
 
   // Fetch profiles separately for each tutor
   let tutorsWithProfiles = [];
@@ -47,6 +61,8 @@ export default async function PendingTutors() {
   }
 
   const pendingCount = tutorsWithProfiles?.length || 0;
+  const newAppsCount = newApplications?.length || 0;
+  const updatesCount = pendingUpdates?.length || 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,10 +70,18 @@ export default async function PendingTutors() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Pending Tutor Applications</h1>
-        <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-          {pendingCount} Pending
-        </span>
+        <h1 className="text-2xl font-bold text-gray-900">Pending Tutor Reviews</h1>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+            {pendingCount} Total
+          </span>
+          <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
+            {newAppsCount} New
+          </span>
+          <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+            {updatesCount} Updates
+          </span>
+        </div>
       </div>
 
       {/* Filters */}

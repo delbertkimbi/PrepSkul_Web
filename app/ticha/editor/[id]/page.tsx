@@ -15,6 +15,7 @@ import { SlideThumbnails } from '@/components/ticha/editor/SlideThumbnails'
 import { Loader2 } from 'lucide-react'
 import { tichaSupabase } from '@/lib/ticha-supabase'
 import type { PresentationData } from '@/lib/ticha/types'
+import { normalizePresentation } from '@/lib/ticha/design/normalize-presentation'
 
 export default function EditorPage() {
   const params = useParams()
@@ -54,11 +55,15 @@ export default function EditorPage() {
         }
 
         // Load presentation data
-        const presentationData: PresentationData | null = data.presentation_data
+        let presentationData: PresentationData | null = data.presentation_data
 
         if (!presentationData) {
           throw new Error('Presentation data not found')
         }
+
+        // Normalize to business template colors and fonts
+        presentationData = normalizePresentation(presentationData)
+        console.log('[Editor] Normalized presentation to business template')
 
         // Set in store
         setPresentation(presentationData)

@@ -118,21 +118,39 @@ export async function POST(request: NextRequest) {
     if (shouldSendPush) {
       try {
         // Dynamically import firebase-admin to avoid build errors if not available
-        const { sendPushNotification } = await import('@/lib/services/firebase-admin');
-        const pushResult = await sendPushNotification({
-          userId,
-          title,
-          body: message,
-          data: {
-            type: type || 'general',
+        // Use a function that checks if the module exists before importing
+        let firebaseAdminModule;
+        try {
+          firebaseAdminModule = await import('@/lib/services/firebase-admin');
+        } catch (importError: any) {
+          // If firebase-admin is not installed or not available, skip push notifications
+          console.warn('Firebase Admin not available, skipping push notification:', importError.message);
+          results.push = { success: false, sent: 0, errors: 0, error: 'Firebase Admin not configured' };
+          return NextResponse.json({
+            success: true,
             notificationId: notification.id,
-            ...(actionUrl ? { actionUrl } : {}),
-            ...(metadata || {}),
-          },
-          priority: priority === 'urgent' || priority === 'high' ? 'high' : 'normal',
-        });
-        // Assign push result (it doesn't have error property, which is fine)
-        results.push = { ...pushResult };
+            channels: results,
+          });
+        }
+        
+        if (firebaseAdminModule && firebaseAdminModule.sendPushNotification) {
+          const pushResult = await firebaseAdminModule.sendPushNotification({
+            userId,
+            title,
+            body: message,
+            data: {
+              type: type || 'general',
+              notificationId: notification.id,
+              ...(actionUrl ? { actionUrl } : {}),
+              ...(metadata || {}),
+            },
+            priority: priority === 'urgent' || priority === 'high' ? 'high' : 'normal',
+          });
+          // Assign push result (it doesn't have error property, which is fine)
+          results.push = { ...pushResult };
+        } else {
+          results.push = { success: false, sent: 0, errors: 0, error: 'Push notification function not available' };
+        }
       } catch (e: any) {
         console.error('Error sending push notification:', e);
         // When error occurs, include error message

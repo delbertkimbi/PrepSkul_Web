@@ -3,9 +3,21 @@
  * 
  * Handles push notifications via Firebase Cloud Messaging
  * Uses Firebase Admin SDK to send notifications to devices
+ * 
+ * NOTE: This module is optional - if firebase-admin is not installed,
+ * push notifications will be skipped gracefully.
  */
 
-import * as admin from 'firebase-admin';
+// Dynamically import firebase-admin to avoid build errors if not available
+let admin: typeof import('firebase-admin') | null = null;
+
+try {
+  // Only import if available
+  admin = require('firebase-admin');
+} catch (e) {
+  // firebase-admin not installed - that's okay, we'll skip push notifications
+  console.warn('⚠️ firebase-admin not available - push notifications disabled');
+}
 
 let firebaseAdminInitialized = false;
 
@@ -13,6 +25,11 @@ let firebaseAdminInitialized = false;
  * Initialize Firebase Admin SDK
  */
 async function initializeFirebaseAdmin() {
+  if (!admin) {
+    console.warn('⚠️ firebase-admin not available');
+    return;
+  }
+  
   if (firebaseAdminInitialized) {
     return;
   }
@@ -44,8 +61,13 @@ async function initializeFirebaseAdmin() {
     }
 
     // Initialize Firebase Admin
+    if (!admin) {
+      console.warn('⚠️ firebase-admin not available');
+      return;
+    }
+    
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+      credential: admin.credential.cert(serviceAccount as any),
     });
 
     firebaseAdminInitialized = true;
@@ -75,9 +97,14 @@ export async function sendPushNotification({
   priority?: 'normal' | 'high';
 }): Promise<{ success: boolean; sent: number; errors: number }> {
   try {
+    if (!admin) {
+      console.warn('⚠️ firebase-admin not available - skipping push notification');
+      return { success: false, sent: 0, errors: 0 };
+    }
+    
     await initializeFirebaseAdmin();
 
-    if (!firebaseAdminInitialized || admin.apps.length === 0) {
+    if (!firebaseAdminInitialized || !admin || admin.apps.length === 0) {
       console.warn('⚠️ Firebase Admin not initialized - skipping push notification');
       return { success: false, sent: 0, errors: 0 };
     }

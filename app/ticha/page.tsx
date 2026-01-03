@@ -10,6 +10,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Zap, Shield, Send, Loader2, CheckCircle, AlertCircle, Download, RefreshCw, Eye } from "lucide-react"
 import { tichaSupabase } from "@/lib/ticha-supabase"
 import { DesignPresetSelector } from "@/components/ticha/DesignPresetSelector"
+import { DesignSetSelector } from "@/components/ticha/DesignSetSelector"
+import { ManualTemplateSelector } from "@/components/ticha/ManualTemplateSelector"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -63,6 +65,7 @@ export default function TichaPage() {
   const [refinementPrompt, setRefinementPrompt] = useState("")
   const [selectedPreset, setSelectedPreset] = useState<string>("")
   const [customDesignPrompt, setCustomDesignPrompt] = useState("")
+  const [selectedDesignSetId, setSelectedDesignSetId] = useState<string | null>(null)
   const [slidesData, setSlidesData] = useState<any[]>([])
   const [showViewer, setShowViewer] = useState(false)
 
@@ -120,16 +123,27 @@ export default function TichaPage() {
       setStatus("processing")
       setStatusMessage("Generating presentation...")
 
+      // Ensure we have either fileUrl or text
+      if (!fileUrl && !text.trim()) {
+        setError("Please upload a file or enter text")
+        setLoading(false)
+        setStatus("idle")
+        return
+      }
+
+      const requestBody: any = {}
+      if (fileUrl) requestBody.fileUrl = fileUrl
+      if (text.trim()) requestBody.prompt = text.trim()
+      if (userId) requestBody.userId = userId
+      if (selectedPreset) requestBody.designPreset = selectedPreset
+      if (customDesignPrompt) requestBody.customDesignPrompt = customDesignPrompt
+
       const generateResponse = await fetch("/api/ticha/generate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          fileUrl: fileUrl || undefined,
-          prompt: text.trim() || undefined,
-          userId: userId || undefined,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!generateResponse.ok) {
@@ -241,20 +255,22 @@ export default function TichaPage() {
                             </p>
                             {downloadUrl && (
                               <div className="flex flex-wrap gap-2 justify-center">
-                                <button
-                                  onClick={() => setShowViewer(true)}
-                                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-                                >
-                                  <Eye className="h-4 w-4" />
-                                  View Presentation
-                                </button>
+                                {slidesData.length > 0 && (
+                                  <button
+                                    onClick={() => setShowViewer(true)}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    View Presentation
+                                  </button>
+                                )}
                                 <a
                                   href={downloadUrl}
                                   download
                                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
                                 >
                                   <Download className="h-4 w-4" />
-                                  Download Presentation
+                                  Download PPT
                                 </a>
                                 {presentationId ? (
                                   <Dialog open={showRefineModal} onOpenChange={setShowRefineModal}>
@@ -281,6 +297,16 @@ export default function TichaPage() {
                                               value={refinementPrompt}
                                               onChange={(e) => setRefinementPrompt(e.target.value)}
                                               rows={4}
+                                            />
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium mb-2">
+                                              Use Your Design Set (Optional)
+                                            </label>
+                                            <DesignSetSelector
+                                              selectedSetId={selectedDesignSetId || undefined}
+                                              onSelect={setSelectedDesignSetId}
+                                              className="mb-4"
                                             />
                                           </div>
                                           <div>
@@ -385,19 +411,41 @@ export default function TichaPage() {
               </motion.div>
             )}
 
-            {/* Slide Viewer Modal */}
+            {/* Beautiful Slide Viewer */}
             {showViewer && slidesData.length > 0 && (
-              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-                <div className="w-full max-w-7xl max-h-[90vh]">
-                  <SlideViewer
-                    slides={slidesData}
-                    presentationId={presentationId || ''}
-                    downloadUrl={downloadUrl || undefined}
-                    onClose={() => setShowViewer(false)}
-                  />
-                </div>
+              <div className="fixed inset-0 z-50">
+                <SlideViewer
+                  slides={slidesData}
+                  presentationId={presentationId || ''}
+                  downloadUrl={downloadUrl || undefined}
+                  designPreset={selectedPreset === 'academic' ? 'academic' : selectedPreset === 'kids' ? 'kids' : 'business'}
+                  onClose={() => setShowViewer(false)}
+                />
               </div>
             )}
+
+            {/* Template Selector */}
+            <motion.div
+              initial="hidden"
+              animate={inputInView ? "visible" : "hidden"}
+              variants={fadeInUp}
+              className="max-w-5xl mx-auto mb-8 sm:mb-12 px-4"
+            >
+              <div className="mb-4 text-center">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                  Choose Your Design Template
+                </h2>
+                <p className="text-gray-600 text-sm sm:text-base">
+                  Select one of our professional templates to style your presentation
+                </p>
+              </div>
+              <ManualTemplateSelector
+                selectedTemplate={selectedPreset ? `${selectedPreset}_v1` : undefined}
+                onSelect={(preset) => {
+                  setSelectedPreset(preset)
+                }}
+              />
+            </motion.div>
 
             {/* Input Field with Upload and Send */}
             <motion.div

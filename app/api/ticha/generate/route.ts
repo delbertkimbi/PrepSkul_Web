@@ -13,6 +13,9 @@ import {
   tichaSupabaseAdmin,
 } from '@/lib/ticha/supabase-service'
 import { getTichaServerSession } from '@/lib/ticha-supabase-server'
+import { matchDesignsToPrompt, incrementDesignUsage } from '@/lib/ticha/design/matcher'
+import { getActiveAggregatedDesignSet } from '@/lib/ticha/design/active-set'
+import { getManualDesignSet } from '@/lib/ticha/design/manual-sets'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
@@ -21,6 +24,9 @@ interface GenerateRequest {
   fileUrl: string
   prompt?: string
   userId?: string
+  designPreset?: string
+  customDesignPrompt?: string
+  designSetId?: string
 }
 
 /**
@@ -31,9 +37,26 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
-    // Parse request
-    const body: GenerateRequest = await request.json()
-    const { fileUrl, prompt, userId, designPreset, customDesignPrompt } = body
+    // Parse request with error handling for empty/invalid JSON
+    let body: GenerateRequest
+    try {
+      const bodyText = await request.text()
+      if (!bodyText || bodyText.trim() === '') {
+        return NextResponse.json(
+          { error: 'Request body is required' },
+          { status: 400 }
+        )
+      }
+      body = JSON.parse(bodyText)
+    } catch (parseError) {
+      console.error('[Generate] JSON parse error:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      )
+    }
+
+    const { fileUrl, prompt, userId, designPreset, customDesignPrompt, designSetId } = body
 
     if (!fileUrl) {
       return NextResponse.json(
@@ -143,13 +166,66 @@ export async function POST(request: NextRequest) {
       console.warn(`[Generate] Using original text due to cleaning failure`)
     }
 
-    // Step 4: Generate outline with design specifications
-    console.log(`[Generate] Step 4: Generating outline with design specs...`)
+    // Step 3.5: Fetch active aggregated design set (latest admin set)
+    console.log('[Generate] Step 3.5: Fetching active design set...')
+    let activeDesignSet: { designSetId: string; spec: any } | null = null
+    try {
+      activeDesignSet = await getActiveAggregatedDesignSet()
+      if (activeDesignSet) {
+        console.log('[Generate] Active design set:', activeDesignSet.designSetId)
+      } else {
+        console.log('[Generate] No active design set found, will fall back to presets/matched designs')
+      }
+    } catch (e) {
+      console.warn('[Generate] Failed to fetch active design set:', e)
+    }
+
+    // Step 4: Match designs to prompt (if enabled)
+    console.log(`[Generate] Step 4: Matching designs to prompt...`)
+    console.log(`[Generate] Prompt received: "${prompt || '(empty)'}"`)
+    console.log(`[Generate] Custom design prompt: "${customDesignPrompt || '(empty)'}"`)
+    
+    // Combine prompt and customDesignPrompt for better matching
+    const combinedPrompt = [prompt, customDesignPrompt].filter(Boolean).join(' ')
+    console.log(`[Generate] Combined prompt for matching: "${combinedPrompt}"`)
+    
+    let matchedDesigns: any[] = []
+    try {
+      // If designSetId is provided, use designs from that set
+      // Otherwise, match based on prompt
+      if (designSetId) {
+        console.log(`[Generate] Using design set: ${designSetId}`)
+        // Get all designs from the set
+        const { matchDesignsToPrompt } = await import('@/lib/ticha/design/matcher')
+        matchedDesigns = await matchDesignsToPrompt('', cleanedText, 20, userId, designSetId)
+        console.log(`[Generate] Found ${matchedDesigns.length} designs in set`)
+      } else {
+        matchedDesigns = await matchDesignsToPrompt(combinedPrompt || prompt || '', cleanedText, 5, userId)
+        console.log(`[Generate] Matched ${matchedDesigns.length} designs`)
+      }
+      
+      // Track usage for matched designs
+      if (matchedDesigns.length > 0) {
+        // Increment usage for top 3 matched designs
+        const topDesigns = matchedDesigns.slice(0, 3)
+        await Promise.allSettled(
+          topDesigns.map(design => incrementDesignUsage(design.designId))
+        )
+      }
+    } catch (error) {
+      console.warn(`[Generate] Design matching failed, continuing without matched designs:`, error)
+      // Continue without matched designs - not critical
+    }
+
+    // Step 5: Generate outline with design context (may include active design / presets)
+    console.log(`[Generate] Step 5: Generating outline with design context...`)
     let outline
     try {
       outline = await generateOutline(cleanedText, prompt, {
         designPreset,
         customDesignPrompt,
+        matchedDesigns: matchedDesigns.length > 0 ? matchedDesigns : undefined,
+        activeDesign: activeDesignSet?.spec,
       })
       console.log(`[Generate] Generated ${outline.slides.length} slides`)
     } catch (error) {
@@ -177,8 +253,95 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 5: Create PowerPoint presentation
-    console.log(`[Generate] Step 5: Creating PowerPoint...`)
+    // Step 5.5: Apply manual design set (fixed sequences) or use matched designs
+    if (designSetId && matchedDesigns.length > 0) {
+      // Use designs from the user's design set - distribute across slides
+      console.log(`[Generate] Step 5.5: Using design set with ${matchedDesigns.length} designs...`)
+      outline.slides = outline.slides.map((slide, index) => {
+        // Cycle through matched designs
+        const designIndex = index % matchedDesigns.length
+        const matchedDesign = matchedDesigns[designIndex]
+        const extractedDesign = matchedDesign.extractedDesign
+        
+        if (extractedDesign && extractedDesign.colorPalette && extractedDesign.colorPalette.length > 0) {
+          // Use colors from extracted design
+          const bgColor = extractedDesign.colorPalette[0].startsWith('#') 
+            ? extractedDesign.colorPalette[0] 
+            : `#${extractedDesign.colorPalette[0]}`
+          
+          // Determine text color based on background brightness
+          const hex = bgColor.replace('#', '')
+          const r = parseInt(hex.substring(0, 2), 16)
+          const g = parseInt(hex.substring(2, 4), 16)
+          const b = parseInt(hex.substring(4, 6), 16)
+          const brightness = (r * 299 + g * 587 + b * 114) / 1000
+          const textColor = brightness > 128 ? 'black' : 'white'
+          
+          // Use fonts from extracted design
+          const fonts = extractedDesign.typography?.fonts || []
+          const fontFamily = fonts[0] || 'Montserrat'
+          const sizes = extractedDesign.typography?.sizes || []
+          const fontSize = sizes[0] || (index === 0 ? 48 : 32)
+          
+          return {
+            ...slide,
+            design: {
+              ...slide.design,
+              background_color: bgColor,
+              text_color: textColor,
+              fontFamily: fontFamily,
+              fontSize: fontSize,
+            },
+          }
+        }
+        return slide
+      })
+      console.log(`[Generate] Applied design set to ${outline.slides.length} slides`)
+    } else {
+      // Use manual design sets (fixed sequences) for presets
+      console.log(`[Generate] Step 5.5: Applying manual design set for preset: ${designPreset || 'business'}...`)
+      const preset = (designPreset === 'academic' ? 'academic' : designPreset === 'kids' ? 'kids' : 'business') as 'business' | 'academic' | 'kids'
+      const manualSetId = `${preset}_v1`
+      const manualSet = getManualDesignSet(manualSetId)
+      
+      if (manualSet && manualSet.slides && manualSet.slides.length > 0) {
+        // Map generated content into fixed slide sequence
+        const fixedSlides = manualSet.slides.map((templateSlide, index) => {
+          // Get corresponding content from AI-generated outline
+          const contentSlide = outline.slides[index] || outline.slides[outline.slides.length - 1] || {
+            slide_title: '',
+            bullets: [],
+            design: {}
+          }
+          
+          // Merge template design with generated content
+          return {
+            slide_title: contentSlide.slide_title || (templateSlide.role === 'title' ? 'Presentation Title' : `Slide ${index + 1}`),
+            bullets: contentSlide.bullets || [],
+            design: {
+              ...templateSlide.design,
+              // Preserve any custom design properties
+              layout: templateSlide.design.layout,
+              icon: templateSlide.design.icon,
+            },
+            imageQueryHint: templateSlide.imageQueryHint,
+            role: templateSlide.role,
+          }
+        })
+        
+        outline.slides = fixedSlides
+        console.log(`[Generate] Applied manual design set "${manualSet.name}" with ${fixedSlides.length} fixed slides`)
+      } else {
+        // Fallback to old preset system if manual set not found
+        console.warn(`[Generate] Manual set "${manualSetId}" not found, falling back to preset application`)
+        const { applyDesignPreset } = await import('@/lib/ticha/design/presets')
+        outline.slides = applyDesignPreset(outline.slides, preset)
+        console.log(`[Generate] Applied ${preset} preset to ${outline.slides.length} slides`)
+      }
+    }
+
+    // Step 6: Create PowerPoint presentation
+    console.log(`[Generate] Step 6: Creating PowerPoint...`)
     let pptBuffer: Buffer
     try {
       pptBuffer = await createPPT({
@@ -196,8 +359,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 6: Upload PPT to Storage
-    console.log(`[Generate] Step 6: Uploading to Storage...`)
+    // Step 7: Upload PPT to Storage
+    console.log(`[Generate] Step 7: Uploading to Storage...`)
     let pptUrl: string
     try {
       const timestamp = Date.now()
@@ -221,20 +384,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 7: Create database record (optional)
-    // Prepare presentation data for storage
+    // Step 8: Create database record (optional)
+    // Prepare presentation data for storage - Normalize all designs to business template
     const presentationData = {
       id: '', // Will be set by database
       title: prompt ? `Presentation: ${prompt.substring(0, 50)}` : 'TichaAI Presentation',
       author: userId || 'TichaAI User',
       company: 'TichaAI',
-      slides: outline.slides.map((slide, index) => ({
-        id: `slide-${index + 1}`,
-        slide_number: index + 1,
-        slide_title: slide.slide_title,
-        bullets: slide.bullets,
-        design: slide.design,
-      })),
+      slides: outline.slides.map((slide, index) => {
+        const design = slide.design || {}
+        
+        // Normalize background color to business template
+        let bgColor = design.background_color
+        if (!bgColor || bgColor === 'light-blue' || bgColor === 'dark-blue' || 
+            bgColor?.includes('667eea') || bgColor?.includes('764ba2') || 
+            bgColor?.includes('1e3c72')) {
+          bgColor = index === 0 ? '#FF8A00' : (index % 2 === 0 ? '#2D3542' : '#FFFFFF')
+        }
+        
+        // Normalize text color
+        const textColor = bgColor === '#FFFFFF' ? 'black' : 'white'
+        
+        // Normalize fonts to business template
+        const fontFamily = design.fontFamily || 'Montserrat'
+        const fontSize = design.fontSize || (index === 0 ? 48 : 32)
+        
+        return {
+          id: `slide-${index + 1}`,
+          slide_number: index + 1,
+          slide_title: slide.slide_title,
+          bullets: slide.bullets,
+          design: {
+            ...design,
+            background_color: bgColor,
+            text_color: textColor,
+            fontFamily: fontFamily,
+            fontSize: fontSize,
+          },
+        }
+      }),
       metadata: {
         version: 1,
         created_at: new Date().toISOString(),
@@ -253,6 +441,10 @@ export async function POST(request: NextRequest) {
         refinement_history: [],
         status: 'completed',
         completed_at: new Date().toISOString(),
+        design_customizations: matchedDesigns.length > 0 ? {
+          matchedDesignIds: matchedDesigns.map(d => d.designId),
+          matchedDesignCount: matchedDesigns.length,
+        } : null,
       }
 
       // Only add user_id if we have one

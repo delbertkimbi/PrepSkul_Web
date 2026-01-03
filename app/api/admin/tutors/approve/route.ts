@@ -136,11 +136,12 @@ export async function POST(request: NextRequest) {
 
     if (profileError) throw profileError;
 
-    // Update tutor status to approved with optional notes
+    // Update tutor status to approved with optional notes and clear pending update flag
     const { error } = await supabase
       .from('tutor_profiles')
       .update({
         status: 'approved',
+        has_pending_update: false, // Clear pending update flag when approving
         reviewed_by: user.id,
         reviewed_at: new Date().toISOString(),
         admin_review_notes: notes || null,
