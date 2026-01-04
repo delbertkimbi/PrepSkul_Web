@@ -20,22 +20,33 @@ export default function ApprovalPage({ params }: ApprovalPageProps) {
   const [subject, setSubject] = useState<string>('');
   const [body, setBody] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    params.then(({ id }) => {
-      setAmbassadorId(id);
-      // Fetch ambassador data
-      fetch(`/api/admin/ambassadors/${id}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            setAmbassadorName(data.ambassador.full_name || 'Ambassador');
-            setAmbassadorEmail(data.ambassador.email || '');
-            
-            // Set default subject and body
-            setSubject('🎉 Congratulations! Your PrepSkul Ambassador Application Has Been Approved');
-            setBody(`Dear ${data.ambassador.full_name || 'Ambassador'},
+    const loadAmbassadorData = async () => {
+      try {
+        const { id } = await params;
+        setAmbassadorId(id);
+        
+        // Fetch ambassador data
+        const response = await fetch(`/api/admin/ambassadors/${id}`);
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch ambassador data');
+        }
+        
+        if (data.success && data.ambassador) {
+          const fullName = data.ambassador.full_name || 'Ambassador';
+          const email = data.ambassador.email || '';
+          
+          setAmbassadorName(fullName);
+          setAmbassadorEmail(email);
+          
+          // Set default subject and body
+          setSubject('🎉 Congratulations! Your PrepSkul Ambassador Application Has Been Approved');
+          setBody(`Dear ${fullName},
 
 We are thrilled to inform you that your application to become a PrepSkul Ambassador has been approved! 🎊
 
@@ -58,13 +69,18 @@ Welcome to the PrepSkul Ambassador family! 🌟
 
 Best regards,
 The PrepSkul Team`);
-          }
-        })
-        .catch(err => {
-          console.error('Error fetching ambassador data:', err);
-          setError('Failed to load ambassador information');
-        });
-    });
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (err: any) {
+        console.error('Error fetching ambassador data:', err);
+        setError(err.message || 'Failed to load ambassador information');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    loadAmbassadorData();
   }, [params]);
 
   const handleSend = async () => {
@@ -165,6 +181,12 @@ The PrepSkul Team`);
             </div>
           )}
 
+          {loadingData ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
+              <p className="text-gray-600">Loading ambassador data...</p>
+            </div>
+          ) : (
+          <>
           {/* Email Form */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
             <div>
@@ -216,6 +238,8 @@ The PrepSkul Team`);
               </Button>
             </div>
           </div>
+          </>
+          )}
         </div>
       </main>
     </div>

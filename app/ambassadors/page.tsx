@@ -5,6 +5,7 @@ import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { InfoCard } from "@/components/ambassadors/InfoCard"
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import {
   Users,
@@ -25,45 +26,41 @@ export default function AmbassadorsPage() {
     {
       icon: Users,
       title: "Represent PrepSkul",
-      description: "Act as a trusted voice of PrepSkul within your school, community, or network."
+      description: "Be the Voice of PrepSkul in your school, community, and online network."
     },
     {
       icon: Share2,
-      title: "Share PrepSkul Opportunities",
-      description: "Help spread awareness about tutoring opportunities, programs, and updates."
+      title: "Spread the Word",
+      description: "Talk about PrepSkul, our opportunities and spread updates"
     },
     {
       icon: UserCheck,
-      title: "Support Onboarding",
-      description: "Assist students, parents, and tutors in understanding and joining the platform."
+      title: "Help Others Join",
+      description: "Guide students, parents, and tutors through joining PrepSkul and help them understand how the platform works"
     }
   ]
 
   const benefits = [
     {
       icon: Award,
-      title: "Recognition & Awards",
-      description: "Stand a chance to win Ambassador of the Month and Annual Ambassador Awards."
+      title: "Get Recognized",
+      description: "Compete for PrepSkul Ambassador of the Month and Annual PrepSkul Ambassador Awards!"
     },
-    {
-      icon: Gift,
-      title: "Exclusive PrepSkul Packages",
-      description: "Receive PrepSkul-branded incentives and special ambassador perks."
-    },
+    
     {
       icon: TrendingUp,
-      title: "Spotlight & Visibility",
-      description: "Be featured on PrepSkul's social media platforms and community channels."
+      title: "Get Featured",
+      description: "See yourself on PrepSkul's social media and community channels. Your impact deserves the spotlight!"
     },
     {
       icon: BookOpen,
-      title: "Skill Growth",
-      description: "Get free access to skill sessions and learning events organized by the PrepSkul team."
+      title: "Level Up Your Skills",
+      description: "Access free skill sessions and learning events. Grow personally and professionally with PrepSkul!"
     },
     {
       icon: School,
-      title: "Scholarship Opportunities",
-      description: "PrepSkul shares exclusive scholarship opportunities with ambassadors. Access information about available scholarships, eligibility criteria, and step-by-step application guidance through our dedicated ambassador portal."
+      title: "Unlock Scholarships",
+      description: "Get exclusive access to scholarship opportunities with detailed info, eligibility criteria, and application guidance!"
     }
   ]
 
@@ -78,69 +75,106 @@ export default function AmbassadorsPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      {/* Hero Section */}
-      <section className="relative py-16 sm:py-20 lg:py-28 overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/10"></div>
+      {/* Hero Section - Compact with White Background */}
+      <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden bg-white">
+        {/* Subtle animated background elements */}
+        <div className="absolute inset-0 opacity-[0.02]">
+          <motion.div
+            className="absolute top-20 left-10 w-64 h-64 bg-primary rounded-full blur-3xl"
+            animate={{
+              x: [0, 50, 0],
+              y: [0, 30, 0],
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute bottom-20 right-10 w-80 h-80 bg-primary rounded-full blur-3xl"
+            animate={{
+              x: [0, -40, 0],
+              y: [0, -50, 0],
+              scale: [1, 1.3, 1],
+            }}
+            transition={{
+              duration: 25,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+        </div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 xl:gap-20 items-center max-w-7xl mx-auto">
+            {/* Text Content - Centered on mobile */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+              transition={{ duration: 0.6 }}
+              className="space-y-6 text-center lg:text-left"
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Become a <span className="text-primary">PrepSkul Ambassador</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
+                Ready to Make an Impact?
+                <span className="block text-primary mt-2">Join the PrepSkul Ambassador Team</span>
               </h1>
+              
+              <p className="text-lg sm:text-xl text-gray-700 leading-relaxed font-medium max-w-2xl mx-auto lg:mx-0">
+                Join a vibrant community of passionate changemakers transforming education and expanding access to learning opportunities across Cameroon.
+              </p>
+              
+              <div className="pt-2 flex justify-center lg:justify-start">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button size="lg" asChild className="text-base font-semibold px-8 h-12 shadow-md hover:shadow-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Link href="/ambassadors/apply">Apply Now</Link>
+                  </Button>
+                </motion.div>
+              </div>
             </motion.div>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed"
-            >
-              Join a growing community of passionate individuals helping PrepSkul expand access to learning opportunities.
-            </motion.p>
-            
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed"
-            >
-              PrepSkul Ambassadors represent our mission in schools, communities, and online — helping students, parents, and tutors discover meaningful opportunities.
-            </motion.p>
-            
+
+            {/* Ambassador Image - Larger on Desktop, Steady (No Animation) */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="pt-4"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative flex items-center justify-center lg:order-last"
             >
-              <Button size="lg" asChild className="text-lg font-semibold px-8 h-12 shadow-lg hover:shadow-xl transition-all">
-                <Link href="/ambassadors/apply">Apply as an Ambassador</Link>
-              </Button>
+              <div className="relative">
+                <Image
+                  src="/ambs.png"
+                  alt="PrepSkul Ambassadors"
+                  width={1200}
+                  height={1200}
+                  className="w-full h-auto max-w-sm sm:max-w-md md:max-w-lg lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto"
+                  priority
+                />
+              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* What PrepSkul Ambassadors Do Section */}
-      <section className="py-16 sm:py-20 bg-white">
+      {/* Your Ambassador Journey Section */}
+      <section className="py-16 sm:py-20 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-12 max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              What You'll Do as a PrepSkul Ambassador
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            What It Means To Be A PrepSkul Ambassador
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Simple, human, and practical ways to make a real impact
+           
+            <p className="text-base text-gray-700 leading-relaxed max-w-2xl mx-auto">
+              As a PrepSkul Ambassador, you'll be the bridge connecting students, parents, and tutors to life-changing educational opportunities.
             </p>
           </motion.div>
           
@@ -158,40 +192,41 @@ export default function AmbassadorsPage() {
         </div>
       </section>
 
-      {/* Why Become a PrepSkul Ambassador Section */}
-      <section className="py-16 sm:py-20 bg-gray-50">
+      {/* Why You'll Love Being an Ambassador Section */}
+      <section className="py-16 sm:py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            className="text-center mb-12 max-w-3xl mx-auto"
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              What PrepSkul Has for You
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+            Benefits of Being a PrepSkul Ambassador
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Growth, recognition, and long-term value for our ambassadors
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Amazing perks, incredible opportunities, and a community that celebrates you
             </p>
           </motion.div>
           
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 max-w-7xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto justify-items-center">
             {benefits.map((benefit, index) => (
-              <InfoCard
-                key={index}
-                icon={benefit.icon}
-                title={benefit.title}
-                description={benefit.description}
-                index={index}
-              />
+              <div key={index} className="w-full max-w-sm">
+                <InfoCard
+                  icon={benefit.icon}
+                  title={benefit.title}
+                  description={benefit.description}
+                  index={index}
+                />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Who Should Apply Section */}
-      <section className="py-16 sm:py-20 bg-white">
+      {/* Ideal Candidates Section */}
+      <section className="py-16 sm:py-20 bg-gray-50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -201,43 +236,48 @@ export default function AmbassadorsPage() {
             className="max-w-4xl mx-auto text-center space-y-8"
           >
             <div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-                Who This Is For
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+                Who We Are Looking For
               </h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                We're looking for curious, driven individuals who believe in education and community.
+              <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
+                We're looking for driven, curious individuals who believe education can transform lives. If that sounds like you, we'd love to have you on board.
               </p>
             </div>
-            
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-6">
-              {whoShouldApply.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
-                  whileHover={{ scale: 1.05 }}
-                  className="flex flex-col items-center gap-3 p-6 bg-gray-50 rounded-xl border-2 border-transparent hover:border-primary/30 transition-all group"
-                >
-                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                    <item.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-700 text-center group-hover:text-primary transition-colors">
-                    {item.label}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
+         
           </motion.div>
         </div>
       </section>
 
       {/* Final Call to Action */}
-      <section id="apply" className="py-20 sm:py-24 bg-primary text-primary-foreground relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-20 h-20 bg-white rounded-full blur-2xl"></div>
-          <div className="absolute bottom-10 right-10 w-32 h-32 bg-white rounded-full blur-3xl"></div>
+      <section id="apply" className="py-20 sm:py-24 bg-secondary text-secondary-foreground relative overflow-hidden">
+        {/* Subtle animated background elements */}
+        <div className="absolute inset-0 opacity-5">
+          <motion.div
+            className="absolute top-10 left-10 w-32 h-32 bg-white rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.3, 1],
+              x: [0, 50, 0],
+              y: [0, 30, 0],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
+          <motion.div
+            className="absolute bottom-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"
+            animate={{
+              scale: [1, 1.4, 1],
+              x: [0, -40, 0],
+              y: [0, -50, 0],
+            }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          />
         </div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -248,20 +288,20 @@ export default function AmbassadorsPage() {
             transition={{ duration: 0.8 }}
             className="max-w-3xl mx-auto text-center space-y-6"
           >
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-              Help PrepSkul reach further — and grow with us along the way.
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+              Ready to Change Lives?
             </h2>
-            <p className="text-lg sm:text-xl text-primary-foreground/90 leading-relaxed">
-              Join our ambassador community and be part of something meaningful.
+            <p className="text-lg sm:text-xl text-secondary-foreground/90 leading-relaxed">
+              Join our ambassador community and be part of something truly meaningful. Your journey starts now.
             </p>
             <div className="pt-4">
               <Button
                 size="lg"
                 variant="secondary"
                 asChild
-                className="text-lg font-semibold px-8 h-12 bg-white text-primary hover:bg-gray-100 shadow-xl hover:shadow-2xl transition-all"
+                className="text-base font-semibold px-8 h-12 bg-white text-primary hover:bg-primary-foreground/10 shadow-xl hover:shadow-2xl transition-all"
               >
-                <Link href="/ambassadors/apply">Apply as an Ambassador</Link>
+                <Link href="/ambassadors/apply">Apply Now and Start Making Impact</Link>
               </Button>
             </div>
           </motion.div>
@@ -272,4 +312,3 @@ export default function AmbassadorsPage() {
     </div>
   )
 }
-
