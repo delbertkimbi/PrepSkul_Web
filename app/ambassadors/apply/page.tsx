@@ -717,9 +717,8 @@ export default function AmbassadorApplyPage() {
                         className="w-full h-12 text-lg border-2 border-gray-200 focus:border-primary rounded-lg"
                         autoFocus
                       />
-                    )}
-                  </>
-                )}
+                    </div>
+                  )}
 
                 {/* Step 6: Motivation */}
                 {currentStep === 6 && (
@@ -761,9 +760,10 @@ export default function AmbassadorApplyPage() {
                         </label>
                       ))}
                     </div>
-                  )}
+                  </>
+                )}
 
-                  {/* Step 6: Region */}
+                {/* Step 6: Region */}
                   {currentStep === 6 && (
                     <div className="space-y-4">
                       <div>
@@ -1117,9 +1117,8 @@ export default function AmbassadorApplyPage() {
                         className="w-full min-h-[200px] text-lg border-2 border-gray-200 focus:border-primary rounded-lg"
                         autoFocus
                       />
-                    )}
-                  </>
-                )}
+                    </div>
+                  )}
 
                 {/* Step 13: Creative Idea */}
                 {currentStep === 13 && (
@@ -1238,7 +1237,8 @@ export default function AmbassadorApplyPage() {
                         </div>
                       )}
                     </div>
-                  )}
+                  </>
+                )}
                 </motion.div>
               </AnimatePresence>
             </div>
