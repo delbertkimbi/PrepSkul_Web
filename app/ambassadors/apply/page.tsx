@@ -100,7 +100,6 @@ export default function AmbassadorApplyPage() {
           region: parsed.region || "",
           status: parsed.status || "",
           status_other: parsed.status_other || "",
-          status_other: parsed.status_other || "",
           student_class_level: parsed.student_class_level || "",
           motivation: parsed.motivation || "",
           alignment_goals: parsed.alignment_goals || [],
