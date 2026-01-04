@@ -1,4 +1,5 @@
-"use client"
+import type { Metadata } from "next"
+import AmbassadorsLayoutClient from "./layout-client"
 
 import { LocaleProvider } from "@/lib/locale-context"
 import type { Locale } from "@/lib/i18n"
@@ -59,4 +60,3 @@ export default function AmbassadorsLayout({
     </LocaleProvider>
   )
 }
-

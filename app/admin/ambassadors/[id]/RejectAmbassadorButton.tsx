@@ -27,14 +27,33 @@ export default function RejectAmbassadorButton({
     setError('');
 
     try {
+      if (!ambassadorId) {
+        setError('Invalid ambassador ID');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(`/api/admin/ambassadors/${ambassadorId}/reject`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        setError(`Failed to parse server response. Status: ${response.status}`);
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok) {
-        setError(data.error || data.message || 'Failed to reject ambassador');
+        const errorMessage = data.details 
+          ? `${data.error || 'Failed to reject ambassador'}: ${data.details}`
+          : data.error || data.message || 'Failed to reject ambassador';
+        setError(errorMessage);
         setLoading(false);
         return;
       }
@@ -47,7 +66,8 @@ export default function RejectAmbassadorButton({
         setLoading(false);
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      console.error('Reject ambassador error:', err);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
