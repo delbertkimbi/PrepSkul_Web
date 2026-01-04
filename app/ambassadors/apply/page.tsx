@@ -219,21 +219,23 @@ export default function AmbassadorApplyPage() {
     if (canProceed() && currentStep < totalSteps - 1) {
       let nextStep = currentStep + 1
       
-      // Skip Social Links step (12/13) if no platforms selected
-      if (currentStep === 11 && formData.social_platforms.length === 0) {
-        // Non-student: skip step 12, go to step 13
-        nextStep = 13
-      } else if (currentStep === 12 && !shouldShowStudentStep() && formData.social_platforms.length === 0) {
-        // Non-student on social links step with no platforms
+      // Handle skipping Social Links step if no platforms selected
+      if (currentStep === 11 && !shouldShowStudentStep() && formData.social_platforms.length === 0) {
+        // Non-student: skip step 12 (Social Links), go to step 13 (Social Media Influence Rating)
         nextStep = 13
       } else if (currentStep === 12 && shouldShowStudentStep() && formData.social_platforms.length === 0) {
-        // Student: skip step 13, go to step 14
+        // Student: skip step 13 (Social Links), go to step 14 (Social Media Influence Rating)
         nextStep = 14
+      } else if (currentStep === 12 && !shouldShowStudentStep() && formData.social_platforms.length === 0) {
+        // Non-student on step 12 (Social Links) with no platforms - shouldn't happen, but skip to 13
+        nextStep = 13
       } else if (currentStep === 13 && shouldShowStudentStep() && formData.social_platforms.length === 0) {
-        // Student on social links step with no platforms
+        // Student on step 13 (Social Links) with no platforms - shouldn't happen, but skip to 14
         nextStep = 14
       }
       
+      // Set direction for animation
+      setDirection(nextStep > currentStep ? 1 : -1)
       setCurrentStep(nextStep)
     }
   }
@@ -242,13 +244,21 @@ export default function AmbassadorApplyPage() {
     if (currentStep > 0) {
       let prevStep = currentStep - 1
       
-      // If we're on step 13 (Social Media Influence Rating) and no platforms were selected, go back to step 11
-      if (currentStep === 13 && formData.social_platforms.length === 0) {
-        prevStep = 11 // Go back to Social Media Presence
+      // Handle going back from Social Media Influence Rating
+      if (currentStep === 13 && !shouldShowStudentStep()) {
+        // Non-student: go back to Social Links (step 12) if platforms selected, otherwise to Social Media Presence (step 11)
+        prevStep = formData.social_platforms.length > 0 ? 12 : 11
+      } else if (currentStep === 14 && shouldShowStudentStep()) {
+        // Student: go back to Social Links (step 13) if platforms selected, otherwise to Social Media Presence (step 12)
+        prevStep = formData.social_platforms.length > 0 ? 13 : 12
       }
-      // If we're on step 14 (Social Media Influence Rating for students) and no platforms were selected, go back to step 12
-      else if (currentStep === 14 && shouldShowStudentStep() && formData.social_platforms.length === 0) {
-        prevStep = 12 // Go back to Social Media Presence
+      // Handle going back from Social Links
+      else if (currentStep === 12 && !shouldShowStudentStep()) {
+        // Non-student: go back to Social Media Presence (step 11)
+        prevStep = 11
+      } else if (currentStep === 13 && shouldShowStudentStep()) {
+        // Student: go back to Social Media Presence (step 12)
+        prevStep = 12
       }
       // If we're on step 8 (motivation for non-students), go back to step 7 (status)
       else if (currentStep === 8 && !shouldShowStudentStep()) {
@@ -259,6 +269,8 @@ export default function AmbassadorApplyPage() {
         prevStep = 8
       }
       
+      // Set direction for animation
+      setDirection(prevStep < currentStep ? -1 : 1)
       setCurrentStep(prevStep)
     }
   }
@@ -364,6 +376,17 @@ export default function AmbassadorApplyPage() {
       }
     }
   }, [imagePreviewUrl])
+
+  // Initialize social_media_influence_rating when reaching step 13/14
+  useEffect(() => {
+    const isSocialRatingStep = 
+      (currentStep === 13 && !shouldShowStudentStep()) || 
+      (currentStep === 14 && shouldShowStudentStep())
+    
+    if (isSocialRatingStep && (formData.social_media_influence_rating === null || formData.social_media_influence_rating === undefined)) {
+      setFormData((prev) => ({ ...prev, social_media_influence_rating: 50 }))
+    }
+  }, [currentStep, formData.status])
 
   const slideVariants = {
     enter: (direction: number) => ({
@@ -828,26 +851,26 @@ export default function AmbassadorApplyPage() {
                       <div className="flex flex-col items-center justify-center space-y-8 py-8">
                         {/* Central Circle with Value */}
                         <div className="relative">
-                          <div className="w-36 h-36 rounded-full bg-primary/10 border-4 border-primary flex items-center justify-center shadow-xl">
-                            <span className="text-5xl font-bold text-primary">{formData.social_media_influence_rating ?? 50}</span>
+                          <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-primary/10 border-4 border-primary flex items-center justify-center shadow-xl">
+                            <span className="text-4xl sm:text-5xl font-bold text-primary">{formData.social_media_influence_rating !== null ? formData.social_media_influence_rating : 50}</span>
                           </div>
                         </div>
                         
                         {/* Slider with Horizontal Labels */}
-                        <div className="relative w-full max-w-2xl px-8">
+                        <div className="relative w-full max-w-2xl px-2 sm:px-8">
                           {/* Horizontal Slider Track */}
                           <div className="relative h-4 bg-gray-200 rounded-full mb-8">
                             {/* Filled portion */}
                             <div 
                               className="absolute top-0 left-0 h-full bg-primary rounded-full transition-all duration-200"
-                              style={{ width: `${formData.social_media_influence_rating ?? 50}%` }}
+                              style={{ width: `${formData.social_media_influence_rating !== null ? formData.social_media_influence_rating : 50}%` }}
                             ></div>
                             
                             {/* Selector Dot on Slider */}
                             <div
                               className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-primary rounded-full border-4 border-white shadow-xl z-20 cursor-pointer"
                               style={{
-                                left: `${formData.social_media_influence_rating ?? 50}%`,
+                                left: `${formData.social_media_influence_rating !== null ? formData.social_media_influence_rating : 50}%`,
                               }}
                             ></div>
                           </div>
@@ -858,22 +881,26 @@ export default function AmbassadorApplyPage() {
                             min="0"
                             max="100"
                             step="10"
-                            value={formData.social_media_influence_rating ?? 50}
+                            value={formData.social_media_influence_rating !== null ? formData.social_media_influence_rating : 50}
                             onChange={(e) => updateFormData("social_media_influence_rating", parseInt(e.target.value))}
                             className="absolute top-0 left-0 w-full h-4 opacity-0 cursor-pointer z-30"
                           />
                           
                           {/* Horizontal Labels Below Slider */}
-                          <div className="relative w-full flex justify-between px-2 mt-4">
+                          <div className="relative w-full mt-4" style={{ height: '2.5rem' }}>
                             {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value) => {
-                              const isActive = formData.social_media_influence_rating === value
+                              const currentRating = formData.social_media_influence_rating !== null ? formData.social_media_influence_rating : 50
+                              const isActive = currentRating === value
                               
                               return (
                                 <div
                                   key={value}
-                                  className="flex flex-col items-center"
+                                  className="absolute flex flex-col items-center transform -translate-x-1/2"
+                                  style={{
+                                    left: `${value}%`,
+                                  }}
                                 >
-                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-semibold transition-all mb-1 ${
+                                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-semibold transition-all ${
                                     isActive 
                                       ? 'bg-primary text-white border-2 border-primary shadow-lg scale-125' 
                                       : 'bg-white text-gray-600 border-2 border-gray-300 shadow-md'
@@ -1024,7 +1051,7 @@ export default function AmbassadorApplyPage() {
               Back
             </Button>
 
-            {currentStep < 16 ? (
+            {currentStep < getTotalSteps() - 1 ? (
               <Button
                 onClick={handleNext}
                 disabled={!canProceed()}
