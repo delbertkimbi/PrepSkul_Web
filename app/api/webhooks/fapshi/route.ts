@@ -108,6 +108,13 @@ export async function POST(request: NextRequest) {
 
 /**
  * Normalize payment status from Fapshi
+ * 
+ * Status values from Fapshi:
+ * - CREATED: Payment not yet attempted (initial state for direct pay)
+ * - PENDING: User is in process of payment
+ * - SUCCESSFUL: Payment completed successfully
+ * - FAILED: Payment failed
+ * - EXPIRED: Payment link expired (only for initiate-pay, not direct-pay)
  */
 function normalizeStatus(status: string): 'SUCCESS' | 'FAILED' | 'EXPIRED' | 'PENDING' {
   const upperStatus = status.toUpperCase();
@@ -117,10 +124,13 @@ function normalizeStatus(status: string): 'SUCCESS' | 'FAILED' | 'EXPIRED' | 'PE
     return 'FAILED';
   } else if (upperStatus === 'EXPIRED' || upperStatus === 'TIMEOUT') {
     return 'EXPIRED';
-  } else if (upperStatus === 'PENDING' || upperStatus === 'PROCESSING') {
+  } else if (upperStatus === 'PENDING' || upperStatus === 'PROCESSING' || upperStatus === 'CREATED') {
+    // CREATED is initial state for direct pay - treat as pending
     return 'PENDING';
   }
-  return upperStatus as 'SUCCESS' | 'FAILED' | 'EXPIRED' | 'PENDING';
+  // Default to PENDING for unknown statuses (don't mark as failed)
+  console.warn(`⚠️ Unknown payment status: ${status}, treating as PENDING`);
+  return 'PENDING';
 }
 
 /**
@@ -244,7 +254,33 @@ async function handlePaymentRequestPayment({
   failureReason?: string;
 }) {
   try {
-    console.log(`💰 Processing payment request payment: ${paymentRequestId}`);
+    console.log(`💰 Processing payment request payment: ${paymentRequestId}, status: ${status}`);
+
+    // Get current payment request status (idempotency check)
+    const { data: currentPaymentRequest } = await supabase
+      .from('payment_requests')
+      .select('status, fapshi_trans_id')
+      .eq('id', paymentRequestId)
+      .maybeSingle();
+
+    if (!currentPaymentRequest) {
+      console.error(`❌ Payment request not found: ${paymentRequestId}`);
+      return;
+    }
+
+    const currentStatus = currentPaymentRequest.status;
+
+    // Idempotency: If already paid and webhook says SUCCESS, skip (webhook may be called multiple times)
+    if (currentStatus === 'paid' && status === 'SUCCESS') {
+      console.log(`ℹ️ Payment request already paid: ${paymentRequestId}. Skipping duplicate webhook.`);
+      return;
+    }
+
+    // Don't process FAILED webhooks if payment is already paid (idempotency)
+    if (currentStatus === 'paid' && (status === 'FAILED' || status === 'EXPIRED')) {
+      console.log(`ℹ️ Payment request already paid, ignoring FAILED/EXPIRED webhook: ${paymentRequestId}`);
+      return;
+    }
 
     if (status === 'SUCCESS') {
       // Payment successful
@@ -282,35 +318,55 @@ async function handlePaymentRequestPayment({
 
       console.log(`✅ Payment request payment confirmed: ${paymentRequestId}`);
     } else if (status === 'FAILED' || status === 'EXPIRED') {
-      // Payment failed
-      await supabase
-        .from('payment_requests')
-        .update({
-          status: 'failed',
-          fapshi_trans_id: transactionId,
-          failed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', paymentRequestId);
+      // Only update to failed if not already paid (idempotency)
+      if (currentStatus !== 'paid') {
+        // Payment failed
+        await supabase
+          .from('payment_requests')
+          .update({
+            status: 'failed',
+            fapshi_trans_id: transactionId,
+            failed_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', paymentRequestId);
 
-      // Send failure notification
-      const { data: paymentRequest } = await supabase
-        .from('payment_requests')
-        .select('student_id')
-        .eq('id', paymentRequestId)
-        .maybeSingle();
+        // Send failure notification
+        const { data: paymentRequest } = await supabase
+          .from('payment_requests')
+          .select('student_id')
+          .eq('id', paymentRequestId)
+          .maybeSingle();
 
-      if (paymentRequest) {
-        await createPaymentNotification({
-          supabase,
-          type: 'payment_request_failed',
-          paymentRequestId,
-          studentId: paymentRequest.student_id,
-          failureReason: failureReason || 'Payment failed',
-        });
+        if (paymentRequest) {
+          await createPaymentNotification({
+            supabase,
+            type: 'payment_request_failed',
+            paymentRequestId,
+            studentId: paymentRequest.student_id,
+            failureReason: failureReason || 'Payment failed',
+          });
+        }
+
+        console.log(`⚠️ Payment request payment failed: ${paymentRequestId}`);
+      } else {
+        console.log(`ℹ️ Payment request already paid, ignoring FAILED webhook: ${paymentRequestId}`);
       }
-
-      console.log(`⚠️ Payment request payment failed: ${paymentRequestId}`);
+    } else if (status === 'PENDING') {
+      // Payment is still pending - don't update status, just log and update transaction ID if needed
+      console.log(`⏳ Payment request still pending: ${paymentRequestId}`);
+      // Update fapshi_trans_id if not set yet
+      if (!currentPaymentRequest.fapshi_trans_id) {
+        await supabase
+          .from('payment_requests')
+          .update({
+            fapshi_trans_id: transactionId,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', paymentRequestId);
+      }
+    } else {
+      console.log(`⚠️ Unknown payment status received: ${status} for payment request: ${paymentRequestId}`);
     }
   } catch (error) {
     console.error('❌ Error handling payment request payment webhook:', error);

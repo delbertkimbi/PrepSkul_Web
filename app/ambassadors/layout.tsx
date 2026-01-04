@@ -1,49 +1,62 @@
 import type { Metadata } from "next"
 import AmbassadorsLayoutClient from "./layout-client"
 
-export const metadata: Metadata = {
-  title: "PrepSkul Ambassadors Program | Join Our Community of Changemakers",
-  description: "Join the PrepSkul Ambassador Team and help transform education in Cameroon. Connect students, parents, and tutors to life-changing learning opportunities. Get recognized, access exclusive perks, and unlock scholarship opportunities.",
-  keywords: [
-    "PrepSkul Ambassadors",
-    "education ambassadors Cameroon",
-    "student ambassadors",
-    "tutoring ambassadors",
-    "education community Cameroon",
-    "PrepSkul ambassador program"
-  ],
-  openGraph: {
-    type: "website",
-    url: "https://ambassadors.prepskul.com",
-    siteName: "PrepSkul Ambassadors",
-    title: "PrepSkul Ambassadors Program | Join Our Community of Changemakers",
-    description: "Join the PrepSkul Ambassador Team and help transform education in Cameroon. Connect students, parents, and tutors to life-changing learning opportunities.",
-    images: [
-      {
-        url: "https://ambassadors.prepskul.com/ambassadors.jpg",
-        width: 1200,
-        height: 630,
-        alt: "PrepSkul Ambassadors - Join Our Community of Changemakers",
-      },
-    ],
-    locale: "en_CM",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "PrepSkul Ambassadors Program",
-    description: "Join the PrepSkul Ambassador Team and help transform education in Cameroon.",
-    images: ["https://ambassadors.prepskul.com/ambassadors.jpg"],
-  },
-  metadataBase: new URL("https://ambassadors.prepskul.com"),
-  alternates: {
-    canonical: "https://ambassadors.prepskul.com",
-  },
-}
+import { LocaleProvider } from "@/lib/locale-context"
+import type { Locale } from "@/lib/i18n"
+import { useEffect } from "react"
 
 export default function AmbassadorsLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <AmbassadorsLayoutClient>{children}</AmbassadorsLayoutClient>
+  // Default to 'en' for the ambassadors page
+  const locale: Locale = 'en'
+  
+  // Update document metadata and favicon for ambassadors subdomain
+  useEffect(() => {
+    document.title = "Become a PrepSkul Ambassador | Join Our Community"
+    
+    // Update favicon - use the ambassador group photo
+    let favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement
+    if (!favicon) {
+      favicon = document.createElement('link')
+      favicon.rel = 'icon'
+      document.head.appendChild(favicon)
+    }
+    // Note: You'll need to save the ambassador group photo as /public/ambassador-favicon.png
+    favicon.href = '/ambassador-favicon.png'
+    
+    // Update meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.setAttribute('name', 'description')
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.setAttribute('content', 'Join the PrepSkul Ambassador program and help expand access to learning opportunities. Represent PrepSkul in schools, communities, and online. Apply now!')
+    
+    // Update Open Graph tags
+    let ogTitle = document.querySelector('meta[property="og:title"]')
+    if (!ogTitle) {
+      ogTitle = document.createElement('meta')
+      ogTitle.setAttribute('property', 'og:title')
+      document.head.appendChild(ogTitle)
+    }
+    ogTitle.setAttribute('content', 'Become a PrepSkul Ambassador')
+    
+    let ogDescription = document.querySelector('meta[property="og:description"]')
+    if (!ogDescription) {
+      ogDescription = document.createElement('meta')
+      ogDescription.setAttribute('property', 'og:description')
+      document.head.appendChild(ogDescription)
+    }
+    ogDescription.setAttribute('content', 'Join the PrepSkul Ambassador program and help expand access to learning opportunities. Represent PrepSkul in schools, communities, and online.')
+  }, [])
+  
+  return (
+    <LocaleProvider locale={locale}>
+      {children}
+    </LocaleProvider>
+  )
 }

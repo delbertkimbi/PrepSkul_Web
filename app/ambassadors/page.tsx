@@ -75,50 +75,31 @@ export default function AmbassadorsPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      {/* Hero Section - Compact with White Background */}
-      <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden bg-white">
-        {/* Subtle animated background elements */}
-        <div className="absolute inset-0 opacity-[0.02]">
-          <motion.div
-            className="absolute top-20 left-10 w-64 h-64 bg-primary rounded-full blur-3xl"
-            animate={{
-              x: [0, 50, 0],
-              y: [0, 30, 0],
-              scale: [1, 1.2, 1],
-            }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-          <motion.div
-            className="absolute bottom-20 right-10 w-80 h-80 bg-primary rounded-full blur-3xl"
-            animate={{
-              x: [0, -40, 0],
-              y: [0, -50, 0],
-              scale: [1, 1.3, 1],
-            }}
-            transition={{
-              duration: 25,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        </div>
+      {/* Hero Section */}
+      <section className="relative py-20 sm:py-24 lg:py-32 overflow-hidden">
+        {/* Soft background with subtle patterns */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-purple-50/30"></div>
+        
+        {/* Decorative elements - soft and non-distracting */}
+        <div className="absolute top-0 left-0 w-72 h-72 bg-blue-200/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl translate-x-1/3 translate-y-1/3"></div>
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-200/15 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+        
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: 'linear-gradient(to right, #000 1px, transparent 1px), linear-gradient(to bottom, #000 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}></div>
         
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 xl:gap-20 items-center max-w-7xl mx-auto">
-            {/* Text Content - Centered on mobile */}
+          <div className="max-w-4xl mx-auto text-center space-y-8">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="space-y-6 text-center lg:text-left"
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
-                Ready to Make an Impact?
-                <span className="block text-primary mt-2">Join the PrepSkul Ambassador Team</span>
+              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-gray-900 leading-tight tracking-tight">
+                Become a <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">PrepSkul Ambassador</span>
               </h1>
               
               <p className="text-lg sm:text-xl text-gray-700 leading-relaxed font-medium max-w-2xl mx-auto lg:mx-0">
@@ -136,24 +117,37 @@ export default function AmbassadorsPage() {
                 </motion.div>
               </div>
             </motion.div>
-
-            {/* Ambassador Image - Larger on Desktop, Steady (No Animation) */}
+            
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="relative flex items-center justify-center lg:order-last"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              className="space-y-4"
             >
-              <div className="relative">
-                <Image
-                  src="/ambs.png"
-                  alt="PrepSkul Ambassadors"
-                  width={1200}
-                  height={1200}
-                  className="w-full h-auto max-w-sm sm:max-w-md md:max-w-lg lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto"
-                  priority
-                />
-              </div>
+              <p className="text-xl sm:text-2xl text-gray-700 max-w-3xl mx-auto leading-relaxed font-medium">
+                Join a growing community of passionate individuals helping PrepSkul expand access to learning opportunities.
+              </p>
+              
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                PrepSkul Ambassadors represent our mission in schools, communities, and online — helping students, parents, and tutors discover meaningful opportunities.
+              </p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.4, type: "spring", stiffness: 200 }}
+              className="pt-6"
+            >
+              <Button 
+                size="lg" 
+                asChild 
+                className="text-lg font-semibold px-10 h-14 rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+              >
+                <Link href="/ambassadors/apply" prefetch={true}>
+                  Apply as an Ambassador
+                </Link>
+              </Button>
             </motion.div>
           </div>
         </div>

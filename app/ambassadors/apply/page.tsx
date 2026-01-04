@@ -289,15 +289,50 @@ export default function AmbassadorApplyPage() {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to submit application")
+        const errorData = await response.json()
+        const errorMessage = errorData.error || errorData.details || "Failed to submit application"
+        throw new Error(errorMessage)
       }
 
+      const result = await response.json()
+      
+      // Clear localStorage on success
       localStorage.removeItem(STORAGE_KEY)
       setIsSuccess(true)
     } catch (error) {
-      console.error("Submission error:", error)
-      alert(error instanceof Error ? error.message : "Failed to submit application. Please try again.")
+      // Show user-friendly error message
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "We encountered an issue submitting your application. Please check your internet connection and try again. If the problem persists, contact support."
+      
+      // Create a more visible error notification
+      const errorDiv = document.createElement('div')
+      errorDiv.className = 'fixed top-4 right-4 bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow-lg z-50 max-w-md'
+      errorDiv.innerHTML = `
+        <div class="flex items-start">
+          <div class="flex-shrink-0">
+            <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm font-medium">${errorMessage}</p>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-auto text-red-500 hover:text-red-700">
+            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      `
+      document.body.appendChild(errorDiv)
+      
+      // Auto-remove after 8 seconds
+      setTimeout(() => {
+        if (errorDiv.parentElement) {
+          errorDiv.remove()
+        }
+      }, 8000)
     } finally {
       setIsSubmitting(false)
     }
@@ -340,17 +375,25 @@ export default function AmbassadorApplyPage() {
     }))
   }
 
+  const [imageError, setImageError] = useState<string | null>(null)
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    setImageError(null)
+    
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Image must be less than 2MB")
-        return
-      }
+      // Validate file type
       if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
-        alert("Image must be JPG or PNG")
+        setImageError("Please upload a JPG or PNG image file")
         return
       }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setImageError("Image size must be less than 5MB. Please compress your image and try again.")
+        return
+      }
+      
       updateFormData("profile_image", file)
       const url = URL.createObjectURL(file)
       setImagePreviewUrl(url)
@@ -387,30 +430,112 @@ export default function AmbassadorApplyPage() {
     setCurrentStep(step)
   }
 
+  // Confetti effect on success
+  useEffect(() => {
+    if (isSuccess) {
+      // Simple confetti effect using CSS animations
+      const confettiCount = 50
+      const confettiContainer = document.createElement('div')
+      confettiContainer.className = 'fixed inset-0 pointer-events-none z-50'
+      confettiContainer.id = 'confetti-container'
+      
+      const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
+      
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div')
+        confetti.style.position = 'absolute'
+        confetti.style.left = `${Math.random() * 100}%`
+        confetti.style.top = '-10px'
+        confetti.style.width = `${Math.random() * 10 + 5}px`
+        confetti.style.height = `${Math.random() * 10 + 5}px`
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)]
+        confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0'
+        confetti.style.opacity = '0.8'
+        confetti.style.transform = `rotate(${Math.random() * 360}deg)`
+        
+        const animation = confetti.animate(
+          [
+            { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+            { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+          ],
+          {
+            duration: Math.random() * 2000 + 2000,
+            easing: 'cubic-bezier(0.5, 0, 0.5, 1)',
+          }
+        )
+        
+        confettiContainer.appendChild(confetti)
+        animation.onfinish = () => confetti.remove()
+      }
+      
+      document.body.appendChild(confettiContainer)
+      
+      // Clean up after 5 seconds
+      setTimeout(() => {
+        if (confettiContainer.parentElement) {
+          confettiContainer.remove()
+        }
+      }, 5000)
+    }
+  }, [isSuccess])
+
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 via-white to-blue-50">
         <Header />
         <div className="flex-1 flex items-center justify-center py-20 px-4">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-md w-full text-center space-y-6 bg-white rounded-2xl shadow-xl p-8 border border-gray-200"
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.6, type: "spring" }}
+            className="max-w-lg w-full text-center space-y-8"
           >
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
-              <CheckCircle2 className="w-12 h-12 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Application Submitted!</h1>
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Your application has been successfully submitted. The PrepSkul team will review it and contact you via email.
-            </p>
-            <Button
-              onClick={() => router.push("/ambassadors")}
-              className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground"
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+              className="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto shadow-lg"
             >
-              Return to Ambassadors Page
-            </Button>
+              <CheckCircle2 className="w-14 h-14 text-white" />
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-4"
+            >
+              <h1 className="text-4xl font-bold text-gray-900">Congratulations! 🎉</h1>
+              <div className="space-y-3 text-lg text-gray-700 leading-relaxed">
+                <p className="font-semibold text-gray-900">
+                  Your application has been successfully submitted!
+                </p>
+                <p>
+                  Our team will review your application and get back to you via email within 2-3 business days.
+                </p>
+                <p className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg text-left">
+                  <span className="font-semibold text-blue-900">Next Steps:</span>
+                  <br />
+                  <span className="text-blue-800">
+                    If you're qualified, you'll be invited for a short 5-minute interview to join the PrepSkul Ambassador program.
+                  </span>
+                </p>
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Button
+                onClick={() => router.push("/")}
+                size="lg"
+                className="mt-6 px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+              >
+                Return to Home
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
         <Footer />
@@ -592,6 +717,49 @@ export default function AmbassadorApplyPage() {
                         className="w-full h-12 text-lg border-2 border-gray-200 focus:border-primary rounded-lg"
                         autoFocus
                       />
+                    )}
+                  </>
+                )}
+
+                {/* Step 6: Motivation */}
+                {currentStep === 6 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900">What motivates you to become a PrepSkul Ambassador?</h2>
+                    <Textarea
+                      placeholder="Share your motivation..."
+                      value={formData.motivation}
+                      onChange={(e) => updateFormData("motivation", e.target.value)}
+                      className="w-full min-h-[200px]"
+                      autoFocus
+                    />
+                  </>
+                )}
+
+                {/* Step 7: Mission Alignment */}
+                {currentStep === 7 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900">Which PrepSkul missions align with you?</h2>
+                    <p className="text-sm text-gray-600">Select all that apply</p>
+                    <div className="space-y-3">
+                      {[
+                        "Helping students find personal Educators",
+                        "Creating learning opportunities",
+                        "Building trust in education",
+                        "Leadership & personal growth",
+                      ].map((goal) => (
+                        <label
+                          key={goal}
+                          className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={formData.alignment_goals.includes(goal)}
+                            onChange={() => toggleCheckbox("alignment_goals", goal)}
+                            className="w-4 h-4 text-primary"
+                          />
+                          <span>{goal}</span>
+                        </label>
+                      ))}
                     </div>
                   )}
 
@@ -949,24 +1117,70 @@ export default function AmbassadorApplyPage() {
                         className="w-full min-h-[200px] text-lg border-2 border-gray-200 focus:border-primary rounded-lg"
                         autoFocus
                       />
-                    </div>
-                  )}
+                    )}
+                  </>
+                )}
 
-                  {/* Step 16/17: Profile Image (Step 16 if not student, Step 17 if student) */}
-                  {((currentStep === 16 && !shouldShowStudentStep()) || (currentStep === 17 && shouldShowStudentStep())) && (
+                {/* Step 13: Creative Idea */}
+                {currentStep === 13 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900">Share one creative idea to promote PrepSkul</h2>
+                    <Textarea
+                      placeholder="Your creative idea..."
+                      value={formData.creative_idea}
+                      onChange={(e) => updateFormData("creative_idea", e.target.value)}
+                      className="w-full min-h-[200px]"
+                      autoFocus
+                    />
+                  </>
+                )}
+
+                {/* Step 14: Email */}
+                {currentStep === 14 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900">What's your email address?</h2>
+                    <p className="text-sm text-gray-600 mb-4">We'll use this to contact you about your application</p>
+                    <Input
+                      type="email"
+                      placeholder="your.email@example.com"
+                      value={formData.email}
+                      onChange={(e) => updateFormData("email", e.target.value)}
+                      className="w-full"
+                      autoFocus
+                    />
+                  </>
+                )}
+
+                {/* Step 15: WhatsApp Number */}
+                {currentStep === 15 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900">What's your WhatsApp number?</h2>
+                    <p className="text-sm text-gray-600 mb-4">We'll use this to contact you via WhatsApp</p>
+                    <Input
+                      type="tel"
+                      placeholder="+237 6XX XXX XXX"
+                      value={formData.whatsapp_number}
+                      onChange={(e) => updateFormData("whatsapp_number", e.target.value)}
+                      className="w-full"
+                      autoFocus
+                    />
+                  </>
+                )}
+
+                {/* Step 16: Profile Image */}
+                {currentStep === 16 && (
+                  <>
+                    <h2 className="text-2xl font-bold text-gray-900">Upload your profile image</h2>
+                    <p className="text-sm text-gray-600 mb-4">JPG or PNG, max 5MB</p>
                     <div className="space-y-4">
-                      <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Upload your profile image</h2>
-                        <p className="text-sm text-gray-600">JPG or PNG, max 2MB. This will be your ambassador profile picture.</p>
-                      </div>
                       {imagePreviewUrl ? (
-                        <div className="relative w-full h-96 rounded-2xl overflow-hidden border-4 border-primary shadow-xl">
-                          <img
-                            src={imagePreviewUrl}
-                            alt="Profile preview"
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6">
+                        <div className="relative w-full">
+                          <div className="relative w-full h-64 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                            <img
+                              src={imagePreviewUrl}
+                              alt="Profile preview"
+                              className="w-full h-full object-cover"
+                            />
                             <button
                               onClick={() => {
                                 updateFormData("profile_image", null)
@@ -974,28 +1188,41 @@ export default function AmbassadorApplyPage() {
                                   URL.revokeObjectURL(imagePreviewUrl)
                                   setImagePreviewUrl(null)
                                 }
+                                setImageError(null)
                               }}
-                              className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg font-medium transition-colors shadow-lg flex items-center gap-2"
+                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors shadow-lg"
+                              aria-label="Remove image"
                             >
                               <X className="w-5 h-5" />
-                              Remove Image
                             </button>
                           </div>
-                          <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg flex items-center gap-2">
-                            <CheckCircle2 className="w-4 h-4" />
-                            Uploaded
-                          </div>
+                          <button
+                            onClick={() => {
+                              // Trigger file input click
+                              const input = document.createElement('input')
+                              input.type = 'file'
+                              input.accept = 'image/jpeg,image/jpg,image/png'
+                              input.onchange = (e) => {
+                                const target = e.target as HTMLInputElement
+                                if (target.files?.[0]) {
+                                  handleImageUpload({ target } as React.ChangeEvent<HTMLInputElement>)
+                                }
+                              }
+                              input.click()
+                            }}
+                            className="mt-3 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                          >
+                            Replace image
+                          </button>
                         </div>
                       ) : (
-                        <label className="flex flex-col items-center justify-center w-full h-64 border-3 border-dashed border-primary/30 rounded-2xl cursor-pointer hover:bg-primary/5 transition-all bg-gray-50 group">
+                        <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 hover:border-primary/50 transition-all group">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
-                              <Upload className="w-8 h-8 text-primary-foreground" />
-                            </div>
-                            <p className="mb-2 text-sm font-semibold text-gray-700">
-                              <span className="text-primary">Click to upload</span> or drag and drop
+                            <Upload className="w-12 h-12 text-gray-400 mb-4 group-hover:text-primary transition-colors" />
+                            <p className="mb-2 text-sm text-gray-600 group-hover:text-gray-900">
+                              <span className="font-semibold">Click to upload</span> or drag and drop
                             </p>
-                            <p className="text-xs text-gray-500">JPG or PNG (MAX. 2MB)</p>
+                            <p className="text-xs text-gray-500">JPG or PNG (MAX. 5MB)</p>
                           </div>
                           <input
                             type="file"
@@ -1004,6 +1231,11 @@ export default function AmbassadorApplyPage() {
                             onChange={handleImageUpload}
                           />
                         </label>
+                      )}
+                      {imageError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-sm text-red-700">{imageError}</p>
+                        </div>
                       )}
                     </div>
                   )}
