@@ -127,87 +127,41 @@ export async function POST(request: NextRequest) {
       hourly_rate: tutorProfile.hourly_rate,
     });
 
-//     // Get user profile for email/phone
-//     const { data: userProfile, error: profileError } = await supabase
-//       .from('profiles')
-//       .select('email, phone_number, full_name')
-//       .eq('id', tutorProfile.user_id)
-//       .maybeSingle();
+    // Get user profile for email/phone
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email, phone_number, full_name')
+      .eq('id', tutorProfile.user_id)
+      .maybeSingle();
 
-//     if (profileError) throw profileError;
+    if (profileError) throw profileError;
 
+    // Sync video fields: ensure video_url is populated from video_link or video_intro
+    const videoUrl = tutorProfile.video_url || tutorProfile.video_link || 
+      (typeof tutorProfile.video_intro === 'string' ? tutorProfile.video_intro : tutorProfile.video_intro?.url || tutorProfile.video_intro?.link || null);
+    
+    // Update tutor status to approved with optional notes
+    // Also sync video_url if it's empty but video_link or video_intro exists
+    // Clear pending update flag when approving
+    const updateData: any = {
+      status: 'approved',
+      has_pending_update: false, // Clear pending update flag when approving
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+      admin_review_notes: notes || null,
+    };
+    
+    // Sync video_url if needed
+    if (videoUrl && !tutorProfile.video_url) {
+      updateData.video_url = videoUrl;
+    }
+    
+    const { error } = await supabase
+      .from('tutor_profiles')
+      .update(updateData)
+      .eq('id', tutorId);
 
-//     // Update tutor status to approved with optional notes and clear pending update flag
-//     const { error } = await supabase
-//       .from('tutor_profiles')
-//       .update({
-//         status: 'approved',
-//         has_pending_update: false, // Clear pending update flag when approving
-//         reviewed_by: user.id,
-//         reviewed_at: new Date().toISOString(),
-//         admin_review_notes: notes || null,
-//       })
-//    // Sync video fields: ensure video_url is populated from video_link or video_intro
-// const videoUrl = tutorProfile.video_url || tutorProfile.video_link || 
-//   (typeof tutorProfile.video_intro === 'string' ? tutorProfile.video_intro : tutorProfile.video_intro?.url || tutorProfile.video_intro?.link || null);
-  
-// // Update tutor status to approved with optional notes
-// // Also sync video_url if it's empty but video_link or video_intro exists
-// const updateData: any = {
-//   status: 'approved',
-//   reviewed_by: user.id,
-//   reviewed_at: new Date().toISOString(),
-//   admin_review_notes: notes || null,
-// };
-
-// // Sync video_url if needed
-// if (videoUrl && !tutorProfile.video_url) {
-//   updateData.video_url = videoUrl;
-// }
-
-// const { error } = await supabase
-//   .from('tutor_profiles')
-//   .update(updateData)
-//   .eq('id', tutorId);
-
-
-//     if (error) throw error;
-
-// Get user profile for email/phone
-const { data: userProfile, error: profileError } = await supabase
-  .from('profiles')
-  .select('email, phone_number, full_name')
-  .eq('id', tutorProfile.user_id)
-  .maybeSingle();
-
-if (profileError) throw profileError;
-
-// Sync video fields: ensure video_url is populated from video_link or video_intro
-const videoUrl = tutorProfile.video_url || tutorProfile.video_link || 
-  (typeof tutorProfile.video_intro === 'string' ? tutorProfile.video_intro : tutorProfile.video_intro?.url || tutorProfile.video_intro?.link || null);
-  
-// Update tutor status to approved with optional notes
-// Also sync video_url if it's empty but video_link or video_intro exists
-// Clear pending update flag when approving
-const updateData: any = {
-  status: 'approved',
-  has_pending_update: false, // Clear pending update flag when approving
-  reviewed_by: user.id,
-  reviewed_at: new Date().toISOString(),
-  admin_review_notes: notes || null,
-};
-
-// Sync video_url if needed
-if (videoUrl && !tutorProfile.video_url) {
-  updateData.video_url = videoUrl;
-}
-
-const { error } = await supabase
-  .from('tutor_profiles')
-  .update(updateData)
-  .eq('id', tutorId);
-
-if (error) throw error;
+    if (error) throw error;
 
     // Send notification to tutor (email/SMS/in-app) with rating and pricing info
     const tutorName = userProfile?.full_name || tutorProfile.full_name || 'Tutor';
