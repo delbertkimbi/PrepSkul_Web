@@ -114,7 +114,7 @@ export function profileApprovedEmail(
               <li>Log in to your dashboard to manage your profile</li>
             </ul>
             <p style="text-align: center;">
-              <a href="https://app.prepskul.com/login" class="button">Open Dashboard</a>
+              <a href="https://app.prepskul.com/tutor/profile" class="button">Open Dashboard</a>
             </p>
             <p>If you have any questions, feel free to reach out to our support team.</p>
             <p>Welcome to the PrepSkul community! 🎓</p>

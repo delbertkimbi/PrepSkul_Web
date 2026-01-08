@@ -68,15 +68,11 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
     },
   ]
 
-  // Try different vision models - prioritize free/cheap models first
+  // Use only vision models that are known to be available on this account
   const visionModels = [
-    'google/gemini-flash-1.5-8b',  // Cheapest option
-    'google/gemini-flash-1.5',     // Flash model
-    'google/gemini-1.5-pro',       // Pro model
-    'qwen/qwen-2.5-vl-7b-instruct', // Qwen vision (if available)
-    'qwen/qwen-vl-max',            // Requires credits
-    'anthropic/claude-3-haiku-20240307', // Cheaper Claude
-    'anthropic/claude-3-sonnet-20240229', // Mid-tier Claude
+    'qwen/qwen-2.5-vl-7b-instruct', // Proven working in logs
+    'anthropic/claude-3-haiku-20240307', // Keep a lightweight Claude vision-capable model
+    'anthropic/claude-3-sonnet-20240229', // Mid-tier fallback
   ]
 
   let response
