@@ -1,0 +1,283 @@
+import { NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { filterMessage } from '@/lib/services/message-filter-service';
+import { sendPushNotification } from '@/lib/services/firebase-admin';
+
+/**
+ * Message Send API
+ * 
+ * POST /api/messages/send
+ * 
+ * Validates, filters, and sends a message
+ * - Validates conversation exists and is active
+ * - Checks user is participant
+ * - Runs message filtering
+ * - Blocks critical violations
+ * - Stores flagged attempts
+ * - Inserts allowed messages
+ * - Updates conversation metadata
+ * - Triggers push notifications
+ */
+
+export async function POST(request: Request) {
+  try {
+    const supabase = await createServerSupabaseClient();
+    const body = await request.json();
+    const { conversationId, content } = body;
+    
+    // Validate input
+    if (!conversationId || !content || typeof content !== 'string' || content.trim().length === 0) {
+      return NextResponse.json(
+        { error: 'Invalid input. conversationId and content are required.' },
+        { status: 400 }
+      );
+    }
+    
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    // Validate conversation exists and user is participant
+    const { data: conversation, error: convError } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('id', conversationId)
+      .single();
+    
+    if (convError || !conversation) {
+      return NextResponse.json(
+        { error: 'Conversation not found' },
+        { status: 404 }
+      );
+    }
+    
+    if (conversation.student_id !== user.id && conversation.tutor_id !== user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized. You are not a participant in this conversation.' },
+        { status: 403 }
+      );
+    }
+    
+    // Check conversation is active
+    if (conversation.status !== 'active') {
+      return NextResponse.json(
+        { 
+          error: 'This conversation is no longer active',
+          reason: `Conversation status: ${conversation.status}`,
+        },
+        { status: 400 }
+      );
+    }
+    
+    // Check if conversation expired
+    if (conversation.expires_at && new Date(conversation.expires_at) < new Date()) {
+      // Auto-close expired conversation
+      await supabase
+        .from('conversations')
+        .update({ status: 'expired' })
+        .eq('id', conversationId);
+      
+      return NextResponse.json(
+        { error: 'This conversation has expired' },
+        { status: 400 }
+      );
+    }
+    
+    // Check if user is muted/banned
+    const { data: activeViolations } = await supabase
+      .from('user_violations')
+      .select('action_taken, expires_at')
+      .eq('user_id', user.id)
+      .in('action_taken', ['mute_24h', 'mute_7d', 'ban'])
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
+    
+    if (activeViolations && activeViolations.length > 0) {
+      const ban = activeViolations.find(v => v.action_taken === 'ban');
+      if (ban) {
+        return NextResponse.json(
+          { error: 'Your account has been banned. You cannot send messages.' },
+          { status: 403 }
+        );
+      }
+      
+      const mute = activeViolations.find(v => v.action_taken?.startsWith('mute'));
+      if (mute) {
+        const expiresAt = mute.expires_at ? new Date(mute.expires_at) : null;
+        const isExpired = expiresAt && expiresAt < new Date();
+        
+        if (!isExpired) {
+          return NextResponse.json(
+            { 
+              error: 'You are temporarily muted and cannot send messages.',
+              reason: `Mute expires: ${expiresAt?.toISOString() || 'indefinitely'}`,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+    
+    // Filter message content
+    const filterResult = filterMessage(content, user.id, conversationId);
+    
+    // If blocked, store flag and return error
+    if (!filterResult.allowed) {
+      // Store flagged message attempt
+      const { error: flagError } = await supabase
+        .from('flagged_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: content, // Store original for review
+          flags: filterResult.flags,
+          status: 'blocked',
+          severity: filterResult.flags.find(f => f.severity === 'critical')?.severity ||
+                    filterResult.flags.find(f => f.severity === 'high')?.severity ||
+                    filterResult.flags[0]?.severity ||
+                    'medium',
+          created_at: new Date().toISOString(),
+        });
+      
+      if (flagError) {
+        console.error('❌ Error storing flagged message:', flagError);
+      }
+      
+      // Create user violation record
+      for (const flag of filterResult.flags) {
+        if (flag.severity === 'critical' || flag.severity === 'high') {
+          await supabase
+            .from('user_violations')
+            .insert({
+              user_id: user.id,
+              violation_type: flag.type,
+              severity: flag.severity,
+              created_at: new Date().toISOString(),
+            });
+        }
+      }
+      
+      // Get the primary reason
+      const primaryFlag = filterResult.flags.find(f => f.severity === 'critical') ||
+                         filterResult.flags.find(f => f.severity === 'high') ||
+                         filterResult.flags[0];
+      
+      return NextResponse.json(
+        { 
+          error: 'Message blocked',
+          reason: primaryFlag?.reason || 'Message contains prohibited content',
+          flags: filterResult.flags.map(f => f.type), // Don't expose full details
+        },
+        { status: 400 }
+      );
+    }
+    
+    // If allowed but has low/medium flags, store flags for review
+    if (filterResult.flags.length > 0) {
+      const { error: flagError } = await supabase
+        .from('flagged_messages')
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: content,
+          flags: filterResult.flags,
+          status: 'review', // Needs admin review
+          severity: filterResult.flags[0]?.severity || 'low',
+          created_at: new Date().toISOString(),
+        });
+      
+      if (flagError) {
+        console.error('❌ Error storing flagged message for review:', flagError);
+      }
+    }
+    
+    // Insert message
+    const { data: message, error: insertError } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content: content.trim(),
+        is_filtered: filterResult.flags.length > 0,
+        filter_reason: filterResult.flags.length > 0 
+          ? filterResult.flags.map(f => f.type).join(',')
+          : null,
+        moderation_status: filterResult.flags.length > 0 ? 'pending' : 'approved',
+        created_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    
+    if (insertError) {
+      console.error('❌ Error inserting message:', insertError);
+      return NextResponse.json(
+        { error: 'Failed to send message' },
+        { status: 500 }
+      );
+    }
+    
+    // Update conversation last_message_at (trigger should handle this, but ensure it)
+    await supabase
+      .from('conversations')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', conversationId);
+    
+    // Get recipient ID
+    const recipientId = conversation.student_id === user.id 
+      ? conversation.tutor_id 
+      : conversation.student_id;
+    
+    // Get sender name for notification
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+    
+    const senderName = senderProfile?.full_name || 'Someone';
+    
+    // Trigger push notification (if no critical flags)
+    if (filterResult.flags.length === 0 || !filterResult.flags.some(f => f.severity === 'critical')) {
+      try {
+        await sendPushNotification({
+          userId: recipientId,
+          title: `New message from ${senderName}`,
+          body: content.length > 100 ? content.substring(0, 100) + '...' : content,
+          data: {
+            type: 'message',
+            conversation_id: conversationId,
+            sender_id: user.id,
+          },
+          priority: 'high',
+        });
+      } catch (pushError) {
+        // Don't fail message send if push notification fails
+        console.error('⚠️ Error sending push notification:', pushError);
+      }
+    }
+    
+    return NextResponse.json(
+      { 
+        message,
+        flags: filterResult.flags.length > 0 ? filterResult.flags.map(f => ({
+          type: f.type,
+          severity: f.severity,
+          reason: f.reason,
+        })) : [],
+      },
+      { status: 200 }
+    );
+    
+  } catch (error: any) {
+    console.error('❌ Error in POST /api/messages/send:', error);
+    return NextResponse.json(
+      { error: 'Internal server error', details: error.message },
+      { status: 500 }
+    );
+  }
+}
+

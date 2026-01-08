@@ -1,6 +1,6 @@
 "use client"
 
-import { AmbassadorHeader } from "@/components/ambassador-header"
+import AmbassadorHeader from "@/components/ambassador-header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { InfoCard } from "@/components/ambassadors/InfoCard"
