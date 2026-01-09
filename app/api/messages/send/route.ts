@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { createClient } from '@supabase/supabase-js';
 import { filterMessage } from '@/lib/services/message-filter-service';
 import { sendPushNotification } from '@/lib/services/firebase-admin';
 
@@ -19,9 +20,97 @@ import { sendPushNotification } from '@/lib/services/firebase-admin';
  * - Triggers push notifications
  */
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Handle CORS
+  const origin = request.headers.get('origin');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'http://localhost:5000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8080',
+    'https://app.prepskul.com',
+    'https://www.prepskul.com',
+  ];
+
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    corsHeaders['Access-Control-Allow-Origin'] = origin;
+    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+  }
+
   try {
-    const supabase = await createServerSupabaseClient();
+    // Get Authorization header (Flutter sends token here)
+    const authHeader = request.headers.get('authorization');
+    const accessToken = authHeader?.replace('Bearer ', '') || null;
+
+    let supabase;
+    let user;
+
+    if (accessToken) {
+      // Flutter app sends token via Authorization header
+      // Create Supabase client with the access token
+      const tempSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+      
+      const { data: { user: userFromToken }, error: tokenError } = 
+        await tempSupabase.auth.getUser(accessToken);
+      
+      if (tokenError || !userFromToken) {
+        return NextResponse.json(
+          { error: 'Unauthorized. Invalid or expired token.' },
+          { 
+            status: 401,
+            headers: corsHeaders,
+          }
+        );
+      }
+
+      // Create authenticated Supabase client
+      supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          global: {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        }
+      );
+      
+      user = userFromToken;
+    } else {
+      // Fallback: Try cookies (for web app)
+      supabase = await createServerSupabaseClient();
+      const { data: { user: userFromCookies }, error: authError } = 
+        await supabase.auth.getUser();
+      
+      if (authError || !userFromCookies) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { 
+            status: 401,
+            headers: corsHeaders,
+          }
+        );
+      }
+      
+      user = userFromCookies;
+    }
+
     const body = await request.json();
     const { conversationId, content } = body;
     
@@ -29,16 +118,10 @@ export async function POST(request: Request) {
     if (!conversationId || !content || typeof content !== 'string' || content.trim().length === 0) {
       return NextResponse.json(
         { error: 'Invalid input. conversationId and content are required.' },
-        { status: 400 }
-      );
-    }
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
     
@@ -52,14 +135,20 @@ export async function POST(request: Request) {
     if (convError || !conversation) {
       return NextResponse.json(
         { error: 'Conversation not found' },
-        { status: 404 }
+        { 
+          status: 404,
+          headers: corsHeaders,
+        }
       );
     }
     
     if (conversation.student_id !== user.id && conversation.tutor_id !== user.id) {
       return NextResponse.json(
         { error: 'Unauthorized. You are not a participant in this conversation.' },
-        { status: 403 }
+        { 
+          status: 403,
+          headers: corsHeaders,
+        }
       );
     }
     
@@ -70,7 +159,10 @@ export async function POST(request: Request) {
           error: 'This conversation is no longer active',
           reason: `Conversation status: ${conversation.status}`,
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
     
@@ -84,7 +176,10 @@ export async function POST(request: Request) {
       
       return NextResponse.json(
         { error: 'This conversation has expired' },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
     
@@ -101,7 +196,10 @@ export async function POST(request: Request) {
       if (ban) {
         return NextResponse.json(
           { error: 'Your account has been banned. You cannot send messages.' },
-          { status: 403 }
+          { 
+            status: 403,
+            headers: corsHeaders,
+          }
         );
       }
       
@@ -116,7 +214,10 @@ export async function POST(request: Request) {
               error: 'You are temporarily muted and cannot send messages.',
               reason: `Mute expires: ${expiresAt?.toISOString() || 'indefinitely'}`,
             },
-            { status: 403 }
+            { 
+              status: 403,
+              headers: corsHeaders,
+            }
           );
         }
       }
@@ -172,7 +273,10 @@ export async function POST(request: Request) {
           reason: primaryFlag?.reason || 'Message contains prohibited content',
           flags: filterResult.flags.map(f => f.type), // Don't expose full details
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: corsHeaders,
+        }
       );
     }
     
@@ -216,7 +320,10 @@ export async function POST(request: Request) {
       console.error('❌ Error inserting message:', insertError);
       return NextResponse.json(
         { error: 'Failed to send message' },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: corsHeaders,
+        }
       );
     }
     
@@ -269,15 +376,51 @@ export async function POST(request: Request) {
           reason: f.reason,
         })) : [],
       },
-      { status: 200 }
+      { 
+        status: 200,
+        headers: corsHeaders,
+      }
     );
     
   } catch (error: any) {
     console.error('❌ Error in POST /api/messages/send:', error);
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: corsHeaders,
+      }
     );
   }
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8080',
+    'http://localhost:5000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8080',
+    'https://app.prepskul.com',
+    'https://www.prepskul.com',
+  ];
+
+  const corsHeaders: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    corsHeaders['Access-Control-Allow-Origin'] = origin;
+    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+  }
+
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
 }
 
