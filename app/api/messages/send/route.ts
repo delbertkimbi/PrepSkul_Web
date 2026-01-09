@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
 import { filterMessage } from '@/lib/services/message-filter-service';
 import { sendPushNotification } from '@/lib/services/firebase-admin';
+import { checkRateLimit } from '@/lib/services/rate-limiter';
 
 /**
  * Message Send API
@@ -116,6 +117,28 @@ export async function POST(request: NextRequest) {
       }
       
       user = userFromCookies;
+    }
+
+    // Rate limiting check
+    const rateLimitResult = checkRateLimit(user.id, '/api/messages/send');
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { 
+          error: 'Rate limit exceeded',
+          message: 'Too many messages sent. Please wait before sending more.',
+          retryAfter: Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000),
+        },
+        { 
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            'X-RateLimit-Limit': '30',
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.resetAt.toString(),
+            'Retry-After': Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000).toString(),
+          },
+        }
+      );
     }
 
     const body = await request.json();
@@ -287,7 +310,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // If allowed but has low/medium flags, store flags for review
+    // If allowed but has low/medium flags, store flags silently (no UI warning)
+    // Only store flags for future admin dashboard, don't affect user experience
     if (filterResult.flags.length > 0) {
       const { error: flagError } = await supabase
         .from('flagged_messages')
@@ -296,7 +320,7 @@ export async function POST(request: NextRequest) {
           sender_id: user.id,
           content: content,
           flags: filterResult.flags,
-          status: 'review', // Needs admin review
+          status: 'review', // Needs admin review (when admin dashboard is implemented)
           severity: filterResult.flags[0]?.severity || 'low',
           created_at: new Date().toISOString(),
         });
@@ -306,18 +330,17 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Insert message
+    // Insert message - always mark as approved if it passed filtering
+    // Low/medium flags are stored but don't affect message status
     const { data: message, error: insertError } = await supabase
       .from('messages')
       .insert({
         conversation_id: conversationId,
         sender_id: user.id,
         content: content.trim(),
-        is_filtered: filterResult.flags.length > 0,
-        filter_reason: filterResult.flags.length > 0 
-          ? filterResult.flags.map(f => f.type).join(',')
-          : null,
-        moderation_status: filterResult.flags.length > 0 ? 'pending' : 'approved',
+        is_filtered: false, // Don't mark as filtered since we're allowing it through
+        filter_reason: null, // Don't expose filter reason to users
+        moderation_status: 'approved', // Always approved if it passed filtering
         created_at: new Date().toISOString(),
       })
       .select()
@@ -377,14 +400,11 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Return message without flags - low/medium flags are stored silently
+    // Only return flags if message was blocked (which returns error above)
     return NextResponse.json(
       { 
         message,
-        flags: filterResult.flags.length > 0 ? filterResult.flags.map(f => ({
-          type: f.type,
-          severity: f.severity,
-          reason: f.reason,
-        })) : [],
       },
       { 
         status: 200,
