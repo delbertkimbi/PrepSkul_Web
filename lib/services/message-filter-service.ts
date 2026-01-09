@@ -371,14 +371,35 @@ function detectInappropriateLanguage(content: string): MessageFlag[] {
 function detectSpam(content: string, senderId: string): MessageFlag[] {
   const flags: MessageFlag[] = [];
   
-  // Check message length (very short messages might be spam)
-  if (content.trim().length < 3) {
+  // Common short legitimate words/phrases (whitelist)
+  const legitimateShortWords = [
+    'hi', 'hey', 'ok', 'okay', 'yes', 'no', 'yeah', 'yep', 'nope',
+    'ok', 'sure', 'thanks', 'thank you', 'ty', 'np', 'yw',
+    'bye', 'ciao', 'ttyl', 'brb', 'lol', 'haha', 'hahaha',
+    '👍', '👋', '😊', '😀', '😁', '🙂', '👍', '👌', '✌️',
+  ];
+  
+  const trimmedContent = content.trim().toLowerCase();
+  
+  // Only flag as too short if it's empty, single character, or not a legitimate short word
+  if (trimmedContent.length === 0) {
+    // Empty messages are handled by validation, not spam detection
+    return flags;
+  }
+  
+  if (trimmedContent.length === 1 && !legitimateShortWords.includes(trimmedContent)) {
     flags.push({
       type: 'spam',
       severity: 'low',
       detected: 'too_short',
       reason: 'Message is too short.',
     });
+  }
+  
+  // Don't flag legitimate short words/phrases
+  if (trimmedContent.length < 3 && legitimateShortWords.includes(trimmedContent)) {
+    // Allow legitimate short words
+    return flags;
   }
   
   // Check for repeated characters (e.g., "aaaaaa")

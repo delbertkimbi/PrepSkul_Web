@@ -27,8 +27,11 @@ export async function POST(request: NextRequest) {
     'http://localhost:3000',
     'http://localhost:8080',
     'http://localhost:5000',
+    'http://localhost:49581', // Flutter Web default port
     'http://127.0.0.1:3000',
     'http://127.0.0.1:8080',
+    'http://127.0.0.1:5000',
+    'http://127.0.0.1:49581',
     'https://app.prepskul.com',
     'https://www.prepskul.com',
   ];
@@ -39,9 +42,13 @@ export async function POST(request: NextRequest) {
     'Access-Control-Max-Age': '86400',
   };
 
+  // Allow any localhost origin for local development
   if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
     corsHeaders['Access-Control-Allow-Origin'] = origin;
     corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+  } else if (!origin) {
+    // Same-origin request (no origin header) - allow it
+    corsHeaders['Access-Control-Allow-Origin'] = '*';
   }
 
   try {
@@ -327,10 +334,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Update conversation last_message_at (trigger should handle this, but ensure it)
+    // Update conversation last_message_at and updated_at (trigger should handle this, but ensure it)
     await supabase
       .from('conversations')
-      .update({ last_message_at: new Date().toISOString() })
+      .update({ 
+        last_message_at: new Date().toISOString(),
+        updated_at: new Date().toISOString() // Explicitly set updated_at
+      })
       .eq('id', conversationId);
     
     // Get recipient ID
@@ -401,8 +411,11 @@ export async function OPTIONS(request: NextRequest) {
     'http://localhost:3000',
     'http://localhost:8080',
     'http://localhost:5000',
+    'http://localhost:49581', // Flutter Web default port
     'http://127.0.0.1:3000',
     'http://127.0.0.1:8080',
+    'http://127.0.0.1:5000',
+    'http://127.0.0.1:49581',
     'https://app.prepskul.com',
     'https://www.prepskul.com',
   ];
@@ -413,9 +426,13 @@ export async function OPTIONS(request: NextRequest) {
     'Access-Control-Max-Age': '86400',
   };
 
+  // Allow any localhost origin for local development
   if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
     corsHeaders['Access-Control-Allow-Origin'] = origin;
     corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+  } else if (!origin) {
+    // Same-origin request (no origin header) - allow it
+    corsHeaders['Access-Control-Allow-Origin'] = '*';
   }
 
   return new NextResponse(null, {
