@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     'https://app.prepskul.com',
     'https://www.prepskul.com',
     'https://prepskul.com',
+    'http://10.148.224.254:5000', // Network IP for local testing
   ];
 
   // CORS headers - when using credentials, must specify exact origin (not *)
@@ -37,15 +38,41 @@ export async function POST(request: NextRequest) {
     'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
   };
 
+  // Helper function to check if origin is a local/network IP
+  const isLocalOrNetworkOrigin = (orig: string): boolean => {
+    // Check for localhost variations
+    if (orig.includes('localhost') || orig.includes('127.0.0.1')) {
+      return true;
+    }
+    // Check for private network IP ranges (RFC 1918)
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    const ipPattern = /^http:\/\/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+$/;
+    const match = orig.match(ipPattern);
+    if (match) {
+      const ip = match[1];
+      const parts = ip.split('.').map(Number);
+      // 10.0.0.0 - 10.255.255.255
+      if (parts[0] === 10) return true;
+      // 172.16.0.0 - 172.31.255.255
+      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+      // 192.168.0.0 - 192.168.255.255
+      if (parts[0] === 192 && parts[1] === 168) return true;
+    }
+    return false;
+  };
+
   // Only allow specific origins
   if (origin && allowedOrigins.includes(origin)) {
     corsHeaders['Access-Control-Allow-Origin'] = origin;
     corsHeaders['Access-Control-Allow-Credentials'] = 'true';
   } else if (origin) {
-    // Allow any origin for localhost variations (Flutter web dev server)
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+    // Allow localhost variations and private network IPs (for local/network testing)
+    if (isLocalOrNetworkOrigin(origin)) {
       corsHeaders['Access-Control-Allow-Origin'] = origin;
       corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+      console.log(`[Agora Token] Allowing network origin: ${origin}`);
+    } else {
+      console.warn(`[Agora Token] Blocked origin: ${origin}`);
     }
   }
 
@@ -175,6 +202,8 @@ export async function POST(request: NextRequest) {
 
     // Generate unique UID for this user in this session
     const uid = generateSessionUID(sessionId, user.id, role);
+    console.log(`[Agora Token] Generated UID for user ${user.id} (${role}): ${uid}`);
+    console.log(`[Agora Token] UID generation input: sessionId=${sessionId}, userId=${user.id}, role=${role}`);
 
     // Get Agora configuration
     const agoraConfig = getAgoraConfig();
@@ -204,6 +233,7 @@ export async function POST(request: NextRequest) {
       uid,
       expiresAt,
       role,
+      appId: agoraConfig.appId, // Include appId for client initialization
     }, {
       headers: corsHeaders,
     });
@@ -232,7 +262,31 @@ export async function OPTIONS(request: NextRequest) {
     'https://app.prepskul.com',
     'https://www.prepskul.com',
     'https://prepskul.com',
+    'http://10.148.224.254:5000', // Network IP for local testing
   ];
+
+  // Helper function to check if origin is a local/network IP
+  const isLocalOrNetworkOrigin = (orig: string): boolean => {
+    // Check for localhost variations
+    if (orig.includes('localhost') || orig.includes('127.0.0.1')) {
+      return true;
+    }
+    // Check for private network IP ranges (RFC 1918)
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    const ipPattern = /^http:\/\/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+$/;
+    const match = orig.match(ipPattern);
+    if (match) {
+      const ip = match[1];
+      const parts = ip.split('.').map(Number);
+      // 10.0.0.0 - 10.255.255.255
+      if (parts[0] === 10) return true;
+      // 172.16.0.0 - 172.31.255.255
+      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+      // 192.168.0.0 - 192.168.255.255
+      if (parts[0] === 192 && parts[1] === 168) return true;
+    }
+    return false;
+  };
 
   const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -240,10 +294,15 @@ export async function OPTIONS(request: NextRequest) {
     'Access-Control-Max-Age': '86400',
   };
 
-  // Allow any localhost origin for development (Flutter web dev server)
-  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
-    corsHeaders['Access-Control-Allow-Origin'] = origin;
-    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+  // Allow specific origins or local/network IPs for development
+  if (origin) {
+    if (allowedOrigins.includes(origin) || isLocalOrNetworkOrigin(origin)) {
+      corsHeaders['Access-Control-Allow-Origin'] = origin;
+      corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+      console.log(`[Agora Token OPTIONS] Allowing origin: ${origin}`);
+    } else {
+      console.warn(`[Agora Token OPTIONS] Blocked origin: ${origin}`);
+    }
   }
 
   return new NextResponse(null, {
