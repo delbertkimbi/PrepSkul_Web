@@ -129,6 +129,6 @@ export async function extractFile(
       }
 
     default:
-      throw new Error(`Unsupported file type: ${fileInfo.type}. Supported types: PDF, DOCX, Images (JPG/PNG/GIF), TXT`)
+      throw new Error(`Unsupported file type: ${fileInfo.type}. Supported types: PDF, DOCX, Images and TXT`)
   }
 }
