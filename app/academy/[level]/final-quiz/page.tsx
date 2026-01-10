@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { getLevelById, getFinalQuiz, type AcademyLevelId } from "@/lib/academy-data"
 import { canAccessFinalQuiz, recordFinalQuizScore, PASS_THRESHOLD, getFinalQuizStatus } from "@/lib/academy-storage"
