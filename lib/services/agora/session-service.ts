@@ -22,15 +22,16 @@ export function generateChannelName(sessionId: string): string {
  * Get or create Agora channel name for a session
  * 
  * If channel name doesn't exist, generates and stores it in the database.
+ * For trial sessions, just generates the channel name (trial_sessions doesn't have agora_channel_name column).
  * 
- * @param sessionId Individual session ID
+ * @param sessionId Session ID (can be individual_sessions or trial_sessions)
  * @param supabase Optional Supabase client (if not provided, creates a new one)
  * @returns Channel name
  */
 export async function getOrCreateChannelName(sessionId: string, supabase?: any): Promise<string> {
   const client = supabase || await createServerSupabaseClient();
 
-  // Check if channel name already exists
+  // First, check if it's an individual_session with stored channel name
   const { data: session, error: fetchError } = await client
     .from('individual_sessions')
     .select('agora_channel_name')
@@ -38,25 +39,53 @@ export async function getOrCreateChannelName(sessionId: string, supabase?: any):
     .maybeSingle();
 
   if (fetchError) {
-    throw new Error(`Failed to fetch session: ${fetchError.message}`);
+    console.warn('[getOrCreateChannelName] Error querying individual_sessions:', fetchError.message);
   }
 
-  // If channel name exists, return it
+  // If channel name exists in individual_sessions, return it
   if (session?.agora_channel_name) {
+    console.log('[getOrCreateChannelName] Found existing channel name in individual_sessions');
     return session.agora_channel_name;
   }
 
-  // Generate new channel name
+  // Check if it's a trial session (trial_sessions doesn't have agora_channel_name column)
+  const { data: trialSession, error: trialError } = await client
+    .from('trial_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (trialError) {
+    console.warn('[getOrCreateChannelName] Error querying trial_sessions:', trialError.message);
+  }
+
+  // Generate channel name
   const channelName = generateChannelName(sessionId);
 
-  // Store in database
-  const { error: updateError } = await client
-    .from('individual_sessions')
-    .update({ agora_channel_name: channelName })
-    .eq('id', sessionId);
+  if (trialSession) {
+    // For trial sessions, just return the generated channel name
+    // (trial_sessions table doesn't have agora_channel_name column)
+    console.log('[getOrCreateChannelName] Trial session detected, using generated channel name:', channelName);
+    return channelName;
+  }
 
-  if (updateError) {
-    throw new Error(`Failed to store channel name: ${updateError.message}`);
+  // For individual_sessions, try to store the channel name
+  if (session) {
+    // Session exists but no channel name - store it
+    const { error: updateError } = await client
+      .from('individual_sessions')
+      .update({ agora_channel_name: channelName })
+      .eq('id', sessionId);
+
+    if (updateError) {
+      console.warn('[getOrCreateChannelName] Failed to store channel name, but continuing with generated name:', updateError.message);
+      // Continue anyway - the channel name will still work
+    } else {
+      console.log('[getOrCreateChannelName] Stored channel name in individual_sessions');
+    }
+  } else {
+    // Session not found in either table - just return generated name
+    console.warn('[getOrCreateChannelName] Session not found in individual_sessions or trial_sessions, using generated channel name');
   }
 
   return channelName;
@@ -118,8 +147,53 @@ export async function validateSessionAccess(
   }
 
   if (!session) {
-    console.error('[validateSessionAccess] Session not found in database');
+    console.error('[validateSessionAccess] Session not found in individual_sessions');
     console.error('[validateSessionAccess] Session ID:', sessionId, 'User ID:', userId);
+    
+    // Check trial_sessions table first (before recurring_sessions)
+    try {
+      console.log('[validateSessionAccess] Checking trial_sessions table...');
+      const { data: trialSession, error: trialError } = await client
+        .from('trial_sessions')
+        .select('tutor_id, learner_id, parent_id, id, status')
+        .eq('id', sessionId)
+        .maybeSingle();
+      
+      if (trialError) {
+        console.error('[validateSessionAccess] Error querying trial_sessions:', trialError);
+      }
+      
+      if (trialSession) {
+        console.log('[validateSessionAccess] ✅ Session found in trial_sessions:', {
+          tutor_id: trialSession.tutor_id,
+          learner_id: trialSession.learner_id,
+          parent_id: trialSession.parent_id,
+          status: trialSession.status
+        });
+        
+        // Validate access for trial session
+        const hasAccess = (
+          trialSession.tutor_id === userId ||
+          trialSession.learner_id === userId ||
+          trialSession.parent_id === userId
+        );
+        
+        console.log('[validateSessionAccess] Trial session access check:', {
+          sessionId,
+          userId,
+          tutor_id: trialSession.tutor_id,
+          learner_id: trialSession.learner_id,
+          parent_id: trialSession.parent_id,
+          hasAccess
+        });
+        
+        return hasAccess;
+      } else {
+        console.log('[validateSessionAccess] Session not found in trial_sessions');
+      }
+    } catch (e) {
+      console.error('[validateSessionAccess] Could not check trial_sessions:', e);
+    }
     
     // Check if this might be a recurring_session_id instead of individual_session_id
     // Try querying recurring_sessions to see if it exists there
@@ -183,25 +257,57 @@ export async function getUserRoleInSession(
 ): Promise<'tutor' | 'learner' | null> {
   const client = supabase || await createServerSupabaseClient();
 
+  // First, try individual_sessions
   const { data: session, error } = await client
     .from('individual_sessions')
     .select('tutor_id, learner_id, parent_id')
     .eq('id', sessionId)
     .maybeSingle();
 
-  if (error || !session) {
-    console.error('[getUserRoleInSession] Error or session not found:', error?.message || 'Session not found');
+  if (error) {
+    console.error('[getUserRoleInSession] Error querying individual_sessions:', error);
+  }
+
+  if (session) {
+    console.log('[getUserRoleInSession] Session found in individual_sessions');
+    if (session.tutor_id === userId) {
+      return 'tutor';
+    }
+    if (session.learner_id === userId || session.parent_id === userId) {
+      return 'learner';
+    }
     return null;
   }
 
-  if (session.tutor_id === userId) {
-    return 'tutor';
+  // If not found in individual_sessions, check trial_sessions
+  console.log('[getUserRoleInSession] Session not found in individual_sessions, checking trial_sessions...');
+  const { data: trialSession, error: trialError } = await client
+    .from('trial_sessions')
+    .select('tutor_id, learner_id, parent_id')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (trialError) {
+    console.error('[getUserRoleInSession] Error querying trial_sessions:', trialError);
   }
 
-  if (session.learner_id === userId || session.parent_id === userId) {
-    return 'learner';
+  if (trialSession) {
+    console.log('[getUserRoleInSession] ✅ Session found in trial_sessions:', {
+      tutor_id: trialSession.tutor_id,
+      learner_id: trialSession.learner_id,
+      parent_id: trialSession.parent_id
+    });
+    
+    if (trialSession.tutor_id === userId) {
+      return 'tutor';
+    }
+    if (trialSession.learner_id === userId || trialSession.parent_id === userId) {
+      return 'learner';
+    }
+    return null;
   }
 
+  console.error('[getUserRoleInSession] Session not found in individual_sessions or trial_sessions');
   return null;
 }
 
