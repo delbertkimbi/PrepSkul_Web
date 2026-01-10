@@ -51,7 +51,38 @@ async function downloadFileFromUrl(fileUrl: string): Promise<Buffer> {
     });
     // #endregion
     
-    const response = await fetch(fileUrl)
+    // Add timeout and retry logic for fetch requests
+    const fetchWithTimeout = async (url: string, timeoutMs: number = 30000, retries: number = 2): Promise<Response> => {
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+          
+          const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {
+              'User-Agent': 'PrepSkul-SkulMate/1.0',
+            },
+          })
+          
+          clearTimeout(timeoutId)
+          return response
+        } catch (error: any) {
+          if (error.name === 'AbortError' || error.code === 'UND_ERR_CONNECT_TIMEOUT') {
+            if (attempt < retries) {
+              console.warn(`[skulMate Storage] Fetch timeout (attempt ${attempt + 1}/${retries + 1}), retrying...`)
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))) // Exponential backoff
+              continue
+            }
+            throw new Error(`Connection timeout after ${retries + 1} attempts. The file may be too large or the server is slow.`)
+          }
+          throw error
+        }
+      }
+      throw new Error('Failed to fetch file after retries')
+    }
+    
+    const response = await fetchWithTimeout(fileUrl, 30000, 2)
     
     // #region agent log
     logDebug('skulmate/generate:downloadFileFromUrl', 'Fetch response received', {
@@ -132,6 +163,9 @@ interface GameItem {
   leftItem?: string // For matching
   rightItem?: string // For matching
   blankText?: string // For fill_blank
+  needsImage?: boolean // For image generation flag
+  imagePrompt?: string // Description for image generation
+  imageUrl?: string // URL of generated image
 }
 
 interface GameData {
@@ -644,29 +678,23 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   if (isCreativeGame) {
     // Creative games: Use models optimized for storytelling and world-building
     gameModels = [
-      'qwen/qwen-2-14b-instruct',     // Creative model for stories/simulations
-      'meta-llama/llama-3.2-11b-instruct', // Alternative creative model
-      'qwen/qwen-2-7b-instruct',      // Fallback
-      'google/gemini-flash-1.5',      // Google model
-      'openai/gpt-4o-mini',           // OpenAI fallback
+      'openai/gpt-4o-mini',               // Stable, available
+      'mistralai/mistral-7b-instruct',    // Reliable fallback
+      'meta-llama/llama-3.2-3b-instruct', // Lightweight fallback
     ]
   } else if (needsReasoning) {
     // Reasoning games: Use models optimized for logic and validation
     gameModels = [
-      'openai/gpt-4o-mini',           // Reasoning model
-      'google/gemini-flash-1.5',      // Google reasoning model
-      'qwen/qwen-2-14b-instruct',     // Fallback
-      'qwen/qwen-2-7b-instruct',      // Cheaper fallback
+      'openai/gpt-4o-mini',               // Reasoning model
+      'mistralai/mistral-7b-instruct',    // Reasoning fallback
+      'meta-llama/llama-3.2-3b-instruct', // Lightweight fallback
     ]
   } else {
     // Fast games: Use lightweight models for quick generation
     gameModels = [
-      'mistralai/mistral-7b-instruct', // Fast lightweight model
-    'qwen/qwen-2-7b-instruct',      // Free/cheap
-    'meta-llama/llama-3.2-3b-instruct', // Free tier
-      'qwen/qwen-2-14b-instruct',     // Slightly more expensive
-    'google/gemini-flash-1.5',       // Google model
-      'openai/gpt-4o-mini',           // OpenAI (fallback)
+      'openai/gpt-4o-mini',               // Balanced model
+      'mistralai/mistral-7b-instruct',    // Balanced fallback
+      'meta-llama/llama-3.2-3b-instruct', // Lightweight fallback
   ]
   }
 
@@ -730,8 +758,12 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   }
   
   // Validate game data
-  if (!gameData.gameType || !gameData.items || gameData.items.length === 0) {
-    throw new Error('Invalid game data structure')
+  if (!gameData.gameType) {
+    throw new Error('Invalid game data structure: missing gameType')
+  }
+  if (!Array.isArray(gameData.items) || gameData.items.length === 0) {
+    console.error('[skulMate] Invalid items structure:', gameData.items)
+    throw new Error('Invalid game data structure: items must be a non-empty array')
   }
 
   // Check if items have quiz structure when they shouldn't
@@ -815,7 +847,12 @@ If you generate quiz again, your response will be rejected.`
   
   // Validate items structure matches gameType - reject if quiz items detected
   if (gameType === 'auto' && recommendedGameType !== 'quiz') {
-    const finalHasQuizItems = gameData.items && gameData.items.some((item: any) => item.question && Array.isArray(item.options))
+    // Safety check: Ensure items is an array before calling .some()
+    if (!Array.isArray(gameData.items)) {
+      console.error(`[skulMate] ❌ CRITICAL: gameData.items is not an array:`, typeof gameData.items, gameData.items)
+      throw new Error(`Invalid game data structure: items must be an array, but got ${typeof gameData.items}`)
+    }
+    const finalHasQuizItems = gameData.items.some((item: any) => item.question && Array.isArray(item.options))
     if (finalHasQuizItems) {
       console.error(`[skulMate] ❌ CRITICAL: Items have quiz structure (question/options) but gameType should be ${recommendedGameType}. Rejecting.`)
       throw new Error(`Generated items have quiz structure but gameType should be ${recommendedGameType}. The AI did not follow the prompt correctly.`)
@@ -1165,7 +1202,12 @@ export async function POST(request: NextRequest) {
     let gameId: string | null = null
     if (finalUserId) {
       try {
-        const supabase = await createServerSupabaseClient()
+        // Always use service role for inserts to bypass RLS for server-side operations
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+          console.error('[skulMate] Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_URL; cannot save game')
+          throw new Error('Server misconfigured: missing Supabase service role env vars for saving games')
+        }
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
         
         // Insert game metadata
         const { data: game, error: gameError } = await supabase

@@ -126,13 +126,11 @@ Return a JSON object with this exact structure:
   ]
 }`
 
-  // Use cheaper models for entity extraction
+  // Use only models that are available/stable on OpenRouter for this project
   const extractionModels = [
-    'qwen/qwen-2-7b-instruct',      // Cheapest
-    'meta-llama/llama-3.2-3b-instruct', // Free tier
-    'mistralai/mistral-7b-instruct', // Cheap
-    'qwen/qwen-2-14b-instruct',     // Slightly more expensive
-    'google/gemini-flash-1.5',      // Google model
+    'openai/gpt-4o-mini',              // Stable, available
+    'mistralai/mistral-7b-instruct',   // Reliable fallback
+    'meta-llama/llama-3.2-3b-instruct' // Lightweight fallback
   ]
 
   const skulMateApiKey = getSkulMateApiKey()
