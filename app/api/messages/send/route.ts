@@ -461,3 +461,21 @@ export async function OPTIONS(request: NextRequest) {
   });
 }
 
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Max-Age': '86400',
+  };
+
+  // Allow any localhost origin for local development
+  if (origin && (allowedOrigins.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    corsHeaders['Access-Control-Allow-Origin'] = origin;
+    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+  } else if (!origin) {
+    // Same-origin request (no origin header) - allow it
+    corsHeaders['Access-Control-Allow-Origin'] = '*';
+  }
+
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
