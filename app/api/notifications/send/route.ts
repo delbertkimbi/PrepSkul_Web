@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendCustomEmail } from '@/lib/notifications';
 
 /**
@@ -34,10 +35,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use admin client to bypass RLS for notification creation
+    const supabaseAdmin = getSupabaseAdmin();
     const supabase = await createServerSupabaseClient();
 
     // Check user notification preferences
-    const { data: preferences } = await supabase
+    const { data: preferences } = await supabaseAdmin
       .from('notification_preferences')
       .select('*')
       .eq('user_id', userId)
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
     const shouldSendEmail = sendEmail && (preferences?.channels?.email !== false);
     const shouldSendPush = sendPush && (preferences?.channels?.push !== false);
 
-    // Create in-app notification (always)
+    // Create in-app notification (always) - using admin client to bypass RLS
     const notificationData = {
       user_id: userId,
       type: type || 'general',
@@ -62,7 +65,7 @@ export async function POST(request: NextRequest) {
       metadata: metadata || {},
     };
 
-    const { data: notification, error: notifError } = await supabase
+    const { data: notification, error: notifError } = await supabaseAdmin
       .from('notifications')
       .insert(notificationData)
       .select()
