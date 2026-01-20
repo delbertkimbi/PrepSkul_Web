@@ -134,7 +134,7 @@ export async function PATCH(
             sendPush = true;
             break;
           case 'matched':
-            title = '🎉 Tutor Matched!';
+            title = 'Tutor Matched';
             message = tutorName 
               ? `Great news! We found a tutor for your request: ${tutorName}. Check the details now!`
               : 'Great news! We found a tutor for your request. Check the details now!';
@@ -143,7 +143,7 @@ export async function PATCH(
             sendPush = true;
             break;
           case 'closed':
-            title = '✅ Request Closed';
+            title = 'Request Closed';
             message = admin_notes 
               ? `Your tutor request has been closed. Note: ${admin_notes}`
               : 'Your tutor request has been closed.';

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       reminders.push({
         time: twentyFourHoursBefore,
         type: '24_hours',
-        title: '📅 Session Reminder',
+        title: 'Session Reminder',
         message: sessionType === 'trial'
           ? `Your trial session with ${tutorName} is tomorrow!`
           : `Your session with ${tutorName} is tomorrow!`,

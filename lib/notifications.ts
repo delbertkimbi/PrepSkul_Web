@@ -410,7 +410,7 @@ export async function notifyTutorApproval(
         user_id: tutorUserId,
         type: 'profile_approved',
         notification_type: 'profile_approved',
-        title: '🎉 Profile Approved!',
+        title: 'Profile Approved',
         message: `Your PrepSkul tutor profile has been approved. Your profile is now live and students can book sessions with you!${ratingText}${adminNotes ? `\n\nAdmin Note: ${adminNotes}` : ''}`,
         priority: 'high',
         is_read: false,

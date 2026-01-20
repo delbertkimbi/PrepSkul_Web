@@ -111,7 +111,7 @@ export async function POST(
       console.log('📤 Notification payload:', {
         userId: tutor.user_id,
         type: 'profile_update_approved',
-        title: '✅ All Updates Approved',
+        title: 'All Updates Approved',
         message: notificationMessage,
       });
 
@@ -123,7 +123,7 @@ export async function POST(
         body: JSON.stringify({
           userId: tutor.user_id,
           type: 'profile_update_approved',
-          title: '✅ All Updates Approved',
+          title: 'All Updates Approved',
           message: notificationMessage,
             metadata: {
               approved_fields: approvedFields,
@@ -152,7 +152,7 @@ export async function POST(
               user_id: tutor.user_id,
               type: 'profile_update_approved',
               notification_type: 'profile_update_approved',
-              title: '✅ All Updates Approved',
+              title: 'All Updates Approved',
               message: notificationMessage,
               priority: 'high',
               metadata: {
@@ -186,7 +186,7 @@ export async function POST(
             user_id: tutor.user_id,
             type: 'profile_update_approved',
             notification_type: 'profile_update_approved',
-            title: '✅ All Updates Approved',
+            title: 'All Updates Approved',
             message: 'All your profile updates have been approved and are now live on your profile.',
             priority: 'high',
             action_url: '/tutor/dashboard',

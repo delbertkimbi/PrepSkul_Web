@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendCustomEmail } from '@/lib/notifications';
+import { shouldReceiveNotification } from '@/lib/services/notification-permission-service';
 
 /**
  * Send Notification API
@@ -24,6 +25,7 @@ export async function POST(request: NextRequest) {
       actionText,
       icon,
       metadata,
+      imageUrl, // Rich preview image URL
       sendEmail = false,
       sendPush = false,
     } = body;
@@ -38,6 +40,26 @@ export async function POST(request: NextRequest) {
     // Use admin client to bypass RLS for notification creation
     const supabaseAdmin = getSupabaseAdmin();
     const supabase = await createServerSupabaseClient();
+
+    // Check if user should receive this notification (permission check)
+    const permissionCheck = await shouldReceiveNotification({
+      userId,
+      type: type || 'general',
+      metadata,
+      actionUrl,
+    });
+
+    if (!permissionCheck.allowed) {
+      console.log(`Notification blocked for user ${userId}: ${permissionCheck.reason}`);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Notification not allowed',
+          reason: permissionCheck.reason,
+        },
+        { status: 403 }
+      );
+    }
 
     // Check user notification preferences
     const { data: preferences } = await supabaseAdmin
@@ -62,7 +84,11 @@ export async function POST(request: NextRequest) {
       action_url: actionUrl,
       action_text: actionText,
       icon,
-      metadata: metadata || {},
+      image_url: imageUrl, // Rich preview image URL
+      metadata: {
+        ...(metadata || {}),
+        ...(imageUrl ? { image_url: imageUrl } : {}), // Also store in metadata for easy access
+      },
     };
 
     const { data: notification, error: notifError } = await supabaseAdmin
