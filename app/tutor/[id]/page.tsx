@@ -60,10 +60,28 @@ export async function generateMetadata({
   const subjectsText = subjectsArray.length > 0 
     ? subjectsArray.join(', ') 
     : 'Tutor';
-  const bio = tutor.bio as string | null;
-  const description = bio 
-    ? `Book ${tutorName} for ${subjectsText} tutoring sessions. ${bio.substring(0, 150)}...`
-    : `Book ${tutorName} for ${subjectsText} tutoring sessions. Verified tutor on PrepSkul.`;
+  
+  // Get bio from multiple possible sources (bio, personal_statement, motivation)
+  const bio = (tutor.bio as string | null) || 
+              (tutor.personal_statement as string | null) ||
+              (tutor.motivation as string | null);
+  
+  // Create rich description for link preview
+  const rating = tutor.rating || tutor.admin_approved_rating || 0;
+  const totalReviews = tutor.total_reviews || 0;
+  const ratingText = rating > 0 ? `⭐ ${rating.toFixed(1)}${totalReviews > 0 ? ` (${totalReviews} reviews)` : ''}` : '';
+  
+  let description = `Book ${tutorName} for ${subjectsText} tutoring sessions`;
+  if (ratingText.isNotEmpty) {
+    description += ` • ${ratingText}`;
+  }
+  if (bio && bio.trim().isNotEmpty) {
+    // Clean bio (remove "Hello!" if present) and truncate
+    const cleanBio = bio.replaceAll(RegExp(r'^Hello!?\s*', caseSensitive: false), '').trim();
+    description += `. ${cleanBio.substring(0, 120)}${cleanBio.length > 120 ? '...' : ''}`;
+  } else {
+    description += '. Verified tutor on PrepSkul.';
+  }
   
   const tutorId = tutor.user_id || tutor.id;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';

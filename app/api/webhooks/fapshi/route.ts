@@ -485,47 +485,57 @@ async function handleSessionPayment({
         })
         .eq('id', paymentId);
 
-      // Send notifications to tutor and student/parent
+      // Send notifications to tutor and student/parent (with email and push)
       try {
-        // Notify tutor
-        await supabase.from('notifications').insert({
-          user_id: tutorId,
-          type: 'payment_confirmed',
-          notification_type: 'payment_confirmed',
-          title: 'Payment Received',
-          message: `Payment of \${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings are now available.`,
-          priority: 'normal',
-          action_url: '/earnings',
-          action_text: 'View Earnings',
-          icon: 'payment',
-          metadata: {
-            session_id: sessionId,
-            payment_id: paymentId,
-            earnings: tutorEarnings,
-          },
-          is_read: false,
-        });
-
-        // Notify student/parent
-        const studentUserId = learnerId || parentId;
-        if (studentUserId) {
-          await supabase.from('notifications').insert({
-            user_id: studentUserId,
+        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        
+        // Notify tutor (with email and push)
+        await fetch(`${apiUrl}/api/notifications/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: tutorId,
             type: 'payment_confirmed',
-            notification_type: 'payment_confirmed',
-            title: 'Payment Confirmed',
-            message: 'Your session payment has been confirmed.',
+            title: 'Payment Received',
+            message: `Payment of ${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings are now available.`,
             priority: 'normal',
-            action_url: `/sessions/\${sessionId}`,
-            action_text: 'View Session',
-            icon: 'check_circle',
+            actionUrl: '/earnings',
+            actionText: 'View Earnings',
+            icon: 'payment',
             metadata: {
               session_id: sessionId,
               payment_id: paymentId,
-              user_type: parentId ? 'parent' : 'student',
+              earnings: tutorEarnings,
             },
-            is_read: false,
-          });
+            sendEmail: true,
+            sendPush: true,
+          }),
+        }).catch(err => console.error('⚠️ Failed to send tutor notification:', err));
+
+        // Notify student/parent (with email and push)
+        const studentUserId = learnerId || parentId;
+        if (studentUserId) {
+          await fetch(`${apiUrl}/api/notifications/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: studentUserId,
+              type: 'payment_confirmed',
+              title: 'Payment Confirmed',
+              message: 'Your session payment has been confirmed.',
+              priority: 'normal',
+              actionUrl: `/sessions/${sessionId}`,
+              actionText: 'View Session',
+              icon: 'check_circle',
+              metadata: {
+                session_id: sessionId,
+                payment_id: paymentId,
+                user_type: parentId ? 'parent' : 'student',
+              },
+              sendEmail: true,
+              sendPush: true,
+            }),
+          }).catch(err => console.error('⚠️ Failed to send student notification:', err));
         }
       } catch (notifError) {
         console.error('⚠️ Error sending notifications:', notifError);
@@ -546,28 +556,33 @@ async function handleSessionPayment({
 
       if (failError) throw failError;
 
-      // Send failure notification to student/parent
+      // Send failure notification to student/parent (with email and push - high priority)
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         const studentUserId = learnerId || parentId;
         if (studentUserId) {
-          await supabase.from('notifications').insert({
-            user_id: studentUserId,
-            type: 'payment_failed',
-            notification_type: 'payment_failed',
-            title: '⚠️ Payment Failed',
-            message: `Your session payment failed.${failureReason ? ` Reason: ${failureReason}` : ''} Please try again.`,
-            priority: 'high',
-            action_url: `/sessions/\${sessionId}/payment`,
-            action_text: 'Retry Payment',
-            icon: '⚠️',
-            metadata: {
-              session_id: sessionId,
-              payment_id: paymentId,
-              failure_reason: failureReason,
-              user_type: parentId ? 'parent' : 'student',
-            },
-            is_read: false,
-          });
+          await fetch(`${apiUrl}/api/notifications/send`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: studentUserId,
+              type: 'payment_failed',
+              title: 'Payment Failed',
+              message: `Your session payment failed.${failureReason ? ` Reason: ${failureReason}` : ''} Please try again.`,
+              priority: 'high',
+              actionUrl: `/sessions/${sessionId}/payment`,
+              actionText: 'Retry Payment',
+              icon: undefined,
+              metadata: {
+                session_id: sessionId,
+                payment_id: paymentId,
+                failure_reason: failureReason,
+                user_type: parentId ? 'parent' : 'student',
+              },
+              sendEmail: true,
+              sendPush: true, // High priority - send push
+            }),
+          }).catch(err => console.error('⚠️ Failed to send failure notification:', err));
         }
       } catch (notifError) {
         console.error('⚠️ Error sending failure notification:', notifError);

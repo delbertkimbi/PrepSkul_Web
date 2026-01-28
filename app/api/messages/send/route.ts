@@ -338,32 +338,51 @@ export async function POST(request: NextRequest) {
       ? conversation.tutor_id 
       : conversation.student_id;
     
-    // Get sender name for notification
+    // Get sender profile with avatar for rich notifications
     const { data: senderProfile } = await supabase
       .from('profiles')
-      .select('full_name')
+      .select('full_name, avatar_url')
       .eq('id', user.id)
       .single();
     
     const senderName = senderProfile?.full_name || 'Someone';
+    const senderAvatarUrl = senderProfile?.avatar_url || null;
     
-    // Trigger push notification (if no critical flags)
+    // Send rich notification via unified endpoint (if no critical flags)
     if (filterResult.flags.length === 0 || !filterResult.flags.some(f => f.severity === 'critical')) {
       try {
-        await sendPushNotification({
-          userId: recipientId,
-          title: `New message from ${senderName}`,
-          body: content.length > 100 ? content.substring(0, 100) + '...' : content,
-          data: {
+        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const messagePreview = content.length > 200 ? content.substring(0, 200) + '...' : content;
+        
+        await fetch(`${apiUrl}/api/notifications/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: recipientId,
             type: 'message',
-            conversation_id: conversationId,
-            sender_id: user.id,
-          },
-          priority: 'high',
+            title: `New message from ${senderName}`,
+            message: messagePreview,
+            priority: 'high',
+            actionUrl: `/messages/${conversationId}`,
+            actionText: 'Open Conversation',
+            imageUrl: senderAvatarUrl, // Rich preview: sender avatar
+            metadata: {
+              sender_id: user.id,
+              sender_name: senderName,
+              sender_avatar_url: senderAvatarUrl,
+              conversation_id: conversationId,
+              message_preview: messagePreview,
+            },
+            sendEmail: true, // Enable email for messages
+            sendPush: true, // Enable push for messages
+          }),
+        }).catch(err => {
+          // Don't fail message send if notification fails
+          console.error('⚠️ Error sending notification:', err);
         });
-      } catch (pushError) {
-        // Don't fail message send if push notification fails
-        console.error('⚠️ Error sending push notification:', pushError);
+      } catch (notifError) {
+        // Don't fail message send if notification fails
+        console.error('⚠️ Error sending notification:', notifError);
       }
     }
     

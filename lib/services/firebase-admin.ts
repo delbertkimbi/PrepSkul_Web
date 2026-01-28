@@ -83,12 +83,14 @@ export async function sendPushNotification({
   body,
   data,
   priority = 'normal',
+  imageUrl,
 }: {
   userId: string;
   title: string;
   body: string;
   data?: Record<string, string>;
   priority?: 'normal' | 'high';
+  imageUrl?: string;
 }): Promise<{ success: boolean; sent: number; errors: number }> {
   try {
     // Initialize and get admin module
@@ -119,12 +121,15 @@ export async function sendPushNotification({
       return { success: true, sent: 0, errors: 0 };
     }
 
-    // Prepare notification payload
-    const message = {
-      notification: {
-        title,
-        body,
-      },
+    // Prepare notification payload with rich image support
+    const notificationPayload: import('firebase-admin').messaging.Notification = {
+      title,
+      body,
+      ...(imageUrl ? { imageUrl } : {}), // Rich notification image (Android & iOS)
+    };
+
+    const message: import('firebase-admin').messaging.MulticastMessage = {
+      notification: notificationPayload,
       data: data ? Object.fromEntries(
         Object.entries(data).map(([key, value]) => [key, String(value)])
       ) : undefined,
@@ -133,6 +138,7 @@ export async function sendPushNotification({
         notification: {
           sound: 'default',
           channelId: 'prepskul_notifications',
+          ...(imageUrl ? { imageUrl } : {}), // Android rich notification image
         },
       },
       apns: {
@@ -140,7 +146,9 @@ export async function sendPushNotification({
           aps: {
             sound: 'default',
             badge: 1,
+            'mutable-content': imageUrl ? 1 : undefined, // Enable rich content for iOS
           },
+          ...(imageUrl ? { fcm_options: { image: imageUrl } } : {}), // iOS rich notification image
         },
       },
       tokens: tokens.map(t => t.token as string),

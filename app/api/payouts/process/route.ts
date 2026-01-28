@@ -157,26 +157,36 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Payout processing initiated: ${payoutRequestId}, Fapshi transId: ${transId}`);
 
-    // Notify tutor (async - don't wait)
-    supabase
-      .from('notifications')
-      .insert({
-        user_id: tutorId,
-        type: 'payout_processing',
-        title: 'Payout Processing',
-        message: `Your payout request of ${amount.toFixed(0)} XAF is being processed. You will receive a notification once it's completed.`,
-        data: {
-          payout_request_id: payoutRequestId,
-          amount: amount,
-          status: 'processing',
-        },
-      })
-      .then(() => {
+    // Notify tutor (async - don't wait) with email and push
+    void (async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        await fetch(`${apiUrl}/api/notifications/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: tutorId,
+            type: 'payout_processing',
+            title: 'Payout Processing',
+            message: `Your payout request of ${amount.toFixed(0)} XAF is being processed. You will receive a notification once it's completed.`,
+            priority: 'normal',
+            actionUrl: '/earnings',
+            actionText: 'View Earnings',
+            icon: undefined,
+            metadata: {
+              payout_request_id: payoutRequestId,
+              amount: amount,
+              status: 'processing',
+            },
+            sendEmail: true,
+            sendPush: false, // Normal priority - no push needed
+          }),
+        }).catch(err => console.error('⚠️ Failed to send payout notification:', err));
         console.log(`✅ Payout notification sent to tutor: ${tutorId}`);
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('⚠️ Failed to send payout notification:', err);
-      });
+      }
+    })();
 
     return NextResponse.json({
       success: true,

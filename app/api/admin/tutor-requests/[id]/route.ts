@@ -122,15 +122,14 @@ export async function PATCH(
         let title: string;
         let message: string;
         let priority = 'normal';
-        let icon = '📋';
+        let icon: string | undefined;
         let sendPush = false;
 
         switch (status) {
           case 'in_progress':
-            title = '🔄 Request In Progress';
+            title = 'Request In Progress';
             message = 'Your tutor request is now being processed by our team. We\'ll keep you updated!';
             priority = 'normal';
-            icon = '🔄';
             sendPush = true;
             break;
           case 'matched':
@@ -139,7 +138,6 @@ export async function PATCH(
               ? `Great news! We found a tutor for your request: ${tutorName}. Check the details now!`
               : 'Great news! We found a tutor for your request. Check the details now!';
             priority = 'high';
-            icon = '🎉';
             sendPush = true;
             break;
           case 'closed':
@@ -148,13 +146,11 @@ export async function PATCH(
               ? `Your tutor request has been closed. Note: ${admin_notes}`
               : 'Your tutor request has been closed.';
             priority = 'normal';
-            icon = '✅';
             break;
           default:
-            title = '📋 Request Status Updated';
+            title = 'Request Status Updated';
             message = `Your tutor request status has been updated to: ${status.replace(/_/g, ' ')}.`;
             priority = 'normal';
-            icon = '📋';
         }
 
         await fetch(`${apiUrl}/notifications/send`, {
