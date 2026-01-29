@@ -72,12 +72,12 @@ export async function generateMetadata({
   const ratingText = rating > 0 ? `⭐ ${rating.toFixed(1)}${totalReviews > 0 ? ` (${totalReviews} reviews)` : ''}` : '';
   
   let description = `Book ${tutorName} for ${subjectsText} tutoring sessions`;
-  if (ratingText.isNotEmpty) {
+  if (ratingText.length > 0) {
     description += ` • ${ratingText}`;
   }
-  if (bio && bio.trim().isNotEmpty) {
+  if (bio && bio.trim().length > 0) {
     // Clean bio (remove "Hello!" if present) and truncate
-    const cleanBio = bio.replaceAll(RegExp(r'^Hello!?\s*', caseSensitive: false), '').trim();
+    const cleanBio = bio.replaceAll(/^Hello!?\s*/i, '').trim();
     description += `. ${cleanBio.substring(0, 120)}${cleanBio.length > 120 ? '...' : ''}`;
   } else {
     description += '. Verified tutor on PrepSkul.';
@@ -231,4 +231,3 @@ export default async function TutorPage({
     />
   );
 }
-
