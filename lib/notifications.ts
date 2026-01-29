@@ -88,11 +88,10 @@ export async function sendTutorApprovalEmail(
           <div class="container">
             <div class="header">
               <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" />
-              <h1>🎉 Congratulations!</h1>
+              <h1>PrepSkul</h1>
             </div>
             <div class="content">
-              <div class="success-icon">✅</div>
-              <h2 style="color: #1B2C4F; margin-top: 0;">Your Tutor Profile Has Been Approved!</h2>
+              <h2 style="color: #1B2C4F; margin-top: 0;">Your Tutor Profile Has Been Approved</h2>
               <p>Hi <strong>${tutorName}</strong>,</p>
               <p>Great news! Your PrepSkul tutor profile has been reviewed and <strong>approved</strong> by our admin team.</p>
               ${adminNotes ? `
@@ -105,7 +104,7 @@ export async function sendTutorApprovalEmail(
                 <h3>Your Profile Details:</h3>
                 <div class="rating-item">
                   <span class="rating-label">Your Initial Rating:</span>
-                  <span class="rating-value">${rating} ⭐</span>
+                  <span class="rating-value">${rating}</span>
                 </div>
                 <div class="rating-item">
                   <span class="rating-label">Your Session Price:</span>
@@ -129,7 +128,7 @@ export async function sendTutorApprovalEmail(
                 <a href="https://app.prepskul.com/tutor/profile" class="button">Open Dashboard</a>
               </p>
               <p>If you have any questions, feel free to reach out to our support team.</p>
-              <p>Welcome to the PrepSkul community! 🎓</p>
+              <p>Welcome to the PrepSkul community!</p>
               <p style="margin-top: 30px;"><strong>The PrepSkul Team</strong></p>
             </div>
             <div class="footer">
@@ -410,7 +409,7 @@ export async function notifyTutorApproval(
         user_id: tutorUserId,
         type: 'profile_approved',
         notification_type: 'profile_approved',
-        title: '🎉 Profile Approved!',
+        title: 'Profile Approved',
         message: `Your PrepSkul tutor profile has been approved. Your profile is now live and students can book sessions with you!${ratingText}${adminNotes ? `\n\nAdmin Note: ${adminNotes}` : ''}`,
         priority: 'high',
         is_read: false,
@@ -697,4 +696,130 @@ export async function sendCustomEmail(
       error: error.message || 'Failed to send email',
     };
   }
+}
+
+type NotificationEmailParams = {
+  recipientEmail: string;
+  recipientName: string;
+  subject: string;
+  title: string;
+  message: string;
+  actionUrl?: string;
+  actionText?: string;
+  senderName?: string;
+  senderAvatarUrl?: string;
+  messagePreview?: string;
+};
+
+function buildNotificationEmailHtml({
+  recipientName,
+  title,
+  message,
+  actionUrl,
+  actionText,
+  senderName,
+  senderAvatarUrl,
+  messagePreview,
+}: Omit<NotificationEmailParams, 'recipientEmail' | 'subject'>): string {
+  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
+  const resolvedActionUrl = actionUrl
+    ? (actionUrl.startsWith('http') ? actionUrl : `${appBaseUrl}${actionUrl}`)
+    : appBaseUrl;
+  const buttonText = actionText || 'Open PrepSkul';
+  const isMessageNotification = !!senderName;
+  const previewText = messagePreview || message;
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f2f4f8; }
+          .container { max-width: 640px; margin: 0 auto; background: #ffffff; }
+          .header { background: linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%); color: white; padding: 32px 28px; text-align: center; }
+          .logo { max-width: 120px; height: auto; margin: 0 auto 16px; display: block; }
+          .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+          .content { padding: 32px 28px; background: #ffffff; }
+          .sender-section { display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
+          .sender-avatar { width: 48px; height: 48px; border-radius: 50%; margin-right: 12px; object-fit: cover; background: #e0e0e0; }
+          .sender-info { flex: 1; }
+          .sender-label { font-size: 12px; color: #666; margin-bottom: 4px; }
+          .sender-name { font-size: 16px; font-weight: 600; color: #1B2C4F; margin: 0; }
+          .title { color: #1B2C4F; font-size: 20px; font-weight: 700; margin: 0 0 12px; }
+          .message { font-size: 15px; margin: 0 0 20px; white-space: pre-wrap; }
+          .message-preview { background: #f8f9fa; border-left: 3px solid #4A6FBF; padding: 16px; margin: 20px 0; border-radius: 4px; font-size: 14px; color: #333; line-height: 1.6; }
+          .button { display: inline-block; background: #4A6FBF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; }
+          .link-note { font-size: 12px; color: #666; margin-top: 16px; word-break: break-all; }
+          .footer { background: #f9f9f9; padding: 20px 28px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" />
+            <h1>PrepSkul</h1>
+          </div>
+          <div class="content">
+            <p style="margin: 0 0 12px;">Hi <strong>${recipientName}</strong>,</p>
+            ${isMessageNotification && senderName ? `
+            <div class="sender-section">
+              ${senderAvatarUrl ? `<img src="${senderAvatarUrl}" alt="${senderName}" class="sender-avatar" />` : `<div class="sender-avatar" style="display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600;">${senderName.charAt(0).toUpperCase()}</div>`}
+              <div class="sender-info">
+                <div class="sender-label">From</div>
+                <div class="sender-name">${senderName}</div>
+              </div>
+            </div>
+            ` : ''}
+            <h2 class="title">${title}</h2>
+            ${isMessageNotification && messagePreview ? `
+            <div class="message-preview">${previewText}</div>
+            ` : `<p class="message">${message}</p>`}
+            <p style="text-align: center; margin: 24px 0;">
+              <a href="${resolvedActionUrl}" class="button">${buttonText}</a>
+            </p>
+            <p class="link-note">
+              If the button doesn't work, copy and paste this link into your browser:<br />
+              <a href="${resolvedActionUrl}">${resolvedActionUrl}</a>
+            </p>
+          </div>
+          <div class="footer">
+            © ${new Date().getFullYear()} PrepSkul. All rights reserved.<br />
+            This is an automated email. Please do not reply.
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+export async function sendNotificationEmail({
+  recipientEmail,
+  recipientName,
+  subject,
+  title,
+  message,
+  actionUrl,
+  actionText,
+  senderName,
+  senderAvatarUrl,
+  messagePreview,
+}: NotificationEmailParams): Promise<{ success: boolean; error?: string }> {
+  const emailHtml = buildNotificationEmailHtml({
+    recipientName,
+    title,
+    message,
+    actionUrl,
+    actionText,
+    senderName,
+    senderAvatarUrl,
+    messagePreview,
+  });
+
+  return sendCustomEmail(
+    recipientEmail,
+    recipientName,
+    subject,
+    emailHtml
+  );
 }

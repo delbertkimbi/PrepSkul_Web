@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { sendCustomEmail } from '@/lib/notifications';
+import { sendNotificationEmail } from '@/lib/notifications';
 
 /**
  * Process Scheduled Notifications Cron Job
@@ -45,12 +45,16 @@ export async function GET(request: NextRequest) {
     const now = new Date().toISOString();
 
     // Fetch pending scheduled notifications that are due
+    // Process by priority order: urgent > high > normal
+    // Increased batch size to 500 for better throughput
     const { data: scheduledNotifications, error: fetchError } = await supabase
       .from('scheduled_notifications')
       .select('*')
       .eq('status', 'pending')
       .lte('scheduled_for', now)
-      .limit(100); // Process up to 100 at a time
+      .order('priority', { ascending: false }) // urgent > high > normal
+      .order('scheduled_for', { ascending: true }) // Then by scheduled time
+      .limit(500); // Process up to 500 at a time
 
     if (fetchError) {
       console.error('❌ Error fetching scheduled notifications:', fetchError);
@@ -107,28 +111,42 @@ export async function GET(request: NextRequest) {
           throw new Error(`Failed to create in-app notification: ${notifError.message}`);
         }
 
-        // Send email notification if enabled
+        // Send email notification if enabled (use branded template)
         if (shouldSendEmail && notification) {
           try {
-            // Get user email
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('email, full_name')
-              .eq('id', scheduled.user_id)
-              .maybeSingle();
+            // Check if email was already sent (deduplication)
+            if (metadata.sent_email_at) {
+              console.log(`ℹ️ Email already sent for scheduled notification ${scheduled.id}, skipping`);
+            } else {
+              // Get user email
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('email, full_name')
+                .eq('id', scheduled.user_id)
+                .maybeSingle();
 
-            if (userProfile?.email) {
-              const emailBody = `
-                <h2>${scheduled.title}</h2>
-                <p>${scheduled.message}</p>
-                ${metadata.action_url ? `<p><a href="${process.env.NEXT_PUBLIC_APP_URL}${metadata.action_url}">${metadata.action_text || 'View Details'}</a></p>` : ''}
-              `;
-              await sendCustomEmail(
-                userProfile.email,
-                userProfile.full_name || 'User',
-                scheduled.title,
-                emailBody
-              );
+              if (userProfile?.email) {
+                await sendNotificationEmail({
+                  recipientEmail: userProfile.email,
+                  recipientName: userProfile.full_name || 'User',
+                  subject: scheduled.title,
+                  title: scheduled.title,
+                  message: scheduled.message,
+                  actionUrl: metadata.action_url,
+                  actionText: metadata.action_text || 'View Details',
+                });
+
+                // Mark email as sent in metadata to prevent duplicates
+                await supabase
+                  .from('notifications')
+                  .update({
+                    metadata: {
+                      ...metadata,
+                      sent_email_at: new Date().toISOString(),
+                    },
+                  })
+                  .eq('id', notification.id);
+              }
             }
           } catch (emailError: any) {
             console.error(`⚠️ Failed to send email for scheduled notification ${scheduled.id}:`, emailError);
@@ -136,22 +154,26 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Send push notification if enabled
+        // Send push notification if enabled (for high-priority reminders)
         if (shouldSendPush && notification) {
           try {
-            // Dynamically import firebase-admin to avoid build errors if not available
-            const { sendPushNotification } = await import('@/lib/services/firebase-admin');
-            await sendPushNotification({
-              userId: scheduled.user_id,
-              title: scheduled.title,
-              body: scheduled.message,
-              data: {
-                notificationId: notification.id,
-                type: scheduled.notification_type || 'general',
-                actionUrl: metadata.action_url || '',
-              },
-              priority: (metadata.priority === 'urgent' || metadata.priority === 'high') ? 'high' : 'normal',
-            });
+            // Only send push for high-priority reminders (1h, 15m)
+            const isHighPriorityReminder = metadata.reminder_type === '1_hour' || metadata.reminder_type === '15_minutes';
+            if (isHighPriorityReminder || metadata.priority === 'urgent' || metadata.priority === 'high') {
+              // Dynamically import firebase-admin to avoid build errors if not available
+              const { sendPushNotification } = await import('@/lib/services/firebase-admin');
+              await sendPushNotification({
+                userId: scheduled.user_id,
+                title: scheduled.title,
+                body: scheduled.message,
+                data: {
+                  notificationId: notification.id,
+                  type: scheduled.notification_type || 'general',
+                  actionUrl: metadata.action_url || '',
+                },
+                priority: (metadata.priority === 'urgent' || metadata.priority === 'high') ? 'high' : 'normal',
+              });
+            }
           } catch (pushError: any) {
             console.error(`⚠️ Failed to send push notification for scheduled notification ${scheduled.id}:`, pushError);
             // Don't fail the whole process if push fails

@@ -141,7 +141,7 @@ export async function POST(
         body: JSON.stringify({
           userId: tutor.user_id,
           type: 'profile_update_approved',
-          title: '✅ Update Approved',
+          title: 'Update Approved',
           message: notificationMessage,
             metadata: {
               approved_fields: [field],
@@ -171,7 +171,7 @@ export async function POST(
               user_id: tutor.user_id,
               type: 'profile_update_approved',
               notification_type: 'profile_update_approved',
-              title: '✅ Update Approved',
+              title: 'Update Approved',
               message: notificationMessage,
               priority: 'high',
               metadata: {
@@ -210,7 +210,7 @@ export async function POST(
             user_id: tutor.user_id,
             type: 'profile_update_approved',
             notification_type: 'profile_update_approved',
-            title: '✅ Update Approved',
+            title: 'Update Approved',
             message: notificationMessage,
             priority: 'high',
             action_url: '/tutor/dashboard',

@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       reminders.push({
         time: twentyFourHoursBefore,
         type: '24_hours',
-        title: '📅 Session Reminder',
+        title: 'Session Reminder',
         message: sessionType === 'trial'
           ? `Your trial session with ${tutorName} is tomorrow!`
           : `Your session with ${tutorName} is tomorrow!`,
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       reminders.push({
         time: oneHourBefore,
         type: '1_hour',
-        title: '⏰ Session Starting Soon',
+        title: 'Session Starting Soon',
         message: sessionType === 'trial'
           ? `Your trial session with ${tutorName} starts in 1 hour!`
           : `Your session with ${tutorName} starts in 1 hour!`,
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       reminders.push({
         time: fifteenMinutesBefore,
         type: '15_minutes',
-        title: '🚀 Join Session Now',
+        title: 'Join Session Now',
         message: sessionType === 'trial'
           ? `Your trial session with ${tutorName} starts in 15 minutes! Join now.`
           : `Your session with ${tutorName} starts in 15 minutes! Join now.`,
@@ -106,7 +106,9 @@ export async function POST(request: NextRequest) {
           priority: reminder.priority,
           action_url: `/sessions/${sessionId}`,
           action_text: 'View Session',
-          icon: reminder.type === '24_hours' ? '📅' : reminder.type === '1_hour' ? '⏰' : '🚀',
+          icon: undefined,
+          sendEmail: true, // Enable email for all session reminders
+          sendPush: reminder.type === '1_hour' || reminder.type === '15_minutes', // Push only for urgent reminders
         },
       });
 
@@ -127,7 +129,9 @@ export async function POST(request: NextRequest) {
           priority: reminder.priority,
           action_url: `/sessions/${sessionId}`,
           action_text: 'View Session',
-          icon: reminder.type === '24_hours' ? '📅' : reminder.type === '1_hour' ? '⏰' : '🚀',
+          icon: undefined,
+          sendEmail: true, // Enable email for all session reminders
+          sendPush: reminder.type === '1_hour' || reminder.type === '15_minutes', // Push only for urgent reminders
         },
       });
     }

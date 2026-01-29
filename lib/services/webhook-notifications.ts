@@ -102,7 +102,7 @@ export async function createPaymentNotification({
         user_id: studentId,
         type: 'payment_request_paid',
         notification_type: 'payment_request_paid',
-        title: 'Payment Confirmed! ✅',
+        title: 'Payment Confirmed',
         message: `Your payment of ${amount.toLocaleString('en-US')} XAF has been confirmed.`,
         data: {
           payment_request_id: paymentRequestId,

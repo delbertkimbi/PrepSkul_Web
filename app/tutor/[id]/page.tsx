@@ -1,56 +1,80 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import TutorProfilePreview from './TutorProfilePreview';
 
-export async function generateMetadata({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
-  
-  // Fetch tutor data - try both id and user_id since id might be the user_id UUID
+
+  // Fetch tutor data for Open Graph metadata
   let tutor = null;
-  
-  // First try: query by id (primary key)
+  let profile = null;
+
+  // Try by user_id first (most common case)
   const { data: tutorById } = await supabase
     .from('tutor_profiles')
-    .select('*, profiles(full_name)')
-    .eq('id', id)
+    .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email)')
+    .eq('user_id', id)
+    .eq('status', 'approved')
+    .neq('is_hidden', true)
     .maybeSingle();
-  
+
   if (tutorById) {
     tutor = tutorById;
-  }
-  
-  // Second try: query by user_id if first query failed
-  if (!tutor) {
-    const { data: tutorByUserId } = await supabase
+    profile = tutorById.profiles;
+  } else {
+    // Try by tutor_profiles.id as fallback
+    const { data: tutorByTutorId } = await supabase
       .from('tutor_profiles')
-      .select('*, profiles(full_name)')
-      .eq('user_id', id)
+      .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email)')
+      .eq('id', id)
+      .eq('status', 'approved')
+      .neq('is_hidden', true)
       .maybeSingle();
-    
-    if (tutorByUserId) {
-      tutor = tutorByUserId;
+
+    if (tutorByTutorId) {
+      tutor = tutorByTutorId;
+      profile = tutorByTutorId.profiles;
     }
   }
 
-  if (!tutor) {
+  if (!tutor || !profile) {
     return {
-      title: 'Tutor Not Found | PrepSkul',
-      description: 'The requested tutor profile could not be found.',
+      title: 'Tutor Not Found - PrepSkul',
+      description: 'The tutor profile you are looking for could not be found.',
     };
   }
 
-  // Get tutor name
-  const tutorName = (tutor.profiles as any)?.full_name || tutor.full_name || 'Tutor';
-  const bio = tutor.bio || tutor.motivation || '';
+  const tutorName = (profile as any)?.full_name || 'Tutor';
+  const tutorAvatar = (profile as any)?.avatar_url || null;
+  const subjects = tutor.subjects as string[] | string | null;
+  const subjectsArray = Array.isArray(subjects) 
+    ? subjects 
+    : (typeof subjects === 'string' ? [subjects] : []);
+  const subjectsText = subjectsArray.length > 0 
+    ? subjectsArray.join(', ') 
+    : 'Tutor';
   
-  // Build description
-  let description = `${tutorName} is a verified tutor on PrepSkul`;
+  // Get bio from multiple possible sources (bio, personal_statement, motivation)
+  const bio = (tutor.bio as string | null) || 
+              (tutor.personal_statement as string | null) ||
+              (tutor.motivation as string | null);
   
+  // Create rich description for link preview
+  const rating = tutor.rating || tutor.admin_approved_rating || 0;
+  const totalReviews = tutor.total_reviews || 0;
+  const ratingText = rating > 0 ? `⭐ ${rating.toFixed(1)}${totalReviews > 0 ? ` (${totalReviews} reviews)` : ''}` : '';
+  
+  let description = `Book ${tutorName} for ${subjectsText} tutoring sessions`;
+  if (ratingText.length > 0) {
+    description += ` • ${ratingText}`;
+  }
   if (bio && bio.trim().length > 0) {
     // Clean bio (remove "Hello!" if present) and truncate
     const cleanBio = bio.replaceAll(/^Hello!?\s*/i, '').trim();
@@ -58,100 +82,152 @@ export async function generateMetadata({
   } else {
     description += '. Verified tutor on PrepSkul.';
   }
-
-  // Add subjects if available
-  if (tutor.tutoring_areas && tutor.tutoring_areas.length > 0) {
-    description += ` Specializes in ${tutor.tutoring_areas.slice(0, 3).join(', ')}.`;
+  
+  const tutorId = tutor.user_id || tutor.id;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
+  const tutorUrl = `${baseUrl}/tutor/${tutorId}`;
+  
+  // Ensure image URL is absolute and publicly accessible
+  let imageUrl: string;
+  if (tutorAvatar) {
+    // If avatar URL is already absolute, use it; otherwise make it absolute
+    if (tutorAvatar.startsWith('http://') || tutorAvatar.startsWith('https://')) {
+      imageUrl = tutorAvatar;
+    } else if (tutorAvatar.startsWith('/')) {
+      // Relative URL - prepend base URL
+      imageUrl = `${baseUrl}${tutorAvatar}`;
+    } else {
+      // Supabase storage URL - ensure it's absolute
+      // Supabase URLs are typically already absolute, but check anyway
+      imageUrl = tutorAvatar.startsWith('http') ? tutorAvatar : `${baseUrl}${tutorAvatar}`;
+    }
+  } else {
+    // Fallback to PrepSkul logo
+    imageUrl = `${baseUrl}/logo.jpg`;
   }
 
   return {
-    title: `${tutorName} | Tutor Profile | PrepSkul`,
+    title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
     description,
     openGraph: {
-      title: `${tutorName} | Tutor Profile | PrepSkul`,
+      title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
       description,
-      type: 'profile',
-      images: tutor.profile_photo_url ? [
+      url: tutorUrl,
+      siteName: 'PrepSkul',
+      images: [
         {
-          url: tutor.profile_photo_url,
+          url: imageUrl,
           width: 1200,
           height: 630,
           alt: `${tutorName} - PrepSkul Tutor`,
         },
-      ] : undefined,
+      ],
+      type: 'profile',
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${tutorName} | Tutor Profile | PrepSkul`,
+      title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
       description,
-      images: tutor.profile_photo_url ? [tutor.profile_photo_url] : undefined,
+      images: [imageUrl],
+    },
+    alternates: {
+      canonical: tutorUrl,
     },
   };
 }
 
-export default async function TutorProfilePage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default async function TutorPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const headersList = await headers();
+  const userAgent = headersList.get('user-agent') || '';
+  
+  // Detect mobile app user agents or deep link requests
+  const isMobileApp = userAgent.includes('PrepSkul') || 
+                      userAgent.includes('prepskul') ||
+                      headersList.get('x-requested-with') === 'com.prepskul.app';
+  
+  // If mobile app detected, redirect to app deep link
+  if (isMobileApp) {
+    redirect(`prepskul://tutor/${id}`);
+  }
+
   const supabase = await createServerSupabaseClient();
-  
-  // Fetch tutor data - try both id and user_id since id might be the user_id UUID
+
+  // Fetch tutor data
   let tutor = null;
-  
-  // First try: query by id (primary key)
+  let profile = null;
+
+  // Try by user_id first (most common case)
   const { data: tutorById } = await supabase
     .from('tutor_profiles')
-    .select('*, profiles(full_name, email)')
-    .eq('id', id)
+    .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email, phone_number)')
+    .eq('user_id', id)
+    .eq('status', 'approved')
+    .neq('is_hidden', true)
     .maybeSingle();
-  
+
   if (tutorById) {
     tutor = tutorById;
-  }
-  
-  // Second try: query by user_id if first query failed
-  if (!tutor) {
-    const { data: tutorByUserId } = await supabase
+    profile = tutorById.profiles;
+  } else {
+    // Try by tutor_profiles.id as fallback
+    const { data: tutorByTutorId } = await supabase
       .from('tutor_profiles')
-      .select('*, profiles(full_name, email)')
-      .eq('user_id', id)
+      .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email, phone_number)')
+      .eq('id', id)
+      .eq('status', 'approved')
+      .neq('is_hidden', true)
       .maybeSingle();
-    
-    if (tutorByUserId) {
-      tutor = tutorByUserId;
+
+    if (tutorByTutorId) {
+      tutor = tutorByTutorId;
+      profile = tutorByTutorId.profiles;
     }
   }
 
-  if (!tutor) {
-    notFound();
+  if (!tutor || !profile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Tutor Not Found</h1>
+          <p className="text-gray-600 mb-4">The tutor profile you are looking for could not be found.</p>
+          <a 
+            href="https://app.prepskul.com" 
+            className="text-blue-600 hover:text-blue-800 underline"
+          >
+            Go to PrepSkul
+          </a>
+        </div>
+      </div>
+    );
   }
 
-  const tutorName = (tutor.profiles as any)?.full_name || tutor.full_name || 'Tutor';
+  // Check if user is authenticated
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAuthenticated = !!user;
+
+  // Get user role if authenticated
+  let userRole: string | null = null;
+  if (user) {
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('user_type')
+      .eq('id', user.id)
+      .maybeSingle();
+    userRole = userProfile?.user_type || null;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">{tutorName}</h1>
-          {tutor.bio && (
-            <p className="text-gray-700 whitespace-pre-wrap mb-4">{tutor.bio}</p>
-          )}
-          {tutor.tutoring_areas && tutor.tutoring_areas.length > 0 && (
-            <div className="mt-4">
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">Subjects</h2>
-              <div className="flex flex-wrap gap-2">
-                {tutor.tutoring_areas.map((area: string, index: number) => (
-                  <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {area}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </main>
-    </div>
+    <TutorProfilePreview 
+      tutor={tutor} 
+      profile={profile as any}
+      isAuthenticated={isAuthenticated}
+      userRole={userRole}
+      tutorId={tutor.user_id || tutor.id}
+    />
   );
 }
