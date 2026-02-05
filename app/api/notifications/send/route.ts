@@ -38,6 +38,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Stage-specific content for onboarding_reminder (metadata.reminder_stage)
+    let effectiveTitle = title;
+    let effectiveMessage = message;
+    let effectiveSubject = title;
+    if (type === 'onboarding_reminder' && metadata?.reminder_stage) {
+      const stage = metadata.reminder_stage as string;
+      if (stage === 'missing_video') {
+        effectiveTitle = 'Add your video intro – PrepSkul';
+        effectiveMessage = 'Students love seeing a short video from you. Add your video intro to complete your profile and get verified.';
+        effectiveSubject = effectiveTitle;
+      } else if (stage === 'missing_id') {
+        effectiveTitle = 'Upload your ID – PrepSkul';
+        effectiveMessage = 'Complete verification by uploading your ID. Finish this step to get your profile approved and visible to students.';
+        effectiveSubject = effectiveTitle;
+      } else if (stage === 'missing_statement') {
+        effectiveTitle = 'Complete your profile – PrepSkul';
+        effectiveMessage = "You're almost there! Add your personal statement to complete your profile and submit for verification.";
+        effectiveSubject = effectiveTitle;
+      }
+    }
+
     // Check rate limits (per-user: 10/min, global: 1000/min)
     const rateLimitCheck = checkRateLimit(userId, 10, 1000);
     if (!rateLimitCheck.allowed) {
@@ -169,8 +190,8 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       type: type || 'general',
       notification_type: type || 'general',
-      title,
-      message,
+      title: effectiveTitle,
+      message: effectiveMessage,
       priority,
       is_read: false,
       action_url: actionUrl,
@@ -227,9 +248,9 @@ export async function POST(request: NextRequest) {
           await sendNotificationEmail({
             recipientEmail: profile.email,
             recipientName: profile.full_name || 'User',
-            subject: title,
-            title,
-            message,
+            subject: effectiveSubject,
+            title: effectiveTitle,
+            message: effectiveMessage,
             actionUrl,
             actionText,
             senderName: (type === 'message' && senderName) ? senderName : undefined,
@@ -278,8 +299,8 @@ export async function POST(request: NextRequest) {
         if (firebaseAdminModule && firebaseAdminModule.sendPushNotification) {
           const pushResult = await firebaseAdminModule.sendPushNotification({
             userId,
-            title,
-            body: message,
+            title: effectiveTitle,
+            body: effectiveMessage,
             data: {
               type: type || 'general',
               notificationId: notification.id,

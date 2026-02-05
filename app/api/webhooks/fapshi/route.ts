@@ -459,37 +459,14 @@ async function handleSessionPayment({
 
       if (updateError) throw updateError;
 
-      // Update tutor earnings status to 'active'
-      const { error: earningsError } = await supabase
-        .from('tutor_earnings')
-        .update({
-          earnings_status: 'active',
-          added_to_active_balance: true,
-          active_balance_added_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('session_payment_id', paymentId);
-
-      if (earningsError) {
-        console.error('⚠️ Error updating tutor earnings:', earningsError);
-        // Don't throw - continue with other updates
-      }
-
-      // Update session_payments to mark earnings added to wallet
-      await supabase
-        .from('session_payments')
-        .update({
-          earnings_added_to_wallet: true,
-          wallet_updated_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', paymentId);
+      // Leave tutor_earnings as pending; they move to active after QA window (see process-pending-earnings cron)
+      // Do not set earnings_added_to_wallet here; that is set when moving to active.
 
       // Send notifications to tutor and student/parent (with email and push)
       try {
         const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
         
-        // Notify tutor (with email and push)
+        // Notify tutor (with email and push) - earnings will be available after 24h QA window
         await fetch(`${apiUrl}/api/notifications/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -497,7 +474,7 @@ async function handleSessionPayment({
             userId: tutorId,
             type: 'payment_confirmed',
             title: 'Payment Received',
-            message: `Payment of ${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings are now available.`,
+            message: `Payment of ${tutorEarnings.toFixed(0)} XAF has been confirmed. Earnings will be available in your balance after a short review period (24h).`,
             priority: 'normal',
             actionUrl: '/earnings',
             actionText: 'View Earnings',
