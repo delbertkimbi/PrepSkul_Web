@@ -8,37 +8,34 @@
  * push notifications will be skipped gracefully.
  */
 
-// Dynamically import firebase-admin to avoid build errors if not available
-let admin: typeof import('firebase-admin') | null = null;
-
-try {
-  // Only import if available
-  admin = require('firebase-admin');
-} catch (e) {
-  // firebase-admin not installed - that's okay, we'll skip push notifications
-  console.warn('⚠️ firebase-admin not available - push notifications disabled');
-}
-
 let firebaseAdminInitialized = false;
+let adminModule: typeof import('firebase-admin') | null = null;
 
 /**
  * Initialize Firebase Admin SDK
+ * Uses dynamic import to avoid build issues
  */
-async function initializeFirebaseAdmin() {
-  if (!admin) {
-    console.warn('⚠️ firebase-admin not available');
-    return;
-  }
-  
-  if (firebaseAdminInitialized) {
-    return;
+async function initializeFirebaseAdmin(): Promise<typeof import('firebase-admin') | null> {
+  if (firebaseAdminInitialized && adminModule) {
+    return adminModule;
   }
 
   try {
+    // Dynamically import firebase-admin
+    if (!adminModule) {
+      try {
+        adminModule = await import('firebase-admin');
+      } catch (importError: any) {
+        console.warn('⚠️ firebase-admin not installed:', importError.message);
+        firebaseAdminInitialized = true;
+        return null;
+      }
+    }
+
     // Check if already initialized
-    if (admin.apps.length > 0) {
+    if (adminModule.apps.length > 0) {
       firebaseAdminInitialized = true;
-      return;
+      return adminModule;
     }
 
     // Get service account key from environment
@@ -46,8 +43,8 @@ async function initializeFirebaseAdmin() {
     
     if (!serviceAccountKey) {
       console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not set - push notifications disabled');
-      firebaseAdminInitialized = true; // Mark as initialized to prevent repeated warnings
-      return;
+      firebaseAdminInitialized = true;
+      return null;
     }
 
     // Parse service account key
@@ -57,24 +54,21 @@ async function initializeFirebaseAdmin() {
     } catch (e) {
       console.error('❌ Error parsing FIREBASE_SERVICE_ACCOUNT_KEY:', e);
       firebaseAdminInitialized = true;
-      return;
+      return null;
     }
 
     // Initialize Firebase Admin
-    if (!admin) {
-      console.warn('⚠️ firebase-admin not available');
-      return;
-    }
-    
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount as any),
+    adminModule.initializeApp({
+      credential: adminModule.credential.cert(serviceAccount as import('firebase-admin').ServiceAccount),
     });
 
     firebaseAdminInitialized = true;
     console.log('✅ Firebase Admin initialized successfully');
+    return adminModule;
   } catch (error: any) {
     console.error('❌ Error initializing Firebase Admin:', error);
-    firebaseAdminInitialized = true; // Mark as initialized to prevent repeated errors
+    firebaseAdminInitialized = true;
+    return null;
   }
 }
 
@@ -89,22 +83,20 @@ export async function sendPushNotification({
   body,
   data,
   priority = 'normal',
+  imageUrl,
 }: {
   userId: string;
   title: string;
   body: string;
   data?: Record<string, string>;
   priority?: 'normal' | 'high';
+  imageUrl?: string;
 }): Promise<{ success: boolean; sent: number; errors: number }> {
   try {
-    if (!admin) {
-      console.warn('⚠️ firebase-admin not available - skipping push notification');
-      return { success: false, sent: 0, errors: 0 };
-    }
-    
-    await initializeFirebaseAdmin();
+    // Initialize and get admin module
+    const admin = await initializeFirebaseAdmin();
 
-    if (!firebaseAdminInitialized || !admin || admin.apps.length === 0) {
+    if (!admin || admin.apps.length === 0) {
       console.warn('⚠️ Firebase Admin not initialized - skipping push notification');
       return { success: false, sent: 0, errors: 0 };
     }
@@ -129,12 +121,15 @@ export async function sendPushNotification({
       return { success: true, sent: 0, errors: 0 };
     }
 
-    // Prepare notification payload
-    const message: admin.messaging.MulticastMessage = {
-      notification: {
-        title,
-        body,
-      },
+    // Prepare notification payload with rich image support
+    const notificationPayload: import('firebase-admin').messaging.Notification = {
+      title,
+      body,
+      ...(imageUrl ? { imageUrl } : {}), // Rich notification image (Android & iOS)
+    };
+
+    const message: import('firebase-admin').messaging.MulticastMessage = {
+      notification: notificationPayload,
       data: data ? Object.fromEntries(
         Object.entries(data).map(([key, value]) => [key, String(value)])
       ) : undefined,
@@ -143,6 +138,7 @@ export async function sendPushNotification({
         notification: {
           sound: 'default',
           channelId: 'prepskul_notifications',
+          ...(imageUrl ? { imageUrl } : {}), // Android rich notification image
         },
       },
       apns: {
@@ -150,7 +146,9 @@ export async function sendPushNotification({
           aps: {
             sound: 'default',
             badge: 1,
+            'mutable-content': imageUrl ? 1 : undefined, // Enable rich content for iOS
           },
+          ...(imageUrl ? { fcm_options: { image: imageUrl } } : {}), // iOS rich notification image
         },
       },
       tokens: tokens.map(t => t.token as string),
@@ -188,6 +186,11 @@ export async function sendPushNotification({
     return { success: false, sent: 0, errors: 0 };
   }
 }
+
+
+
+
+
 
 
 

@@ -109,7 +109,7 @@ export async function POST(
             is_read: false,
             action_url: '/tutor/profile',
             action_text: 'View Profile',
-            icon: '📧',
+            icon: undefined,
           });
         
         if (notifError) {

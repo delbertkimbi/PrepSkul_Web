@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Header } from "@/components/header"
+import AmbassadorHeader from "@/components/ambassador-header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, ArrowRight, CheckCircle2, Upload, X, Mail, MessageCircle } from "lucide-react"
+import { ArrowLeft, ArrowRight, CheckCircle2, Upload, X, Mail, MessageCircle, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 const STORAGE_KEY = "ambassador_application_progress"
@@ -62,6 +62,8 @@ export default function AmbassadorApplyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [imageError, setImageError] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     full_name: "",
     age_range: "",
@@ -99,7 +101,6 @@ export default function AmbassadorApplyPage() {
           city: parsed.city || "",
           region: parsed.region || "",
           status: parsed.status || "",
-          status_other: parsed.status_other || "",
           status_other: parsed.status_other || "",
           student_class_level: parsed.student_class_level || "",
           motivation: parsed.motivation || "",
@@ -279,6 +280,7 @@ export default function AmbassadorApplyPage() {
     if (!canProceed()) return
 
     setIsSubmitting(true)
+    setSubmitError(null) // Clear previous errors
 
     try {
       const submitFormData = new FormData()
@@ -300,16 +302,33 @@ export default function AmbassadorApplyPage() {
         body: submitFormData,
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to submit application")
+        // User-friendly error messages based on the error type
+        let userMessage = "Something went wrong while submitting your application. Please try again."
+        
+        if (result.error?.toLowerCase().includes("missing required")) {
+          userMessage = "Please make sure all required fields are filled in before submitting."
+        } else if (result.error?.toLowerCase().includes("upload") || result.error?.toLowerCase().includes("image")) {
+          userMessage = "There was a problem uploading your profile image. Please try a smaller image or a different format (JPG or PNG)."
+        } else if (result.error?.toLowerCase().includes("email")) {
+          userMessage = "Please check your email address and try again."
+        } else if (response.status === 500) {
+          userMessage = "Our servers are experiencing issues right now. Please wait a few minutes and try again."
+        } else if (result.error) {
+          userMessage = result.error
+        }
+        
+        setSubmitError(userMessage)
+        return
       }
 
       localStorage.removeItem(STORAGE_KEY)
       setIsSuccess(true)
     } catch (error) {
       console.error("Submission error:", error)
-      alert(error instanceof Error ? error.message : "Failed to submit application. Please try again.")
+      setSubmitError("Unable to connect to our servers. Please check your internet connection and try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -354,13 +373,15 @@ export default function AmbassadorApplyPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
+    setImageError(null) // Clear previous errors
+    
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert("Image must be less than 2MB")
+        setImageError("Your image is too large. Please choose an image smaller than 2MB.")
         return
       }
       if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
-        alert("Image must be JPG or PNG")
+        setImageError("Please upload a JPG or PNG image only.")
         return
       }
       updateFormData("profile_image", file)
@@ -413,7 +434,7 @@ export default function AmbassadorApplyPage() {
   if (isSuccess) {
     return (
       <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
+        <AmbassadorHeader />
         <div className="flex-1 flex items-center justify-center py-20 px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -423,17 +444,17 @@ export default function AmbassadorApplyPage() {
           >
             <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto shadow-lg">
               <CheckCircle2 className="w-12 h-12 text-white" />
-            </div>
+              </div>
             <h1 className="text-3xl font-bold text-gray-900">Application Submitted!</h1>
             <p className="text-lg text-gray-600 leading-relaxed">
               Your application has been successfully submitted. The PrepSkul team will review it and contact you via email.
             </p>
-            <Button
+              <Button
               onClick={() => router.push("/ambassadors")}
               className="mt-6 bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
+              >
               Return to Ambassadors Page
-            </Button>
+              </Button>
           </motion.div>
         </div>
         <Footer />
@@ -443,7 +464,7 @@ export default function AmbassadorApplyPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
+      <AmbassadorHeader />
       <div className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-3xl">
           {/* Progress Bar */}
@@ -988,11 +1009,11 @@ export default function AmbassadorApplyPage() {
                       </div>
                       {imagePreviewUrl ? (
                         <div className="relative w-full h-96 rounded-2xl overflow-hidden border-4 border-primary shadow-xl">
-                          <img
-                            src={imagePreviewUrl}
-                            alt="Profile preview"
-                            className="w-full h-full object-cover"
-                          />
+                            <img
+                              src={imagePreviewUrl}
+                              alt="Profile preview"
+                              className="w-full h-full object-cover"
+                            />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6">
                             <button
                               onClick={() => {
@@ -1038,6 +1059,43 @@ export default function AmbassadorApplyPage() {
               </AnimatePresence>
             </div>
           </motion.div>
+
+          {/* Error Messages */}
+          {submitError && (
+            <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-red-800">Submission Error</h3>
+                  <p className="text-sm text-red-700 mt-1">{submitError}</p>
+                  <button 
+                    onClick={() => setSubmitError(null)}
+                    className="text-sm text-red-600 hover:text-red-800 underline mt-2 font-medium"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {imageError && (
+            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-amber-800">Image Upload Issue</h3>
+                  <p className="text-sm text-amber-700 mt-1">{imageError}</p>
+                  <button 
+                    onClick={() => setImageError(null)}
+                    className="text-sm text-amber-600 hover:text-amber-800 underline mt-2 font-medium"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex justify-between items-center mt-8">

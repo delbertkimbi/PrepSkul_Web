@@ -48,6 +48,8 @@ interface TutorRequestsListClientProps {
 export default function TutorRequestsListClient({ initialRequests }: TutorRequestsListClientProps) {
   const [requests, setRequests] = useState<TutorRequest[]>(initialRequests);
   const [filter, setFilter] = useState<'all' | 'pending' | 'in_progress' | 'matched' | 'closed'>('all');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
   const filteredRequests = filter === 'all' 
     ? requests 
@@ -81,15 +83,69 @@ export default function TutorRequestsListClient({ initialRequests }: TutorReques
     }
   };
 
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredRequests.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredRequests.map(r => r.id)));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleBulkUpdate = async (newStatus: 'in_progress' | 'closed') => {
+    if (selectedIds.size === 0) return;
+
+    setIsBulkUpdating(true);
+    try {
+      const response = await fetch('/api/admin/tutor-requests/bulk-update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestIds: Array.from(selectedIds),
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update requests');
+      }
+
+      // Update local state
+      setRequests(prev => prev.map(r => 
+        selectedIds.has(r.id) ? { ...r, status: newStatus } : r
+      ));
+      setSelectedIds(new Set());
+      alert(`Successfully updated ${selectedIds.size} request(s)`);
+    } catch (error) {
+      console.error('Bulk update error:', error);
+      alert('Failed to update requests. Please try again.');
+    } finally {
+      setIsBulkUpdating(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       {/* Filter Tabs */}
       <div className="border-b border-gray-200">
-        <div className="flex space-x-1 p-4">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex space-x-1">
           {(['all', 'pending', 'in_progress', 'matched', 'closed'] as const).map((status) => (
             <button
               key={status}
-              onClick={() => setFilter(status)}
+                onClick={() => {
+                  setFilter(status);
+                  setSelectedIds(new Set()); // Clear selection when filter changes
+                }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === status
                   ? 'bg-blue-600 text-white'
@@ -99,6 +155,36 @@ export default function TutorRequestsListClient({ initialRequests }: TutorReques
               {status === 'all' ? 'All' : status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
             </button>
           ))}
+          </div>
+
+          {/* Bulk Actions */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                {selectedIds.size} selected
+              </span>
+              <button
+                onClick={() => handleBulkUpdate('in_progress')}
+                disabled={isBulkUpdating}
+                className="px-3 py-1.5 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50"
+              >
+                Mark In Progress
+              </button>
+              <button
+                onClick={() => handleBulkUpdate('closed')}
+                disabled={isBulkUpdating}
+                className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+              >
+                Close Selected
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -109,91 +195,126 @@ export default function TutorRequestsListClient({ initialRequests }: TutorReques
             <p className="text-gray-500">No tutor requests found</p>
           </div>
         ) : (
-          filteredRequests.map((request) => (
-            <Link
-              key={request.id}
-              href={`/admin/tutor-requests/${request.id}`}
-              className="block p-6 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
-                      {request.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                    <span className={`text-sm ${getUrgencyColor(request.urgency)}`}>
-                      {request.urgency.toUpperCase()}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {formatDate(request.created_at)}
-                    </span>
-                  </div>
+          <>
+            {/* Select All Checkbox */}
+            <div className="p-4 border-b border-gray-200 bg-gray-50">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === filteredRequests.length && filteredRequests.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Select All ({filteredRequests.length})
+                </span>
+              </label>
+            </div>
 
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {request.requester_name || 'Unknown User'}
-                    {request.requester_type && (
-                      <span className="ml-2 text-sm font-normal text-gray-500">
-                        ({request.requester_type})
-                      </span>
-                    )}
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium">Subjects:</span>{' '}
-                      {request.subjects.join(', ')}
-                    </div>
-                    <div>
-                      <span className="font-medium">Level:</span> {request.education_level}
-                    </div>
-                    <div>
-                      <span className="font-medium">Teaching Mode:</span>{' '}
-                      {request.teaching_mode.toUpperCase()}
-                    </div>
-                    <div>
-                      <span className="font-medium">Budget:</span>{' '}
-                      {request.budget_min.toLocaleString()} - {request.budget_max.toLocaleString()} XAF/month
-                    </div>
-                    <div>
-                      <span className="font-medium">Location:</span> {request.location}
-                    </div>
-                    <div>
-                      <span className="font-medium">Schedule:</span>{' '}
-                      {request.preferred_days.join(', ')} • {request.preferred_time}
-                    </div>
-                  </div>
-
-                  {request.requester_phone && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <span className="font-medium">Phone:</span> {request.requester_phone}
-                    </div>
-                  )}
-
-                  {request.matched_tutor_id && (
-                    <div className="mt-2 text-sm text-green-600">
-                      ✅ Matched with tutor
-                    </div>
-                  )}
-                </div>
-
-                <div className="ml-4">
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
+            {filteredRequests.map((request) => {
+              return (
+                <div
+                  key={request.id}
+                  className={`p-6 transition-colors ${
+                    selectedIds.has(request.id) ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(request.id)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleSelectOne(request.id);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                     />
-                  </svg>
+
+                    <Link href={`/admin/tutor-requests/${request.id}`} className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(request.status)}`}>
+                              {request.status.replace('_', ' ').toUpperCase()}
+                            </span>
+                            <span className={`text-sm ${getUrgencyColor(request.urgency)}`}>
+                              {request.urgency.toUpperCase()}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              {formatDate(request.created_at)}
+                            </span>
+                          </div>
+
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                            {request.requester_name || 'Unknown User'}
+                            {request.requester_type && (
+                              <span className="ml-2 text-sm font-normal text-gray-500">
+                                ({request.requester_type})
+                              </span>
+                            )}
+                          </h3>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div>
+                              <span className="font-medium">Subjects:</span>{' '}
+                              {request.subjects.join(', ')}
+                            </div>
+                            <div>
+                              <span className="font-medium">Level:</span> {request.education_level}
+                            </div>
+                            <div>
+                              <span className="font-medium">Teaching Mode:</span>{' '}
+                              {request.teaching_mode.toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-medium">Budget:</span>{' '}
+                              {request.budget_min.toLocaleString()} - {request.budget_max.toLocaleString()} XAF/month
+                            </div>
+                            <div>
+                              <span className="font-medium">Location:</span> {request.location}
+                            </div>
+                            <div>
+                              <span className="font-medium">Schedule:</span>{' '}
+                              {request.preferred_days.join(', ')} • {request.preferred_time}
+                            </div>
+                          </div>
+
+                          {request.requester_phone && (
+                            <div className="mt-2 text-sm text-gray-600">
+                              <span className="font-medium">Phone:</span> {request.requester_phone}
+                            </div>
+                          )}
+
+                          {request.matched_tutor_id && (
+                            <div className="mt-2 text-sm text-green-600">
+                              ✅ Matched with tutor
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="ml-4">
+                          <svg
+                            className="w-5 h-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))
+              );
+            })}
+          </>
         )}
       </div>
     </div>

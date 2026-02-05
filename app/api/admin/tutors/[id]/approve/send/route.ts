@@ -107,7 +107,7 @@ export async function POST(
         body: JSON.stringify({
           userId: tutor.user_id,
           type: 'profile_approved',
-          title: '🎉 Profile Approved!',
+          title: 'Profile Approved',
           message: 'Your PrepSkul tutor profile has been approved. Your profile is now live and students can book sessions with you!',
           priority: 'high',
           sendEmail: false, // Email already sent above

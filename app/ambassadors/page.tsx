@@ -1,6 +1,6 @@
 "use client"
 
-import { Header } from "@/components/header"
+import AmbassadorHeader from "@/components/ambassador-header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { InfoCard } from "@/components/ambassadors/InfoCard"
@@ -73,7 +73,7 @@ export default function AmbassadorsPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <AmbassadorHeader />
 
       {/* Hero Section - Compact with White Background */}
       <section className="relative py-12 sm:py-16 lg:py-20 overflow-hidden bg-white">
