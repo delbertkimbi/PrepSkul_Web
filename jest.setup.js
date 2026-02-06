@@ -6,4 +6,4 @@ process.env.TICHA_SUPABASE_SERVICE_KEY = process.env.TICHA_SUPABASE_SERVICE_KEY 
 process.env.NEXT_PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
 
-//kiujoewfwe
+//kiujoewf
