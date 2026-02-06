@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
   if (origin && allowedOrigins.includes(origin)) {
     corsHeaders['Access-Control-Allow-Origin'] = origin;
     corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+    console.log(`[Agora Token] Allowing origin: ${origin}`);
   } else if (origin) {
     // Allow localhost variations and private network IPs (for local/network testing)
     if (isLocalOrNetworkOrigin(origin)) {
@@ -72,7 +73,25 @@ export async function POST(request: NextRequest) {
       corsHeaders['Access-Control-Allow-Credentials'] = 'true';
       console.log(`[Agora Token] Allowing network origin: ${origin}`);
     } else {
-      console.warn(`[Agora Token] Blocked origin: ${origin}`);
+      // CRITICAL: Always allow prepskul.com domains (production or not)
+      // This ensures app.prepskul.com works regardless of NODE_ENV setting
+      const isPrepskulDomain = origin.includes('prepskul.com');
+      if (isPrepskulDomain) {
+        corsHeaders['Access-Control-Allow-Origin'] = origin;
+        corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+        console.log(`[Agora Token] Allowing prepskul.com domain: ${origin}`);
+      } else {
+        console.warn(`[Agora Token] Blocked origin: ${origin}`);
+        // Still set CORS headers for debugging (but don't allow credentials)
+        corsHeaders['Access-Control-Allow-Origin'] = origin || '*';
+      }
+    }
+  } else {
+    // No origin header - might be a direct request or some browsers
+    // In production, allow requests without origin (for debugging)
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      console.warn('[Agora Token] No origin header - allowing in production');
+      corsHeaders['Access-Control-Allow-Origin'] = '*';
     }
   }
 
@@ -93,18 +112,85 @@ export async function POST(request: NextRequest) {
 
     // Create Supabase client with the access token from Authorization header
     // This is needed because Flutter web sends tokens in headers, not cookies
-    // First, verify the token and get user info
+    // First, verify the token and get user info with retry logic for network issues
     const tempSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+        global: {
+          fetch: (url, options = {}) => {
+            return fetch(url, {
+              ...options,
+              // Increase timeout for Supabase requests
+              signal: AbortSignal.timeout(30000), // 30 seconds instead of default 10
+            });
+          },
+        },
+      }
     );
     
-    const { data: { user: userFromToken }, error: tokenError } = await tempSupabase.auth.getUser(accessToken);
+    // Retry logic for token validation (network issues can cause timeouts)
+    let userFromToken = null;
+    let tokenError = null;
+    const maxRetries = 3;
+    let retryCount = 0;
+    
+    while (retryCount < maxRetries && !userFromToken) {
+      try {
+        const result = await tempSupabase.auth.getUser(accessToken);
+        userFromToken = result.data?.user;
+        tokenError = result.error;
+        
+        if (userFromToken) {
+          break; // Success, exit retry loop
+        }
+        
+        // If it's a network/timeout error, retry
+        if (tokenError && (
+          tokenError.message?.includes('timeout') ||
+          tokenError.message?.includes('fetch failed') ||
+          tokenError.message?.includes('ConnectTimeoutError')
+        )) {
+          retryCount++;
+          if (retryCount < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000); // Exponential backoff, max 5s
+            console.warn(`[Agora Token] Token validation timeout (attempt ${retryCount}/${maxRetries}), retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+        } else {
+          // Not a network error, don't retry
+          break;
+        }
+      } catch (error: any) {
+        // Catch any other errors (like AbortError from timeout)
+        if (error?.message?.includes('timeout') || error?.code === 'UND_ERR_CONNECT_TIMEOUT') {
+          retryCount++;
+          if (retryCount < maxRetries) {
+            const delay = Math.min(1000 * Math.pow(2, retryCount - 1), 5000);
+            console.warn(`[Agora Token] Token validation error (attempt ${retryCount}/${maxRetries}): ${error.message}, retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          } else {
+            tokenError = { message: `Connection timeout after ${maxRetries} attempts: ${error.message}` };
+          }
+        } else {
+          // Not a timeout error, don't retry
+          tokenError = { message: error?.message || 'Unknown error' };
+          break;
+        }
+      }
+    }
     
     if (tokenError || !userFromToken) {
       console.error('[Agora Token] Token validation error:', tokenError?.message || 'Unknown error');
+      console.error('[Agora Token] This may be a network connectivity issue with Supabase');
       return NextResponse.json(
-        { error: 'Unauthorized. Invalid or expired token.' },
+        { error: 'Unauthorized. Invalid or expired token, or network connectivity issue.' },
         { 
           status: 401,
           headers: corsHeaders,
@@ -302,7 +388,25 @@ export async function OPTIONS(request: NextRequest) {
       corsHeaders['Access-Control-Allow-Credentials'] = 'true';
       console.log(`[Agora Token OPTIONS] Allowing origin: ${origin}`);
     } else {
-      console.warn(`[Agora Token OPTIONS] Blocked origin: ${origin}`);
+      // CRITICAL: Always allow prepskul.com domains (production or not)
+      // This ensures app.prepskul.com works regardless of NODE_ENV setting
+      const isPrepskulDomain = origin.includes('prepskul.com');
+      if (isPrepskulDomain) {
+        corsHeaders['Access-Control-Allow-Origin'] = origin;
+        corsHeaders['Access-Control-Allow-Credentials'] = 'true';
+        console.log(`[Agora Token OPTIONS] Allowing prepskul.com domain: ${origin}`);
+      } else {
+        console.warn(`[Agora Token OPTIONS] Blocked origin: ${origin}`);
+        // Still set CORS headers for debugging
+        corsHeaders['Access-Control-Allow-Origin'] = origin;
+      }
+    }
+  } else {
+    // No origin header - might be a direct request or some browsers
+    // In production, allow requests without origin (for debugging)
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      console.warn('[Agora Token OPTIONS] No origin header - allowing in production');
+      corsHeaders['Access-Control-Allow-Origin'] = '*';
     }
   }
 

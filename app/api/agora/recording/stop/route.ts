@@ -1,21 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { stopRecording, getAgoraRecordingConfig } from '@/lib/services/agora/recording-service';
-import { getAgoraConfig } from '@/lib/services/agora/token-generator';
-import { validateSessionAccess, getUserRoleInSession } from '@/lib/services/agora/session-service';
-
 /**
- * Stop Agora Cloud Recording API
- * 
+ * Stop Agora Cloud Recording
  * POST /api/agora/recording/stop
- * Body: { sessionId: string }
+ * 
+ * Stops recording for a session
  */
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { RecordingService } from '@/lib/services/agora/recording.service';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user
-    const supabase = await createServerSupabaseClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get auth token from header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
+    const token = authHeader.replace('Bearer ', '');
+
+    // Verify token and get user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
@@ -29,34 +42,17 @@ export async function POST(request: NextRequest) {
 
     if (!sessionId) {
       return NextResponse.json(
-        { error: 'Missing required field: sessionId' },
+        { error: 'sessionId is required' },
         { status: 400 }
       );
     }
 
-    // Validate user access (only tutor can stop recording)
-    const hasAccess = await validateSessionAccess(sessionId, user.id);
-    if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
-    }
-
-    const role = await getUserRoleInSession(sessionId, user.id);
-    if (role !== 'tutor') {
-      return NextResponse.json(
-        { error: 'Only tutors can stop recording' },
-        { status: 403 }
-      );
-    }
-
-    // Get session recording metadata
+    // Get session and recording details
     const { data: session, error: sessionError } = await supabase
       .from('individual_sessions')
-      .select('recording_resource_id, recording_sid, agora_channel_name')
+      .select('id, tutor_id, learner_id, agora_channel_name, recording_resource_id, recording_sid')
       .eq('id', sessionId)
-      .maybeSingle();
+      .single();
 
     if (sessionError || !session) {
       return NextResponse.json(
@@ -65,30 +61,36 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!session.recording_resource_id || !session.recording_sid) {
+    // Verify user is part of the session
+    if (session.tutor_id !== user.id && session.learner_id !== user.id) {
       return NextResponse.json(
-        { error: 'Recording not started for this session' },
-        { status: 400 }
+        { error: 'Forbidden: You are not a participant in this session' },
+        { status: 403 }
       );
     }
 
-    // Get Agora configuration
-    const agoraConfig = getAgoraConfig();
-    const recordingConfig = getAgoraRecordingConfig();
+    // Check if recording exists
+    if (!session.recording_resource_id || !session.recording_sid) {
+      return NextResponse.json(
+        { error: 'No active recording found' },
+        { status: 404 }
+      );
+    }
 
     // Stop recording
-    await stopRecording(
-      agoraConfig.appId,
+    const recordingService = new RecordingService();
+    const channelName = session.agora_channel_name || `session_${sessionId}`;
+    const uid = session.tutor_id; // Use tutor UID to stop
+
+    await recordingService.stopRecording(
+      sessionId,
       session.recording_resource_id,
       session.recording_sid,
-      session.agora_channel_name || `session_${sessionId}`,
-      user.id,
-      recordingConfig.customerId,
-      recordingConfig.customerSecret,
-      'individual' // Individual mode
+      channelName,
+      uid
     );
 
-    // Update recording status in database
+    // Update session recording status
     await supabase
       .from('individual_sessions')
       .update({
@@ -96,23 +98,14 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', sessionId);
 
-    await supabase
-      .from('session_recordings')
-      .update({
-        recording_status: 'stopped',
-      })
-      .eq('session_id', sessionId);
-
     return NextResponse.json({
-      success: true,
-      message: 'Recording stopped',
+      message: 'Recording stopped successfully',
     });
   } catch (error: any) {
-    console.error('Error stopping recording:', error);
+    console.error('[Recording Stop] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to stop recording' },
       { status: 500 }
     );
   }
 }
-
