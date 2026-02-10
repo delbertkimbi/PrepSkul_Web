@@ -84,26 +84,22 @@ export async function generateMetadata({
   }
   
   const tutorId = tutor.user_id || tutor.id;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
-  const tutorUrl = `${baseUrl}/tutor/${tutorId}`;
-  
+  // SEO proxy: shared links are www.prepskul.com/tutor/[id] so og:url and canonical match
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.prepskul.com';
+  const tutorUrl = `${siteUrl}/tutor/${tutorId}`;
+
   // Ensure image URL is absolute and publicly accessible
   let imageUrl: string;
   if (tutorAvatar) {
-    // If avatar URL is already absolute, use it; otherwise make it absolute
     if (tutorAvatar.startsWith('http://') || tutorAvatar.startsWith('https://')) {
       imageUrl = tutorAvatar;
     } else if (tutorAvatar.startsWith('/')) {
-      // Relative URL - prepend base URL
-      imageUrl = `${baseUrl}${tutorAvatar}`;
+      imageUrl = `${siteUrl}${tutorAvatar}`;
     } else {
-      // Supabase storage URL - ensure it's absolute
-      // Supabase URLs are typically already absolute, but check anyway
-      imageUrl = tutorAvatar.startsWith('http') ? tutorAvatar : `${baseUrl}${tutorAvatar}`;
+      imageUrl = tutorAvatar.startsWith('http') ? tutorAvatar : `${siteUrl}${tutorAvatar}`;
     }
   } else {
-    // Fallback to PrepSkul logo
-    imageUrl = `${baseUrl}/logo.jpg`;
+    imageUrl = `${siteUrl}/logo.jpg`;
   }
 
   return {
@@ -136,6 +132,27 @@ export async function generateMetadata({
   };
 }
 
+// Crawler UAs that must receive HTML with OG meta tags (no redirect)
+const CRAWLER_UA_PATTERNS = [
+  'WhatsApp',
+  'WhatsAppBot',
+  'facebookexternalhit',
+  'Facebot',
+  'Twitterbot',
+  'TelegramBot',
+  'LinkedInBot',
+  'Slackbot',
+  'Discordbot',
+  'Pinterest',
+  'Googlebot',
+  'bingbot',
+];
+
+function isCrawler(userAgent: string): boolean {
+  const ua = userAgent.toLowerCase();
+  return CRAWLER_UA_PATTERNS.some((p) => ua.includes(p.toLowerCase()));
+}
+
 export default async function TutorPage({
   params,
 }: {
@@ -144,15 +161,20 @@ export default async function TutorPage({
   const { id } = await params;
   const headersList = await headers();
   const userAgent = headersList.get('user-agent') || '';
-  
-  // Detect mobile app user agents or deep link requests
-  const isMobileApp = userAgent.includes('PrepSkul') || 
-                      userAgent.includes('prepskul') ||
-                      headersList.get('x-requested-with') === 'com.prepskul.app';
-  
-  // If mobile app detected, redirect to app deep link
-  if (isMobileApp) {
-    redirect(`prepskul://tutor/${id}`);
+
+  if (!isCrawler(userAgent)) {
+    const isMobileApp =
+      userAgent.includes('PrepSkul') ||
+      userAgent.includes('prepskul') ||
+      headersList.get('x-requested-with') === 'com.prepskul.app';
+
+    if (isMobileApp) {
+      redirect(`prepskul://tutor/${id}`);
+    }
+
+    // Desktop / mobile browser: send to Flutter Web app
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
+    redirect(`${appUrl}/tutor/${id}`);
   }
 
   const supabase = await createServerSupabaseClient();

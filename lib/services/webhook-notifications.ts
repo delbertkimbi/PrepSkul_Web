@@ -40,37 +40,66 @@ export async function createPaymentNotification({
         .maybeSingle();
 
       if (trial) {
-        // Notify learner
-        await supabase.from('notifications').insert({
-          user_id: trial.learner_id,
-          type: 'trial_payment_completed',
-          notification_type: 'trial_payment_completed',
-          title: 'Payment Successful! 🎉',
-          message: `Your payment for the trial session in ${trial.subject} has been confirmed. ${trial.meet_link ? 'Your Meet link is ready!' : ''}`,
-          data: {
-            session_id: trialSessionId,
-            session_type: 'trial',
-            subject: trial.subject,
-            meet_link: trial.meet_link,
-          },
-          is_read: false,
-        });
+        const cutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-        // Notify tutor with Meet link
-        await supabase.from('notifications').insert({
-          user_id: trial.tutor_id,
-          type: 'trial_payment_received',
-          notification_type: 'trial_payment_received',
-          title: 'Trial Payment Received - Session Ready',
-          message: `Payment for trial session in ${trial.subject} has been confirmed. ${trial.meet_link ? 'Meet link is ready!' : ''}`,
-          data: {
-            session_id: trialSessionId,
-            session_type: 'trial',
-            subject: trial.subject,
-            meet_link: trial.meet_link, // Include Meet link for tutor
-          },
-          is_read: false,
-        });
+        // Dedupe: skip if app already created notification for this session (same user + type + session_id in last 5 min)
+        const { data: learnerExisting } = await supabase
+          .from('notifications')
+          .select('id, data')
+          .eq('user_id', trial.learner_id)
+          .eq('type', 'trial_payment_completed')
+          .gte('created_at', cutoff)
+          .limit(10);
+        const learnerHasDuplicate = (learnerExisting ?? []).some(
+          (n: { data?: { session_id?: string } }) => n.data?.session_id === trialSessionId
+        );
+
+        if (!learnerHasDuplicate) {
+          await supabase.from('notifications').insert({
+            user_id: trial.learner_id,
+            type: 'trial_payment_completed',
+            notification_type: 'trial_payment_completed',
+            title: 'Payment Successful! 🎉',
+            message: `Your payment for the trial session in ${trial.subject} has been confirmed. You can join from My Sessions at session time.`,
+            data: {
+              session_id: trialSessionId,
+              session_type: 'trial',
+              subject: trial.subject,
+              meet_link: trial.meet_link,
+            },
+            action_url: '/sessions',
+            is_read: false,
+          });
+        }
+
+        const { data: tutorExisting } = await supabase
+          .from('notifications')
+          .select('id, data')
+          .in('type', ['trial_payment_completed', 'trial_payment_received'])
+          .eq('user_id', trial.tutor_id)
+          .gte('created_at', cutoff)
+          .limit(10);
+        const tutorHasDuplicate = (tutorExisting ?? []).some(
+          (n: { data?: { session_id?: string } }) => n.data?.session_id === trialSessionId
+        );
+
+        if (!tutorHasDuplicate) {
+          await supabase.from('notifications').insert({
+            user_id: trial.tutor_id,
+            type: 'trial_payment_received',
+            notification_type: 'trial_payment_received',
+            title: 'Trial Payment Received - Session Ready',
+            message: `Payment for trial session in ${trial.subject} has been confirmed. Session is ready — student can join from My Sessions at session time.`,
+            data: {
+              session_id: trialSessionId,
+              session_type: 'trial',
+              subject: trial.subject,
+              meet_link: trial.meet_link,
+            },
+            action_url: '/sessions',
+            is_read: false,
+          });
+        }
       }
     } else if (type === 'trial_payment_failed' && trialSessionId) {
       // Get trial session details
