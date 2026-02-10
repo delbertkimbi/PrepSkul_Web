@@ -95,6 +95,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
+  // PRIORITY 2e: Handle /tutor/[id] (share links and OG metadata - no locale)
+  // Served by app/tutor/[id]/page.tsx for rich previews and redirects
+  if (pathname.startsWith('/tutor/')) {
+    return NextResponse.next()
+  }
+  
   // PRIORITY 3: Handle locale redirection for main site only
   const pathnameIsMissingLocale = locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`
