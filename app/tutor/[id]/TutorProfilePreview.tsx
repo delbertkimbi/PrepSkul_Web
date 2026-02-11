@@ -46,7 +46,7 @@ export default function TutorProfilePreview({
 
   // Deep link URLs
   const appDeepLink = `prepskul://tutor/${tutorId}`;
-  const webUrl = `https://app.prepskul.com/tutor/${tutorId}`;
+  const webUrl = `https://app.prepskul.com/#/tutor/${tutorId}`;
 
   return (
     <div className="min-h-screen bg-gray-50">
