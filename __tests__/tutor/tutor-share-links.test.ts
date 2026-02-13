@@ -63,8 +63,9 @@ describe('Tutor share links (www.prepskul.com/tutor/[id])', () => {
     expect(metadata.openGraph?.url).toContain(
       `/tutor/${tutorRow.user_id}`,
     );
-
-    const ogImage = metadata.openGraph?.images?.[0];
+    
+    const ogImages = metadata.openGraph?.images;
+    const ogImage = Array.isArray(ogImages) ? ogImages[0] : ogImages;
     expect(ogImage?.url).toBe('https://cdn.prepskul.com/avatar.jpg');
     expect(ogImage?.alt).toContain('John Doe');
   });

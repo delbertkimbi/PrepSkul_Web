@@ -351,10 +351,12 @@ export async function POST(request: NextRequest) {
     // Send rich notification via unified endpoint (if no critical flags)
     if (filterResult.flags.length === 0 || !filterResult.flags.some(f => f.severity === 'critical')) {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        // Always call the notification API on the SAME origin that served this request.
+        // This avoids misconfigured env vars (e.g., pointing to `app.prepskul.com` which has no API routes).
+        const baseUrl = new URL(request.url).origin;
         const messagePreview = content.length > 200 ? content.substring(0, 200) + '...' : content;
         
-        await fetch(`${apiUrl}/api/notifications/send`, {
+        const notifRes = await fetch(`${baseUrl}/api/notifications/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -376,10 +378,16 @@ export async function POST(request: NextRequest) {
             sendEmail: true, // Enable email for messages
             sendPush: true, // Enable push for messages
           }),
-        }).catch(err => {
-          // Don't fail message send if notification fails
-          console.error('⚠️ Error sending notification:', err);
         });
+
+        if (!notifRes.ok) {
+          const preview = await notifRes.text().catch(() => '');
+          console.warn(
+            `⚠️ Notification API returned ${notifRes.status} ${notifRes.statusText}. Body preview: ${
+              preview.length > 200 ? preview.substring(0, 200) : preview
+            }`
+          );
+        }
       } catch (notifError) {
         // Don't fail message send if notification fails
         console.error('⚠️ Error sending notification:', notifError);
