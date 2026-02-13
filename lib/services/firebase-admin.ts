@@ -101,9 +101,10 @@ export async function sendPushNotification({
       return { success: false, sent: 0, errors: 0 };
     }
 
-    // Get FCM tokens from Supabase
-    const { createServerSupabaseClient } = await import('@/lib/supabase-server');
-    const supabase = await createServerSupabaseClient();
+    // Get FCM tokens from Supabase (service role; bypass RLS)
+    // This route runs server-to-server, so relying on cookie/session auth will often return 0 rows.
+    const { getSupabaseAdmin } = await import('@/lib/supabase-admin');
+    const supabase = getSupabaseAdmin();
 
     const { data: tokens, error } = await supabase
       .from('fcm_tokens')
