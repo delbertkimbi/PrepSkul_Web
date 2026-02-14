@@ -30,11 +30,16 @@ export default function SendNotificationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [suiteLoading, setSuiteLoading] = useState(false);
+  const [segmentLoading, setSegmentLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [userTypeFilter, setUserTypeFilter] = useState('all');
+  const [recipientMode, setRecipientMode] = useState<'single' | 'segment'>('single');
+  const [segmentKey, setSegmentKey] = useState<string>('all_users');
+  const [segmentActiveDays, setSegmentActiveDays] = useState<number>(30);
+  const [segmentLimit, setSegmentLimit] = useState<number>(200);
   const [formData, setFormData] = useState({
     type: 'admin_message',
     title: '',
@@ -127,6 +132,40 @@ export default function SendNotificationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (recipientMode === 'segment') {
+      if (!formData.title || !formData.message) {
+        toast.error('Title and message are required');
+        return;
+      }
+      setSegmentLoading(true);
+      try {
+        const response = await fetch('/api/admin/notifications/send-segment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            segment: segmentKey,
+            activeDays: segmentActiveDays,
+            limit: segmentLimit,
+            ...formData,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          toast.error('Segment send failed', { description: data?.error || 'Unknown error' });
+          return;
+        }
+        toast.success('Segment notification sent', {
+          description: `Recipients: ${data.sentTo}/${data.totalMatched}${data.push?.attempted ? ` | Push delivered: ${data.push?.sentUsers}` : ''}${data.note ? ` | ${data.note}` : ''}`,
+          duration: 10000,
+        });
+      } catch (e: any) {
+        toast.error('Segment send error', { description: e?.message || String(e) });
+      } finally {
+        setSegmentLoading(false);
+      }
+      return;
+    }
 
     if (!selectedUser) {
       toast.error('Please select a user');
@@ -268,7 +307,92 @@ export default function SendNotificationPage() {
       </div>
 
       <div className="grid gap-6">
+        {/* Recipient Mode */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recipient Mode</CardTitle>
+            <CardDescription>Send to one user or a customer segment</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Mode</Label>
+                <Select
+                  value={recipientMode}
+                  onValueChange={(v) => {
+                    const mode = (v as any) === 'segment' ? 'segment' : 'single';
+                    setRecipientMode(mode);
+                    if (mode === 'segment') setSelectedUser(null);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single user</SelectItem>
+                    <SelectItem value="segment">Segment (bulk)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {recipientMode === 'segment' && (
+                <div className="space-y-2">
+                  <Label>Segment</Label>
+                  <Select value={segmentKey} onValueChange={setSegmentKey}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select segment" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all_users">All users</SelectItem>
+                      <SelectItem value="approved_tutors">All approved tutors</SelectItem>
+                      <SelectItem value="non_approved_tutors">All non-approved tutors</SelectItem>
+                      <SelectItem value="active_tutors">Active tutors</SelectItem>
+                      <SelectItem value="inactive_tutors">Inactive tutors</SelectItem>
+                      <SelectItem value="active_students">Active students/learners</SelectItem>
+                      <SelectItem value="inactive_students">Inactive students/learners</SelectItem>
+                      <SelectItem value="active_parents">Active parents</SelectItem>
+                      <SelectItem value="inactive_parents">Inactive parents</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {recipientMode === 'segment' && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Active window (days)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={segmentActiveDays}
+                    onChange={(e) => setSegmentActiveDays(Number(e.target.value || 30))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used for active/inactive segments (default 30 days).
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Recipient cap (limit)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={500}
+                    value={segmentLimit}
+                    onChange={(e) => setSegmentLimit(Number(e.target.value || 200))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Safety cap for serverless execution. Increase carefully.
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* User Selection Card */}
+        {recipientMode === 'single' && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -393,6 +517,7 @@ export default function SendNotificationPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
         {/* Notification Details Card */}
         <Card>
@@ -549,15 +674,15 @@ export default function SendNotificationPage() {
               <div className="flex gap-4 pt-4">
                 <Button
                   type="submit"
-                  disabled={loading || !selectedUser}
+                  disabled={(recipientMode === 'single' ? (loading || !selectedUser) : segmentLoading)}
                   className="flex items-center gap-2"
                 >
-                  {loading ? (
+                  {(recipientMode === 'single' ? loading : segmentLoading) ? (
                     <>Sending...</>
                   ) : (
                     <>
                       <Send className="h-4 w-4" />
-                      Send Notification
+                      {recipientMode === 'single' ? 'Send Notification' : 'Send to Segment'}
                     </>
                   )}
                 </Button>
