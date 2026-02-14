@@ -3,8 +3,8 @@ import { headers } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { generateTutorMetadata } from '@/lib/tutor-metadata';
-import { redirect } from 'next/navigation';
 import TutorProfilePreview from './TutorProfilePreview';
+import AutoRedirect from './AutoRedirect';
 
 export async function generateMetadata({
   params,
@@ -45,21 +45,19 @@ export default async function TutorPage({
   const headersList = await headers();
   const userAgent = headersList.get('user-agent') || '';
 
-  if (!isCrawler(userAgent)) {
-    const isMobileApp =
-      userAgent.includes('PrepSkul') ||
-      userAgent.includes('prepskul') ||
-      headersList.get('x-requested-with') === 'com.prepskul.app';
+  // IMPORTANT:
+  // Do NOT HTTP-redirect here. Many link preview engines (Facebook/WhatsApp/Telegram/etc.)
+  // either do not identify as crawlers or will follow redirects to Flutter Web, which
+  // loses the tutor-specific OG metadata. Instead: always return 200 HTML with metadata,
+  // and use a client-side redirect for real users.
+  const isMobileApp =
+    userAgent.includes('PrepSkul') ||
+    userAgent.includes('prepskul') ||
+    headersList.get('x-requested-with') === 'com.prepskul.app';
 
-    if (isMobileApp) {
-      // Native app deep link
-      redirect(`prepskul://tutor/${id}`);
-    }
-
-    // Desktop / mobile browser: send to Flutter Web app (hash routing)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
-    redirect(`${appUrl}/#/tutor/${id}`);
-  }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
+  const deepLink = `prepskul://tutor/${id}`;
+  const webAppUrl = `${appUrl}/#/tutor/${id}`;
 
   // Fetch tutor data
   let tutor = null;
@@ -129,12 +127,21 @@ export default async function TutorPage({
   }
 
   return (
-    <TutorProfilePreview 
-      tutor={tutor} 
-      profile={profile as any}
-      isAuthenticated={isAuthenticated}
-      userRole={userRole}
-      tutorId={tutor.user_id || tutor.id}
-    />
+    <>
+      {!isCrawler(userAgent) && (
+        <AutoRedirect
+          to={isMobileApp ? deepLink : webAppUrl}
+          fallbackTo={isMobileApp ? webAppUrl : undefined}
+          fallbackDelayMs={900}
+        />
+      )}
+      <TutorProfilePreview
+        tutor={tutor}
+        profile={profile as any}
+        isAuthenticated={isAuthenticated}
+        userRole={userRole}
+        tutorId={tutor.user_id || tutor.id}
+      />
+    </>
   );
 }

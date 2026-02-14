@@ -28,7 +28,9 @@ export default function TutorProfilePreview({
   const [imageError, setImageError] = useState(false);
 
   const tutorName = profile.full_name || 'Tutor';
-  const tutorAvatar = profile.avatar_url;
+  // Prefer profiles.avatar_url, but many tutors store their photo on tutor_profiles.profile_photo_url.
+  const tutorAvatar =
+    profile.avatar_url || (tutor?.profile_photo_url as string | null) || null;
   const subjects = tutor.subjects as string[] | string | null;
   const subjectsArray = Array.isArray(subjects) 
     ? subjects 
@@ -48,6 +50,10 @@ export default function TutorProfilePreview({
   const appDeepLink = `prepskul://tutor/${tutorId}`;
   const webUrl = `https://app.prepskul.com/#/tutor/${tutorId}`;
 
+  const authUrl = `https://app.prepskul.com/#/auth-method-selection?tutor=${encodeURIComponent(
+    tutorId,
+  )}`;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -60,13 +66,13 @@ export default function TutorProfilePreview({
             {!isAuthenticated && (
               <div className="flex items-center space-x-4">
                 <Link
-                  href="https://app.prepskul.com/auth-method-selection"
+                  href={authUrl}
                   className="text-gray-600 hover:text-gray-900"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="https://app.prepskul.com/auth-method-selection"
+                  href={authUrl}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
                 >
                   Sign Up
@@ -202,14 +208,14 @@ export default function TutorProfilePreview({
                     </p>
                     <div className="flex items-center justify-center space-x-4">
                       <Link
-                        href="https://app.prepskul.com/auth-method-selection"
+                        href={authUrl}
                         className="text-blue-600 hover:underline font-medium"
                       >
                         Sign Up Free
                       </Link>
                       <span className="text-gray-400">•</span>
                       <Link
-                        href="https://app.prepskul.com/auth-method-selection"
+                        href={authUrl}
                         className="text-blue-600 hover:underline font-medium"
                       >
                         Sign In
