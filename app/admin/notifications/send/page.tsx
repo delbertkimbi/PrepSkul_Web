@@ -29,6 +29,7 @@ interface UserProfile {
 export default function SendNotificationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [suiteLoading, setSuiteLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
   const [searching, setSearching] = useState(false);
@@ -192,6 +193,45 @@ export default function SendNotificationPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runTestSuite = async () => {
+    if (!selectedUser) {
+      toast.error('Please select a user first');
+      return;
+    }
+
+    setSuiteLoading(true);
+    try {
+      const response = await fetch('/api/admin/notifications/test-suite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedUser.id,
+          sendPush: true,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        toast.error('Test suite failed', { description: data?.error || 'Unknown error' });
+        return;
+      }
+
+      const results = Array.isArray(data?.results) ? data.results : [];
+      const pushed = results.filter((r: any) => Number(r?.push?.sent || 0) > 0).length;
+      const pushErrors = results.filter((r: any) => (r?.push?.error || '').length > 0).length;
+      const inAppOk = results.filter((r: any) => r?.inApp?.ok).length;
+
+      toast.success('Test suite completed', {
+        description: `In-app ok: ${inAppOk}/${results.length} | Push delivered: ${pushed}/${results.length} | Push errors: ${pushErrors}`,
+        duration: 10000,
+      });
+    } catch (e: any) {
+      toast.error('Test suite error', { description: e?.message || String(e) });
+    } finally {
+      setSuiteLoading(false);
     }
   };
 
@@ -559,6 +599,21 @@ export default function SendNotificationPage() {
                   </ul>
                 </li>
               </ol>
+
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  disabled={!selectedUser || suiteLoading}
+                  onClick={runTestSuite}
+                  className="w-full"
+                >
+                  {suiteLoading ? 'Running test suite…' : 'Run Test Suite (multiple types)'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Sends a small batch of different notification types to the selected user (uses real booking/session/message IDs when available).
+                </p>
+              </div>
+
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-yellow-800 text-xs">
                   <strong>Note:</strong> Push notifications only work if the user has the PrepSkul app installed 
