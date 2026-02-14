@@ -5,17 +5,41 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 // Registers / updates an FCM token for the currently authenticated user.
 // Uses service-role Supabase client to bypass RLS and handle account switching on same device.
 
-export async function POST(request: NextRequest) {
+async function getUserIdFromRequest(request: NextRequest): Promise<string | null> {
+  // Mobile app calls this endpoint with Authorization: Bearer <access_token>
+  // Web app calls it with cookies. Support both.
+  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
+  const bearer = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7).trim() : '';
+
+  // 1) Prefer bearer token when present (mobile).
+  if (bearer) {
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data, error } = await supabaseAdmin.auth.getUser(bearer);
+      if (!error && data?.user?.id) return data.user.id;
+    } catch {
+      // fall through
+    }
+  }
+
+  // 2) Fallback to cookie session (web).
   try {
     const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data?.user?.id) return data.user.id;
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+export async function POST(request: NextRequest) {
+  try {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const {
-      data: { user },
-      error: userErr,
-    } = await supabase.auth.getUser();
-
-    if (userErr || !user?.id) {
+    const userId = await getUserIdFromRequest(request);
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -35,7 +59,7 @@ export async function POST(request: NextRequest) {
     // Prefer upsert on token (single device token should belong to latest signed-in user).
     // If schema differs, fall back to minimal columns.
     const richRow: Record<string, any> = {
-      user_id: user.id,
+      user_id: userId,
       token,
       is_active: true,
       updated_at: now,
@@ -46,7 +70,7 @@ export async function POST(request: NextRequest) {
     };
 
     const minimalRow: Record<string, any> = {
-      user_id: user.id,
+      user_id: userId,
       token,
       is_active: true,
       updated_at: now,

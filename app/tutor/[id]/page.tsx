@@ -3,8 +3,9 @@ import { headers } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { generateTutorMetadata } from '@/lib/tutor-metadata';
-import TutorProfilePreview from './TutorProfilePreview';
 import AutoRedirect from './AutoRedirect';
+import TutorProfilePreview from './TutorProfilePreview';
+import OpeningAppScreen from './OpeningAppScreen';
 
 export async function generateMetadata({
   params,
@@ -17,7 +18,6 @@ export async function generateMetadata({
 
 // Crawler UAs that must receive HTML with OG meta tags (no redirect)
 const CRAWLER_UA_PATTERNS = [
-  'WhatsApp',
   'WhatsAppBot',
   'facebookexternalhit',
   'Facebot',
@@ -137,22 +137,26 @@ export default async function TutorPage({
 
   return (
     <>
-      {!isCrawler(userAgent) && (
-        <AutoRedirect
-          to={isMobileApp ? deepLink : isAndroidBrowser ? androidIntentUrl : webAppUrl}
-          // For Android intent:// links, the fallback is already handled by the intent itself.
-          // Adding a JS fallback timer can "steal" the navigation and force users into the web app.
-          fallbackTo={isAndroidBrowser ? undefined : webAppUrl}
-          fallbackDelayMs={900}
+      {/* Always attempt to open the app for real users. Scrapers don't execute JS, so OG tags remain safe. */}
+      <AutoRedirect
+        to={isMobileApp ? deepLink : isAndroidBrowser ? androidIntentUrl : webAppUrl}
+        // For Android intent:// links, the fallback is already handled by the intent itself.
+        fallbackTo={isAndroidBrowser ? undefined : webAppUrl}
+        fallbackDelayMs={900}
+      />
+
+      {/* UX: show a branded deep-blue opening screen during redirect to avoid UI flash. */}
+      {!isCrawler(userAgent) ? (
+        <OpeningAppScreen />
+      ) : (
+        <TutorProfilePreview
+          tutor={tutor}
+          profile={profile as any}
+          isAuthenticated={isAuthenticated}
+          userRole={userRole}
+          tutorId={tutor.user_id || tutor.id}
         />
       )}
-      <TutorProfilePreview
-        tutor={tutor}
-        profile={profile as any}
-        isAuthenticated={isAuthenticated}
-        userRole={userRole}
-        tutorId={tutor.user_id || tutor.id}
-      />
     </>
   );
 }
