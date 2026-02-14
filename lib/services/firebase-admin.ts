@@ -116,11 +116,30 @@ export async function sendPushNotification({
     const { getSupabaseAdmin } = await import('@/lib/supabase-admin');
     const supabase = getSupabaseAdmin();
 
-    const { data: tokens, error } = await supabase
-      .from('fcm_tokens')
-      .select('token')
-      .eq('user_id', userId)
-      .eq('is_active', true);
+    // Fetch tokens with helpful device metadata (fallback to token-only if schema differs)
+    let tokens: any[] | null = null;
+    let error: any | null = null;
+    {
+      const rich = await supabase
+        .from('fcm_tokens')
+        .select('token, platform, device_name, app_version, updated_at')
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      if (rich.error) {
+        // Some older schemas may not have these optional columns.
+        const fallback = await supabase
+          .from('fcm_tokens')
+          .select('token')
+          .eq('user_id', userId)
+          .eq('is_active', true);
+        tokens = fallback.data as any[] | null;
+        error = fallback.error;
+      } else {
+        tokens = rich.data as any[] | null;
+        error = rich.error;
+      }
+    }
 
     if (error) {
       console.error('❌ Error fetching FCM tokens:', error);
@@ -139,6 +158,24 @@ export async function sendPushNotification({
     if (!tokens || tokens.length === 0) {
       console.log(`ℹ️ PUSH skipped user=${userId} type=${type} reason=no_tokens`);
       return { success: true, sent: 0, errors: 0 };
+    }
+
+    // Log which devices/tokens we are targeting (safe: only suffix).
+    try {
+      const summary = tokens
+        .map((t) => {
+          const tok = String((t as any)?.token ?? '');
+          const suffix = tok.length > 10 ? tok.slice(-10) : tok;
+          const platform = (t as any)?.platform ? String((t as any).platform) : 'unknown';
+          const deviceName = (t as any)?.device_name ? String((t as any).device_name) : 'unknown-device';
+          const appVersion = (t as any)?.app_version ? String((t as any).app_version) : '';
+          const updatedAt = (t as any)?.updated_at ? String((t as any).updated_at) : '';
+          return `${platform}/${deviceName}${appVersion ? `@${appVersion}` : ''}${updatedAt ? ` (${updatedAt})` : ''} …${suffix}`;
+        })
+        .join(' | ');
+      console.log(`ℹ️ PUSH targets user=${userId} count=${tokens.length} ${summary}`);
+    } catch {
+      // ignore
     }
 
     // Prepare notification payload with rich image support
@@ -171,7 +208,7 @@ export async function sendPushNotification({
           ...(imageUrl ? { fcm_options: { image: imageUrl } } : {}), // iOS rich notification image
         },
       },
-      tokens: tokens.map(t => t.token as string),
+      tokens: tokens.map((t: any) => t.token as string),
     };
 
     // Send notification
@@ -180,6 +217,22 @@ export async function sendPushNotification({
     console.log(
       `✅ PUSH result user=${userId} type=${type} sent=${response.successCount} errors=${response.failureCount}`
     );
+
+    // Helpful failure diagnostics (safe): which token suffix failed and why.
+    if (response.failureCount > 0) {
+      try {
+        response.responses.forEach((r, idx) => {
+          if (r.success) return;
+          const tok = String((tokens?.[idx] as any)?.token ?? '');
+          const suffix = tok.length > 10 ? tok.slice(-10) : tok;
+          const code = (r.error as any)?.code || 'unknown';
+          const msg = (r.error as any)?.message || 'unknown';
+          console.warn(`⚠️ PUSH failure user=${userId} type=${type} tokenSuffix=…${suffix} code=${code} msg=${msg}`);
+        });
+      } catch {
+        // ignore
+      }
+    }
 
     // Deactivate failed tokens
     if (response.failureCount > 0) {

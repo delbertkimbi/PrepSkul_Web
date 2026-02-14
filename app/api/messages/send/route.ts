@@ -339,6 +339,7 @@ export async function POST(request: NextRequest) {
       : conversation.student_id;
     
     // Get sender profile with avatar for rich notifications
+    // NOTE: some users store photos in `profile_photo_url` (tutor_profiles) not `profiles.avatar_url`.
     const { data: senderProfile } = await supabase
       .from('profiles')
       .select('full_name, avatar_url')
@@ -346,7 +347,20 @@ export async function POST(request: NextRequest) {
       .single();
     
     const senderName = senderProfile?.full_name || 'Someone';
-    const senderAvatarUrl = senderProfile?.avatar_url || null;
+    let senderAvatarUrl = senderProfile?.avatar_url || null;
+    // Fallback: try tutor_profiles.profile_photo_url if avatar_url is missing.
+    if (!senderAvatarUrl) {
+      try {
+        const { data: tutorProfile } = await supabase
+          .from('tutor_profiles')
+          .select('profile_photo_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        senderAvatarUrl = tutorProfile?.profile_photo_url || null;
+      } catch {
+        // ignore
+      }
+    }
     
     // Send rich notification via unified endpoint (if no critical flags)
     if (filterResult.flags.length === 0 || !filterResult.flags.some(f => f.severity === 'critical')) {
