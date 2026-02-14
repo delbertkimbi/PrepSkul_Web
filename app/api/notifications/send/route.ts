@@ -38,6 +38,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Diagnostic log: helps validate "automatic" sends across all triggers.
+    // (Safe: no secrets; message is truncated.)
+    try {
+      const preview = String(message ?? '').slice(0, 120);
+      console.log(
+        `ℹ️ /api/notifications/send request user=${userId} type=${type || 'general'} sendPush=${!!sendPush} sendEmail=${!!sendEmail} priority=${priority} msg="${preview}"`
+      );
+    } catch {
+      // ignore
+    }
+
     // Stage-specific content for onboarding_reminder (metadata.reminder_stage)
     let effectiveTitle = title;
     let effectiveMessage = message;
@@ -184,9 +195,15 @@ export async function POST(request: NextRequest) {
     // Determine which channels to use
     const shouldSendEmail = sendEmail && (preferences?.channels?.email !== false) && !alreadyEmailed;
     const shouldSendPush = sendPush && (preferences?.channels?.push !== false);
+    console.log(
+      `ℹ️ notification channels user=${userId} type=${type || 'general'} shouldSendPush=${shouldSendPush} shouldSendEmail=${shouldSendEmail}`
+    );
 
-    // Create in-app notification (always) - using admin client to bypass RLS
-    const notificationData = {
+    // Create in-app notification - using admin client to bypass RLS
+    // NOTE: Some environments may not have all optional columns (e.g. `image_url`).
+    // We try a rich insert first, then gracefully retry without the missing column(s)
+    // so push/email still work for "automatic" notifications.
+    const notificationData: Record<string, any> = {
       user_id: userId,
       type: type || 'general',
       notification_type: type || 'general',
@@ -197,34 +214,62 @@ export async function POST(request: NextRequest) {
       action_url: actionUrl,
       action_text: actionText,
       icon,
-      image_url: imageUrl, // Rich preview image URL
       metadata: {
         ...(metadata || {}),
         ...(imageUrl ? { image_url: imageUrl } : {}), // Also store in metadata for easy access
         ...(shouldSendEmail ? { will_send_email: true } : {}), // Track email intent
       },
     };
+    if (imageUrl) {
+      notificationData.image_url = imageUrl; // optional column in DB
+    }
 
-    const { data: notification, error: notifError } = await supabaseAdmin
-      .from('notifications')
-      .insert(notificationData)
-      .select()
-      .maybeSingle();
+    let notification: any | null = null;
+    let notifError: any | null = null;
 
-    if (notifError) {
-      console.error('Error creating in-app notification:', notifError);
-      return NextResponse.json(
-        { error: 'Failed to create notification' },
-        { status: 500 }
+    const tryInsertNotification = async (data: Record<string, any>) => {
+      const res = await supabaseAdmin.from('notifications').insert(data).select().maybeSingle();
+      return res;
+    };
+
+    // First attempt (may include `image_url`)
+    const firstAttempt = await tryInsertNotification(notificationData);
+    notification = firstAttempt.data;
+    notifError = firstAttempt.error;
+
+    // If `image_url` column is missing, retry without it (do not fail push/email)
+    const isMissingColumn = (err: any, columnName: string) =>
+      err?.code === 'PGRST204' && String(err?.message || '').includes(`'${columnName}'`);
+
+    if (!notification && notifError && isMissingColumn(notifError, 'image_url')) {
+      console.warn(
+        "⚠️ notifications.image_url missing in DB schema; retrying notification insert without image_url"
       );
+      const retryData = { ...notificationData };
+      delete retryData.image_url;
+
+      const retryAttempt = await tryInsertNotification(retryData);
+      notification = retryAttempt.data;
+      notifError = retryAttempt.error;
+    }
+
+    if (notifError || !notification) {
+      console.error('Error creating in-app notification:', notifError);
+      // If caller only wanted in-app (no email/push), fail hard.
+      if (!shouldSendEmail && !shouldSendPush) {
+        return NextResponse.json({ error: 'Failed to create notification' }, { status: 500 });
+      }
+      // Otherwise continue: we can still send email/push even if in-app insert failed.
     }
 
     const results: {
-      inApp: { success: boolean; notificationId: string };
+      inApp: { success: boolean; notificationId?: string; error?: string };
       email: { success: boolean; sent: boolean; error?: string };
       push: { success: boolean; sent: number; errors: number; error?: string };
     } = {
-      inApp: { success: true, notificationId: notification.id },
+      inApp: notification?.id
+        ? { success: true, notificationId: notification.id }
+        : { success: false, error: notifError?.message || 'Failed to create in-app notification' },
       email: { success: false, sent: false },
       push: { success: false, sent: 0, errors: 0 },
     };
@@ -258,16 +303,18 @@ export async function POST(request: NextRequest) {
             messagePreview: (type === 'message' && messagePreview) ? messagePreview : undefined,
           });
           
-          // Mark email as sent in notification metadata
-          await supabaseAdmin
-            .from('notifications')
-            .update({
-              metadata: {
-                ...notificationData.metadata,
-                sent_email_at: new Date().toISOString(),
-              },
-            })
-            .eq('id', notification.id);
+          // Mark email as sent in notification metadata (only if in-app notification exists)
+          if (notification?.id) {
+            await supabaseAdmin
+              .from('notifications')
+              .update({
+                metadata: {
+                  ...notificationData.metadata,
+                  sent_email_at: new Date().toISOString(),
+                },
+              })
+              .eq('id', notification.id);
+          }
           
           results.email = { success: true, sent: true };
         }
@@ -303,7 +350,7 @@ export async function POST(request: NextRequest) {
             body: effectiveMessage,
             data: {
               type: type || 'general',
-              notificationId: notification.id,
+              ...(notification?.id ? { notificationId: notification.id } : {}),
               ...(actionUrl ? { actionUrl } : {}),
               ...(metadata || {}),
             },
@@ -312,8 +359,12 @@ export async function POST(request: NextRequest) {
           });
           // Assign push result (it doesn't have error property, which is fine)
           results.push = { ...pushResult };
+          console.log(
+            `✅ push result user=${userId} type=${type || 'general'} sent=${results.push.sent} errors=${results.push.errors}`
+          );
         } else {
           results.push = { success: false, sent: 0, errors: 0, error: 'Push notification function not available' };
+          console.warn(`⚠️ push not available user=${userId} type=${type || 'general'}`);
         }
       } catch (e: any) {
         console.error('Error sending push notification:', e);
@@ -324,7 +375,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      notificationId: notification.id,
+      notificationId: notification?.id,
       channels: results,
     });
   } catch (error: any) {

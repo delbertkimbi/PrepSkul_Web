@@ -380,13 +380,26 @@ export async function POST(request: NextRequest) {
           }),
         });
 
+        const responseText = await notifRes.text().catch(() => '');
         if (!notifRes.ok) {
-          const preview = await notifRes.text().catch(() => '');
           console.warn(
             `⚠️ Notification API returned ${notifRes.status} ${notifRes.statusText}. Body preview: ${
-              preview.length > 200 ? preview.substring(0, 200) : preview
+              responseText.length > 200 ? responseText.substring(0, 200) : responseText
             }`
           );
+        } else {
+          try {
+            const parsed = JSON.parse(responseText);
+            const pushSent = parsed?.channels?.push?.sent;
+            const pushErrors = parsed?.channels?.push?.errors;
+            console.log(
+              `✅ Message notification dispatched: recipient=${recipientId} push_sent=${pushSent ?? 'n/a'} push_errors=${pushErrors ?? 'n/a'}`
+            );
+          } catch {
+            console.log(
+              `✅ Message notification dispatched (non-JSON response): recipient=${recipientId}`
+            );
+          }
         }
       } catch (notifError) {
         // Don't fail message send if notification fails

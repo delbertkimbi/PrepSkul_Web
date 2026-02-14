@@ -93,6 +93,16 @@ export async function sendPushNotification({
   imageUrl?: string;
 }): Promise<{ success: boolean; sent: number; errors: number }> {
   try {
+    const type = (data as any)?.type ? String((data as any).type) : 'general';
+    try {
+      const titlePreview = String(title ?? '').slice(0, 80);
+      console.log(
+        `ℹ️ PUSH attempt user=${userId} type=${type} priority=${priority} title="${titlePreview}"`
+      );
+    } catch {
+      // ignore
+    }
+
     // Initialize and get admin module
     const admin = await initializeFirebaseAdmin();
 
@@ -127,7 +137,7 @@ export async function sendPushNotification({
     }
 
     if (!tokens || tokens.length === 0) {
-      console.log(`ℹ️ No FCM tokens found for user ${userId}`);
+      console.log(`ℹ️ PUSH skipped user=${userId} type=${type} reason=no_tokens`);
       return { success: true, sent: 0, errors: 0 };
     }
 
@@ -167,7 +177,9 @@ export async function sendPushNotification({
     // Send notification
     const response = await admin.messaging().sendEachForMulticast(message);
 
-    console.log(`✅ Push notification sent: ${response.successCount} successful, ${response.failureCount} failed`);
+    console.log(
+      `✅ PUSH result user=${userId} type=${type} sent=${response.successCount} errors=${response.failureCount}`
+    );
 
     // Deactivate failed tokens
     if (response.failureCount > 0) {
