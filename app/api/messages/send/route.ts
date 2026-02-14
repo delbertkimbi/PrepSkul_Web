@@ -339,6 +339,7 @@ export async function POST(request: NextRequest) {
       : conversation.student_id;
     
     // Get sender profile with avatar for rich notifications
+    // NOTE: some users store photos in `profile_photo_url` (tutor_profiles) not `profiles.avatar_url`.
     const { data: senderProfile } = await supabase
       .from('profiles')
       .select('full_name, avatar_url')
@@ -346,15 +347,30 @@ export async function POST(request: NextRequest) {
       .single();
     
     const senderName = senderProfile?.full_name || 'Someone';
-    const senderAvatarUrl = senderProfile?.avatar_url || null;
+    let senderAvatarUrl = senderProfile?.avatar_url || null;
+    // Fallback: try tutor_profiles.profile_photo_url if avatar_url is missing.
+    if (!senderAvatarUrl) {
+      try {
+        const { data: tutorProfile } = await supabase
+          .from('tutor_profiles')
+          .select('profile_photo_url')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        senderAvatarUrl = tutorProfile?.profile_photo_url || null;
+      } catch {
+        // ignore
+      }
+    }
     
     // Send rich notification via unified endpoint (if no critical flags)
     if (filterResult.flags.length === 0 || !filterResult.flags.some(f => f.severity === 'critical')) {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        // Always call the notification API on the SAME origin that served this request.
+        // This avoids misconfigured env vars (e.g., pointing to `app.prepskul.com` which has no API routes).
+        const baseUrl = new URL(request.url).origin;
         const messagePreview = content.length > 200 ? content.substring(0, 200) + '...' : content;
         
-        await fetch(`${apiUrl}/api/notifications/send`, {
+        const notifRes = await fetch(`${baseUrl}/api/notifications/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -376,10 +392,29 @@ export async function POST(request: NextRequest) {
             sendEmail: true, // Enable email for messages
             sendPush: true, // Enable push for messages
           }),
-        }).catch(err => {
-          // Don't fail message send if notification fails
-          console.error('⚠️ Error sending notification:', err);
         });
+
+        const responseText = await notifRes.text().catch(() => '');
+        if (!notifRes.ok) {
+          console.warn(
+            `⚠️ Notification API returned ${notifRes.status} ${notifRes.statusText}. Body preview: ${
+              responseText.length > 200 ? responseText.substring(0, 200) : responseText
+            }`
+          );
+        } else {
+          try {
+            const parsed = JSON.parse(responseText);
+            const pushSent = parsed?.channels?.push?.sent;
+            const pushErrors = parsed?.channels?.push?.errors;
+            console.log(
+              `✅ Message notification dispatched: recipient=${recipientId} push_sent=${pushSent ?? 'n/a'} push_errors=${pushErrors ?? 'n/a'}`
+            );
+          } catch {
+            console.log(
+              `✅ Message notification dispatched (non-JSON response): recipient=${recipientId}`
+            );
+          }
+        }
       } catch (notifError) {
         // Don't fail message send if notification fails
         console.error('⚠️ Error sending notification:', notifError);
