@@ -200,8 +200,14 @@ export async function POST(request: NextRequest) {
     );
 
     // Create in-app notification - using admin client to bypass RLS
+    //
+    // WhatsApp-style behavior for message notifications:
+    // - Avoid spamming multiple in-app rows for the same conversation.
+    // - If there is an existing *unread* message notification for the same actionUrl,
+    //   update it (and bump created_at) instead of inserting a new row.
+    //
     // NOTE: Some environments may not have all optional columns (e.g. `image_url`).
-    // We try a rich insert first, then gracefully retry without the missing column(s)
+    // We try a rich write first, then gracefully retry without the missing column(s)
     // so push/email still work for "automatic" notifications.
     const notificationData: Record<string, any> = {
       user_id: userId,
@@ -227,30 +233,81 @@ export async function POST(request: NextRequest) {
     let notification: any | null = null;
     let notifError: any | null = null;
 
-    const tryInsertNotification = async (data: Record<string, any>) => {
-      const res = await supabaseAdmin.from('notifications').insert(data).select().maybeSingle();
-      return res;
-    };
-
-    // First attempt (may include `image_url`)
-    const firstAttempt = await tryInsertNotification(notificationData);
-    notification = firstAttempt.data;
-    notifError = firstAttempt.error;
-
-    // If `image_url` column is missing, retry without it (do not fail push/email)
     const isMissingColumn = (err: any, columnName: string) =>
       err?.code === 'PGRST204' && String(err?.message || '').includes(`'${columnName}'`);
 
-    if (!notification && notifError && isMissingColumn(notifError, 'image_url')) {
-      console.warn(
-        "⚠️ notifications.image_url missing in DB schema; retrying notification insert without image_url"
-      );
-      const retryData = { ...notificationData };
-      delete retryData.image_url;
+    const tryInsertNotification = async (data: Record<string, any>) =>
+      supabaseAdmin.from('notifications').insert(data).select().maybeSingle();
 
-      const retryAttempt = await tryInsertNotification(retryData);
-      notification = retryAttempt.data;
-      notifError = retryAttempt.error;
+    const tryUpdateNotification = async (id: string, data: Record<string, any>) =>
+      supabaseAdmin.from('notifications').update(data).eq('id', id).select().maybeSingle();
+
+    const isMessageConversation = (type || 'general') === 'message' && !!actionUrl;
+
+    // WhatsApp-style merge for message notifications:
+    // update existing unread notification for the same actionUrl instead of inserting duplicates.
+    if (isMessageConversation) {
+      const { data: existing } = await supabaseAdmin
+        .from('notifications')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('type', 'message')
+        .eq('action_url', actionUrl)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        const updateData: Record<string, any> = {
+          title: effectiveTitle,
+          message: effectiveMessage,
+          priority,
+          is_read: false,
+          action_url: actionUrl,
+          action_text: actionText,
+          icon,
+          metadata: notificationData.metadata,
+          // Bump created_at so the item moves to the top and reads as "now".
+          created_at: new Date().toISOString(),
+        };
+        if (imageUrl) {
+          updateData.image_url = imageUrl; // optional column
+        }
+
+        const firstUpdate = await tryUpdateNotification(existing.id, updateData);
+        notification = firstUpdate.data;
+        notifError = firstUpdate.error;
+
+        if (!notification && notifError && isMissingColumn(notifError, 'image_url')) {
+          console.warn(
+            "⚠️ notifications.image_url missing in DB schema; retrying notification update without image_url"
+          );
+          const retryData = { ...updateData };
+          delete retryData.image_url;
+          const retryUpdate = await tryUpdateNotification(existing.id, retryData);
+          notification = retryUpdate.data;
+          notifError = retryUpdate.error;
+        }
+      }
+    }
+
+    // If we didn't update an existing row, insert a new one.
+    if (!notification && !notifError) {
+      const firstAttempt = await tryInsertNotification(notificationData);
+      notification = firstAttempt.data;
+      notifError = firstAttempt.error;
+
+      if (!notification && notifError && isMissingColumn(notifError, 'image_url')) {
+        console.warn(
+          "⚠️ notifications.image_url missing in DB schema; retrying notification insert without image_url"
+        );
+        const retryData = { ...notificationData };
+        delete retryData.image_url;
+        const retryAttempt = await tryInsertNotification(retryData);
+        notification = retryAttempt.data;
+        notifError = retryAttempt.error;
+      }
     }
 
     if (notifError || !notification) {

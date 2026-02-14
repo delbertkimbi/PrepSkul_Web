@@ -185,6 +185,25 @@ export async function sendPushNotification({
       ...(imageUrl ? { imageUrl } : {}), // Rich notification image (Android & iOS)
     };
 
+    // WhatsApp-style collapse/grouping:
+    // Keep only ONE system notification per conversation (or per entity),
+    // replacing older ones instead of stacking duplicates.
+    const actionUrl = (data as any)?.actionUrl ? String((data as any).actionUrl) : '';
+    const conversationIdFromData =
+      (data as any)?.conversation_id ? String((data as any).conversation_id) : '';
+    const conversationIdFromActionUrl = (() => {
+      const m = actionUrl.match(/\/messages\/([^/?#]+)/i);
+      return m?.[1] || '';
+    })();
+    const collapseId =
+      type === 'message'
+        ? `msg_${conversationIdFromData || conversationIdFromActionUrl || 'inbox'}`
+        : (data as any)?.session_id
+          ? `sess_${String((data as any).session_id)}`
+          : (data as any)?.booking_id
+            ? `book_${String((data as any).booking_id)}`
+            : undefined;
+
     const message: import('firebase-admin').messaging.MulticastMessage = {
       notification: notificationPayload,
       data: data ? Object.fromEntries(
@@ -192,13 +211,16 @@ export async function sendPushNotification({
       ) : undefined,
       android: {
         priority: priority === 'high' ? 'high' : 'normal',
+        ...(collapseId ? { collapseKey: collapseId } : {}),
         notification: {
           sound: 'default',
           channelId: 'prepskul_notifications',
+          ...(collapseId ? { tag: collapseId } : {}), // replaces previous notification with same tag
           ...(imageUrl ? { imageUrl } : {}), // Android rich notification image
         },
       },
       apns: {
+        ...(collapseId ? { headers: { 'apns-collapse-id': collapseId } } : {}),
         payload: {
           aps: {
             sound: 'default',
