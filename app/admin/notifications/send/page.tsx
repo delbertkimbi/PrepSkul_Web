@@ -152,9 +152,17 @@ export default function SendNotificationPage() {
         const result = data.channels || {};
         const inAppStatus = result.inApp?.success ? '✅' : '❌';
         const emailStatus = result.email?.sent ? '✅' : (formData.sendEmail ? '❌' : '⏭️');
-        const pushStatus = result.push?.sent > 0 
-          ? `✅ (${result.push.sent} device${result.push.sent > 1 ? 's' : ''})` 
-          : (formData.sendPush ? '❌ (no FCM token)' : '⏭️');
+        const pushStatus = (() => {
+          if (!formData.sendPush) return '⏭️';
+          const sent = Number(result.push?.sent || 0);
+          const errors = Number(result.push?.errors || 0);
+          const errMsg = result.push?.error ? String(result.push.error) : '';
+          if (sent > 0) {
+            return `✅ (${sent} device${sent > 1 ? 's' : ''}${errors > 0 ? `, ${errors} error${errors > 1 ? 's' : ''}` : ''})`;
+          }
+          if (errMsg) return `❌ (${errMsg})`;
+          return '❌ (no FCM token or push disabled)';
+        })();
 
         toast.success(`Notification sent to ${selectedUser.fullName}!`, {
           description: `In-app: ${inAppStatus} | Email: ${emailStatus} | Push: ${pushStatus}`,

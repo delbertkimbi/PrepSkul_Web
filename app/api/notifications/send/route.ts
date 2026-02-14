@@ -5,6 +5,9 @@ import { sendNotificationEmail } from '@/lib/notifications';
 import { shouldReceiveNotification } from '@/lib/services/notification-permission-service';
 import { checkRateLimit } from '@/lib/services/rate-limiter';
 
+// Required: push notifications use `firebase-admin` which needs Node.js runtime (not Edge).
+export const runtime = 'nodejs';
+
 /**
  * Send Notification API
  * 
@@ -395,7 +398,7 @@ export async function POST(request: NextRequest) {
           results.push = { success: false, sent: 0, errors: 0, error: 'Firebase Admin not configured' };
           return NextResponse.json({
             success: true,
-            notificationId: notification.id,
+            notificationId: notification?.id,
             channels: results,
           });
         }

@@ -48,7 +48,11 @@ export async function generateTutorMetadata(tutorIdParam: string): Promise<Metad
   }
 
   const tutorName = profile.full_name || 'Tutor';
-  const tutorAvatar = profile.avatar_url || null;
+  // Prefer profiles.avatar_url, but many tutors store their photo on tutor_profiles.profile_photo_url.
+  const tutorAvatar =
+    (profile.avatar_url as string | null) ||
+    (tutor.profile_photo_url as string | null) ||
+    null;
 
   const subjects = tutor.subjects as string[] | string | null;
   const subjectsArray = Array.isArray(subjects)
