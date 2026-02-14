@@ -60,7 +60,8 @@ export async function generateTutorMetadata(tutorIdParam: string): Promise<Metad
     : typeof subjects === 'string'
       ? [subjects]
       : [];
-  const subjectsText = subjectsArray.length > 0 ? subjectsArray.join(', ') : 'Tutor';
+  // If subjects are missing, avoid "Tutor Tutor" duplication in titles.
+  const subjectsText = subjectsArray.length > 0 ? subjectsArray.join(', ') : '';
 
   const bio =
     (tutor.bio as string | null) ||
@@ -74,7 +75,9 @@ export async function generateTutorMetadata(tutorIdParam: string): Promise<Metad
       ? `⭐ ${rating.toFixed(1)}${totalReviews > 0 ? ` (${totalReviews} reviews)` : ''}`
       : '';
 
-  let description = `Book ${tutorName} for ${subjectsText} tutoring sessions`;
+  let description = subjectsText
+    ? `Book ${tutorName} for ${subjectsText} tutoring sessions`
+    : `Book ${tutorName} for tutoring sessions`;
   if (ratingText.length > 0) {
     description += ` • ${ratingText}`;
   }
@@ -105,10 +108,14 @@ export async function generateTutorMetadata(tutorIdParam: string): Promise<Metad
   }
 
   return {
-    title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
+    title: subjectsText
+      ? `${tutorName} - ${subjectsText} Tutor on PrepSkul`
+      : `${tutorName} - Tutor on PrepSkul`,
     description,
     openGraph: {
-      title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
+      title: subjectsText
+        ? `${tutorName} - ${subjectsText} Tutor on PrepSkul`
+        : `${tutorName} - Tutor on PrepSkul`,
       description,
       url: tutorUrl,
       siteName: 'PrepSkul',
@@ -124,7 +131,9 @@ export async function generateTutorMetadata(tutorIdParam: string): Promise<Metad
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
+      title: subjectsText
+        ? `${tutorName} - ${subjectsText} Tutor on PrepSkul`
+        : `${tutorName} - Tutor on PrepSkul`,
       description,
       images: [imageUrl],
     },

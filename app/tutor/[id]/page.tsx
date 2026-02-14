@@ -44,6 +44,7 @@ export default async function TutorPage({
   const { id } = await params;
   const headersList = await headers();
   const userAgent = headersList.get('user-agent') || '';
+  const uaLower = userAgent.toLowerCase();
 
   // IMPORTANT:
   // Do NOT HTTP-redirect here. Many link preview engines (Facebook/WhatsApp/Telegram/etc.)
@@ -58,6 +59,14 @@ export default async function TutorPage({
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
   const deepLink = `prepskul://tutor/${id}`;
   const webAppUrl = `${appUrl}/#/tutor/${id}`;
+  const isAndroidBrowser = uaLower.includes('android') && !isMobileApp;
+  // Android Chrome supports intent:// which opens the app if installed (more reliable than scheme links).
+  // Falls back to the web app automatically.
+  const androidIntentUrl = `intent://tutor/${encodeURIComponent(
+    id
+  )}#Intent;scheme=prepskul;package=com.prepskul.app;S.browser_fallback_url=${encodeURIComponent(
+    webAppUrl
+  )};end`;
 
   // Fetch tutor data
   let tutor = null;
@@ -130,8 +139,10 @@ export default async function TutorPage({
     <>
       {!isCrawler(userAgent) && (
         <AutoRedirect
-          to={isMobileApp ? deepLink : webAppUrl}
-          fallbackTo={isMobileApp ? webAppUrl : undefined}
+          to={isMobileApp ? deepLink : isAndroidBrowser ? androidIntentUrl : webAppUrl}
+          // For Android intent:// links, the fallback is already handled by the intent itself.
+          // Adding a JS fallback timer can "steal" the navigation and force users into the web app.
+          fallbackTo={isAndroidBrowser ? undefined : webAppUrl}
           fallbackDelayMs={900}
         />
       )}
