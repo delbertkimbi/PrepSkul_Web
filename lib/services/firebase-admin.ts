@@ -117,6 +117,15 @@ export async function sendPushNotification({
       return { success: false, sent: 0, errors: 0 };
     }
 
+    // Helpful diagnostics (safe): confirms which Supabase project this deployment uses.
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+      const ref = supabaseUrl.match(/https:\/\/([a-z0-9-]+)\.supabase\.co/i)?.[1] || 'unknown-ref';
+      console.log(`ℹ️ FCM token lookup: user=${userId} tokens=${tokens?.length ?? 0} supabase_ref=${ref}`);
+    } catch {
+      // ignore logging failures
+    }
+
     if (!tokens || tokens.length === 0) {
       console.log(`ℹ️ No FCM tokens found for user ${userId}`);
       return { success: true, sent: 0, errors: 0 };
