@@ -55,8 +55,28 @@ export class WebhookService {
    */
   extractAudioFiles(payload: WebhookPayload): AudioFile[] {
     const fileList = payload.payload.serverResponse?.fileList || [];
+    
+    // Log webhook payload for debugging
+    console.log(`[WebhookService] Extracting audio files from webhook. Total files: ${fileList.length}`);
+    console.log(`[WebhookService] Webhook payload structure:`, JSON.stringify({
+      eventType: payload.eventType,
+      notifyId: payload.notifyId,
+      resourceId: payload.payload.resourceId,
+      sid: payload.payload.sid,
+      fileListCount: fileList.length,
+      fileList: fileList.map(f => ({
+        fileName: f.fileName,
+        trackType: f.trackType,
+        uid: f.uid,
+        fileUrl: f.fileUrl,
+      })),
+    }, null, 2));
+    
     // Filter for audio files only
-    return fileList.filter(file => file.trackType === 'audio');
+    const audioFiles = fileList.filter(file => file.trackType === 'audio');
+    console.log(`[WebhookService] Found ${audioFiles.length} audio files`);
+    
+    return audioFiles;
   }
 
   /**
@@ -147,10 +167,22 @@ export class WebhookService {
       audioFiles.map(async (file) => {
         const participant = await this.mapAgoraUidToParticipant(sessionId, file.uid);
         
-        // Construct file URL (Agora provides fileList but URLs may need to be constructed)
-        // The actual URL format depends on Agora's storage configuration
-        // For now, we'll use fileName and construct URL if needed
-        const fileUrl = file.fileUrl || `https://agora-cloud-storage/${file.fileName}`;
+        // Agora provides fileUrl in the webhook payload
+        // If not provided, we need to construct it from fileName
+        // Check Agora documentation for your storage configuration
+        let fileUrl = file.fileUrl;
+        
+        if (!fileUrl) {
+          // Log warning - this should not happen if Agora is configured correctly
+          console.warn(`[WebhookService] No fileUrl provided for file ${file.fileName}, uid ${file.uid}`);
+          console.warn(`[WebhookService] Full file object:`, JSON.stringify(file, null, 2));
+          
+          // Try to construct URL from fileName (this may need adjustment based on your Agora storage config)
+          // Agora typically provides URLs in format: https://<bucket>.s3.amazonaws.com/<path>/<filename>
+          fileUrl = `https://agora-cloud-storage/${file.fileName}`;
+        }
+
+        console.log(`[WebhookService] Processing audio file: ${file.fileName}, URL: ${fileUrl}, UID: ${file.uid}`);
 
         return {
           agoraUid: file.uid,

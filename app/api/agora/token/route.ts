@@ -20,8 +20,12 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
   const allowedOrigins = [
     'http://localhost:3000',
-    'http://localhost:8080',
+    'http://localhost:3001',
     'http://localhost:5000',
+    'http://localhost:5001',
+    'http://localhost:8080',
+    'http://localhost:8888',
+    'http://localhost:52988', // Flutter web default dev server
     'http://127.0.0.1:3000',
     'http://127.0.0.1:8080',
     'http://127.0.0.1:5000',
@@ -340,8 +344,12 @@ export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin');
   const allowedOrigins = [
     'http://localhost:3000',
-    'http://localhost:8080',
+    'http://localhost:3001',
     'http://localhost:5000',
+    'http://localhost:5001',
+    'http://localhost:8080',
+    'http://localhost:8888',
+    'http://localhost:52988', // Flutter web default dev server
     'http://127.0.0.1:3000',
     'http://127.0.0.1:8080',
     'http://127.0.0.1:5000',

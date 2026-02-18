@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendNotificationEmail } from '@/lib/notifications';
 
+// Uses firebase-admin for push; ensure Node.js runtime on Vercel.
+export const runtime = 'nodejs';
+
 /**
  * Process Scheduled Notifications Cron Job
  *

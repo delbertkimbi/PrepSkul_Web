@@ -1,8 +1,11 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { redirect } from 'next/navigation';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { generateTutorMetadata } from '@/lib/tutor-metadata';
+import AutoRedirect from './AutoRedirect';
 import TutorProfilePreview from './TutorProfilePreview';
+import OpeningAppScreen from './OpeningAppScreen';
 
 export async function generateMetadata({
   params,
@@ -10,130 +13,27 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createServerSupabaseClient();
+  return generateTutorMetadata(id);
+}
 
-  // Fetch tutor data for Open Graph metadata
-  let tutor = null;
-  let profile = null;
+// Crawler UAs that must receive HTML with OG meta tags (no redirect)
+const CRAWLER_UA_PATTERNS = [
+  'WhatsAppBot',
+  'facebookexternalhit',
+  'Facebot',
+  'Twitterbot',
+  'TelegramBot',
+  'LinkedInBot',
+  'Slackbot',
+  'Discordbot',
+  'Pinterest',
+  'Googlebot',
+  'bingbot',
+];
 
-  // Try by user_id first (most common case)
-  const { data: tutorById } = await supabase
-    .from('tutor_profiles')
-    .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email)')
-    .eq('user_id', id)
-    .eq('status', 'approved')
-    .neq('is_hidden', true)
-    .maybeSingle();
-
-  if (tutorById) {
-    tutor = tutorById;
-    profile = tutorById.profiles;
-  } else {
-    // Try by tutor_profiles.id as fallback
-    const { data: tutorByTutorId } = await supabase
-      .from('tutor_profiles')
-      .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email)')
-      .eq('id', id)
-      .eq('status', 'approved')
-      .neq('is_hidden', true)
-      .maybeSingle();
-
-    if (tutorByTutorId) {
-      tutor = tutorByTutorId;
-      profile = tutorByTutorId.profiles;
-    }
-  }
-
-  if (!tutor || !profile) {
-    return {
-      title: 'Tutor Not Found - PrepSkul',
-      description: 'The tutor profile you are looking for could not be found.',
-    };
-  }
-
-  const tutorName = (profile as any)?.full_name || 'Tutor';
-  const tutorAvatar = (profile as any)?.avatar_url || null;
-  const subjects = tutor.subjects as string[] | string | null;
-  const subjectsArray = Array.isArray(subjects) 
-    ? subjects 
-    : (typeof subjects === 'string' ? [subjects] : []);
-  const subjectsText = subjectsArray.length > 0 
-    ? subjectsArray.join(', ') 
-    : 'Tutor';
-  
-  // Get bio from multiple possible sources (bio, personal_statement, motivation)
-  const bio = (tutor.bio as string | null) || 
-              (tutor.personal_statement as string | null) ||
-              (tutor.motivation as string | null);
-  
-  // Create rich description for link preview
-  const rating = tutor.rating || tutor.admin_approved_rating || 0;
-  const totalReviews = tutor.total_reviews || 0;
-  const ratingText = rating > 0 ? `⭐ ${rating.toFixed(1)}${totalReviews > 0 ? ` (${totalReviews} reviews)` : ''}` : '';
-  
-  let description = `Book ${tutorName} for ${subjectsText} tutoring sessions`;
-  if (ratingText.length > 0) {
-    description += ` • ${ratingText}`;
-  }
-  if (bio && bio.trim().length > 0) {
-    // Clean bio (remove "Hello!" if present) and truncate
-    const cleanBio = bio.replaceAll(/^Hello!?\s*/i, '').trim();
-    description += `. ${cleanBio.substring(0, 120)}${cleanBio.length > 120 ? '...' : ''}`;
-  } else {
-    description += '. Verified tutor on PrepSkul.';
-  }
-  
-  const tutorId = tutor.user_id || tutor.id;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
-  const tutorUrl = `${baseUrl}/tutor/${tutorId}`;
-  
-  // Ensure image URL is absolute and publicly accessible
-  let imageUrl: string;
-  if (tutorAvatar) {
-    // If avatar URL is already absolute, use it; otherwise make it absolute
-    if (tutorAvatar.startsWith('http://') || tutorAvatar.startsWith('https://')) {
-      imageUrl = tutorAvatar;
-    } else if (tutorAvatar.startsWith('/')) {
-      // Relative URL - prepend base URL
-      imageUrl = `${baseUrl}${tutorAvatar}`;
-    } else {
-      // Supabase storage URL - ensure it's absolute
-      // Supabase URLs are typically already absolute, but check anyway
-      imageUrl = tutorAvatar.startsWith('http') ? tutorAvatar : `${baseUrl}${tutorAvatar}`;
-    }
-  } else {
-    // Fallback to PrepSkul logo
-    imageUrl = `${baseUrl}/logo.jpg`;
-  }
-
-  return {
-    title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
-    description,
-    openGraph: {
-      title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
-      description,
-      url: tutorUrl,
-      siteName: 'PrepSkul',
-      images: [
-        {
-          url: imageUrl,
-          width: 1200,
-          height: 630,
-          alt: `${tutorName} - PrepSkul Tutor`,
-        },
-      ],
-      type: 'profile',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${tutorName} - ${subjectsText} Tutor on PrepSkul`,
-      description,
-      images: [imageUrl],
-    },
-    alternates: {
-      canonical: tutorUrl,
-    },
-  };
+function isCrawler(userAgent: string): boolean {
+  const ua = userAgent.toLowerCase();
+  return CRAWLER_UA_PATTERNS.some((p) => ua.includes(p.toLowerCase()));
 }
 
 export default async function TutorPage({
@@ -144,25 +44,38 @@ export default async function TutorPage({
   const { id } = await params;
   const headersList = await headers();
   const userAgent = headersList.get('user-agent') || '';
-  
-  // Detect mobile app user agents or deep link requests
-  const isMobileApp = userAgent.includes('PrepSkul') || 
-                      userAgent.includes('prepskul') ||
-                      headersList.get('x-requested-with') === 'com.prepskul.app';
-  
-  // If mobile app detected, redirect to app deep link
-  if (isMobileApp) {
-    redirect(`prepskul://tutor/${id}`);
-  }
+  const uaLower = userAgent.toLowerCase();
 
-  const supabase = await createServerSupabaseClient();
+  // IMPORTANT:
+  // Do NOT HTTP-redirect here. Many link preview engines (Facebook/WhatsApp/Telegram/etc.)
+  // either do not identify as crawlers or will follow redirects to Flutter Web, which
+  // loses the tutor-specific OG metadata. Instead: always return 200 HTML with metadata,
+  // and use a client-side redirect for real users.
+  const isMobileApp =
+    userAgent.includes('PrepSkul') ||
+    userAgent.includes('prepskul') ||
+    headersList.get('x-requested-with') === 'com.prepskul.app';
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
+  const deepLink = `prepskul://tutor/${id}`;
+  const webAppUrl = `${appUrl}/#/tutor/${id}`;
+  const isAndroidBrowser = uaLower.includes('android') && !isMobileApp;
+  // Android Chrome supports intent:// which opens the app if installed (more reliable than scheme links).
+  // Falls back to the web app automatically.
+  const androidIntentUrl = `intent://tutor/${encodeURIComponent(
+    id
+  )}#Intent;scheme=prepskul;package=com.prepskul.app;S.browser_fallback_url=${encodeURIComponent(
+    webAppUrl
+  )};end`;
 
   // Fetch tutor data
   let tutor = null;
   let profile = null;
 
   // Try by user_id first (most common case)
-  const { data: tutorById } = await supabase
+  const supabaseAdmin = getSupabaseAdmin();
+
+  const { data: tutorById } = await supabaseAdmin
     .from('tutor_profiles')
     .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email, phone_number)')
     .eq('user_id', id)
@@ -175,7 +88,7 @@ export default async function TutorPage({
     profile = tutorById.profiles;
   } else {
     // Try by tutor_profiles.id as fallback
-    const { data: tutorByTutorId } = await supabase
+    const { data: tutorByTutorId } = await supabaseAdmin
       .from('tutor_profiles')
       .select('*, profiles!tutor_profiles_user_id_fkey(full_name, avatar_url, email, phone_number)')
       .eq('id', id)
@@ -207,13 +120,14 @@ export default async function TutorPage({
   }
 
   // Check if user is authenticated
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabaseUserClient = await createServerSupabaseClient();
+  const { data: { user } } = await supabaseUserClient.auth.getUser();
   const isAuthenticated = !!user;
 
   // Get user role if authenticated
   let userRole: string | null = null;
   if (user) {
-    const { data: userProfile } = await supabase
+    const { data: userProfile } = await supabaseUserClient
       .from('profiles')
       .select('user_type')
       .eq('id', user.id)
@@ -222,12 +136,27 @@ export default async function TutorPage({
   }
 
   return (
-    <TutorProfilePreview 
-      tutor={tutor} 
-      profile={profile as any}
-      isAuthenticated={isAuthenticated}
-      userRole={userRole}
-      tutorId={tutor.user_id || tutor.id}
-    />
+    <>
+      {/* Always attempt to open the app for real users. Scrapers don't execute JS, so OG tags remain safe. */}
+      <AutoRedirect
+        to={isMobileApp ? deepLink : isAndroidBrowser ? androidIntentUrl : webAppUrl}
+        // For Android intent:// links, the fallback is already handled by the intent itself.
+        fallbackTo={isAndroidBrowser ? undefined : webAppUrl}
+        fallbackDelayMs={900}
+      />
+
+      {/* UX: show a branded deep-blue opening screen during redirect to avoid UI flash. */}
+      {!isCrawler(userAgent) ? (
+        <OpeningAppScreen />
+      ) : (
+        <TutorProfilePreview
+          tutor={tutor}
+          profile={profile as any}
+          isAuthenticated={isAuthenticated}
+          userRole={userRole}
+          tutorId={tutor.user_id || tutor.id}
+        />
+      )}
+    </>
   );
 }

@@ -95,6 +95,21 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
+  // PRIORITY 2e: Handle /tutor/[id] (share links and OG metadata - no locale)
+  // Served by app/tutor/[id]/page.tsx for rich previews and redirects
+  if (pathname.startsWith('/tutor/')) {
+    return NextResponse.next()
+  }
+
+  // Redirect locale-prefixed tutor URLs to canonical /tutor/[id] (avoids 404)
+  // e.g. /en/tutor/507fc02b-... or /fr/tutor/xxx -> /tutor/507fc02b-...
+  for (const locale of locales) {
+    if (pathname.startsWith(`/${locale}/tutor/`)) {
+      const tutorPath = pathname.slice(locale.length + 1) // '/tutor/xxx'
+      return NextResponse.redirect(new URL(tutorPath, request.url))
+    }
+  }
+  
   // PRIORITY 3: Handle locale redirection for main site only
   const pathnameIsMissingLocale = locales.every(
     (locale) => !pathname.startsWith(`/${locale}/`) && pathname !== `/${locale}`

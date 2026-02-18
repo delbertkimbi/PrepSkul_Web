@@ -4,7 +4,7 @@ This document describes the implementation of the Agora Cloud Recording transcri
 
 ## Overview
 
-The pipeline records audio-only sessions using Agora Cloud Recording in Individual Mode, transcribes each participant's audio separately using OpenAI Whisper API, stores timestamped transcripts in Supabase, and automatically deletes raw audio files after successful transcription.
+The pipeline records audio-only sessions using Agora Cloud Recording in Individual Mode, transcribes each participant's audio separately using Deepgram API, stores timestamped transcripts in Supabase, and automatically deletes raw audio files after successful transcription.
 
 ## Architecture
 
@@ -19,7 +19,7 @@ Agora Webhook → Next.js Backend
     ↓
 Extract Audio URLs & UIDs → Enqueue Transcription Jobs
     ↓
-Download Audio → Transcribe with Whisper API → Store Transcripts in Supabase
+Download Audio → Transcribe with Deepgram API → Store Transcripts in Supabase
     ↓
 Delete Audio Files → Log Cleanup
 ```
@@ -157,15 +157,17 @@ Body: {
 
 ## Cost Analysis
 
-**OpenAI Whisper API:** $0.006 per minute
-- Per 61-minute session: ~$0.37
-- 100 sessions/month: ~$37/month
-- 500 sessions/month: ~$185/month
+**Deepgram API:** 
+- Free tier: $200 credit (no credit card required) = ~418 sessions (61 min each)
+- Paid tier: $0.0043 per minute (Nova-2 model)
+- Per 61-minute session: ~$0.26 (paid tier)
+- 100 sessions/month: ~$26/month (paid tier)
+- 500 sessions/month: ~$131/month (paid tier)
 
-**Cost Optimization Options:**
-- Self-hosted Whisper (free, requires GPU)
-- Deepgram free tier (12,000 minutes/month)
-- Google Cloud Speech-to-Text free tier (60 minutes/month)
+**Free Tier Benefits:**
+- $200 free credit (enough for ~418 sessions)
+- No credit card required
+- High-quality transcription with Nova-2 model
 
 ## Features
 

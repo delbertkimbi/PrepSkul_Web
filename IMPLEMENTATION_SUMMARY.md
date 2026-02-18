@@ -96,9 +96,9 @@ The webhook service constructs file URLs based on Agora's fileList. You may need
 The cleanup service currently marks files for auto-cleanup by Agora. If Agora provides a delete API, implement it in `cleanup.service.ts` → `attemptDelete()`.
 
 ### Cost Considerations
-- OpenAI Whisper: $0.006/minute (~$0.37 per 61-minute session)
-- Consider migrating to Deepgram free tier (12,000 minutes/month) if costs become a concern
-- Self-hosted Whisper is free but requires GPU infrastructure
+- Deepgram: Free tier with $200 credit (~418 sessions), then $0.0043/minute (~$0.26 per 61-minute session)
+- Deepgram free tier: No credit card required, $200 credit covers ~418 sessions
+- High-quality transcription with Nova-2 model
 
 ## 📚 Documentation
 See `README_AGORA_TRANSCRIPTION.md` for detailed documentation on:
