@@ -1,10 +1,12 @@
 /**
  * Cleanup Service
- * 
- * Handles deletion of audio files after successful transcription
+ *
+ * Handles deletion of audio files after successful transcription.
+ * Triggers PrepSkul VA processing (summary/analysis) when transcription completes.
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { processSession as vaProcessSession } from '@/lib/services/va/va.service';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -171,7 +173,14 @@ export class CleanupService {
         .eq('session_id', sessionId);
 
       console.log(`[CleanupService] Transcription completed for session ${sessionId}`);
-      
+
+      // Trigger VA processing (idempotent: summary, analysis, notifications)
+      try {
+        await vaProcessSession(sessionId);
+      } catch (vaError) {
+        console.error('[CleanupService] VA processing failed (non-fatal):', vaError);
+      }
+
       // Note: Actual file cleanup is handled per-file in deleteAudioFile
       // This method just marks transcription as complete
     } catch (error) {
