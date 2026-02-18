@@ -134,7 +134,7 @@ export class DeepgramClient {
 
       const data: DeepgramApiResponse = await response.json();
       
-      // Convert Deepgram response to Whisper-compatible format
+      // Convert Deepgram response to standard format
       return this.convertDeepgramResponse(data);
     } catch (error) {
       console.error('[DeepgramClient] Transcription failed:', error);
@@ -189,7 +189,7 @@ export class DeepgramClient {
 
       const data: DeepgramApiResponse = await response.json();
       
-      // Convert Deepgram response to Whisper-compatible format
+      // Convert Deepgram response to standard format
       return this.convertDeepgramResponse(data);
     } catch (error) {
       console.error('[DeepgramClient] Failed to transcribe from URL:', error);
@@ -198,7 +198,7 @@ export class DeepgramClient {
   }
 
   /**
-   * Convert Deepgram API response to Whisper-compatible format
+   * Convert Deepgram API response to standard transcript format
    */
   private convertDeepgramResponse(data: DeepgramApiResponse): DeepgramResponse {
     const channel = data.results.channels[0];

@@ -23,9 +23,12 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
+    
+    console.log(`[Webhook] Received webhook: eventType=${payload.eventType}, notifyId=${payload.notifyId}`);
 
     // Validate webhook payload
     if (!webhookService.validateWebhookPayload(payload)) {
+      console.error('[Webhook] Invalid webhook payload:', JSON.stringify(payload, null, 2));
       return NextResponse.json(
         { error: 'Invalid webhook payload' },
         { status: 400 }
@@ -53,10 +56,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Process webhook and extract audio files
+    console.log(`[Webhook] Processing webhook for resourceId=${resourceId}, sid=${sid}`);
     const { sessionId, audioFiles } = await webhookService.processWebhook(payload);
+    console.log(`[Webhook] Extracted ${audioFiles.length} audio files for session ${sessionId}`);
 
     // Update recording status
     await webhookService.updateRecordingStatus(sessionId, 'uploaded');
+    console.log(`[Webhook] Updated recording status to 'uploaded' for session ${sessionId}`);
 
     // Update transcription status to processing
     await supabase
@@ -134,7 +140,25 @@ export async function POST(request: NextRequest) {
 
 // Handle GET for webhook verification (if Agora requires it)
 export async function GET(request: NextRequest) {
+  const url = new URL(request.url);
+  const test = url.searchParams.get('test');
+  
+  if (test === 'true') {
+    // Return detailed endpoint info for testing
+    return NextResponse.json({
+      message: 'Agora recording webhook endpoint',
+      endpoint: '/api/webhooks/agora/recording',
+      method: 'POST',
+      status: 'active',
+      expectedEvent: 'recording_file_ready',
+      timestamp: new Date().toISOString(),
+    });
+  }
+  
   return NextResponse.json({
     message: 'Agora recording webhook endpoint',
+    endpoint: '/api/webhooks/agora/recording',
+    method: 'POST',
+    status: 'active',
   });
 }

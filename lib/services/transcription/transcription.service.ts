@@ -102,8 +102,8 @@ export class TranscriptionService {
       startTime: segment.start,
       endTime: segment.end,
       text: segment.text.trim(),
-      // Use avg_logprob as confidence indicator (higher is better)
-      confidence: segment.avg_logprob ? Math.exp(segment.avg_logprob) : undefined,
+      // Use Deepgram confidence directly (0-1 scale, higher is better)
+      confidence: segment.confidence,
     }));
   }
 
