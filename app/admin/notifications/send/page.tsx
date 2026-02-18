@@ -155,8 +155,9 @@ export default function SendNotificationPage() {
           toast.error('Segment send failed', { description: data?.error || 'Unknown error' });
           return;
         }
+        const emailInfo = data.email?.attempted ? ` | Email sent: ${data.email.sent}${data.email.errors > 0 ? ` (${data.email.errors} failed)` : ''}` : '';
         toast.success('Segment notification sent', {
-          description: `Recipients: ${data.sentTo}/${data.totalMatched}${data.push?.attempted ? ` | Push delivered: ${data.push?.sentUsers}` : ''}${data.note ? ` | ${data.note}` : ''}`,
+          description: `Recipients: ${data.sentTo}/${data.totalMatched}${data.push?.attempted ? ` | Push delivered: ${data.push?.sentUsers}` : ''}${emailInfo}${data.note ? ` | ${data.note}` : ''}`,
           duration: 10000,
         });
       } catch (e: any) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { sendNotificationEmail } from '@/lib/notifications';
 
 export const runtime = 'nodejs';
 
@@ -170,6 +171,7 @@ export async function POST(request: NextRequest) {
     const actionUrl = body?.actionUrl ? String(body.actionUrl) : '';
     const actionText = body?.actionText ? String(body.actionText) : '';
     const sendPush = body?.sendPush === true;
+    const sendEmail = body?.sendEmail === true;
 
     const activeDays = Number(body?.activeDays || DEFAULT_ACTIVE_DAYS);
     const limit = Math.min(Number(body?.limit || DEFAULT_LIMIT), 500); // hard cap
@@ -251,6 +253,37 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Send email to each recipient who has an email and (optionally) has not disabled email channel
+    let emailResult = { attempted: false, sent: 0, errors: 0, error: '' as string | null };
+    if (sendEmail && userIds.length > 0) {
+      emailResult.attempted = true;
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', userIds);
+      const profileById = new Map((profiles || []).map((p: any) => [String(p.id), p]));
+
+      for (const uid of userIds) {
+        const profile = profileById.get(uid);
+        if (!profile?.email) continue;
+        try {
+          const { success } = await sendNotificationEmail({
+            recipientEmail: profile.email,
+            recipientName: profile.full_name || 'User',
+            subject: title,
+            title,
+            message,
+            actionUrl: actionUrl || undefined,
+            actionText: actionText || undefined,
+          });
+          if (success) emailResult.sent += 1;
+          else emailResult.errors += 1;
+        } catch (e: any) {
+          emailResult.errors += 1;
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       segment,
@@ -258,6 +291,7 @@ export async function POST(request: NextRequest) {
       totalMatched: allIds.length,
       sentTo: userIds.length,
       push,
+      email: emailResult,
       note: limit < allIds.length ? `Capped at ${limit}. Increase limit carefully or implement queued sending.` : undefined,
     });
   } catch (e: any) {
