@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     if (!sessionId) {
       return NextResponse.json(
         { error: 'sessionId is required' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (sessionError || !session) {
       return NextResponse.json(
         { error: 'Session not found' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (session.tutor_id !== user.id && session.learner_id !== user.id) {
       return NextResponse.json(
         { error: 'Forbidden: You are not a participant in this session' },
-        { status: 403 }
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (!session.recording_resource_id || !session.recording_sid) {
       return NextResponse.json(
         { error: 'No active recording found' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -102,12 +102,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       message: 'Recording stopped successfully',
-    });
+    }, { headers: corsHeaders });
   } catch (error: any) {
     console.error('[Recording Stop] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to stop recording' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
+}
+
+// CORS preflight handler
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(request),
+  });
 }
