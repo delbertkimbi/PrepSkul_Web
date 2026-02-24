@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
           action_text: 'View Session',
           icon: undefined,
           sendEmail: true, // Enable email for all session reminders
-          sendPush: reminder.type === '1_hour' || reminder.type === '15_minutes', // Push only for urgent reminders
+          sendPush: true, // Enable push notifications for all session reminders
         },
       });
 
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
           action_text: 'View Session',
           icon: undefined,
           sendEmail: true, // Enable email for all session reminders
-          sendPush: reminder.type === '1_hour' || reminder.type === '15_minutes', // Push only for urgent reminders
+          sendPush: true, // Enable push notifications for all session reminders
         },
       });
     }
