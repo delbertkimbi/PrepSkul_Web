@@ -41,6 +41,8 @@ interface Tutor {
   location?: string;
   bio?: string;
   status: string;
+  matchScore?: number;
+  available_schedule?: string[];
   profiles?: {
     id: string;
     full_name: string;
@@ -53,6 +55,9 @@ interface TutorMatchingClientProps {
   request: TutorRequest;
   matchingTutors: Tutor[];
   suggestedTutors: Tutor[];
+  totalTutors?: number;
+  currentPage?: number;
+  totalPages?: number;
 }
 
 export default function TutorMatchingClient({ 
@@ -66,6 +71,22 @@ export default function TutorMatchingClient({
   const [selectedTutorId, setSelectedTutorId] = useState(request.matched_tutor_id || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Tutor[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteName, setInviteName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [inviteNotes, setInviteNotes] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+  const [showPotentialMatchModal, setShowPotentialMatchModal] = useState(false);
+  const [selectedTutorForPotential, setSelectedTutorForPotential] = useState<Tutor | null>(null);
+  const [potentialMatchReason, setPotentialMatchReason] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterPriceMin, setFilterPriceMin] = useState<number | ''>('');
+  const [filterPriceMax, setFilterPriceMax] = useState<number | ''>('');
+  const [filterAvailability, setFilterAvailability] = useState(false);
 
   const handleStatusUpdate = async (newStatus: string) => {
     setLoading(true);
@@ -143,6 +164,135 @@ export default function TutorMatchingClient({
     if (!price) return 'Not specified';
     const num = typeof price === 'string' ? parseInt(price.replace(/[^0-9]/g, '')) : price;
     return `${num.toLocaleString()} XAF`;
+  };
+
+  const handleSearchTutors = async () => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setError('Please enter at least 2 characters to search');
+      return;
+    }
+
+    setIsSearching(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/admin/tutor-requests/${request.id}/search-tutors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: searchQuery.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to search tutors');
+      }
+
+      const data = await response.json();
+      setSearchResults(data.tutors || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to search tutors');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleInviteExternalTutor = async () => {
+    if (!inviteName.trim() || !inviteEmail.trim()) {
+      setError('Name and email are required');
+      return;
+    }
+
+    setIsInviting(true);
+    setError('');
+
+    try {
+      const response = await fetch(`/api/admin/tutor-requests/${request.id}/invite-external-tutor`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: inviteName.trim(),
+          email: inviteEmail.trim(),
+          phone: invitePhone.trim() || null,
+          notes: inviteNotes.trim() || null,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to invite tutor');
+      }
+
+      const data = await response.json();
+      setShowInviteModal(false);
+      setInviteName('');
+      setInviteEmail('');
+      setInvitePhone('');
+      setInviteNotes('');
+      router.refresh();
+      alert(`Tutor invited successfully! ${data.tutor.isNewUser ? 'New account created.' : 'Existing account found.'}`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to invite tutor');
+    } finally {
+      setIsInviting(false);
+    }
+  };
+
+  const handleMarkPotentialMatch = (tutor: Tutor) => {
+    setSelectedTutorForPotential(tutor);
+    setShowPotentialMatchModal(true);
+    setPotentialMatchReason('');
+  };
+
+  const handleSavePotentialMatch = async () => {
+    if (!selectedTutorForPotential || !potentialMatchReason.trim()) {
+      setError('Please provide a reason for marking as potential match');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const currentNotes = adminNotes || '';
+      const newNotes = currentNotes
+        ? `${currentNotes}\n\nPotential match: ${selectedTutorForPotential.profiles?.full_name || 'Tutor'} - ${potentialMatchReason.trim()}`
+        : `Potential match: ${selectedTutorForPotential.profiles?.full_name || 'Tutor'} - ${potentialMatchReason.trim()}`;
+
+      const response = await fetch(`/api/admin/tutor-requests/${request.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          admin_notes: newNotes,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save potential match note');
+      }
+
+      setAdminNotes(newNotes);
+      setShowPotentialMatchModal(false);
+      setSelectedTutorForPotential(null);
+      setPotentialMatchReason('');
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || 'Failed to save potential match');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAssignWithWarning = async (tutor: Tutor) => {
+    const isPotentialMatch = adminNotes?.toLowerCase().includes(`potential match: ${tutor.profiles?.full_name?.toLowerCase()}`);
+    
+    if (isPotentialMatch) {
+      const confirmed = window.confirm(
+        `This tutor doesn't meet all criteria but was marked as a potential match. Do you want to proceed with assignment?`
+      );
+      if (!confirmed) return;
+    }
+
+    await handleAssignTutor(tutor.id);
   };
 
   return (
@@ -252,6 +402,132 @@ export default function TutorMatchingClient({
         </div>
       </div>
 
+      {/* Manual Tutor Search */}
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          Search for Tutor
+        </h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Search by name, email, phone number, or subject
+        </p>
+        <div className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSearchTutors();
+              }
+            }}
+            placeholder="Enter tutor name, email, phone, or subject..."
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <button
+            onClick={handleSearchTutors}
+            disabled={isSearching || !searchQuery.trim()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSearching ? 'Searching...' : 'Search'}
+          </button>
+        </div>
+
+        {searchResults.length > 0 && (
+          <div className="mt-4 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Search Results ({searchResults.length})
+            </h3>
+            {searchResults.map((tutor) => (
+              <div
+                key={tutor.id}
+                className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h4 className="text-lg font-semibold text-gray-900">
+                        {tutor.profiles?.full_name || 'Unknown Tutor'}
+                      </h4>
+                      {tutor.matchScore !== undefined && (
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                          tutor.matchScore >= 80 ? 'bg-green-100 text-green-800' :
+                          tutor.matchScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {tutor.matchScore}% Match
+                        </span>
+                      )}
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${
+                          tutor.status === 'approved'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-orange-100 text-orange-800'
+                        }`}
+                      >
+                        {tutor.status.toUpperCase()}
+                      </span>
+                      {selectedTutorId === tutor.id && (
+                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
+                          ASSIGNED
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
+                      <p>
+                        <span className="font-medium">Subjects:</span>{' '}
+                        {(tutor.subjects || []).join(', ') || 'Not specified'}
+                      </p>
+                      <p>
+                        <span className="font-medium">Rate:</span> {formatPrice(tutor.hourly_rate)}
+                      </p>
+                      <p>
+                        <span className="font-medium">Email:</span>{' '}
+                        {tutor.profiles?.email || 'Not provided'}
+                      </p>
+                      <p>
+                        <span className="font-medium">Phone:</span>{' '}
+                        {tutor.profiles?.phone_number || 'Not provided'}
+                      </p>
+                    </div>
+                    {tutor.bio && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{tutor.bio}</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2 ml-4">
+                    <Link
+                      href={`/admin/tutors/${tutor.user_id}`}
+                      className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded hover:bg-blue-50"
+                    >
+                      View Profile
+                    </Link>
+                    <button
+                      onClick={() => handleMarkPotentialMatch(tutor)}
+                      disabled={loading}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      Mark as Potential Match
+                    </button>
+                    {selectedTutorId !== tutor.id && (
+                      <button
+                        onClick={() => handleAssignWithWarning(tutor)}
+                        disabled={loading || tutor.status !== 'approved'}
+                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {tutor.status === 'approved' ? 'Assign Tutor' : 'Approve First'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {searchQuery && searchResults.length === 0 && !isSearching && (
+          <p className="text-gray-500 text-sm mt-4">No tutors found matching your search.</p>
+        )}
+      </div>
+
       {/* Matching Tutors */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -273,6 +549,15 @@ export default function TutorMatchingClient({
                       <h3 className="text-lg font-semibold text-gray-900">
                         {tutor.profiles?.full_name || 'Unknown Tutor'}
                       </h3>
+                      {tutor.matchScore !== undefined && (
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                          tutor.matchScore >= 80 ? 'bg-green-100 text-green-800' :
+                          tutor.matchScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {tutor.matchScore}% Match
+                        </span>
+                      )}
                       {selectedTutorId === tutor.id && (
                         <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded">
                           ASSIGNED
@@ -296,9 +581,16 @@ export default function TutorMatchingClient({
                     >
                       View Profile
                     </Link>
+                    <button
+                      onClick={() => handleMarkPotentialMatch(tutor)}
+                      disabled={loading}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      Mark as Potential Match
+                    </button>
                     {selectedTutorId !== tutor.id && (
                       <button
-                        onClick={() => handleAssignTutor(tutor.id)}
+                        onClick={() => handleAssignWithWarning(tutor)}
                         disabled={loading}
                         className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
                       >
@@ -335,6 +627,15 @@ export default function TutorMatchingClient({
                       <h3 className="text-lg font-semibold text-gray-900">
                         {tutor.profiles?.full_name || 'Unknown Tutor'}
                       </h3>
+                      {tutor.matchScore !== undefined && (
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${
+                          tutor.matchScore >= 80 ? 'bg-green-100 text-green-800' :
+                          tutor.matchScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {tutor.matchScore}% Match
+                        </span>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mb-3">
                       <p><span className="font-medium">Subjects:</span> {(tutor.subjects || []).join(', ') || 'Not specified'}</p>
@@ -351,7 +652,14 @@ export default function TutorMatchingClient({
                       View Profile
                     </Link>
                     <button
-                      onClick={() => handleAssignTutor(tutor.id)}
+                      onClick={() => handleMarkPotentialMatch(tutor)}
+                      disabled={loading}
+                      className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      Mark as Potential Match
+                    </button>
+                    <button
+                      onClick={() => handleAssignWithWarning(tutor)}
                       disabled={loading}
                       className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700 disabled:opacity-50"
                     >
@@ -372,17 +680,151 @@ export default function TutorMatchingClient({
           <p className="text-yellow-700 text-sm mb-4">
             No tutors in the database match this request. Consider:
           </p>
-          <ul className="list-disc list-inside text-yellow-700 text-sm space-y-1">
-            <li>Contacting tutors outside the platform</li>
-            <li>Expanding search criteria</li>
+          <ul className="list-disc list-inside text-yellow-700 text-sm space-y-1 mb-4">
+            <li>Searching for tutors manually using the search above</li>
+            <li>Inviting an external tutor to join the platform</li>
             <li>Contacting the requester to adjust requirements</li>
           </ul>
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Invite External Tutor
+          </button>
+        </div>
+      )}
+
+      {/* Invite External Tutor Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Invite External Tutor</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Tutor full name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="tutor@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone (Optional)
+                </label>
+                <input
+                  type="tel"
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="+237 6XX XXX XXX"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={inviteNotes}
+                  onChange={(e) => setInviteNotes(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Additional information about this tutor or request..."
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteName('');
+                  setInviteEmail('');
+                  setInvitePhone('');
+                  setInviteNotes('');
+                  setError('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                disabled={isInviting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInviteExternalTutor}
+                disabled={isInviting || !inviteName.trim() || !inviteEmail.trim()}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isInviting ? 'Inviting...' : 'Send Invitation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Potential Match Modal */}
+      {showPotentialMatchModal && selectedTutorForPotential && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Mark as Potential Match
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Tutor: <strong>{selectedTutorForPotential.profiles?.full_name || 'Unknown'}</strong>
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Reason <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={potentialMatchReason}
+                onChange={(e) => setPotentialMatchReason(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Explain why this tutor is a potential match despite not meeting all criteria..."
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowPotentialMatchModal(false);
+                  setSelectedTutorForPotential(null);
+                  setPotentialMatchReason('');
+                  setError('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePotentialMatch}
+                disabled={loading || !potentialMatchReason.trim()}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 }
-
 
 
 

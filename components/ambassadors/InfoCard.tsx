@@ -20,15 +20,15 @@ export function InfoCard({ icon: Icon, title, description, index }: InfoCardProp
       transition={{ duration: 0.5, delay: index * 0.1 }}
       whileHover={{ y: -5, scale: 1.02 }}
     >
-      <Card className="h-full border-2 hover:border-primary/50 transition-all hover:shadow-lg group">
-        <CardContent className="p-6 space-y-4 text-center">
-          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-colors">
+      <Card className="h-full border-2 border-gray-200 hover:border-primary/50 transition-all hover:shadow-lg group bg-white flex flex-col">
+        <CardContent className="p-6 space-y-4 text-center flex flex-col flex-1">
+          <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto group-hover:bg-primary/20 transition-colors flex-shrink-0">
             <Icon className="h-7 w-7 text-primary" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors">
+          <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary transition-colors flex-shrink-0">
             {title}
           </h3>
-          <p className="text-sm text-gray-600 leading-relaxed">
+          <p className="text-sm text-gray-600 leading-relaxed flex-1">
             {description}
           </p>
         </CardContent>
@@ -36,4 +36,3 @@ export function InfoCard({ icon: Icon, title, description, index }: InfoCardProp
     </motion.div>
   )
 }
-

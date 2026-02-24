@@ -1,38 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
-import { sendCustomEmail } from '@/lib/notifications';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { sendNotificationEmail } from '@/lib/notifications';
+
+// Uses firebase-admin for push; ensure Node.js runtime on Vercel.
+export const runtime = 'nodejs';
 
 /**
  * Process Scheduled Notifications Cron Job
- * 
- * This endpoint processes scheduled notifications that are due to be sent.
- * 
- * VERCEL PLAN LIMITATIONS:
- * - Hobby Plan: Only runs once per day (schedule: "0 0 * * *")
- * - Pro Plan: Can run every 5 minutes (schedule: every 5 minutes)
- * 
- * Current configuration (vercel.json):
- * - Schedule: "0 0 * * *" (runs once per day at midnight UTC)
- * - Processes up to 100 notifications per run
- * 
- * For more frequent processing, upgrade to Pro plan or use external cron service.
- * See: docs/VERCEL_CRON_JOB_SETUP.md
+ *
+ * Uses Supabase admin client so external cron (e.g. cron-job.org) can run
+ * without a user session. RLS would block anon client.
+ *
+ * Vercel free tier: ~10s timeout; we process a small batch per run.
  */
+const BATCH_SIZE = 50; // Safe for Vercel free tier timeout
+
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret (optional but recommended for security)
-    // Allows both Vercel cron (no auth) and external cron services (with Bearer token)
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
-    
-    // If CRON_SECRET is set, require authentication
-    // Vercel cron jobs don't send auth headers, so we allow them if no secret is set
-    // External cron services should send: Authorization: Bearer YOUR_CRON_SECRET
     if (cronSecret) {
-      const isVercelCron = request.headers.get('user-agent')?.includes('vercel-cron') || 
-                          request.headers.get('x-vercel-cron') === '1';
-      
-      // Allow Vercel cron without auth, but require auth for external services
+      const isVercelCron =
+        request.headers.get('user-agent')?.includes('vercel-cron') ||
+        request.headers.get('x-vercel-cron') === '1';
       if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
         return NextResponse.json(
           { error: 'Unauthorized. Please provide Authorization: Bearer YOUR_CRON_SECRET header.' },
@@ -41,16 +31,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const supabase = await createServerSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const now = new Date().toISOString();
 
-    // Fetch pending scheduled notifications that are due
     const { data: scheduledNotifications, error: fetchError } = await supabase
       .from('scheduled_notifications')
       .select('*')
       .eq('status', 'pending')
       .lte('scheduled_for', now)
-      .limit(100); // Process up to 100 at a time
+      .order('priority', { ascending: false })
+      .order('scheduled_for', { ascending: true })
+      .limit(BATCH_SIZE);
 
     if (fetchError) {
       console.error('❌ Error fetching scheduled notifications:', fetchError);
@@ -107,28 +98,42 @@ export async function GET(request: NextRequest) {
           throw new Error(`Failed to create in-app notification: ${notifError.message}`);
         }
 
-        // Send email notification if enabled
+        // Send email notification if enabled (use branded template)
         if (shouldSendEmail && notification) {
           try {
-            // Get user email
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('email, full_name')
-              .eq('id', scheduled.user_id)
-              .maybeSingle();
+            // Check if email was already sent (deduplication)
+            if (metadata.sent_email_at) {
+              console.log(`ℹ️ Email already sent for scheduled notification ${scheduled.id}, skipping`);
+            } else {
+              // Get user email
+              const { data: userProfile } = await supabase
+                .from('profiles')
+                .select('email, full_name')
+                .eq('id', scheduled.user_id)
+                .maybeSingle();
 
-            if (userProfile?.email) {
-              const emailBody = `
-                <h2>${scheduled.title}</h2>
-                <p>${scheduled.message}</p>
-                ${metadata.action_url ? `<p><a href="${process.env.NEXT_PUBLIC_APP_URL}${metadata.action_url}">${metadata.action_text || 'View Details'}</a></p>` : ''}
-              `;
-              await sendCustomEmail(
-                userProfile.email,
-                userProfile.full_name || 'User',
-                scheduled.title,
-                emailBody
-              );
+              if (userProfile?.email) {
+                await sendNotificationEmail({
+                  recipientEmail: userProfile.email,
+                  recipientName: userProfile.full_name || 'User',
+                  subject: scheduled.title,
+                  title: scheduled.title,
+                  message: scheduled.message,
+                  actionUrl: metadata.action_url,
+                  actionText: metadata.action_text || 'View Details',
+                });
+
+                // Mark email as sent in metadata to prevent duplicates
+                await supabase
+                  .from('notifications')
+                  .update({
+                    metadata: {
+                      ...metadata,
+                      sent_email_at: new Date().toISOString(),
+                    },
+                  })
+                  .eq('id', notification.id);
+              }
             }
           } catch (emailError: any) {
             console.error(`⚠️ Failed to send email for scheduled notification ${scheduled.id}:`, emailError);
@@ -136,22 +141,26 @@ export async function GET(request: NextRequest) {
           }
         }
 
-        // Send push notification if enabled
+        // Send push notification if enabled (for high-priority reminders)
         if (shouldSendPush && notification) {
           try {
-            // Dynamically import firebase-admin to avoid build errors if not available
-            const { sendPushNotification } = await import('@/lib/services/firebase-admin');
-            await sendPushNotification({
-              userId: scheduled.user_id,
-              title: scheduled.title,
-              body: scheduled.message,
-              data: {
-                notificationId: notification.id,
-                type: scheduled.notification_type || 'general',
-                actionUrl: metadata.action_url || '',
-              },
-              priority: (metadata.priority === 'urgent' || metadata.priority === 'high') ? 'high' : 'normal',
-            });
+            // Only send push for high-priority reminders (1h, 15m)
+            const isHighPriorityReminder = metadata.reminder_type === '1_hour' || metadata.reminder_type === '15_minutes';
+            if (isHighPriorityReminder || metadata.priority === 'urgent' || metadata.priority === 'high') {
+              // Dynamically import firebase-admin to avoid build errors if not available
+              const { sendPushNotification } = await import('@/lib/services/firebase-admin');
+              await sendPushNotification({
+                userId: scheduled.user_id,
+                title: scheduled.title,
+                body: scheduled.message,
+                data: {
+                  notificationId: notification.id,
+                  type: scheduled.notification_type || 'general',
+                  actionUrl: metadata.action_url || '',
+                },
+                priority: (metadata.priority === 'urgent' || metadata.priority === 'high') ? 'high' : 'normal',
+              });
+            }
           } catch (pushError: any) {
             console.error(`⚠️ Failed to send push notification for scheduled notification ${scheduled.id}:`, pushError);
             // Don't fail the whole process if push fails

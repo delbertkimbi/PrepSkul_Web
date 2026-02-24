@@ -171,6 +171,12 @@ export default async function AmbassadorDetailPage({
                     <p className="text-sm text-gray-500">Current Status</p>
                     <p className="font-medium">{currentStatusMap[ambassador.status] || ambassador.status || 'Not specified'}</p>
                   </div>
+                  {ambassador.status === 'student' && ambassador.student_class_level && (
+                    <div>
+                      <p className="text-sm text-gray-500">Class/Level</p>
+                      <p className="font-medium">{ambassador.student_class_level}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

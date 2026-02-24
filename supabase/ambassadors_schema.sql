@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS ambassadors (
   )),
   status TEXT NOT NULL CHECK (status IN ('student', 'graduate', 'tutor_teacher', 'working_professional', 'other')),
   status_other TEXT, -- Only filled if status is 'other'
+  student_class_level TEXT, -- Only filled if status is 'student'
   motivation TEXT NOT NULL,
   alignment_goals TEXT[] NOT NULL, -- Array of selected goals
   explanation TEXT,

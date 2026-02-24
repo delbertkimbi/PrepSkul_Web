@@ -68,16 +68,15 @@ export function profileApprovedEmail(
         <div class="container">
           <div class="header">
             <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" />
-            <h1>🎉 Congratulations!</h1>
+            <h1>PrepSkul</h1>
           </div>
           <div class="content">
-            <div class="success-icon">✅</div>
-            <h2 style="color: #1B2C4F; margin-top: 0;">Your Tutor Profile Has Been Approved!</h2>
+            <h2 style="color: #1B2C4F; margin-top: 0;">Your Tutor Profile Has Been Approved</h2>
             <p>Hi <strong>${tutorName}</strong>,</p>
             <p>Great news! Your PrepSkul tutor profile has been reviewed and <strong>approved</strong> by our admin team.</p>
             ${adminNotes ? `
             <div class="notes-box">
-              <strong>💬 Admin Note:</strong>
+              <strong>Admin Note:</strong>
               <p style="margin: 5px 0 0 0;">${adminNotes.replace(/\n/g, '<br>')}</p>
             </div>
             ` : ''}
@@ -87,7 +86,7 @@ export function profileApprovedEmail(
               ${rating ? `
               <div class="rating-item">
                 <span class="rating-label">Your Initial Rating:</span>
-                <span class="rating-value">${rating.toFixed(1)} ⭐</span>
+                <span class="rating-value">${rating.toFixed(1)}</span>
               </div>
               ` : ''}
               ${sessionPrice ? `
@@ -105,7 +104,7 @@ export function profileApprovedEmail(
             </div>
             ` : ''}
             <div class="info-note">
-              <strong>ℹ️ Important Note:</strong> This is your initial rating based on your credentials and qualifications. Starting from your 3rd student review onwards, your rating will be dynamically updated based on actual student feedback and reviews.
+              <strong>Important Note:</strong> This is your initial rating based on your credentials and qualifications. Starting from your 3rd student review onwards, your rating will be dynamically updated based on actual student feedback and reviews.
             </div>
             <p><strong style="color: #1B2C4F;">What's next?</strong></p>
             <ul>
@@ -114,10 +113,10 @@ export function profileApprovedEmail(
               <li>Log in to your dashboard to manage your profile</li>
             </ul>
             <p style="text-align: center;">
-              <a href="https://app.prepskul.com/login" class="button">Open Dashboard</a>
+              <a href="https://app.prepskul.com/tutor/profile" class="button">Open Dashboard</a>
             </p>
             <p>If you have any questions, feel free to reach out to our support team.</p>
-            <p>Welcome to the PrepSkul community! 🎓</p>
+            <p>Welcome to the PrepSkul community!</p>
             <p style="margin-top: 30px;"><strong>The PrepSkul Team</strong></p>
           </div>
           <div class="footer">
@@ -167,7 +166,7 @@ export function profileRejectedEmail(
             <h2 style="color: #1B2C4F; margin-top: 0;">Hi ${tutorName},</h2>
             <p>Thank you for your interest in becoming a PrepSkul tutor. After reviewing your application, we need some additional information or clarifications.</p>
             <div class="warning-box">
-              <strong>⚠️ What needs to be addressed:</strong>
+              <strong>What needs to be addressed:</strong>
               <p style="margin: 5px 0 0 0; color: #856404;">${rejectionReason.replace(/\n/g, '<br>')}</p>
             </div>
             <p><strong style="color: #1B2C4F;">What's next?</strong></p>
@@ -229,13 +228,14 @@ export function profileNeedsImprovementEmail(
         <div class="container">
           <div class="header">
             <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" />
-            <h1>📝 Profile Improvement Requested</h1>
+            <h1>PrepSkul</h1>
           </div>
           <div class="content">
-            <h2 style="color: #1B2C4F; margin-top: 0;">Hi ${tutorName},</h2>
+            <h2 style="color: #1B2C4F; margin-top: 0;">Profile Improvement Requested</h2>
+            <p>Hi <strong>${tutorName}</strong>,</p>
             <p>Thank you for your interest in becoming a PrepSkul tutor. We've reviewed your application and would like to request some improvements before we can approve your profile.</p>
             <div class="improvement-box">
-              <strong>📋 Areas that need improvement:</strong>
+              <strong>Areas that need improvement:</strong>
               <ul>
                 ${improvementsList}
               </ul>
