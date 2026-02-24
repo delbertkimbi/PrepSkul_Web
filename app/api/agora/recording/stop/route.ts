@@ -7,7 +7,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { RecordingService } from '@/lib/services/agora/recording.service';
+import { RecordingService, RECORDER_UID } from '@/lib/services/agora/recording.service';
+import { getCorsHeaders } from '@/lib/utils/cors';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,13 +16,15 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
+  const corsHeaders = getCorsHeaders(request);
+
   try {
     // Get auth token from header
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -77,17 +80,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Stop recording
+    // Stop recording - use RECORDER_UID (same as start)
     const recordingService = new RecordingService();
     const channelName = session.agora_channel_name || `session_${sessionId}`;
-    const uid = session.tutor_id; // Use tutor UID to stop
 
     await recordingService.stopRecording(
       sessionId,
       session.recording_resource_id,
       session.recording_sid,
       channelName,
-      uid
+      RECORDER_UID
     );
 
     // Update session recording status

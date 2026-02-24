@@ -12,11 +12,14 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+/** UID used by the Agora Cloud Recording client - must be unique (not used by participants) */
+export const RECORDER_UID = '999999999';
+
 interface StartRecordingParams {
   sessionId: string;
   channelName: string;
   tutorUid: string;
-  learnerUid: string;
+  learnerUid: string | null;
 }
 
 interface RecordingMetadata {
@@ -51,15 +54,15 @@ export class RecordingService {
     const { sessionId, channelName, tutorUid, learnerUid } = params;
 
     try {
-      // Acquire resource
-      const resourceId = await this.acquireResource(channelName, tutorUid);
+      // Acquire resource - use dedicated recorder UID (must not conflict with participants)
+      const resourceId = await this.acquireResource(channelName, RECORDER_UID);
 
-      // Start recording with Individual Mode (audio only)
-      const subscribeAudioUids = [tutorUid, learnerUid];
+      // Start recording - subscribe to tutor and learner audio (numeric Agora UIDs)
+      const subscribeAudioUids = learnerUid ? [tutorUid, learnerUid] : [tutorUid];
       const response = await this.agoraClient.startRecording(
         resourceId,
         channelName,
-        tutorUid,
+        RECORDER_UID,
         subscribeAudioUids
       );
 
@@ -116,7 +119,7 @@ export class RecordingService {
     resourceId: string,
     sid: string,
     tutorUid: string,
-    learnerUid: string
+    learnerUid: string | null
   ): Promise<void> {
     // Upsert session_recordings
     const { error: recordingError } = await supabase
@@ -133,8 +136,10 @@ export class RecordingService {
 
     if (recordingError) {
       console.error('[RecordingService] Failed to store recording metadata:', recordingError);
+      console.error('[RecordingService] sessionId:', sessionId, 'resourceId:', resourceId, 'sid:', sid);
       throw recordingError;
     }
+    console.log('[RecordingService] session_recordings upsert OK for session:', sessionId);
 
     // Store participants with Agora UIDs
     const { data: session } = await supabase
@@ -164,21 +169,23 @@ export class RecordingService {
       console.error('[RecordingService] Failed to store tutor participant:', tutorError);
     }
 
-    // Upsert learner participant
-    const { error: learnerError } = await supabase
-      .from('session_participants')
-      .upsert({
-        session_id: sessionId,
-        agora_uid: learnerUid,
-        user_id: session.learner_id,
-        role: 'learner',
-        joined_at: new Date().toISOString(),
-      }, {
-        onConflict: 'session_id,agora_uid',
-      });
+    // Upsert learner participant (only if learner exists)
+    if (learnerUid && session.learner_id) {
+      const { error: learnerError } = await supabase
+        .from('session_participants')
+        .upsert({
+          session_id: sessionId,
+          agora_uid: learnerUid,
+          user_id: session.learner_id,
+          role: 'learner',
+          joined_at: new Date().toISOString(),
+        }, {
+          onConflict: 'session_id,agora_uid',
+        });
 
-    if (learnerError) {
-      console.error('[RecordingService] Failed to store learner participant:', learnerError);
+      if (learnerError) {
+        console.error('[RecordingService] Failed to store learner participant:', learnerError);
+      }
     }
   }
 }

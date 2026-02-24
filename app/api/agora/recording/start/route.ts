@@ -3,13 +3,13 @@
  * POST /api/agora/recording/start
  * 
  * Starts recording in Individual Mode (audio only) for a session
- *
- * NOTE: This comment is intentionally irrelevant for a test commit.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { RecordingService } from '@/lib/services/agora/recording.service';
+import { generateSessionUID } from '@/lib/services/agora/token-generator';
+import { getCorsHeaders } from '@/lib/utils/cors';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,13 +17,15 @@ const supabase = createClient(
 );
 
 export async function POST(request: NextRequest) {
+  const corsHeaders = getCorsHeaders(request);
+
   try {
     // Get auth token from header
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -49,14 +51,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get session details
-    const { data: session, error: sessionError } = await supabase
+    // Get session details - try individual_sessions first, then trial_sessions
+    let session: { id: string; tutor_id: string; learner_id: string | null; parent_id?: string; agora_channel_name?: string } | null = null;
+    const { data: indSession } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, agora_channel_name')
+      .select('id, tutor_id, learner_id, parent_id, agora_channel_name')
       .eq('id', sessionId)
-      .single();
+      .maybeSingle();
 
-    if (sessionError || !session) {
+    if (indSession) {
+      session = indSession;
+    } else {
+      const { data: trialSession } = await supabase
+        .from('trial_sessions')
+        .select('id, tutor_id, learner_id, parent_id')
+        .eq('id', sessionId)
+        .maybeSingle();
+      if (trialSession) {
+        session = { ...trialSession, agora_channel_name: undefined };
+      }
+    }
+
+    if (!session) {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }
@@ -64,7 +80,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user is part of the session
-    if (session.tutor_id !== user.id && session.learner_id !== user.id) {
+    const parentId = (session as any).parent_id;
+    const isParticipant =
+      session.tutor_id === user.id ||
+      session.learner_id === user.id ||
+      parentId === user.id;
+    if (!isParticipant) {
       return NextResponse.json(
         { error: 'Forbidden: You are not a participant in this session' },
         { status: 403 }
@@ -89,10 +110,15 @@ export async function POST(request: NextRequest) {
     // Generate channel name if not exists
     const channelName = session.agora_channel_name || `session_${sessionId}`;
 
-    // Generate Agora UIDs (using user IDs as strings, or generate unique IDs)
-    // For simplicity, we'll use the user IDs as UIDs
-    const tutorUid = session.tutor_id;
-    const learnerUid = session.learner_id;
+    // CRITICAL: Use generateSessionUID to get the SAME numeric UIDs that participants
+    // use when joining the channel (from token API). Agora Cloud Recording requires
+    // these UIDs to subscribe to the correct audio streams.
+    const tutorUid = String(generateSessionUID(sessionId, session.tutor_id, 'tutor'));
+    const learnerUid = session.learner_id
+      ? String(generateSessionUID(sessionId, session.learner_id, 'learner'))
+      : null;
+
+    console.log('[Recording Start] Channel:', channelName, 'tutorUid:', tutorUid, 'learnerUid:', learnerUid);
 
     // Start recording
     const recordingService = new RecordingService();
