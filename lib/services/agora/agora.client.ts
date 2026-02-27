@@ -119,9 +119,9 @@ export class AgoraClient {
         token: '', // Token not required for cloud recording
         recordingConfig: {
           maxIdleTime: 30,
-          streamTypes: 0, // 0 = audio only, 1 = video only, 2 = audio and video
+          streamTypes: 0, // 0 = audio only
           subscribeAudioUids: subscribeAudioUids,
-          subscribeVideoUids: [], // Empty for audio-only
+          subscribeUidGroup: 0, // Required in individual/single mode
         },
         storageConfig: {
           vendor: 0, // 0 = Agora Cloud Storage
