@@ -120,7 +120,6 @@ export class AgoraClient {
         recordingConfig: {
           maxIdleTime: 30,
           streamTypes: 0, // 0 = audio only, 1 = video only, 2 = audio and video
-          audioProfile: 1, // 1 = music_high_quality
           subscribeAudioUids: subscribeAudioUids,
           subscribeVideoUids: [], // Empty for audio-only
         },
