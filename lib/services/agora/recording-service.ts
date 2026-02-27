@@ -92,13 +92,13 @@ export async function startRecording(
     clientRequest: {
       token: '', // Token will be generated separately if needed
       recordingConfig: {
-        maxIdleTime: 30, // Max idle time in seconds
+        maxIdleTime: 30,
         streamTypes: 2, // 0: audio only, 1: video only, 2: audio and video
-        audioProfile: 1, // 0: sample rate 48k, 1: sample rate 48k with high quality
         channelType: 0, // 0: communication, 1: live broadcast
         videoStreamType: 0, // 0: low stream, 1: high stream
-        subscribeVideoUids: [], // Empty = record all users
         subscribeAudioUids: [], // Empty = record all users
+        subscribeVideoUids: [], // Empty = record all users
+        subscribeUidGroup: 0, // Required in individual/single mode
       },
       storageConfig: {
         vendor: 0, // 0: Agora Cloud Storage (temporary), will upload to Supabase later
