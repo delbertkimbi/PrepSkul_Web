@@ -4,7 +4,7 @@
  * Handles starting and stopping Agora Cloud Recording in Individual Mode (audio only)
  */
 
-import { AgoraClient } from './agora.client';
+import { AgoraClient, getRecordingStorageConfig } from './agora.client';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -48,10 +48,18 @@ export class RecordingService {
   }
 
   /**
-   * Start recording in Individual Mode (audio only)
+   * Start recording in Individual Mode (audio only).
+   * Requires AGORA_RECORDING_STORAGE_BUCKET, AGORA_RECORDING_STORAGE_ACCESS_KEY, AGORA_RECORDING_STORAGE_SECRET_KEY.
    */
   async startRecording(params: StartRecordingParams): Promise<RecordingMetadata> {
     const { sessionId, channelName, tutorUid, learnerUid } = params;
+
+    const storageConfig = getRecordingStorageConfig(channelName);
+    if (!storageConfig) {
+      throw new Error(
+        'Recording storage not configured. Set AGORA_RECORDING_STORAGE_BUCKET, AGORA_RECORDING_STORAGE_ACCESS_KEY, and AGORA_RECORDING_STORAGE_SECRET_KEY (vendor 1 = AWS S3, region 0 = US).'
+      );
+    }
 
     try {
       // Acquire resource - use dedicated recorder UID (must not conflict with participants)
@@ -63,7 +71,8 @@ export class RecordingService {
         resourceId,
         channelName,
         RECORDER_UID,
-        subscribeAudioUids
+        subscribeAudioUids,
+        storageConfig
       );
 
       const sid = response.sid;

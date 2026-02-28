@@ -7,6 +7,40 @@
 
 const AGORA_RECORDING_API_BASE = 'https://api.agora.io/v1';
 
+/** Storage config for Cloud Recording - must use third-party storage (Agora does not provide built-in). */
+export interface RecordingStorageConfig {
+  vendor: number;   // 1 = AWS S3, 11 = S3-compatible (e.g. Supabase Storage)
+  region: number;
+  bucket: string;
+  accessKey: string;
+  secretKey: string;
+  fileNamePrefix: string[];
+  /** Required for vendor 11 (S3-compatible): custom endpoint, e.g. https://project_ref.storage.supabase.co/storage/v1/s3 */
+  endpoint?: string;
+}
+
+/** Read recording storage from env. Returns null if not configured (recording disabled). */
+export function getRecordingStorageConfig(channelName: string): RecordingStorageConfig | null {
+  const bucket = (process.env.AGORA_RECORDING_STORAGE_BUCKET ?? '').trim();
+  const accessKey = (process.env.AGORA_RECORDING_STORAGE_ACCESS_KEY ?? '').trim();
+  const secretKey = (process.env.AGORA_RECORDING_STORAGE_SECRET_KEY ?? '').trim();
+  if (!bucket || !accessKey || !secretKey) {
+    return null;
+  }
+  const vendor = Math.max(0, parseInt(process.env.AGORA_RECORDING_STORAGE_VENDOR ?? '1', 10)) || 1;
+  const region = Math.max(0, parseInt(process.env.AGORA_RECORDING_STORAGE_REGION ?? '0', 10));
+  const endpoint = (process.env.AGORA_RECORDING_STORAGE_ENDPOINT ?? '').trim() || undefined;
+  return {
+    vendor,
+    region,
+    bucket,
+    accessKey,
+    secretKey,
+    fileNamePrefix: [`${channelName}_${Date.now()}`],
+    endpoint,
+  };
+}
+
 interface AgoraApiResponse<T = any> {
   resourceId?: string;
   sid?: string;
@@ -102,21 +136,23 @@ export class AgoraClient {
   }
 
   /**
-   * Start recording in Individual Mode (audio only)
-   * POST /v1/apps/{appid}/cloud_recording/resourceid/{resourceid}/mode/individual/start
+   * Start recording in Individual Mode (audio only).
+   * Agora requires third-party cloud storage (S3, OSS, etc.) – bucket/accessKey/secretKey cannot be empty.
+   * Pass storageConfig from getRecordingStorageConfig(); if null, do not call startRecording.
    */
   async startRecording(
     resourceId: string,
     channelName: string,
     uid: string,
-    subscribeAudioUids: string[]
+    subscribeAudioUids: string[],
+    storageConfig: RecordingStorageConfig
   ): Promise<{ sid: string }> {
     const endpoint = `/apps/${this.appId}/cloud_recording/resourceid/${resourceId}/mode/individual/start`;
     const body = {
       cname: channelName,
       uid: uid,
       clientRequest: {
-        token: '', // Token not required for cloud recording
+        token: '',
         recordingConfig: {
           maxIdleTime: 30,
           streamTypes: 0, // 0 = audio only
@@ -124,12 +160,15 @@ export class AgoraClient {
           subscribeUidGroup: 0, // Required in individual/single mode
         },
         storageConfig: {
-          vendor: 0, // 0 = Agora Cloud Storage
-          region: 0, // 0 = US, adjust as needed
-          bucket: '',
-          accessKey: '',
-          secretKey: '',
-          fileNamePrefix: [`${channelName}_${Date.now()}`],
+          vendor: storageConfig.vendor,
+          region: storageConfig.region,
+          bucket: storageConfig.bucket,
+          accessKey: storageConfig.accessKey,
+          secretKey: storageConfig.secretKey,
+          fileNamePrefix: storageConfig.fileNamePrefix,
+          ...(storageConfig.vendor === 11 && storageConfig.endpoint
+            ? { extensionParams: { endpoint: storageConfig.endpoint } }
+            : {}),
         },
       },
     };
