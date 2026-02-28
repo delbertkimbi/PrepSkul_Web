@@ -84,21 +84,23 @@ export async function POST(request: NextRequest) {
     const recordingService = new RecordingService();
     const channelName = session.agora_channel_name || `session_${sessionId}`;
 
-    await recordingService.stopRecording(
-      sessionId,
-      session.recording_resource_id,
-      session.recording_sid,
-      channelName,
-      RECORDER_UID
-    );
+    try {
+      await recordingService.stopRecording(
+        sessionId,
+        session.recording_resource_id,
+        session.recording_sid,
+        channelName,
+        RECORDER_UID
+      );
+    } catch (stopError: any) {
+      console.error('[Recording Stop] Agora/stopRecording failed:', stopError);
+      // Still mark session as stopped so UI/DB does not stay "recording" forever
+    }
 
-    // Update session recording status
-    await supabase
-      .from('individual_sessions')
-      .update({
-        recording_status: 'stopped',
-      })
-      .eq('id', sessionId);
+    // Always update recording status so it never stays "recording" after session end
+    const updatePayload = { recording_status: 'stopped', updated_at: new Date().toISOString() };
+    await supabase.from('individual_sessions').update(updatePayload).eq('id', sessionId);
+    await supabase.from('session_recordings').update(updatePayload).eq('session_id', sessionId);
 
     return NextResponse.json({
       message: 'Recording stopped successfully',
