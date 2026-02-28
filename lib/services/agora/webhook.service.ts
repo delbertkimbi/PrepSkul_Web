@@ -102,17 +102,9 @@ export class WebhookService {
       [];
     
     // Log webhook payload for debugging
-    console.log(`[WebhookService] Extracting audio files from webhook. Total files: ${fileList.length}`);
-    console.log(`[WebhookService] Webhook payload structure:`, JSON.stringify({
-      eventType: payload.eventType,
-      sid: payload.payload.sid,
-      fileListCount: fileList.length,
-      fileList: fileList.map((f: AudioFile) => ({ fileName: f.fileName, trackType: f.trackType, uid: f.uid })),
-    }, null, 2));
-    
-    // Filter for audio files only
     const audioFiles = fileList.filter(file => file.trackType === 'audio');
-    console.log(`[WebhookService] Found ${audioFiles.length} audio files`);
+    const firstFileName = fileList[0]?.fileName ?? '(none)';
+    console.log('[WebhookService] Extracting: fileList total=', fileList.length, 'audio count=', audioFiles.length, 'first fileName=', firstFileName);
     
     return audioFiles;
   }
@@ -175,6 +167,7 @@ export class WebhookService {
     const { data: recording, error: recordingError } = await query.single();
 
     if (recordingError || !recording) {
+      console.error('[WebhookService] Recording not found for sid=', sid, 'resourceId=', resourceId ?? 'null', 'error=', recordingError?.message ?? recordingError);
       throw new Error(`Recording not found for sid: ${sid}${resourceId ? `, resourceId: ${resourceId}` : ''}`);
     }
 
