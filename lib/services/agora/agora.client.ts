@@ -154,7 +154,9 @@ export class AgoraClient {
       clientRequest: {
         token: '',
         recordingConfig: {
-          maxIdleTime: 30,
+          // If both users briefly stop publishing (mute / network hiccup), the worker can auto-exit.
+          // Keep this higher to avoid "failed to find worker" on stop.
+          maxIdleTime: 300,
           streamTypes: 0, // 0 = audio only
           subscribeAudioUids: subscribeAudioUids,
           subscribeUidGroup: 0, // Required in individual/single mode

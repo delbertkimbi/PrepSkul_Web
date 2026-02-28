@@ -64,6 +64,18 @@ export async function POST(request: NextRequest) {
     await webhookService.updateRecordingStatus(sessionId, 'uploaded');
     console.log(`[Webhook] Updated recording status to 'uploaded' for session ${sessionId}`);
 
+    // Store the first audio URL on session_recordings for debugging / UI visibility.
+    // (Full per-participant transcripts are stored separately by TranscriptionService.)
+    if (audioFiles.length > 0) {
+      await supabase
+        .from('session_recordings')
+        .update({
+          audio_file_url: audioFiles[0].fileUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('session_id', sessionId);
+    }
+
     // Update transcription status to processing
     await supabase
       .from('session_recordings')

@@ -103,6 +103,26 @@ export class RecordingService {
         })
         .eq('session_id', sessionId);
     } catch (error) {
+      const message = String((error as any)?.message ?? error);
+      const isWorkerMissing =
+        message.includes('"code":404') ||
+        message.toLowerCase().includes('failed to find worker');
+
+      // Cloud Recording workers may auto-stop (e.g. maxIdleTime) before we call stop.
+      // In that case, treat stop as idempotent success so the session can proceed and
+      // the file-ready webhook can still drive transcription.
+      if (isWorkerMissing) {
+        console.warn('[RecordingService] Stop returned worker-missing; treating as already stopped:', message);
+        await supabase
+          .from('session_recordings')
+          .update({
+            recording_status: 'stopped',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('session_id', sessionId);
+        return;
+      }
+
       console.error('[RecordingService] Failed to stop recording:', error);
       throw error;
     }
