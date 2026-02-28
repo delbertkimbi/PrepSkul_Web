@@ -23,8 +23,12 @@ const supabase = createClient(
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
-    
-    console.log(`[Webhook] Received webhook: eventType=${payload.eventType}, notifyId=${payload.notifyId}`);
+    const notifyId = payload.notifyId ?? payload.noticeId ?? 'unknown';
+    const webhookPayload = payload.payload || {};
+    const resourceId = webhookPayload.resourceId ?? null;
+    const sid = webhookPayload.sid;
+
+    console.log(`[Webhook] Received webhook: eventType=${payload.eventType}, notifyId=${notifyId}, sid=${sid}`);
 
     // Validate webhook payload
     if (!webhookService.validateWebhookPayload(payload)) {
@@ -35,28 +39,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { notifyId, payload: webhookPayload } = payload;
-    const { resourceId, sid } = webhookPayload;
+    // Only process events that indicate files are ready:
+    // - Legacy: eventType "recording_file_ready"
+    // - Agora NCS: eventType 31 (uploaded) or 32 (backuped)
+    const isFilesReady =
+      payload.eventType === 'recording_file_ready' ||
+      payload.eventType === 31 ||
+      payload.eventType === 32;
+    if (!isFilesReady) {
+      console.log(`[Webhook] Ignoring event type: ${payload.eventType} (expected recording_file_ready or 31/32)`);
+      return NextResponse.json({ message: `Event type ${payload.eventType} ignored` });
+    }
 
     // Check idempotency
     const isProcessed = await webhookService.isWebhookProcessed(notifyId, resourceId, sid);
     if (isProcessed) {
-      console.log(`[Webhook] Already processed: notifyId=${notifyId}, resourceId=${resourceId}, sid=${sid}`);
-      return NextResponse.json({
-        message: 'Webhook already processed',
-      });
-    }
-
-    // Only process 'recording_file_ready' events
-    if (payload.eventType !== 'recording_file_ready') {
-      console.log(`[Webhook] Ignoring event type: ${payload.eventType}`);
-      return NextResponse.json({
-        message: `Event type ${payload.eventType} ignored`,
-      });
+      console.log(`[Webhook] Already processed: notifyId=${notifyId}, sid=${sid}`);
+      return NextResponse.json({ message: 'Webhook already processed' });
     }
 
     // Process webhook and extract audio files
-    console.log(`[Webhook] Processing webhook for resourceId=${resourceId}, sid=${sid}`);
+    console.log(`[Webhook] Processing webhook for sid=${sid}${resourceId ? `, resourceId=${resourceId}` : ''}`);
     const { sessionId, audioFiles } = await webhookService.processWebhook(payload);
     console.log(`[Webhook] Extracted ${audioFiles.length} audio files for session ${sessionId}`);
 
@@ -156,13 +159,12 @@ export async function GET(request: NextRequest) {
   const test = url.searchParams.get('test');
   
   if (test === 'true') {
-    // Return detailed endpoint info for testing
     return NextResponse.json({
       message: 'Agora recording webhook endpoint',
       endpoint: '/api/webhooks/agora/recording',
       method: 'POST',
       status: 'active',
-      expectedEvent: 'recording_file_ready',
+      expectedEvents: ['recording_file_ready (legacy)', '31 (uploaded)', '32 (backuped)'],
       timestamp: new Date().toISOString(),
     });
   }

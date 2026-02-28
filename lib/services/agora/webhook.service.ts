@@ -23,19 +23,39 @@ interface AudioFile {
   fileUrl?: string;
 }
 
-interface WebhookPayload {
-  eventType: string;
+/** Legacy format (some setups): eventType string, payload.serverResponse.fileList */
+interface LegacyWebhookPayload {
+  eventType: 'recording_file_ready';
   notifyId: string;
   payload: {
     resourceId: string;
     sid: string;
-    serverResponse?: {
+    serverResponse?: { fileList?: AudioFile[]; uploadingStatus?: string };
+  };
+}
+
+/** Agora NCS format (actual): eventType 31|32, payload.details.fileList, payload.sid */
+interface AgoraNcsWebhookPayload {
+  noticeId: string;
+  productId: number;
+  eventType: 31 | 32; // 31=uploaded, 32=backuped
+  notifyMs?: number;
+  payload: {
+    cname?: string;
+    uid?: string;
+    sid: string;
+    sequence?: number;
+    sendts?: number;
+    serviceType?: number;
+    details?: {
+      msgName?: string;
       fileList?: AudioFile[];
-      uploadingStatus?: string;
+      status?: number;
     };
   };
-  timestamp: number;
 }
+
+type WebhookPayload = LegacyWebhookPayload | AgoraNcsWebhookPayload;
 
 export class WebhookService {
   private async getSignedRecordingUrl(objectPath: string): Promise<string> {
@@ -57,39 +77,37 @@ export class WebhookService {
   }
 
   /**
-   * Validate webhook payload structure
+   * Validate webhook payload structure.
+   * Supports: (1) Legacy: eventType "recording_file_ready", notifyId, payload.resourceId/sid/serverResponse
+   *          (2) Agora NCS: eventType 31|32, noticeId, payload.sid, payload.details.fileList
    */
   validateWebhookPayload(payload: any): payload is WebhookPayload {
-    return (
-      payload &&
-      typeof payload.eventType === 'string' &&
-      typeof payload.notifyId === 'string' &&
-      payload.payload &&
-      typeof payload.payload.resourceId === 'string' &&
-      typeof payload.payload.sid === 'string'
-    );
+    if (!payload || !payload.payload || typeof payload.payload.sid !== 'string') return false;
+    // Legacy format
+    if (payload.eventType === 'recording_file_ready' && payload.notifyId && payload.payload.resourceId) return true;
+    // Agora NCS format (eventType 31 = uploaded, 32 = backuped)
+    const notifyId = payload.notifyId ?? payload.noticeId;
+    if ((payload.eventType === 31 || payload.eventType === 32) && notifyId) return true;
+    return false;
   }
 
   /**
-   * Extract audio files from webhook payload
+   * Extract audio files from webhook payload.
+   * Handles both payload.serverResponse.fileList (legacy) and payload.details.fileList (Agora NCS).
    */
   extractAudioFiles(payload: WebhookPayload): AudioFile[] {
-    const fileList = payload.payload.serverResponse?.fileList || [];
+    const fileList =
+      (payload as LegacyWebhookPayload).payload?.serverResponse?.fileList ||
+      (payload as AgoraNcsWebhookPayload).payload?.details?.fileList ||
+      [];
     
     // Log webhook payload for debugging
     console.log(`[WebhookService] Extracting audio files from webhook. Total files: ${fileList.length}`);
     console.log(`[WebhookService] Webhook payload structure:`, JSON.stringify({
       eventType: payload.eventType,
-      notifyId: payload.notifyId,
-      resourceId: payload.payload.resourceId,
       sid: payload.payload.sid,
       fileListCount: fileList.length,
-      fileList: fileList.map(f => ({
-        fileName: f.fileName,
-        trackType: f.trackType,
-        uid: f.uid,
-        fileUrl: f.fileUrl,
-      })),
+      fileList: fileList.map((f: AudioFile) => ({ fileName: f.fileName, trackType: f.trackType, uid: f.uid })),
     }, null, 2));
     
     // Filter for audio files only
@@ -126,29 +144,14 @@ export class WebhookService {
   }
 
   /**
-   * Check if webhook has already been processed (idempotency)
+   * Check if webhook has already been processed (idempotency).
+   * Lookup by sid (required); resourceId optional (Agora NCS may not include it).
    */
-  async isWebhookProcessed(notifyId: string, resourceId: string, sid: string): Promise<boolean> {
-    // Check if we've already processed this webhook by checking recording status
-    // If transcription is already processing or completed, webhook was processed
-    const { data: recording } = await supabase
-      .from('session_recordings')
-      .select('transcription_status')
-      .eq('recording_resource_id', resourceId)
-      .eq('recording_sid', sid)
-      .single();
-
-    if (recording) {
-      // If transcription is processing or completed, webhook was already processed
-      if (recording.transcription_status === 'processing' || recording.transcription_status === 'completed') {
-        return true;
-      }
-    }
-
-    // Additional check: store webhook notifyId to prevent duplicates
-    // For now, we'll rely on transcription_status check
-    // In production, you might want to store webhook IDs in a separate table
-    return false;
+  async isWebhookProcessed(_notifyId: string, resourceId: string | null, sid: string): Promise<boolean> {
+    let query = supabase.from('session_recordings').select('transcription_status').eq('recording_sid', sid);
+    if (resourceId) query = query.eq('recording_resource_id', resourceId);
+    const { data: recording } = await query.maybeSingle();
+    return !!(recording && (recording.transcription_status === 'processing' || recording.transcription_status === 'completed'));
   }
 
   /**
@@ -163,18 +166,16 @@ export class WebhookService {
       participantId?: string;
     }>;
   }> {
-    const { resourceId, sid } = payload.payload;
+    const { sid } = payload.payload;
+    const resourceId = (payload as LegacyWebhookPayload).payload?.resourceId;
 
-    // Find session by resourceId and sid
-    const { data: recording, error: recordingError } = await supabase
-      .from('session_recordings')
-      .select('session_id')
-      .eq('recording_resource_id', resourceId)
-      .eq('recording_sid', sid)
-      .single();
+    // Find session by sid (required); resourceId used if available
+    let query = supabase.from('session_recordings').select('session_id').eq('recording_sid', sid);
+    if (resourceId) query = query.eq('recording_resource_id', resourceId);
+    const { data: recording, error: recordingError } = await query.single();
 
     if (recordingError || !recording) {
-      throw new Error(`Recording not found for resourceId: ${resourceId}, sid: ${sid}`);
+      throw new Error(`Recording not found for sid: ${sid}${resourceId ? `, resourceId: ${resourceId}` : ''}`);
     }
 
     const sessionId = recording.session_id;
