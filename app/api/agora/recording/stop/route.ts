@@ -80,6 +80,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log and verify session_recordings row exists before stopping
+    const { data: existingRecording } = await supabase
+      .from('session_recordings')
+      .select('session_id, recording_status')
+      .eq('session_id', sessionId)
+      .maybeSingle();
+    console.log('[Recording Stop] sessionId=', sessionId, 'recording_resource_id=', session.recording_resource_id, 'recording_sid=', session.recording_sid, 'session_recordings row exists=', !!existingRecording, 'current status=', existingRecording?.recording_status);
+
     // Stop recording - use RECORDER_UID (same as start)
     const recordingService = new RecordingService();
     const channelName = session.agora_channel_name || `session_${sessionId}`;
@@ -93,14 +101,28 @@ export async function POST(request: NextRequest) {
         RECORDER_UID
       );
     } catch (stopError: any) {
-      console.error('[Recording Stop] Agora/stopRecording failed:', stopError);
+      console.error('[Recording Stop] Agora/stopRecording failed:', stopError?.message ?? stopError, stopError);
       // Still mark session as stopped so UI/DB does not stay "recording" forever
     }
 
     // Always update recording status so it never stays "recording" after session end
     const updatePayload = { recording_status: 'stopped', updated_at: new Date().toISOString() };
-    await supabase.from('individual_sessions').update(updatePayload).eq('id', sessionId);
-    await supabase.from('session_recordings').update(updatePayload).eq('session_id', sessionId);
+    const { error: updSessionErr } = await supabase.from('individual_sessions').update(updatePayload).eq('id', sessionId);
+    const { error: updRecErr } = await supabase.from('session_recordings').update(updatePayload).eq('session_id', sessionId);
+    console.log('[Recording Stop] DB updates: individual_sessions', updSessionErr ? 'error=' + String(updSessionErr) : 'OK', 'session_recordings', updRecErr ? 'error=' + String(updRecErr) : 'OK');
+
+    // Set left_at for all session_participants when recording stops
+    const now = new Date().toISOString();
+    const { data: participantsUpdated, error: participantsErr } = await supabase
+      .from('session_participants')
+      .update({ left_at: now, updated_at: now })
+      .eq('session_id', sessionId)
+      .select('id');
+    if (participantsErr) {
+      console.warn('[Recording Stop] session_participants left_at update error:', participantsErr);
+    } else {
+      console.log('[Recording Stop] session_participants left_at set for session', sessionId, 'rows=', participantsUpdated?.length ?? 0);
+    }
 
     return NextResponse.json({
       message: 'Recording stopped successfully',

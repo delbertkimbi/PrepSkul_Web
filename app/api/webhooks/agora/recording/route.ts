@@ -27,17 +27,21 @@ export async function POST(request: NextRequest) {
     const webhookPayload = payload.payload || {};
     const resourceId = webhookPayload.resourceId ?? null;
     const sid = webhookPayload.sid;
+    const fileListLegacy = webhookPayload.serverResponse?.fileList;
+    const fileListNcs = webhookPayload.details?.fileList;
+    const fileListLen = (fileListLegacy ?? fileListNcs ?? []).length;
 
-    console.log(`[Webhook] Received webhook: eventType=${payload.eventType}, notifyId=${notifyId}, sid=${sid}`);
+    console.log('[Webhook] Received POST: eventType=', payload.eventType, 'noticeId/notifyId=', notifyId, 'sid=', sid, 'resourceId=', resourceId ?? 'null', 'payload.fileList length=', fileListLen);
 
     // Validate webhook payload
     if (!webhookService.validateWebhookPayload(payload)) {
-      console.error('[Webhook] Invalid webhook payload:', JSON.stringify(payload, null, 2));
+      console.error('[Webhook] validation FAIL:', JSON.stringify(payload, null, 2));
       return NextResponse.json(
         { error: 'Invalid webhook payload' },
         { status: 400 }
       );
     }
+    console.log('[Webhook] validation OK');
 
     // Only process events that indicate files are ready:
     // - Legacy: eventType "recording_file_ready"
@@ -59,9 +63,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Process webhook and extract audio files
-    console.log(`[Webhook] Processing webhook for sid=${sid}${resourceId ? `, resourceId=${resourceId}` : ''}`);
-    const { sessionId, audioFiles } = await webhookService.processWebhook(payload);
-    console.log(`[Webhook] Extracted ${audioFiles.length} audio files for session ${sessionId}`);
+    console.log('[Webhook] Processing webhook for sid=', sid, resourceId ? 'resourceId=' + resourceId : '');
+    let sessionId: string;
+    let audioFiles: Array<{ agoraUid: string; fileUrl: string; fileName: string; participantId?: string }>;
+    try {
+      const result = await webhookService.processWebhook(payload);
+      sessionId = result.sessionId;
+      audioFiles = result.audioFiles;
+      console.log('[Webhook] Lookup OK: session_id=', sessionId, 'audioFiles count=', audioFiles.length);
+    } catch (lookupErr: any) {
+      console.error('[Webhook] processWebhook failed (lookup or process):', lookupErr?.message ?? lookupErr);
+      throw lookupErr;
+    }
 
     // Update recording status
     await webhookService.updateRecordingStatus(sessionId, 'uploaded');
@@ -70,13 +83,16 @@ export async function POST(request: NextRequest) {
     // Store the first audio URL on session_recordings for debugging / UI visibility.
     // (Full per-participant transcripts are stored separately by TranscriptionService.)
     if (audioFiles.length > 0) {
-      await supabase
+      const firstUrl = audioFiles[0].fileUrl;
+      console.log('[Webhook] Updating session_recordings for session_id=', sessionId, 'audio_file_url=(first file)');
+      const { error: updErr } = await supabase
         .from('session_recordings')
         .update({
-          audio_file_url: audioFiles[0].fileUrl,
+          audio_file_url: firstUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('session_id', sessionId);
+      if (updErr) console.error('[Webhook] session_recordings audio_file_url update error:', updErr);
     }
 
     // Update transcription status to processing
@@ -145,9 +161,9 @@ export async function POST(request: NextRequest) {
       audioFilesCount: audioFiles.length,
     });
   } catch (error: any) {
-    console.error('[Webhook] Error:', error);
+    console.error('[Webhook] Error:', error?.message ?? error, error?.stack);
     return NextResponse.json(
-      { error: error.message || 'Failed to process webhook' },
+      { error: error?.message || 'Failed to process webhook' },
       { status: 500 }
     );
   }
