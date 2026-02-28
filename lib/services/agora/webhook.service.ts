@@ -11,6 +11,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const RECORDING_BUCKET = (process.env.AGORA_RECORDING_STORAGE_BUCKET ?? '').trim();
+
 interface AudioFile {
   fileName: string;
   trackType: 'audio' | 'video';
@@ -36,6 +38,24 @@ interface WebhookPayload {
 }
 
 export class WebhookService {
+  private async getSignedRecordingUrl(objectPath: string): Promise<string> {
+    if (!RECORDING_BUCKET) {
+      throw new Error('AGORA_RECORDING_STORAGE_BUCKET is not set; cannot sign recording URLs');
+    }
+
+    // Agora sends S3 object keys in `fileName` (can include prefixes/folders).
+    // Supabase Storage uses the same key-path inside the bucket.
+    const normalizedPath = objectPath.replace(/^\/+/, '');
+    const { data, error } = await supabase.storage
+      .from(RECORDING_BUCKET)
+      .createSignedUrl(normalizedPath, 60 * 60); // 1 hour
+
+    if (error || !data?.signedUrl) {
+      throw new Error(`Failed to create signed URL for ${normalizedPath}: ${error?.message ?? 'unknown error'}`);
+    }
+    return data.signedUrl;
+  }
+
   /**
    * Validate webhook payload structure
    */
@@ -167,19 +187,20 @@ export class WebhookService {
       audioFiles.map(async (file) => {
         const participant = await this.mapAgoraUidToParticipant(sessionId, file.uid);
         
-        // Agora provides fileUrl in the webhook payload
-        // If not provided, we need to construct it from fileName
-        // Check Agora documentation for your storage configuration
+        // For private buckets, we must use a signed URL for transcription downloads.
+        // Agora may (or may not) provide `fileUrl`. Prefer signing by `fileName` which is the S3 object key.
         let fileUrl = file.fileUrl;
-        
+        try {
+          fileUrl = await this.getSignedRecordingUrl(file.fileName);
+        } catch (e) {
+          console.warn(
+            `[WebhookService] Failed to sign URL for ${file.fileName} (uid=${file.uid}). ` +
+              `Falling back to fileUrl from payload (if any). Error: ${String(e)}`
+          );
+        }
+
         if (!fileUrl) {
-          // Log warning - this should not happen if Agora is configured correctly
-          console.warn(`[WebhookService] No fileUrl provided for file ${file.fileName}, uid ${file.uid}`);
-          console.warn(`[WebhookService] Full file object:`, JSON.stringify(file, null, 2));
-          
-          // Try to construct URL from fileName (this may need adjustment based on your Agora storage config)
-          // Agora typically provides URLs in format: https://<bucket>.s3.amazonaws.com/<path>/<filename>
-          fileUrl = `https://agora-cloud-storage/${file.fileName}`;
+          throw new Error(`No usable URL for recording object: ${file.fileName} (uid=${file.uid})`);
         }
 
         console.log(`[WebhookService] Processing audio file: ${file.fileName}, URL: ${fileUrl}, UID: ${file.uid}`);
