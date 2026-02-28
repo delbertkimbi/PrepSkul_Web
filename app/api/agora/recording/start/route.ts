@@ -186,9 +186,11 @@ export async function POST(request: NextRequest) {
     if (error?.stack) {
       console.error('[Recording Start] Stack trace:', error.stack);
     }
+    const message = error?.message || 'Failed to start recording';
+    const isStorageNotConfigured = typeof message === 'string' && message.includes('Recording storage not configured');
     return NextResponse.json(
-      { error: error.message || 'Failed to start recording' },
-      { status: 500, headers: corsHeaders }
+      { error: message },
+      { status: isStorageNotConfigured ? 503 : 500, headers: corsHeaders }
     );
   }
 }
