@@ -109,7 +109,16 @@ export async function POST(request: NextRequest) {
     const updatePayload = { recording_status: 'stopped', updated_at: new Date().toISOString() };
     const { error: updSessionErr } = await supabase.from('individual_sessions').update(updatePayload).eq('id', sessionId);
     const { error: updRecErr } = await supabase.from('session_recordings').update(updatePayload).eq('session_id', sessionId);
-    console.log('[Recording Stop] DB updates: individual_sessions', updSessionErr ? 'error=' + String(updSessionErr) : 'OK', 'session_recordings', updRecErr ? 'error=' + String(updRecErr) : 'OK');
+    if (updSessionErr) {
+      console.error('[Recording Stop] individual_sessions update FAIL:', updSessionErr.message, 'code=', (updSessionErr as any)?.code, updSessionErr);
+    } else {
+      console.log('[Recording Stop] individual_sessions update OK');
+    }
+    if (updRecErr) {
+      console.error('[Recording Stop] session_recordings update FAIL:', updRecErr.message, 'code=', (updRecErr as any)?.code, updRecErr);
+    } else {
+      console.log('[Recording Stop] session_recordings update OK');
+    }
 
     // Set left_at for all session_participants when recording stops
     const now = new Date().toISOString();
@@ -119,7 +128,7 @@ export async function POST(request: NextRequest) {
       .eq('session_id', sessionId)
       .select('id');
     if (participantsErr) {
-      console.warn('[Recording Stop] session_participants left_at update error:', participantsErr);
+      console.error('[Recording Stop] session_participants left_at update FAIL:', participantsErr.message, 'code=', (participantsErr as any)?.code, 'sessionId=', sessionId, participantsErr);
     } else {
       console.log('[Recording Stop] session_participants left_at set for session', sessionId, 'rows=', participantsUpdated?.length ?? 0);
     }

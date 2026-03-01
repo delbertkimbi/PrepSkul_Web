@@ -167,7 +167,7 @@ export class WebhookService {
     const { data: recording, error: recordingError } = await query.single();
 
     if (recordingError || !recording) {
-      console.error('[WebhookService] Recording not found for sid=', sid, 'resourceId=', resourceId ?? 'null', 'error=', recordingError?.message ?? recordingError);
+      console.error('[WebhookService] Recording not found for sid=', sid, 'resourceId=', resourceId ?? 'null', 'error=', recordingError?.message ?? recordingError, 'code=', (recordingError as any)?.code);
       throw new Error(`Recording not found for sid: ${sid}${resourceId ? `, resourceId: ${resourceId}` : ''}`);
     }
 

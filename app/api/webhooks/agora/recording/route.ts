@@ -96,13 +96,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Update transcription status to processing
-    await supabase
+    const { error: transcriptionStatusErr } = await supabase
       .from('session_recordings')
       .update({
         transcription_status: 'processing',
         transcription_started_at: new Date().toISOString(),
       })
       .eq('session_id', sessionId);
+    if (transcriptionStatusErr) {
+      console.error('[Webhook] session_recordings transcription_status update FAIL:', transcriptionStatusErr.message, (transcriptionStatusErr as any)?.code);
+    }
 
     // Enqueue transcription jobs for each audio file
     // Process asynchronously to avoid blocking webhook response
