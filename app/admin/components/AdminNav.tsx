@@ -17,6 +17,7 @@ export default function AdminNav() {
     { name: 'Tutors', href: '/admin/tutors' },
     { name: 'Tutor Requests', href: '/admin/tutor-requests' },
     { name: 'Ambassadors', href: '/admin/ambassadors' },
+    { name: 'Reachout Track', href: '/admin/reachout' },
     { name: 'Sessions', href: '/admin/sessions' },
     { name: 'Revenue', href: '/admin/revenue' },
     { name: 'Pricing', href: '/admin/pricing' },
