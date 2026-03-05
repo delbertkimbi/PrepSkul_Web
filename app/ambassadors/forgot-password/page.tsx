@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
-import AmbassadorHeader from '@/components/ambassador-header';
 
 export default function AmbassadorForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -30,11 +30,13 @@ export default function AmbassadorForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <AmbassadorHeader />
-        <div className="flex-1 flex items-center justify-center py-12 px-4" style={{ background: 'linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%)' }}>
+      <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%)' }}>
+        <div className="flex-1 flex items-center justify-center py-12 px-4">
           <div className="w-full max-w-md">
             <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+              <div className="flex justify-center mb-4">
+                <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
+              </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
               <p className="text-gray-600 text-sm mb-6">
                 We sent a password reset link to <strong>{email}</strong>. Click the link in the email to set a new password.
@@ -53,12 +55,12 @@ export default function AmbassadorForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <AmbassadorHeader />
-      <div className="flex-1 flex items-center justify-center py-12 px-4" style={{ background: 'linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%)' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%)' }}>
+      <div className="flex-1 flex items-center justify-center py-12 px-4">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
-            <div className="text-center mb-8">
+            <div className="flex flex-col items-center text-center mb-8 gap-3">
+              <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
               <h1 className="text-2xl font-bold text-gray-900">Forgot password?</h1>
               <p className="text-gray-600 mt-2 text-sm">
                 Enter the email you use for the Ambassador Dashboard. We&apos;ll send you a link to reset your password.
