@@ -1,51 +1,87 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Eye, EyeOff } from 'lucide-react';
 import AmbassadorHeader from '@/components/ambassador-header';
 
-export default function AmbassadorLoginPage() {
-  const router = useRouter();
+export default function AmbassadorSignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
 
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-      if (!data.user?.email) throw new Error('No email returned');
-
       const { data: ambassador } = await supabase
         .from('ambassadors')
         .select('id, application_status')
-        .eq('email', data.user.email)
+        .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
       if (!ambassador || ambassador.application_status !== 'approved') {
-        await supabase.auth.signOut();
-        throw new Error('No approved ambassador account found for this email.');
+        setError(
+          'No approved ambassador found for this email. Use the exact email from your approved application, or contact support.'
+        );
+        setLoading(false);
+        return;
       }
 
-      window.location.href = '/ambassadors/dashboard';
+      const { error: authError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password,
+        options: { emailRedirectTo: undefined },
+      });
+
+      if (authError) throw authError;
+      setSuccess(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Sign up failed');
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <AmbassadorHeader />
+        <div className="flex-1 flex items-center justify-center py-12 px-4" style={{ background: 'linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%)' }}>
+          <div className="w-full max-w-md">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Account created</h2>
+              <p className="text-gray-600 text-sm mb-6">
+                You can now sign in with your email and password.
+              </p>
+              <Link
+                href="/ambassadors/login"
+                className="inline-block w-full text-center text-white py-3 rounded-lg font-medium bg-primary hover:bg-primary/90"
+              >
+                Go to Sign In
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -54,11 +90,13 @@ export default function AmbassadorLoginPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">Ambassador Dashboard</h1>
-              <p className="text-gray-600 mt-2">Sign in with the email you used in your ambassador application</p>
+              <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+              <p className="text-gray-600 mt-2 text-sm">
+                Use the <strong>same email</strong> you used in your ambassador application. Only approved ambassadors can create an account.
+              </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleSignup} className="space-y-6">
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-800 text-sm">
                   {error}
@@ -85,8 +123,9 @@ export default function AmbassadorLoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                    placeholder="••••••••"
+                    placeholder="At least 6 characters"
                     required
+                    minLength={6}
                   />
                   <button
                     type="button"
@@ -98,31 +137,32 @@ export default function AmbassadorLoginPage() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm password</label>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                  minLength={6}
+                />
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full text-white py-3 rounded-lg font-medium disabled:opacity-50 transition-all bg-primary hover:bg-primary/90"
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Creating account...' : 'Create account'}
               </button>
-
-              <div className="flex flex-col gap-2 text-center">
-                <Link
-                  href="/ambassadors/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
             </form>
 
             <p className="text-center text-sm text-gray-500 mt-6">
-              Approved ambassadors only. Use the email from your application.
-            </p>
-            <p className="text-center text-sm text-gray-600 mt-2">
-              Don&apos;t have an account yet?{' '}
-              <Link href="/ambassadors/signup" className="text-primary font-medium hover:underline">
-                Sign up
+              Already have an account?{' '}
+              <Link href="/ambassadors/login" className="text-primary font-medium hover:underline">
+                Sign in
               </Link>
             </p>
           </div>
