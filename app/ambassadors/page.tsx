@@ -130,24 +130,12 @@ export default function AmbassadorsPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Button size="lg" asChild className="text-base font-semibold px-8 h-12 shadow-md hover:shadow-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button
+                    size="lg"
+                    asChild
+                    className="text-base font-semibold px-8 h-12 shadow-md hover:shadow-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
                     <Link href="/ambassadors/apply">Apply Now</Link>
-                  </Button>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button size="lg" variant="outline" asChild className="text-base font-semibold px-8 h-12 border-2 border-primary text-primary hover:bg-primary/10">
-                    <Link href="/ambassadors/referral-track">Referral Track</Link>
-                  </Button>
-                </motion.div>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button size="lg" variant="outline" asChild className="text-base font-semibold px-8 h-12 border-2 border-primary text-primary hover:bg-primary/10">
-                    <Link href="/ambassadors/dashboard">My Dashboard</Link>
                   </Button>
                 </motion.div>
               </div>
