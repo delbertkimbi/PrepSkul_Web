@@ -43,3 +43,15 @@ export async function isAdmin(userId: string) {
   return data?.is_admin === true;
 }
 
+/** Resolve approved ambassador by user email (for ambassador dashboard). */
+export async function getApprovedAmbassadorByEmail(email: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data } = await supabase
+    .from('ambassadors')
+    .select('id, full_name, email')
+    .eq('email', email)
+    .eq('application_status', 'approved')
+    .maybeSingle();
+  return data;
+}
+

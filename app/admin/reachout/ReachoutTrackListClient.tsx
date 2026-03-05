@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, MessageCircle, User, Calendar } from 'lucide-react';
+import { Search, MessageCircle, User, Calendar, Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Link from 'next/link';
 
 export type ReachoutRecord = {
   id: string;
@@ -27,6 +28,7 @@ export type ReachoutRecord = {
   next_followup_at: string | null;
   followup_context: string;
   additional_info: string;
+  status?: string;
   created_at: string;
   updated_at: string;
 };
@@ -44,9 +46,28 @@ function formatDate(iso: string | null): string {
   });
 }
 
+function getStatusConfig(status: string): { label: string; className: string } {
+  switch (status) {
+    case 'in_followup':
+      return { label: 'In follow-up', className: 'bg-blue-50 text-blue-700 border-blue-200' };
+    case 'ready_to_pay':
+      return { label: 'Ready to pay', className: 'bg-amber-50 text-amber-700 border-amber-200' };
+    case 'payment_pending':
+      return { label: 'Payment pending', className: 'bg-orange-50 text-orange-700 border-orange-200' };
+    case 'paid':
+      return { label: 'Paid', className: 'bg-green-50 text-green-700 border-green-200' };
+    case 'not_interested':
+      return { label: 'Not interested', className: 'bg-red-50 text-red-700 border-red-200' };
+    case 'new':
+    default:
+      return { label: 'New', className: 'bg-gray-100 text-gray-700 border-gray-200' };
+  }
+}
+
 export default function ReachoutTrackListClient({ records }: ReachoutTrackListClientProps) {
   const [searchWhatsApp, setSearchWhatsApp] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [followupFilter, setFollowupFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredRecords = useMemo(() => {
@@ -60,8 +81,18 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
     if (roleFilter !== 'all') {
       list = list.filter((r) => r.customer_role === roleFilter);
     }
+    if (followupFilter === 'today') {
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+      list = list.filter((r) => {
+        if (!r.next_followup_at) return false;
+        const d = new Date(r.next_followup_at);
+        const dStr = d.toISOString().slice(0, 10);
+        return dStr === todayStr;
+      });
+    }
     return list;
-  }, [records, searchWhatsApp, roleFilter]);
+  }, [records, searchWhatsApp, roleFilter, followupFilter]);
 
   return (
     <div className="space-y-6">
@@ -76,16 +107,27 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
             className="pl-10 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
           />
         </div>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full sm:w-[180px] border-gray-300">
-            <SelectValue placeholder="Customer role" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All roles</SelectItem>
-            <SelectItem value="Parent">Parent</SelectItem>
-            <SelectItem value="Student">Student</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[150px] border-gray-300">
+              <SelectValue placeholder="Customer role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="Parent">Parent</SelectItem>
+              <SelectItem value="Student">Student</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={followupFilter} onValueChange={setFollowupFilter}>
+            <SelectTrigger className="w-[170px] border-gray-300">
+              <SelectValue placeholder="Follow-up" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All follow-ups</SelectItem>
+              <SelectItem value="today">Follow-ups today</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {filteredRecords.length === 0 ? (
@@ -93,7 +135,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
           <MessageCircle className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">No records found</h3>
           <p className="mt-1 text-sm text-gray-500">
-            {searchWhatsApp || roleFilter !== 'all'
+            {searchWhatsApp || roleFilter !== 'all' || followupFilter !== 'all'
               ? 'Try adjusting the search or filters.'
               : 'No reachout records yet. Create one from "New reachout record".'}
           </p>
@@ -102,6 +144,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
         <div className="space-y-4">
           {filteredRecords.map((record) => {
             const isExpanded = expandedId === record.id;
+            const statusCfg = getStatusConfig(record.status ?? 'new');
             return (
               <div
                 key={record.id}
@@ -119,6 +162,11 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
                     </div>
                     <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                       {record.customer_role}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusCfg.className}`}
+                    >
+                      {statusCfg.label}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -178,6 +226,15 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
                     <div className="md:col-span-2">
                       <span className="text-gray-500 block mb-1">Additional info:</span>
                       <p className="text-gray-900 whitespace-pre-wrap">{record.additional_info}</p>
+                    </div>
+                    <div className="md:col-span-2 flex justify-end">
+                      <Link
+                        href={`/admin/reachout/${record.id}/edit`}
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#1B2C4F] hover:text-[#4A6FBF]"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit record
+                      </Link>
                     </div>
                   </div>
                 )}

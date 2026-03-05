@@ -125,13 +125,29 @@ export default function AmbassadorsPage() {
                 Join a vibrant community of passionate changemakers transforming education and expanding access to learning opportunities across Cameroon.
               </p>
               
-              <div className="pt-2 flex justify-center lg:justify-start">
+              <div className="pt-2 flex flex-wrap justify-center lg:justify-start gap-3">
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   <Button size="lg" asChild className="text-base font-semibold px-8 h-12 shadow-md hover:shadow-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90">
                     <Link href="/ambassadors/apply">Apply Now</Link>
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button size="lg" variant="outline" asChild className="text-base font-semibold px-8 h-12 border-2 border-primary text-primary hover:bg-primary/10">
+                    <Link href="/ambassadors/referral-track">Referral Track</Link>
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button size="lg" variant="outline" asChild className="text-base font-semibold px-8 h-12 border-2 border-primary text-primary hover:bg-primary/10">
+                    <Link href="/ambassadors/dashboard">My Dashboard</Link>
                   </Button>
                 </motion.div>
               </div>
@@ -294,7 +310,7 @@ export default function AmbassadorsPage() {
             <p className="text-lg sm:text-xl text-secondary-foreground/90 leading-relaxed">
               Join our ambassador community and be part of something truly meaningful. Your journey starts now.
             </p>
-            <div className="pt-4">
+            <div className="pt-4 flex flex-wrap justify-center gap-3">
               <Button
                 size="lg"
                 variant="secondary"
@@ -302,6 +318,22 @@ export default function AmbassadorsPage() {
                 className="text-base font-semibold px-8 h-12 bg-white text-primary hover:bg-primary-foreground/10 shadow-xl hover:shadow-2xl transition-all"
               >
                 <Link href="/ambassadors/apply">Apply Now and Start Making Impact</Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="text-base font-semibold px-8 h-12 border-2 border-white text-secondary-foreground hover:bg-white/10"
+              >
+                <Link href="/ambassadors/referral-track">Referral Track</Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="text-base font-semibold px-8 h-12 border-2 border-white text-secondary-foreground hover:bg-white/10"
+              >
+                <Link href="/ambassadors/dashboard">My Dashboard</Link>
               </Button>
             </div>
           </motion.div>
