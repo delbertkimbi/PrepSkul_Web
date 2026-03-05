@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,31 +18,21 @@ import {
 } from '@/components/ui/select';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { reachoutSchema, type ReachoutFormData } from '../../new/ReachoutFormClient';
+import type { ReachoutRecord } from '../../ReachoutTrackListClient';
 
-export const reachoutSchema = z.object({
-  agent_name: z.string().min(1, 'Agent name is required'),
-  customer_whatsapp: z.string().min(1, "Customer's WhatsApp number is required"),
-  customer_role: z.enum(['Parent', 'Student'], { required_error: 'Customer role is required' }),
-  number_of_learners: z.string().min(1, 'Number of learners is required'),
-  learner_educational_level: z.string().min(1, 'Learner(s) educational level is required'),
-  subjects_of_interest: z.string().min(1, 'Subjects of interest is required'),
-  examination_status: z.string().min(1, 'Examination status is required'),
-  session_type_preference: z.enum(['online', 'onsite'], { required_error: 'Session type is required' }),
-  frequency_of_sessions: z.string().min(1, 'Frequency of sessions is required'),
-  start_date_time_preference: z.string().min(1, 'Start date and time preference is required'),
-  price_range: z.string().min(1, 'Price range is required'),
-  next_followup_at: z.string().optional(),
-  followup_context: z.string().min(1, 'Follow-up context is required'),
-  additional_info: z.string().min(1, 'Additional info is required'),
-  status: z.enum(
-    ['new', 'in_followup', 'ready_to_pay', 'payment_pending', 'paid', 'not_interested'],
-    { required_error: 'Status is required' },
-  ),
-});
+function toDatetimeLocal(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
 
-export type ReachoutFormData = z.infer<typeof reachoutSchema>;
-
-export default function ReachoutFormClient() {
+export default function ReachoutEditClient({ record }: { record: ReachoutRecord }) {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -52,27 +41,48 @@ export default function ReachoutFormClient() {
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ReachoutFormData>({
     resolver: zodResolver(reachoutSchema),
     defaultValues: {
-      agent_name: '',
-      customer_whatsapp: '',
-      customer_role: undefined,
-      number_of_learners: '',
-      learner_educational_level: '',
-      subjects_of_interest: '',
-      examination_status: '',
-      session_type_preference: undefined,
-      frequency_of_sessions: '',
-      start_date_time_preference: '',
-      price_range: '',
-      next_followup_at: '',
-      followup_context: '',
-      additional_info: '',
-      status: 'new',
+      agent_name: record.agent_name ?? '',
+      customer_whatsapp: record.customer_whatsapp ?? '',
+      customer_role: (record.customer_role as 'Parent' | 'Student') ?? undefined,
+      number_of_learners: record.number_of_learners ?? '',
+      learner_educational_level: record.learner_educational_level ?? '',
+      subjects_of_interest: record.subjects_of_interest ?? '',
+      examination_status: record.examination_status ?? '',
+      session_type_preference: (record.session_type_preference as 'online' | 'onsite') ?? undefined,
+      frequency_of_sessions: record.frequency_of_sessions ?? '',
+      start_date_time_preference: record.start_date_time_preference ?? '',
+      price_range: record.price_range ?? '',
+      next_followup_at: toDatetimeLocal(record.next_followup_at),
+      followup_context: record.followup_context ?? '',
+      additional_info: record.additional_info ?? '',
+      status: (record.status as ReachoutFormData['status']) ?? 'new',
     },
   });
+
+  useEffect(() => {
+    reset({
+      agent_name: record.agent_name ?? '',
+      customer_whatsapp: record.customer_whatsapp ?? '',
+      customer_role: (record.customer_role as 'Parent' | 'Student') ?? undefined,
+      number_of_learners: record.number_of_learners ?? '',
+      learner_educational_level: record.learner_educational_level ?? '',
+      subjects_of_interest: record.subjects_of_interest ?? '',
+      examination_status: record.examination_status ?? '',
+      session_type_preference: (record.session_type_preference as 'online' | 'onsite') ?? undefined,
+      frequency_of_sessions: record.frequency_of_sessions ?? '',
+      start_date_time_preference: record.start_date_time_preference ?? '',
+      price_range: record.price_range ?? '',
+      next_followup_at: toDatetimeLocal(record.next_followup_at),
+      followup_context: record.followup_context ?? '',
+      additional_info: record.additional_info ?? '',
+      status: (record.status as ReachoutFormData['status']) ?? 'new',
+    });
+  }, [record, reset]);
 
   const customerRole = watch('customer_role');
   const sessionType = watch('session_type_preference');
@@ -86,29 +96,32 @@ export default function ReachoutFormClient() {
           ? new Date(data.next_followup_at).toISOString()
           : null;
 
-      const { error } = await supabase.from('reachout_track').insert({
-        agent_name: data.agent_name.trim(),
-        customer_whatsapp: data.customer_whatsapp.trim(),
-        customer_role: data.customer_role,
-        number_of_learners: data.number_of_learners.trim(),
-        learner_educational_level: data.learner_educational_level.trim(),
-        subjects_of_interest: data.subjects_of_interest.trim(),
-        examination_status: data.examination_status.trim(),
-        session_type_preference: data.session_type_preference,
-        frequency_of_sessions: data.frequency_of_sessions.trim(),
-        start_date_time_preference: data.start_date_time_preference.trim(),
-        price_range: data.price_range.trim(),
-        next_followup_at: nextFollowup,
-        followup_context: data.followup_context.trim(),
-        additional_info: data.additional_info.trim(),
-        status: data.status,
-      });
+      const { error } = await supabase
+        .from('reachout_track')
+        .update({
+          agent_name: data.agent_name.trim(),
+          customer_whatsapp: data.customer_whatsapp.trim(),
+          customer_role: data.customer_role,
+          number_of_learners: data.number_of_learners.trim(),
+          learner_educational_level: data.learner_educational_level.trim(),
+          subjects_of_interest: data.subjects_of_interest.trim(),
+          examination_status: data.examination_status.trim(),
+          session_type_preference: data.session_type_preference,
+          frequency_of_sessions: data.frequency_of_sessions.trim(),
+          start_date_time_preference: data.start_date_time_preference.trim(),
+          price_range: data.price_range.trim(),
+          next_followup_at: nextFollowup,
+          followup_context: data.followup_context.trim(),
+          additional_info: data.additional_info.trim(),
+          status: data.status,
+        })
+        .eq('id', record.id);
 
       if (error) throw error;
       router.push('/admin/reachout');
       router.refresh();
     } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : 'Failed to submit. Please try again.');
+      setSubmitError(e instanceof Error ? e.message : 'Failed to update. Please try again.');
     }
   };
 
@@ -125,21 +138,16 @@ export default function ReachoutFormClient() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Agent & customer info */}
         <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">
             Agent & Customer Info
           </h2>
-          <p className="text-sm text-gray-500">
-            Who attended this customer and the customer&apos;s contact.
-          </p>
           <div className="grid gap-4">
             <div>
               <Label htmlFor="agent_name">Your name (agent) *</Label>
               <Input
                 id="agent_name"
                 {...register('agent_name')}
-                placeholder="e.g. Jane Doe"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.agent_name && (
@@ -151,7 +159,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="customer_whatsapp"
                 {...register('customer_whatsapp')}
-                placeholder="e.g. +237 6XX XXX XXX"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.customer_whatsapp && (
@@ -161,7 +168,6 @@ export default function ReachoutFormClient() {
           </div>
         </section>
 
-        {/* Main fields */}
         <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">
             Customer & Learning Details
@@ -172,7 +178,6 @@ export default function ReachoutFormClient() {
               <Select
                 value={customerRole}
                 onValueChange={(v) => setValue('customer_role', v as 'Parent' | 'Student')}
-                required
               >
                 <SelectTrigger className="mt-1 w-full border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20">
                   <SelectValue placeholder="Select role" />
@@ -191,7 +196,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="number_of_learners"
                 {...register('number_of_learners')}
-                placeholder="e.g. 1 or 2"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.number_of_learners && (
@@ -203,7 +207,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="learner_educational_level"
                 {...register('learner_educational_level')}
-                placeholder="e.g. Primary 5, Form 3"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.learner_educational_level && (
@@ -215,7 +218,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="subjects_of_interest"
                 {...register('subjects_of_interest')}
-                placeholder="e.g. Mathematics, Physics"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.subjects_of_interest && (
@@ -227,7 +229,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="examination_status"
                 {...register('examination_status')}
-                placeholder="e.g. Preparing for GCE O/L"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.examination_status && (
@@ -239,7 +240,6 @@ export default function ReachoutFormClient() {
               <Select
                 value={sessionType}
                 onValueChange={(v) => setValue('session_type_preference', v as 'online' | 'onsite')}
-                required
               >
                 <SelectTrigger className="mt-1 w-full border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20">
                   <SelectValue placeholder="Select type" />
@@ -258,7 +258,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="frequency_of_sessions"
                 {...register('frequency_of_sessions')}
-                placeholder="e.g. Twice per week"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.frequency_of_sessions && (
@@ -270,7 +269,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="start_date_time_preference"
                 {...register('start_date_time_preference')}
-                placeholder="e.g. Next week, mornings"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.start_date_time_preference && (
@@ -282,7 +280,6 @@ export default function ReachoutFormClient() {
               <Input
                 id="price_range"
                 {...register('price_range')}
-                placeholder="e.g. 15,000 - 25,000 XAF/session"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.price_range && (
@@ -292,14 +289,10 @@ export default function ReachoutFormClient() {
           </div>
         </section>
 
-        {/* Follow-up & status section */}
         <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">
-            Follow-up
+            Follow-up & Status
           </h2>
-          <p className="text-sm text-gray-500">
-            When to reach out next and any follow-up context.
-          </p>
           <div className="grid gap-4">
             <div>
               <Label htmlFor="next_followup_at">When to reach out next (date & time)</Label>
@@ -315,7 +308,6 @@ export default function ReachoutFormClient() {
               <Textarea
                 id="followup_context"
                 {...register('followup_context')}
-                placeholder="Details on next steps and follow-up for this customer"
                 rows={4}
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
@@ -328,7 +320,6 @@ export default function ReachoutFormClient() {
               <Textarea
                 id="additional_info"
                 {...register('additional_info')}
-                placeholder="Any other relevant information"
                 rows={3}
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
@@ -343,7 +334,6 @@ export default function ReachoutFormClient() {
                 onValueChange={(v) =>
                   setValue('status', v as ReachoutFormData['status'], { shouldValidate: true })
                 }
-                required
               >
                 <SelectTrigger className="mt-1 w-full border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20">
                   <SelectValue placeholder="Select current status" />
@@ -379,10 +369,10 @@ export default function ReachoutFormClient() {
             {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Submitting...
+                Saving...
               </>
             ) : (
-              'Submit'
+              'Save changes'
             )}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.push('/admin/reachout')}>

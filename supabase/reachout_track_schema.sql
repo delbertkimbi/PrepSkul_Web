@@ -20,14 +20,28 @@ CREATE TABLE IF NOT EXISTS reachout_track (
   next_followup_at TIMESTAMP WITH TIME ZONE,
   followup_context TEXT NOT NULL,
   additional_info TEXT NOT NULL,
+  -- Status / pipeline
+  status TEXT NOT NULL DEFAULT 'new',
   -- Timestamps
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );
 
+-- Ensure status column and constraint exist even if table was created before this migration
+ALTER TABLE reachout_track
+  ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new';
+
+-- Drop then add so this migration is safe to re-run (PostgreSQL has no ADD CONSTRAINT IF NOT EXISTS)
+ALTER TABLE reachout_track
+  DROP CONSTRAINT IF EXISTS reachout_track_status_check;
+ALTER TABLE reachout_track
+  ADD CONSTRAINT reachout_track_status_check
+  CHECK (status IN ('new', 'in_followup', 'ready_to_pay', 'payment_pending', 'paid', 'not_interested'));
+
 CREATE INDEX IF NOT EXISTS idx_reachout_track_customer_whatsapp ON reachout_track(customer_whatsapp);
 CREATE INDEX IF NOT EXISTS idx_reachout_track_created_at ON reachout_track(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_reachout_track_next_followup ON reachout_track(next_followup_at);
+CREATE INDEX IF NOT EXISTS idx_reachout_track_status ON reachout_track(status);
 
 ALTER TABLE reachout_track ENABLE ROW LEVEL SECURITY;
 
