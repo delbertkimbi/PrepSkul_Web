@@ -31,13 +31,14 @@ export default function AmbassadorSignupPage() {
     setLoading(true);
     try {
       const trimmed = email.trim();
-      const { data: ambassador } = await supabase
-        .from('ambassadors')
-        .select('id, application_status, email')
-        .ilike('email', trimmed)
-        .maybeSingle();
+      const checkRes = await fetch('/api/ambassadors/check-approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      });
+      const checkData = await checkRes.json();
 
-      if (!ambassador || ambassador.application_status !== 'approved') {
+      if (!checkData?.allowed || !checkData?.email) {
         setError(
           'No approved ambassador found for this email. Use the exact email from your approved application, or contact support.'
         );
@@ -46,7 +47,7 @@ export default function AmbassadorSignupPage() {
       }
 
       const { error: authError } = await supabase.auth.signUp({
-        email: ambassador.email?.trim().toLowerCase() ?? trimmed.toLowerCase(),
+        email: checkData.email,
         password,
         options: { emailRedirectTo: undefined },
       });
