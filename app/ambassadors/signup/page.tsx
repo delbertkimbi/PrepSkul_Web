@@ -1,5 +1,10 @@
 'use client';
 
+import { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function AmbassadorSignupPage() {
   const [email, setEmail] = useState('');
