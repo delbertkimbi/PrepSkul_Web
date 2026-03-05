@@ -17,10 +17,12 @@ export async function POST(request: Request) {
     const { data: ambassador } = await supabase
       .from('ambassadors')
       .select('id, email, application_status')
-      .ilike('email', email)
+      .eq('application_status', 'approved')
+      // Use wildcard match to be robust to stray spaces/case differences
+      .ilike('email', `%${email}%`)
       .maybeSingle();
 
-    if (!ambassador || ambassador.application_status !== 'approved') {
+    if (!ambassador) {
       return NextResponse.json({ allowed: false });
     }
 
