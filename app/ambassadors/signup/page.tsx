@@ -30,10 +30,11 @@ export default function AmbassadorSignupPage() {
 
     setLoading(true);
     try {
+      const trimmed = email.trim();
       const { data: ambassador } = await supabase
         .from('ambassadors')
-        .select('id, application_status')
-        .eq('email', email.trim().toLowerCase())
+        .select('id, application_status, email')
+        .ilike('email', trimmed)
         .maybeSingle();
 
       if (!ambassador || ambassador.application_status !== 'approved') {
@@ -45,7 +46,7 @@ export default function AmbassadorSignupPage() {
       }
 
       const { error: authError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
+        email: ambassador.email?.trim().toLowerCase() ?? trimmed.toLowerCase(),
         password,
         options: { emailRedirectTo: undefined },
       });

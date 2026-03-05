@@ -32,7 +32,7 @@ export default function AmbassadorLoginPage() {
       const { data: ambassador } = await supabase
         .from('ambassadors')
         .select('id, application_status')
-        .eq('email', data.user.email)
+        .ilike('email', data.user.email)
         .maybeSingle();
 
       if (!ambassador || ambassador.application_status !== 'approved') {
