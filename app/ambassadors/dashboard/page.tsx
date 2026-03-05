@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getServerSession } from '@/lib/supabase-server';
-import { getApprovedAmbassadorByEmail } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import AmbassadorHeader from '@/components/ambassador-header';
 import { Footer } from '@/components/footer';
 import AmbassadorDashboardClient from './AmbassadorDashboardClient';
@@ -11,7 +11,13 @@ export default async function AmbassadorDashboardPage() {
     redirect('/ambassadors/login');
   }
 
-  const ambassador = await getApprovedAmbassadorByEmail(user.email);
+  const adminClient = getSupabaseAdmin();
+  const { data: ambassador } = await adminClient
+    .from('ambassadors')
+    .select('id, full_name, email, application_status')
+    .eq('application_status', 'approved')
+    .ilike('email', `%${user.email.trim()}%`)
+    .maybeSingle();
   if (!ambassador) {
     redirect('/ambassadors/login?error=not_approved');
   }
