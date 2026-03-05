@@ -14,21 +14,30 @@ export async function POST(request: Request) {
     }
 
     const supabase = getSupabaseAdmin();
-    const { data: ambassador } = await supabase
+    const { data, error } = await supabase
       .from('ambassadors')
       .select('id, email, application_status')
       .eq('application_status', 'approved')
       // Use wildcard match to be robust to stray spaces/case differences
       .ilike('email', `%${email}%`)
-      .maybeSingle();
+      .order('approved_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      console.error('check-approval query error:', error);
+      return NextResponse.json({ allowed: false, reason: 'query_error' }, { status: 500 });
+    }
+
+    const ambassador = data?.[0];
 
     if (!ambassador) {
-      return NextResponse.json({ allowed: false });
+      return NextResponse.json({ allowed: false, reason: 'not_found' });
     }
 
     return NextResponse.json({
       allowed: true,
       email: ambassador.email?.trim().toLowerCase() ?? email.toLowerCase(),
+      reason: 'ok',
     });
   } catch (e) {
     console.error('Ambassador check-approval error:', e);
