@@ -150,7 +150,7 @@ export default function AmbassadorsPage() {
             >
               <div className="relative">
                 <Image
-                  src="/ambs.png"
+                  src="/images/presenting.svg"
                   alt="PrepSkul Ambassadors"
                   width={1200}
                   height={1200}
