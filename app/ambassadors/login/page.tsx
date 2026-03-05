@@ -27,15 +27,17 @@ export default function AmbassadorLoginPage() {
       });
 
       if (authError) throw authError;
-      if (!data.user?.email) throw new Error('No email returned');
+      const userEmail = data.user?.email?.trim();
+      if (!userEmail) throw new Error('No email returned');
 
-      const { data: ambassador } = await supabase
-        .from('ambassadors')
-        .select('id, application_status')
-        .ilike('email', data.user.email)
-        .maybeSingle();
+      const res = await fetch('/api/ambassadors/check-approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail }),
+      });
+      const checkData = await res.json();
 
-      if (!ambassador || ambassador.application_status !== 'approved') {
+      if (!checkData?.allowed) {
         await supabase.auth.signOut();
         throw new Error('No approved ambassador account found for this email.');
       }
