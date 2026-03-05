@@ -49,8 +49,9 @@ export async function getApprovedAmbassadorByEmail(email: string) {
   const { data } = await supabase
     .from('ambassadors')
     .select('id, full_name, email')
-    .ilike('email', email)
     .eq('application_status', 'approved')
+    // Use wildcard and trimmed email to be robust to small differences
+    .ilike('email', `%${email.trim()}%`)
     .maybeSingle();
   return data;
 }
