@@ -1,10 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
-import { Eye, EyeOff } from 'lucide-react';
 
 export default function AmbassadorSignupPage() {
   const [email, setEmail] = useState('');
@@ -68,7 +63,7 @@ export default function AmbassadorSignupPage() {
           <div className="w-full max-w-md">
             <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
               <div className="flex justify-center mb-4">
-                <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
+                <Image src="/logo.svg" alt="PrepSkul logo" width={48} height={48} />
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Account created</h2>
               <p className="text-gray-600 text-sm mb-6">
@@ -93,7 +88,7 @@ export default function AmbassadorSignupPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <div className="flex flex-col items-center text-center mb-8 gap-3">
-              <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
+              <Image src="/logo.svg" alt="PrepSkul logo" width={48} height={48} />
               <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
               <p className="text-gray-600 mt-2 text-sm">
                 Use the <strong>same email</strong> you used in your ambassador application. Only approved ambassadors can create an account.

@@ -1,11 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { Eye, EyeOff } from 'lucide-react';
 
 export default function AmbassadorLoginPage() {
   const router = useRouter();
@@ -56,7 +50,7 @@ export default function AmbassadorLoginPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <div className="flex flex-col items-center text-center mb-8 gap-3">
-              <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
+              <Image src="/logo.svg" alt="PrepSkul logo" width={48} height={48} />
               <h1 className="text-2xl font-bold text-gray-900">Ambassador Dashboard</h1>
               <p className="text-gray-600 mt-2">Sign in with the email you used in your ambassador application</p>
             </div>
