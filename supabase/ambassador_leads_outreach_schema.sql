@@ -76,7 +76,7 @@ CREATE POLICY "Ambassadors can view own outreach"
   USING (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -87,7 +87,7 @@ CREATE POLICY "Ambassadors can insert own outreach"
   WITH CHECK (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -98,7 +98,7 @@ CREATE POLICY "Ambassadors can update own outreach"
   USING (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -109,7 +109,7 @@ CREATE POLICY "Ambassadors can delete own outreach"
   USING (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -131,7 +131,7 @@ CREATE POLICY "Ambassadors can view own leads"
   USING (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -142,7 +142,7 @@ CREATE POLICY "Ambassadors can insert own leads"
   WITH CHECK (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -153,7 +153,7 @@ CREATE POLICY "Ambassadors can update own leads"
   USING (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
@@ -164,7 +164,7 @@ CREATE POLICY "Ambassadors can delete own leads"
   USING (
     ambassador_id IN (
       SELECT id FROM ambassadors
-      WHERE email = (auth.jwt() ->> 'email')
+      WHERE LOWER(TRIM(email)) = LOWER(TRIM(auth.jwt() ->> 'email'))
       AND application_status = 'approved'
     )
   );
