@@ -40,7 +40,7 @@ export default function AmbassadorSignupPage() {
 
       if (!checkData?.allowed || !checkData?.email) {
         setError(
-          'No approved ambassador found for this email. Use the exact email from your approved application, or contact support.'
+          `No approved ambassador found for this email. Use the exact email from your approved application, or contact support.${checkData?.reason ? ` (reason: ${checkData.reason})` : ''}`
         );
         setLoading(false);
         return;
