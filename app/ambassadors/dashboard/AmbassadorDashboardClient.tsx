@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -832,6 +832,7 @@ function OutreachForm({
     description: '',
   });
   const [photos, setPhotos] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -866,7 +867,9 @@ function OutreachForm({
           .upload(path, file, { upsert: false, contentType: file.type });
 
         if (uploadError) {
-          throw new Error(`Photo upload failed: ${uploadError.message}`);
+          throw new Error(
+            `Photo upload failed: ${uploadError.message}. Please confirm the 'ambassador_outreach' storage bucket exists and is public.`
+          );
         }
 
         const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path);
@@ -959,27 +962,30 @@ function OutreachForm({
         </div>
         <div className="md:col-span-2">
           <Label>Photos of this activity (2 required)</Label>
-          <div className="mt-1 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3">
-            <label className="flex flex-col gap-2 cursor-pointer">
-              <span className="text-sm font-medium text-gray-800">
-                Click to choose photos or drag and drop
-              </span>
-              <span className="text-xs text-gray-500">
-                Please upload <span className="font-semibold">exactly two clear photos</span> that show this
-                outreach activity — for example, a group or community photo that includes you, or a screenshot
-                of an online session (Google Meet, Zoom, WhatsApp call) with the people you reached.
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  const selected = Array.from(e.target.files || []).slice(0, 2);
-                  setPhotos(selected);
-                }}
-                className="hidden"
-              />
-            </label>
+          <div className="mt-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 space-y-2">
+            <p className="text-xs text-gray-600">
+              Please upload <span className="font-semibold">exactly two clear photos</span> that show this
+              outreach activity. For example, a group or community photo that includes you, or a screenshot of
+              an online session (Google Meet, Zoom, WhatsApp call) with the people you reached.
+            </p>
+            <Button
+              type="button"
+              className="bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Choose photos
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const selected = Array.from(e.target.files || []).slice(0, 2);
+                setPhotos(selected);
+              }}
+              className="hidden"
+            />
             {photos.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {photos.map((file, idx) => (
