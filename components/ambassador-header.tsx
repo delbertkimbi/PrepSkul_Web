@@ -15,7 +15,7 @@ export default function AmbassadorHeader() {
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo.svg" alt="PrepSkul logo" width={32} height={32} />
+              <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={32} height={32} />
               <span className="text-base font-semibold text-slate-900">PrepSkul</span>
             </Link>
           </div>
@@ -33,12 +33,6 @@ export default function AmbassadorHeader() {
               className="text-sm font-medium text-slate-600 hover:text-slate-900"
             >
               About
-            </Link>
-            <Link
-              href="https://prepskul.com/tutors"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900"
-            >
-              Find a Tutor
             </Link>
             <Link
               href="/ambassadors/dashboard"
@@ -79,13 +73,6 @@ export default function AmbassadorHeader() {
                 onClick={() => setMenuOpen(false)}
               >
                 About
-              </Link>
-              <Link
-                href="https://prepskul.com/tutors"
-                className="px-2 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md"
-                onClick={() => setMenuOpen(false)}
-              >
-                Find a Tutor
               </Link>
               <Link
                 href="/ambassadors/dashboard"

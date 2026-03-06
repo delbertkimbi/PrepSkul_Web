@@ -71,7 +71,6 @@ export type OutreachActivity = {
   ambassador_id: string;
   activity_name: string;
   activity_type: string;
-  platform: string;
   community_link: string | null;
   estimated_audience: number | null;
   description: string | null;
@@ -472,12 +471,13 @@ function LeadForm({
           />
         </div>
         <div>
-          <Label>Course Interest *</Label>
+          <Label>Specific Area of Interest *</Label>
           <Input
             value={form.course_interest}
             onChange={(e) => setForm((f) => ({ ...f, course_interest: e.target.value }))}
             required
             className="mt-1 border-gray-300"
+            placeholder="e.g. Mathematics, Exam prep, Study skills"
           />
         </div>
         <div>
@@ -603,7 +603,7 @@ function LeadsTable({
           <tr className="border-b border-gray-200">
             <th className="text-left py-3 px-2 font-medium text-gray-700">Name</th>
             <th className="text-left py-3 px-2 font-medium text-gray-700">Phone</th>
-            <th className="text-left py-3 px-2 font-medium text-gray-700">Course Interest</th>
+            <th className="text-left py-3 px-2 font-medium text-gray-700">Specific Area of Interest</th>
             <th className="text-left py-3 px-2 font-medium text-gray-700">Status</th>
             <th className="text-left py-3 px-2 font-medium text-gray-700">Outreach Source</th>
             <th className="text-left py-3 px-2 font-medium text-gray-700">Date Added</th>
@@ -724,7 +724,6 @@ function OutreachTab({
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Activity Name</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Type</th>
-                    <th className="text-left py-3 px-2 font-medium text-gray-700">Platform</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Audience Size</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Date</th>
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Leads Generated</th>
@@ -740,7 +739,6 @@ function OutreachTab({
                     >
                       <td className="py-3 px-2 font-medium">{a.activity_name}</td>
                       <td className="py-3 px-2">{a.activity_type}</td>
-                      <td className="py-3 px-2">{a.platform}</td>
                       <td className="py-3 px-2">{a.estimated_audience ?? '—'}</td>
                       <td className="py-3 px-2">{formatDate(a.date)}</td>
                       <td className="py-3 px-2">{a.leads_count ?? 0}</td>
@@ -797,7 +795,6 @@ function OutreachForm({
   const [form, setForm] = useState({
     activity_name: '',
     activity_type: '' as string,
-    platform: '',
     community_link: '',
     estimated_audience: '',
     date: new Date().toISOString().slice(0, 10),
@@ -813,7 +810,6 @@ function OutreachForm({
         ambassador_id: ambassadorId,
         activity_name: form.activity_name.trim(),
         activity_type: form.activity_type,
-        platform: form.platform.trim(),
         community_link: form.community_link?.trim() || null,
         estimated_audience: form.estimated_audience ? parseInt(form.estimated_audience, 10) : null,
         date: form.date,
@@ -859,16 +855,6 @@ function OutreachForm({
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div>
-          <Label>Platform *</Label>
-          <Input
-            value={form.platform}
-            onChange={(e) => setForm((f) => ({ ...f, platform: e.target.value }))}
-            required
-            placeholder="e.g. WhatsApp, Telegram"
-            className="mt-1 border-gray-300"
-          />
         </div>
         <div>
           <Label>Community Link (optional)</Label>

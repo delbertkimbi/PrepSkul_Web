@@ -150,7 +150,7 @@ export default function AmbassadorsPage() {
             >
               <div className="relative">
                 <Image
-                  src="/images/presenting.svg"
+                  src="/ambs.png"
                   alt="PrepSkul Ambassadors"
                   width={1200}
                   height={1200}
@@ -306,22 +306,6 @@ export default function AmbassadorsPage() {
                 className="text-base font-semibold px-8 h-12 bg-white text-primary hover:bg-primary-foreground/10 shadow-xl hover:shadow-2xl transition-all"
               >
                 <Link href="/ambassadors/apply">Apply Now and Start Making Impact</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                className="text-base font-semibold px-8 h-12 border-2 border-white text-secondary-foreground hover:bg-white/10"
-              >
-                <Link href="/ambassadors/referral-track">Referral Track</Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                className="text-base font-semibold px-8 h-12 border-2 border-white text-secondary-foreground hover:bg-white/10"
-              >
-                <Link href="/ambassadors/dashboard">My Dashboard</Link>
               </Button>
             </div>
           </motion.div>
