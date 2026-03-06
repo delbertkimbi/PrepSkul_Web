@@ -227,12 +227,18 @@ export function Footer() {
 
           <div className="pt-6 border-t border-primary-foreground/20 flex flex-col md:flex-row justify-between items-center gap-4 text-primary-foreground/80 text-sm">
             <p>&copy; {new Date().getFullYear()} PrepSkul. {t.footer.allRightsReserved}</p>
-            <div className="flex gap-6">
+            <div className="flex flex-wrap gap-4 md:gap-6">
               <Link href={`/${locale}/privacy-policy`} className="hover:text-primary-foreground hover:underline transition-colors">
                 {t.footer.privacyPolicy}
               </Link>
               <Link href={`/${locale}/terms`} className="hover:text-primary-foreground hover:underline transition-colors">
                 {t.footer.termsOfService}
+              </Link>
+              <Link href={`/${locale}/safeguarding`} className="hover:text-primary-foreground hover:underline transition-colors">
+                {t.footer.safeguardingPolicy}
+              </Link>
+              <Link href={`/${locale}/code-of-conduct`} className="hover:text-primary-foreground hover:underline transition-colors">
+                {t.footer.codeOfConduct}
               </Link>
             </div>
           </div>

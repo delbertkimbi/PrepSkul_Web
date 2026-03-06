@@ -21,6 +21,8 @@ export default function AdminNav() {
     { name: 'Reachout Track', href: '/admin/reachout' },
     { name: 'Referral Track', href: '/admin/referral-track' },
     { name: 'Sessions', href: '/admin/sessions' },
+    { name: 'Safety', href: '/admin/sessions/safety' },
+    { name: 'Incidents', href: '/admin/incidents' },
     { name: 'Revenue', href: '/admin/revenue' },
     { name: 'Pricing', href: '/admin/pricing' },
     { name: 'Notifications', href: '/admin/notifications/send' },
