@@ -68,6 +68,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
   const [searchWhatsApp, setSearchWhatsApp] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [followupFilter, setFollowupFilter] = useState<string>('all');
+  const [agentFilter, setAgentFilter] = useState<string>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredRecords = useMemo(() => {
@@ -81,6 +82,9 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
     if (roleFilter !== 'all') {
       list = list.filter((r) => r.customer_role === roleFilter);
     }
+    if (agentFilter !== 'all') {
+      list = list.filter((r) => r.agent_name === agentFilter);
+    }
     if (followupFilter === 'today') {
       const today = new Date();
       const todayStr = today.toISOString().slice(0, 10);
@@ -92,7 +96,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
       });
     }
     return list;
-  }, [records, searchWhatsApp, roleFilter, followupFilter]);
+  }, [records, searchWhatsApp, roleFilter, followupFilter, agentFilter]);
 
   return (
     <div className="space-y-6">
@@ -107,7 +111,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
             className="pl-10 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
             <SelectTrigger className="w-[150px] border-gray-300">
               <SelectValue placeholder="Customer role" />
@@ -125,6 +129,19 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
             <SelectContent>
               <SelectItem value="all">All follow-ups</SelectItem>
               <SelectItem value="today">Follow-ups today</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger className="w-[170px] border-gray-300">
+              <SelectValue placeholder="Agent" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All agents</SelectItem>
+              <SelectItem value="Brian">Brian</SelectItem>
+              <SelectItem value="Delbert">Delbert</SelectItem>
+              <SelectItem value="Calvin">Calvin</SelectItem>
+              <SelectItem value="Brinzel">Brinzel</SelectItem>
+              <SelectItem value="Brandon">Brandon</SelectItem>
             </SelectContent>
           </Select>
         </div>

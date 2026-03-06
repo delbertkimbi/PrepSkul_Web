@@ -21,7 +21,9 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export const reachoutSchema = z.object({
-  agent_name: z.string().min(1, 'Agent name is required'),
+  agent_name: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon'], {
+    required_error: 'Agent name is required',
+  }),
   customer_whatsapp: z.string().min(1, "Customer's WhatsApp number is required"),
   customer_role: z.enum(['Parent', 'Student'], { required_error: 'Customer role is required' }),
   number_of_learners: z.string().min(1, 'Number of learners is required'),
@@ -56,7 +58,7 @@ export default function ReachoutFormClient() {
   } = useForm<ReachoutFormData>({
     resolver: zodResolver(reachoutSchema),
     defaultValues: {
-      agent_name: '',
+      agent_name: undefined,
       customer_whatsapp: '',
       customer_role: undefined,
       number_of_learners: '',
@@ -136,12 +138,22 @@ export default function ReachoutFormClient() {
           <div className="grid gap-4">
             <div>
               <Label htmlFor="agent_name">Your name (agent) *</Label>
-              <Input
-                id="agent_name"
-                {...register('agent_name')}
-                placeholder="e.g. Jane Doe"
-                className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
-              />
+              <Select
+                value={watch('agent_name')}
+                onValueChange={(v) => setValue('agent_name', v as ReachoutFormData['agent_name'])}
+                required
+              >
+                <SelectTrigger className="mt-1 w-full border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20">
+                  <SelectValue placeholder="Select agent" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Brian">Brian</SelectItem>
+                  <SelectItem value="Delbert">Delbert</SelectItem>
+                  <SelectItem value="Calvin">Calvin</SelectItem>
+                  <SelectItem value="Brinzel">Brinzel</SelectItem>
+                  <SelectItem value="Brandon">Brandon</SelectItem>
+                </SelectContent>
+              </Select>
               {errors.agent_name && (
                 <p className="mt-1 text-sm text-red-600">{errors.agent_name.message}</p>
               )}
