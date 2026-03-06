@@ -15,7 +15,9 @@ export default async function AmbassadorOutreachPage() {
   const [leadsRes, activitiesRes, ambassadorsRes] = await Promise.all([
     supabase
       .from('ambassador_leads')
-      .select('*, ambassadors(full_name, email), outreach_activities(activity_name)')
+      .select(
+        '*, ambassadors(full_name, email), outreach_activities(id, activity_name, photo_url_1, photo_url_2, activity_type, community_link, estimated_audience, description, date)'
+      )
       .order('created_at', { ascending: false }),
     supabase
       .from('outreach_activities')
@@ -31,10 +33,9 @@ export default async function AmbassadorOutreachPage() {
   const leads = (leadsRes.data || []).map((l: Record<string, unknown>) => ({
     ...l,
     ambassador_name: (l.ambassadors as { full_name?: string } | null)?.full_name ?? '—',
-    // If a lead is linked to an outreach activity, show that activity name as the outreach source
-    lead_source:
-      (l.outreach_activities as { activity_name?: string } | null)?.activity_name ??
-      (l.lead_source as string),
+    outreach_activity_name: (l.outreach_activities as { activity_name?: string } | null)?.activity_name ?? null,
+    outreach_photo_url_1: (l.outreach_activities as { photo_url_1?: string } | null)?.photo_url_1 ?? null,
+    outreach_photo_url_2: (l.outreach_activities as { photo_url_2?: string } | null)?.photo_url_2 ?? null,
   }));
   const activities = (activitiesRes.data || []).map((a: Record<string, unknown>) => ({
     ...a,
