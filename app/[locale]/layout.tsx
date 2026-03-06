@@ -7,6 +7,7 @@ import { LocaleProvider } from "@/lib/locale-context"
 import { localeMetadata, type Locale } from "@/lib/i18n"
 import "../globals.css"
 import { Suspense } from "react"
+import { AndroidAppPrompt } from "@/components/AndroidAppPrompt"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -115,6 +116,7 @@ export default async function LocaleLayout({
         <LocaleProvider locale={locale}>
           <Suspense fallback={null}>{children}</Suspense>
         </LocaleProvider>
+        <AndroidAppPrompt />
         <Analytics />
       </body>
     </html>

@@ -186,6 +186,15 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      // Onsite payment rules: only release if session is eligible (tutor checked in, no dispute or 7 days passed)
+      const { data: eligible } = await supabase
+        .rpc('is_session_eligible_for_payment', { p_session_id: sessionId });
+      if (eligible !== true) {
+        console.log(`⚠️ Session ${sessionId} not eligible for payment (dispute or missing check-in). Skipping.`);
+        skippedCount++;
+        continue;
+      }
+
       const { error: updateEarningsError } = await supabase
         .from('tutor_earnings')
         .update({
