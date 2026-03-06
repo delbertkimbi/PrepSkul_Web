@@ -303,9 +303,9 @@ export default function AmbassadorOutreachClient({
   }, [initialLeads, selectedActivityId]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
       {/* Analytics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card className="border-gray-200">
           <CardContent className="pt-6">
             <div className="flex items-center gap-2 text-gray-600 text-sm">
@@ -350,8 +350,8 @@ export default function AmbassadorOutreachClient({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max">
           <button
             onClick={() => setActiveView('leads')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -380,9 +380,9 @@ export default function AmbassadorOutreachClient({
           <CardHeader>
             <CardTitle className="text-lg">Leads</CardTitle>
             <p className="text-sm text-gray-500 mt-1">Filter by ambassador, status, and date.</p>
-            <div className="flex flex-wrap gap-3 mt-2">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
               <Select value={ambassadorFilter} onValueChange={setAmbassadorFilter}>
-                <SelectTrigger className="w-[180px] border-gray-300">
+                <SelectTrigger className="w-full sm:w-[180px] border-gray-300 min-w-0">
                   <SelectValue placeholder="Filter by ambassador" />
                 </SelectTrigger>
                 <SelectContent>
@@ -395,7 +395,7 @@ export default function AmbassadorOutreachClient({
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[160px] border-gray-300">
+                <SelectTrigger className="w-full sm:w-[160px] border-gray-300 min-w-0">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -412,27 +412,27 @@ export default function AmbassadorOutreachClient({
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 placeholder="From"
-                className="w-[140px] border-gray-300"
+                className="w-full sm:w-[140px] border-gray-300 min-w-0"
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 placeholder="To"
-                className="w-[140px] border-gray-300"
+                className="w-full sm:w-[140px] border-gray-300 min-w-0"
               />
               <Input
                 type="text"
                 value={searchLead}
                 onChange={(e) => setSearchLead(e.target.value)}
                 placeholder="Search name, phone, course..."
-                className="max-w-xs border-gray-300"
+                className="w-full sm:max-w-xs border-gray-300 min-w-0"
               />
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <table className="w-full text-sm border-collapse min-w-[700px]">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Lead Name</th>
@@ -481,9 +481,9 @@ export default function AmbassadorOutreachClient({
           <CardHeader>
             <CardTitle className="text-lg">Outreach Activities</CardTitle>
             <p className="text-sm text-gray-500 mt-1">Filter by ambassador.</p>
-            <div className="flex flex-wrap gap-3 mt-2">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
               <Select value={ambassadorFilter} onValueChange={setAmbassadorFilter}>
-                <SelectTrigger className="w-[180px] border-gray-300">
+                <SelectTrigger className="w-full sm:w-[180px] border-gray-300 min-w-0">
                   <SelectValue placeholder="Filter by ambassador" />
                 </SelectTrigger>
                 <SelectContent>
@@ -498,8 +498,8 @@ export default function AmbassadorOutreachClient({
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
+            <div className="overflow-x-auto -mx-2 sm:mx-0">
+              <table className="w-full text-sm border-collapse min-w-[700px]">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 px-2 font-medium text-gray-700">Activity Name</th>
