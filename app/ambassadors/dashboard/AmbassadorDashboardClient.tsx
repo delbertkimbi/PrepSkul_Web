@@ -109,16 +109,14 @@ export default function AmbassadorDashboardClient({
     const { data } = await supabase
       .from('ambassador_leads')
       .select('*, outreach_activities(activity_name, photo_url_1, photo_url_2)')
-      .eq('ambassador_id', ambassadorId)
       .order('created_at', { ascending: false });
     setLeads((data as Lead[]) || []);
-  }, [ambassadorId]);
+  }, []);
 
   const fetchActivities = useCallback(async () => {
     const { data: activitiesData } = await supabase
       .from('outreach_activities')
       .select('*')
-      .eq('ambassador_id', ambassadorId)
       .order('date', { ascending: false });
     const list = (activitiesData as OutreachActivity[]) || [];
     const withCounts = await Promise.all(
@@ -131,7 +129,7 @@ export default function AmbassadorDashboardClient({
       })
     );
     setActivities(withCounts);
-  }, [ambassadorId]);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -542,15 +540,17 @@ function LeadForm({
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <Label>Follow-up Date (optional)</Label>
-          <Input
-            type="date"
-            value={form.follow_up_date}
-            onChange={(e) => setForm((f) => ({ ...f, follow_up_date: e.target.value }))}
-            className="mt-1 border-gray-300"
-          />
-        </div>
+        {form.status === 'Follow Up Needed' && (
+          <div>
+            <Label>Follow-up Date</Label>
+            <Input
+              type="date"
+              value={form.follow_up_date}
+              onChange={(e) => setForm((f) => ({ ...f, follow_up_date: e.target.value }))}
+              className="mt-1 border-gray-300"
+            />
+          </div>
+        )}
       </div>
       <div>
         <Label>Notes</Label>
@@ -926,14 +926,17 @@ function OutreachForm({
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <Label>Community Link (optional)</Label>
-          <Input
-            value={form.community_link}
-            onChange={(e) => setForm((f) => ({ ...f, community_link: e.target.value }))}
-            className="mt-1 border-gray-300"
-          />
-        </div>
+        {['WhatsApp Community', 'Telegram Group', 'Online Community'].includes(form.activity_type) && (
+          <div>
+            <Label>Community Link</Label>
+            <Input
+              value={form.community_link}
+              onChange={(e) => setForm((f) => ({ ...f, community_link: e.target.value }))}
+              className="mt-1 border-gray-300"
+              placeholder="e.g. WhatsApp/Telegram/online community invite link"
+            />
+          </div>
+        )}
         <div>
           <Label>Estimated Audience Size</Label>
           <Input
@@ -956,20 +959,40 @@ function OutreachForm({
         </div>
         <div className="md:col-span-2">
           <Label>Photos of this activity (2 required)</Label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => {
-              const selected = Array.from(e.target.files || []).slice(0, 2);
-              setPhotos(selected);
-            }}
-            className="mt-1 block w-full text-sm text-gray-700"
-          />
-          <p className="mt-1 text-xs text-gray-500">
-            Upload exactly two clear photos that show this outreach activity. For example, a group photo of
-            the community you reached, or a screenshot of an online session with potential users.
-          </p>
+          <div className="mt-1 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-4 py-3">
+            <label className="flex flex-col gap-2 cursor-pointer">
+              <span className="text-sm font-medium text-gray-800">
+                Click to choose photos or drag and drop
+              </span>
+              <span className="text-xs text-gray-500">
+                Please upload <span className="font-semibold">exactly two clear photos</span> that show this
+                outreach activity — for example, a group or community photo that includes you, or a screenshot
+                of an online session (Google Meet, Zoom, WhatsApp call) with the people you reached.
+              </span>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const selected = Array.from(e.target.files || []).slice(0, 2);
+                  setPhotos(selected);
+                }}
+                className="hidden"
+              />
+            </label>
+            {photos.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {photos.map((file, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-700 border border-gray-200"
+                  >
+                    {idx === 0 ? 'Photo 1:' : 'Photo 2:'}&nbsp;{file.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div>
