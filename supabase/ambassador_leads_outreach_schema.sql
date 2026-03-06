@@ -7,20 +7,29 @@ CREATE TABLE IF NOT EXISTS outreach_activities (
   ambassador_id UUID NOT NULL REFERENCES ambassadors(id) ON DELETE CASCADE,
   activity_name TEXT NOT NULL,
   activity_type TEXT NOT NULL CHECK (activity_type IN (
-    'WhatsApp Community',
-    'Telegram Group',
-    'Discord Community',
-    'Campus Event',
-    'Classroom Talk',
-    'Online Community'
+  'WhatsApp Community',
+  'Telegram Group',
+  'Discord Community',
+  'Campus Event',
+  'Classroom Talk',
+  'Online Community'
   )),
   platform TEXT NOT NULL,
   community_link TEXT,
   estimated_audience INTEGER,
   description TEXT,
   date DATE NOT NULL,
+  photo_url_1 TEXT,
+  photo_url_2 TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );
+
+-- Add photo URL columns if table already exists
+ALTER TABLE outreach_activities
+  ADD COLUMN IF NOT EXISTS photo_url_1 TEXT;
+
+ALTER TABLE outreach_activities
+  ADD COLUMN IF NOT EXISTS photo_url_2 TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_outreach_activities_ambassador_id ON outreach_activities(ambassador_id);
 CREATE INDEX IF NOT EXISTS idx_outreach_activities_date ON outreach_activities(date DESC);
@@ -178,3 +187,4 @@ CREATE POLICY "Admins can manage all leads"
   WITH CHECK (
     (SELECT is_admin FROM profiles WHERE id = auth.uid()) = true
   );
+  

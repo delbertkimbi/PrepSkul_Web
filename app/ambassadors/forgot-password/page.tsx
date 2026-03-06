@@ -35,7 +35,7 @@ export default function AmbassadorForgotPasswordPage() {
           <div className="w-full max-w-md">
             <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
               <div className="flex justify-center mb-4">
-                <Image src="/logo.svg" alt="PrepSkul logo" width={48} height={48} />
+                <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-2">Check your email</h2>
               <p className="text-gray-600 text-sm mb-6">
@@ -60,7 +60,7 @@ export default function AmbassadorForgotPasswordPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-2xl shadow-2xl p-8">
             <div className="flex flex-col items-center text-center mb-8 gap-3">
-              <Image src="/logo.svg" alt="PrepSkul logo" width={48} height={48} />
+              <Image src="/app_logo(blue).png" alt="PrepSkul logo" width={48} height={48} />
               <h1 className="text-2xl font-bold text-gray-900">Forgot password?</h1>
               <p className="text-gray-600 mt-2 text-sm">
                 Enter the email you use for the Ambassador Dashboard. We&apos;ll send you a link to reset your password.

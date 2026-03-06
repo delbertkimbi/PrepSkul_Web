@@ -63,7 +63,11 @@ export type Lead = {
   notes: string | null;
   follow_up_date: string | null;
   created_at: string;
-  outreach_activities?: { activity_name: string } | null;
+  outreach_activities?: {
+    activity_name: string;
+    photo_url_1?: string | null;
+    photo_url_2?: string | null;
+  } | null;
 };
 
 export type OutreachActivity = {
@@ -76,6 +80,8 @@ export type OutreachActivity = {
   description: string | null;
   date: string;
   created_at: string;
+  photo_url_1?: string | null;
+  photo_url_2?: string | null;
   leads_count?: number;
 };
 
@@ -102,7 +108,7 @@ export default function AmbassadorDashboardClient({
   const fetchLeads = useCallback(async () => {
     const { data } = await supabase
       .from('ambassador_leads')
-      .select('*, outreach_activities(activity_name)')
+      .select('*, outreach_activities(activity_name, photo_url_1, photo_url_2)')
       .eq('ambassador_id', ambassadorId)
       .order('created_at', { ascending: false });
     setLeads((data as Lead[]) || []);
@@ -647,6 +653,31 @@ function LeadsTable({
               </td>
               <td className="py-3 px-2">
                 {lead.outreach_activities?.activity_name ?? lead.lead_source}
+                {lead.outreach_activities &&
+                  (lead.outreach_activities.photo_url_1 || lead.outreach_activities.photo_url_2) && (
+                    <div className="mt-1 flex gap-2 flex-wrap">
+                      {lead.outreach_activities.photo_url_1 && (
+                        <a
+                          href={lead.outreach_activities.photo_url_1}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Photo 1
+                        </a>
+                      )}
+                      {lead.outreach_activities.photo_url_2 && (
+                        <a
+                          href={lead.outreach_activities.photo_url_2}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Photo 2
+                        </a>
+                      )}
+                    </div>
+                  )}
               </td>
               <td className="py-3 px-2">{formatDate(lead.created_at)}</td>
               <td className="py-3 px-2">{formatDate(lead.follow_up_date)}</td>
@@ -800,20 +831,59 @@ function OutreachForm({
     date: new Date().toISOString().slice(0, 10),
     description: '',
   });
+  const [photos, setPhotos] = useState<File[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSaving(true);
     try {
+      if (photos.length !== 2) {
+        setError('Please upload exactly two photos for this outreach activity.');
+        setSaving(false);
+        return;
+      }
+
+      const bucket = 'ambassador_outreach';
+      const uploadedUrls: string[] = [];
+
+      for (let i = 0; i < photos.length; i += 1) {
+        const file = photos[i];
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+          throw new Error('Photos must be JPG, PNG, or WEBP images.');
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          throw new Error('Each photo must be less than 2MB.');
+        }
+
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const path = `${ambassadorId}/${timestamp}-${i + 1}-${safeName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(path, file, { upsert: false, contentType: file.type });
+
+        if (uploadError) {
+          throw new Error(`Photo upload failed: ${uploadError.message}`);
+        }
+
+        const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path);
+        uploadedUrls.push(publicData.publicUrl);
+      }
+
       const { error: err } = await supabase.from('outreach_activities').insert({
         ambassador_id: ambassadorId,
         activity_name: form.activity_name.trim(),
         activity_type: form.activity_type,
+        platform: 'N/A',
         community_link: form.community_link?.trim() || null,
         estimated_audience: form.estimated_audience ? parseInt(form.estimated_audience, 10) : null,
         date: form.date,
         description: form.description?.trim() || null,
+        photo_url_1: uploadedUrls[0],
+        photo_url_2: uploadedUrls[1],
       });
       if (err) throw err;
       onSuccess();
@@ -883,6 +953,23 @@ function OutreachForm({
             required
             className="mt-1 border-gray-300"
           />
+        </div>
+        <div className="md:col-span-2">
+          <Label>Photos of this activity (2 required)</Label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => {
+              const selected = Array.from(e.target.files || []).slice(0, 2);
+              setPhotos(selected);
+            }}
+            className="mt-1 block w-full text-sm text-gray-700"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Upload exactly two clear photos that show this outreach activity. For example, a group photo of
+            the community you reached, or a screenshot of an online session with potential users.
+          </p>
         </div>
       </div>
       <div>
