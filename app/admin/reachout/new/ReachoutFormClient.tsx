@@ -29,10 +29,13 @@ export const reachoutSchema = z.object({
   number_of_learners: z.string().min(1, 'Number of learners is required'),
   learner_educational_level: z.string().min(1, 'Learner(s) educational level is required'),
   subjects_of_interest: z.string().min(1, 'Subjects of interest is required'),
-  examination_status: z.string().min(1, 'Examination status is required'),
+  examination_status: z.enum(
+    ['None', 'FSLC', 'GCE O/L', 'GCE A/L', 'Concours', 'Other exam'],
+    { required_error: 'Examination status is required' },
+  ),
   session_type_preference: z.enum(['online', 'onsite'], { required_error: 'Session type is required' }),
-  frequency_of_sessions: z.string().min(1, 'Frequency of sessions is required'),
-  start_date_time_preference: z.string().min(1, 'Start date and time preference is required'),
+  frequency_of_sessions: z.string().optional(),
+  start_date_time_preference: z.string().optional(),
   price_range: z.string().min(1, 'Price range is required'),
   next_followup_at: z.string().optional(),
   followup_context: z.string().min(1, 'Follow-up context is required'),
@@ -64,7 +67,7 @@ export default function ReachoutFormClient() {
       number_of_learners: '',
       learner_educational_level: '',
       subjects_of_interest: '',
-      examination_status: '',
+      examination_status: 'None',
       session_type_preference: undefined,
       frequency_of_sessions: '',
       start_date_time_preference: '',
@@ -79,6 +82,7 @@ export default function ReachoutFormClient() {
   const customerRole = watch('customer_role');
   const sessionType = watch('session_type_preference');
   const status = watch('status');
+  const examStatus = watch('examination_status');
 
   const onSubmit = async (data: ReachoutFormData) => {
     setSubmitError(null);
@@ -95,10 +99,10 @@ export default function ReachoutFormClient() {
         number_of_learners: data.number_of_learners.trim(),
         learner_educational_level: data.learner_educational_level.trim(),
         subjects_of_interest: data.subjects_of_interest.trim(),
-        examination_status: data.examination_status.trim(),
+        examination_status: data.examination_status,
         session_type_preference: data.session_type_preference,
-        frequency_of_sessions: data.frequency_of_sessions.trim(),
-        start_date_time_preference: data.start_date_time_preference.trim(),
+        frequency_of_sessions: data.frequency_of_sessions?.trim() ?? '',
+        start_date_time_preference: data.start_date_time_preference?.trim() ?? '',
         price_range: data.price_range.trim(),
         next_followup_at: nextFollowup,
         followup_context: data.followup_context.trim(),
@@ -235,13 +239,24 @@ export default function ReachoutFormClient() {
               )}
             </div>
             <div>
-              <Label htmlFor="examination_status">Examination status *</Label>
-              <Input
-                id="examination_status"
-                {...register('examination_status')}
-                placeholder="e.g. Preparing for GCE O/L"
-                className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
-              />
+              <Label>Examination status *</Label>
+              <Select
+                value={examStatus}
+                onValueChange={(v) => setValue('examination_status', v as ReachoutFormData['examination_status'])}
+                required
+              >
+                <SelectTrigger className="mt-1 w-full border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20">
+                  <SelectValue placeholder="Select exam" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="None">None</SelectItem>
+                  <SelectItem value="FSLC">FSLC</SelectItem>
+                  <SelectItem value="GCE O/L">GCE O/L</SelectItem>
+                  <SelectItem value="GCE A/L">GCE A/L</SelectItem>
+                  <SelectItem value="Concours">Concours</SelectItem>
+                  <SelectItem value="Other exam">Other exam</SelectItem>
+                </SelectContent>
+              </Select>
               {errors.examination_status && (
                 <p className="mt-1 text-sm text-red-600">{errors.examination_status.message}</p>
               )}
@@ -266,11 +281,11 @@ export default function ReachoutFormClient() {
               )}
             </div>
             <div>
-              <Label htmlFor="frequency_of_sessions">Frequency of sessions *</Label>
+              <Label htmlFor="frequency_of_sessions">Frequency of sessions</Label>
               <Input
                 id="frequency_of_sessions"
                 {...register('frequency_of_sessions')}
-                placeholder="e.g. Twice per week"
+                placeholder="e.g. Twice per week (optional)"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.frequency_of_sessions && (
@@ -278,15 +293,15 @@ export default function ReachoutFormClient() {
               )}
             </div>
             <div>
-              <Label htmlFor="start_date_time_preference">Start date and time preference *</Label>
+              <Label htmlFor="start_date_time_preference">Start date and time preference</Label>
               <Input
                 id="start_date_time_preference"
                 {...register('start_date_time_preference')}
-                placeholder="e.g. Next week, mornings"
+                placeholder="e.g. Next week, mornings (optional)"
                 className="mt-1 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
               />
               {errors.start_date_time_preference && (
-                <p className="mt-1 text-sm text-red-600">{errors.start_date_time_preference.message}</p>
+                <p className="mt1 text-sm text-red-600">{errors.start_date_time_preference.message}</p>
               )}
             </div>
             <div>
