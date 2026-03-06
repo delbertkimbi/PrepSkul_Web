@@ -81,7 +81,18 @@ export default async function SafetyPage() {
       `)
       .in('id', sessionIds);
     const sessionMap = new Map((sessions || []).map((s: { id: string }) => [s.id, s]));
-    const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', [...new Set((sessions || []).flatMap((s: { tutor_id?: string; learner_id?: string; parent_id?: string }) => [s.tutor_id, s.learner_id, s.parent_id].filter(Boolean))])]);
+    const profileIds = Array.from(
+      new Set(
+        (sessions || []).flatMap(
+          (s: { tutor_id?: string; learner_id?: string; parent_id?: string }) =>
+            [s.tutor_id, s.learner_id, s.parent_id].filter(Boolean) as string[],
+        ),
+      ),
+    );
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', profileIds);
     const profileMap = new Map((profiles || []).map((p: { id: string; full_name?: string }) => [p.id, { name: p.full_name || '—' }]));
     sessionsWithDetails = (riskRows || []).map((r: Record<string, unknown>) => {
       const session = sessionMap.get(r.session_id as string);
