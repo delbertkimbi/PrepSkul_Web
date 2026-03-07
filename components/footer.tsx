@@ -154,9 +154,29 @@ export function Footer() {
               <h4 className="font-bold text-lg">{t.footer.downloadApp}</h4>
               <div className="space-y-1">
                 <a
-                  href="https://app.prepskul.com"
+                  href="https://play.google.com/store/apps/details?id=com.prepskul.prepskul&pcampaignid=web_share"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    // Try to open app if installed, fallback to Play Store
+                    const intentUrl = 'intent://details?id=com.prepskul.prepskul#Intent;scheme=market;action=android.intent.action.VIEW;end';
+                    const userAgent = navigator.userAgent.toLowerCase();
+                    const isAndroid = /android/.test(userAgent);
+                    
+                    if (isAndroid) {
+                      // Try to open app first
+                      const appLink = 'prepskul://';
+                      const iframe = document.createElement('iframe');
+                      iframe.style.display = 'none';
+                      iframe.src = appLink;
+                      document.body.appendChild(iframe);
+                      
+                      setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        // If app didn't open, continue with Play Store link (default behavior)
+                      }, 500);
+                    }
+                  }}
                   className="block w-full hover:opacity-80 transition-opacity"
                   aria-label="Download on Google Play"
                 >
@@ -169,9 +189,27 @@ export function Footer() {
                   />
                 </a>
                 <a
-                  href="https://app.prepskul.com"
+                  href="https://play.google.com/store/apps/details?id=com.prepskul.prepskul&pcampaignid=web_share"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    // Try to open app if installed, fallback to Play Store
+                    const userAgent = navigator.userAgent.toLowerCase();
+                    const isAndroid = /android/.test(userAgent);
+                    
+                    if (isAndroid) {
+                      // Try to open app first
+                      const appLink = 'prepskul://';
+                      const iframe = document.createElement('iframe');
+                      iframe.style.display = 'none';
+                      iframe.src = appLink;
+                      document.body.appendChild(iframe);
+                      
+                      setTimeout(() => {
+                        document.body.removeChild(iframe);
+                      }, 500);
+                    }
+                  }}
                   className="block w-full hover:opacity-80 transition-opacity"
                   aria-label="Download on App Store"
                 >
@@ -189,12 +227,18 @@ export function Footer() {
 
           <div className="pt-6 border-t border-primary-foreground/20 flex flex-col md:flex-row justify-between items-center gap-4 text-primary-foreground/80 text-sm">
             <p>&copy; {new Date().getFullYear()} PrepSkul. {t.footer.allRightsReserved}</p>
-            <div className="flex gap-6">
+            <div className="flex flex-wrap gap-4 md:gap-6">
               <Link href={`/${locale}/privacy-policy`} className="hover:text-primary-foreground hover:underline transition-colors">
                 {t.footer.privacyPolicy}
               </Link>
               <Link href={`/${locale}/terms`} className="hover:text-primary-foreground hover:underline transition-colors">
                 {t.footer.termsOfService}
+              </Link>
+              <Link href={`/${locale}/safeguarding`} className="hover:text-primary-foreground hover:underline transition-colors">
+                {t.footer.safeguardingPolicy}
+              </Link>
+              <Link href={`/${locale}/code-of-conduct`} className="hover:text-primary-foreground hover:underline transition-colors">
+                {t.footer.codeOfConduct}
               </Link>
             </div>
           </div>
