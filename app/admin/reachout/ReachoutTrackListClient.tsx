@@ -100,20 +100,20 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1 relative">
+      <div className="flex flex-col gap-4">
+        <div className="flex-1 relative min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
           <Input
             type="text"
             placeholder="Search by WhatsApp number..."
             value={searchWhatsApp}
             onChange={(e) => setSearchWhatsApp(e.target.value)}
-            className="pl-10 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20"
+            className="pl-10 border-gray-300 focus:border-[#4A6FBF] focus:ring-[#4A6FBF]/20 w-full"
           />
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 min-w-0">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[150px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[150px] border-gray-300 min-w-0">
               <SelectValue placeholder="Customer role" />
             </SelectTrigger>
             <SelectContent>
@@ -123,7 +123,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
             </SelectContent>
           </Select>
           <Select value={followupFilter} onValueChange={setFollowupFilter}>
-            <SelectTrigger className="w-[170px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[170px] border-gray-300 min-w-0">
               <SelectValue placeholder="Follow-up" />
             </SelectTrigger>
             <SelectContent>
@@ -132,7 +132,7 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
             </SelectContent>
           </Select>
           <Select value={agentFilter} onValueChange={setAgentFilter}>
-            <SelectTrigger className="w-[170px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[170px] border-gray-300 min-w-0">
               <SelectValue placeholder="Agent" />
             </SelectTrigger>
             <SelectContent>
@@ -170,9 +170,9 @@ export default function ReachoutTrackListClient({ records }: ReachoutTrackListCl
                 <button
                   type="button"
                   onClick={() => setExpandedId(isExpanded ? null : record.id)}
-                  className="w-full flex flex-wrap items-center gap-4 p-4 text-left hover:bg-gray-50/80 transition-colors"
+                  className="w-full flex flex-wrap items-center gap-2 sm:gap-4 p-3 sm:p-4 text-left hover:bg-gray-50/80 transition-colors"
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 text-gray-700">
                       <MessageCircle className="h-4 w-4 shrink-0 text-[#4A6FBF]" />
                       <span className="font-medium truncate">{record.customer_whatsapp}</span>
