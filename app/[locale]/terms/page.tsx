@@ -63,7 +63,9 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
             </p>
             <ul className="mt-4 space-y-2 text-gray-700 list-disc list-inside">
               <li>We provide the infrastructure for booking, payment processing, and video conferencing.</li>
-              <li><strong>We are not an educational institution.</strong> Tutors are independent contractors, not employees of PrepSkul. We do not endorse or guarantee the quality of any specific Tutor, although we implement verification processes.</li>
+              <li><strong>We are not an educational institution.</strong> Tutors are independent contractors, not employees, agents, or representatives of PrepSkul. We do not create an employment, partnership, or joint venture relationship between PrepSkul and Tutors.</li>
+              <li>We do not control where, when, or how in-person sessions are delivered. We provide policies, guidance, and tools (such as safeguarding rules, incident reports, and check-in features) to help reduce risk, but we do not supervise sessions in person.</li>
+              <li>We do not guarantee the quality, safety, legality, or suitability of any particular Tutor, Learner, or household, although we implement verification and safety processes.</li>
               <li>The "Ticha" feature is an AI-powered assistant provided as a tool to aid in content creation and study. It is not a substitute for professional human instruction.</li>
             </ul>
           </section>
@@ -159,21 +161,35 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Limitation of Liability</h2>
             <p className="text-gray-700 leading-relaxed">
-              IN NO EVENT WILL WE BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, EXEMPLARY, INCIDENTAL, SPECIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SITE. We do not guarantee specific educational outcomes or grades resulting from the use of our services.
+              IN NO EVENT WILL WE BE LIABLE TO YOU OR ANY THIRD PARTY FOR ANY DIRECT, INDIRECT, CONSEQUENTIAL, EXEMPLARY, INCIDENTAL, SPECIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE SITE OR PARTICIPATION IN SESSIONS ARRANGED THROUGH THE PLATFORM. We do not guarantee specific educational outcomes or grades resulting from the use of our services.
+            </p>
+            <p className="mt-4 text-gray-700 leading-relaxed">
+              To the maximum extent permitted by law, our total liability for any claims arising out of or relating to the Platform in any 12-month period is limited to the greater of: (a) the amount of fees you paid to PrepSkul for the services giving rise to the claim during that period, or (b) an amount determined by applicable mandatory law. We are not liable for the acts or omissions of Tutors, Learners, parents, guardians, or other third parties (including conduct during in-person sessions), except where required by law.
+            </p>
+            <p className="mt-4 text-gray-700 leading-relaxed">
+              We may maintain certain business or liability insurance policies for PrepSkul as a company. These policies, where they exist, are primarily intended to protect PrepSkul and do not create any guarantee of coverage, compensation, or entitlement for users. As we grow, we may expand our insurance arrangements, but we are not obligated to maintain any particular type or level of insurance unless required by law.
             </p>
           </section>
 
           {/* Section 9 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Governing Law & Dispute Resolution</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Indemnity</h2>
             <p className="text-gray-700 leading-relaxed">
-              These Terms shall be governed by and defined following the laws of the Republic of Cameroon. Any dispute arising out of or in connection with these terms shall first be attempted to be settled through amicable negotiation. If negotiation fails, the dispute shall be referred to the competent courts of Cameroon.
+              To the extent permitted by law, you agree to indemnify and hold harmless PrepSkul, its affiliates, and their respective officers, directors, employees, and agents from and against any claims, demands, damages, losses, liabilities, and expenses (including reasonable legal fees) arising out of or related to: (a) your use of the Platform or participation in sessions, (b) your breach of these Terms of Service or of our Code of Conduct or Safeguarding Policy, or (c) your violation of any law or the rights of a third party. This indemnity does not apply to the extent a claim results from PrepSkul&apos;s own gross negligence or wilful misconduct.
             </p>
           </section>
 
           {/* Section 10 */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Contact Us</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Governing Law & Dispute Resolution</h2>
+            <p className="text-gray-700 leading-relaxed">
+              These Terms shall be governed by and defined following the laws of the Republic of Cameroon. Any dispute arising out of or in connection with these terms shall first be attempted to be settled through amicable negotiation. If negotiation fails, the dispute shall be referred to the competent courts of Cameroon.
+            </p>
+          </section>
+
+          {/* Section 11 */}
+          <section>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Contact Us</h2>
             <p className="text-gray-700 leading-relaxed mb-6">
               In order to resolve a complaint regarding the Site or to receive further information regarding use of the Site, please contact us at:
             </p>

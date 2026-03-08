@@ -274,7 +274,9 @@ export const translations = {
       seconds: "Seconds",
       allRightsReserved: "All rights reserved.",
       privacyPolicy: "Privacy Policy",
-      termsOfService: "Terms of Service"
+      termsOfService: "Terms of Service",
+      safeguardingPolicy: "Safeguarding Policy",
+      codeOfConduct: "Code of Conduct"
     },
     programs: {
       hero: {
@@ -859,7 +861,9 @@ export const translations = {
       seconds: "Secondes",
       allRightsReserved: "Tous droits réservés.",
       privacyPolicy: "Politique de Confidentialité",
-      termsOfService: "Conditions d'Utilisation"
+      termsOfService: "Conditions d'Utilisation",
+      safeguardingPolicy: "Politique de Protection",
+      codeOfConduct: "Code de Conduite"
     },
     programs: {
       hero: {
