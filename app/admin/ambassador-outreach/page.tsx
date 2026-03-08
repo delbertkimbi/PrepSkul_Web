@@ -25,7 +25,7 @@ export default async function AmbassadorOutreachPage() {
       .order('date', { ascending: false }),
     supabase
       .from('ambassadors')
-      .select('id, full_name, email')
+      .select('id, full_name, email, profile_image_url')
       .eq('application_status', 'approved')
       .order('full_name'),
   ]);
