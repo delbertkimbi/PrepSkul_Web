@@ -25,8 +25,16 @@ import {
   LogOut,
   Megaphone,
   Loader2,
+  Trophy,
 } from 'lucide-react';
 import Link from 'next/link';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import type { LeaderBoardEntry } from './page';
 
 const LEAD_SOURCES = [
   'Campus conversation',
@@ -92,11 +100,14 @@ function formatDate(d: string | null): string {
 
 export default function AmbassadorDashboardClient({
   ambassadorId,
+  leaderBoard,
 }: {
   ambassadorId: string;
+  leaderBoard: LeaderBoardEntry[];
 }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'leads' | 'outreach'>('leads');
+  const [activeTab, setActiveTab] = useState<'leads' | 'outreach' | 'leaderboard'>('leads');
+  const [avatarPreview, setAvatarPreview] = useState<LeaderBoardEntry | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [activities, setActivities] = useState<OutreachActivity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,11 +185,12 @@ export default function AmbassadorDashboardClient({
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
+      <div className="border-b border-gray-200 mb-6 overflow-x-auto">
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 min-w-max">
           {[
             { id: 'leads' as const, label: 'My Leads' },
             { id: 'outreach' as const, label: 'Outreach Activities' },
+            { id: 'leaderboard' as const, label: 'Leader Board' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -213,7 +225,7 @@ export default function AmbassadorDashboardClient({
           setQuickStatusLeadId={setQuickStatusLeadId}
           onRefresh={() => { fetchLeads(); fetchActivities(); }}
         />
-      ) : (
+      ) : activeTab === 'outreach' ? (
         <OutreachTab
           ambassadorId={ambassadorId}
           activities={activities}
@@ -222,8 +234,113 @@ export default function AmbassadorDashboardClient({
           setShowOutreachForm={setShowOutreachForm}
           onRefresh={fetchActivities}
         />
+      ) : (
+        <LeaderBoardTab
+          leaderBoard={leaderBoard}
+          onAvatarClick={setAvatarPreview}
+        />
+      )}
+
+      {avatarPreview && (
+        <Dialog open onOpenChange={(open) => !open && setAvatarPreview(null)}>
+          <DialogContent className="max-w-sm p-0 overflow-hidden">
+            <DialogHeader className="p-4 pb-0">
+              <DialogTitle>{avatarPreview.full_name}</DialogTitle>
+            </DialogHeader>
+            <div className="p-4 pt-2">
+              {avatarPreview.profile_image_url ? (
+                <img
+                  src={avatarPreview.profile_image_url}
+                  alt={avatarPreview.full_name}
+                  className="w-full h-auto rounded-lg object-cover"
+                />
+              ) : (
+                <div className="w-full aspect-square rounded-lg bg-gray-200 flex items-center justify-center text-gray-500">
+                  No photo
+                </div>
+              )}
+              <p className="text-sm text-gray-500 mt-2 text-center">
+                Rank #{avatarPreview.rank} · {avatarPreview.hot_leads} hot leads · {avatarPreview.outreach_count} outreach
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
+  );
+}
+
+function LeaderBoardTab({
+  leaderBoard,
+  onAvatarClick,
+}: {
+  leaderBoard: LeaderBoardEntry[];
+  onAvatarClick: (entry: LeaderBoardEntry) => void;
+}) {
+  return (
+    <Card className="border-gray-200">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-amber-500" />
+          Leader Board
+        </CardTitle>
+        <p className="text-sm text-gray-500 mt-1">
+          Ranked by hot leads (Contacted, Applied, Enrolled). Ties broken by name.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto -mx-2 sm:mx-0">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 px-2 font-medium text-gray-700 w-16">Rank</th>
+                <th className="text-left py-3 px-2 font-medium text-gray-700">Ambassador</th>
+                <th className="text-left py-3 px-2 font-medium text-gray-700">Hot Leads</th>
+                <th className="text-left py-3 px-2 font-medium text-gray-700">Outreach Activities</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderBoard.map((entry) => (
+                <tr key={entry.id} className="border-b border-gray-100 hover:bg-gray-50/50">
+                  <td className="py-3 px-2">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold">
+                      {entry.rank}
+                    </span>
+                  </td>
+                  <td className="py-3 px-2">
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => onAvatarClick(entry)}
+                        className="flex-shrink-0 rounded-full overflow-hidden ring-2 ring-gray-200 hover:ring-primary focus:ring-primary focus:outline-none transition-shadow w-10 h-10"
+                      >
+                        {entry.profile_image_url ? (
+                          <img
+                            src={entry.profile_image_url}
+                            alt={entry.full_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-medium">
+                            {entry.full_name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                        )}
+                      </button>
+                      <span className="font-medium text-gray-900">{entry.full_name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-2">{entry.hot_leads}</td>
+                  <td className="py-3 px-2">{entry.outreach_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {leaderBoard.length === 0 && (
+          <p className="text-gray-500 text-sm py-8 text-center">No ambassadors on the board yet.</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
