@@ -46,60 +46,113 @@ function getSkulMateApiKey(): string {
   return key
 }
 
+function normalizeExtractedText(text: string): string {
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+function parseOpenRouterTextResponse(response: any): string {
+  const rawContent = response?.choices?.[0]?.message?.content
+
+  if (typeof rawContent === 'string') {
+    return normalizeExtractedText(rawContent)
+  }
+
+  if (Array.isArray(rawContent)) {
+    const joined = rawContent
+      .map((part: any) => {
+        if (typeof part === 'string') return part
+        if (part && typeof part.text === 'string') return part.text
+        return ''
+      })
+      .join('\n')
+    return normalizeExtractedText(joined)
+  }
+
+  return ''
+}
+
+function isMeaningfulOcrText(text: string): boolean {
+  const normalized = normalizeExtractedText(text)
+  if (normalized.length < 24) return false
+
+  // Must contain at least a few alphanumeric chunks (not just symbols/noise).
+  const tokens = normalized.match(/[A-Za-z0-9]{2,}/g) || []
+  return tokens.length >= 4
+}
+
 /**
  * Extract text from image using OpenRouter Vision (skulMate-specific, uses skulMate API key)
  */
 async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
   const skulMateApiKey = getSkulMateApiKey()
-  
-  const messages = [
-    {
-      role: 'user' as const,
-      content: [
-        {
-          type: 'text' as const,
-          text: 'Extract all text content from this image. Preserve the structure, bullet points, and formatting. Return only the extracted text, no explanations.',
-        },
-        {
-          type: 'image_url' as const,
-          image_url: { url: imageUrl },
-        },
-      ],
-    },
+  const extractionPrompts = [
+    'Extract all text content from this image. Preserve the structure, bullet points, and formatting. Return only the extracted text, no explanations.',
+    'Carefully read handwritten and faint text in this image. Reconstruct likely words where letters are unclear using nearby context. Keep line structure. Return only extracted text with no explanation.',
   ]
 
-  // Use only vision models that are known to be available on this account
+  // Lower-cost models first, then stronger models.
+  // This mirrors tichar's strategy: cheap -> better if needed.
   const visionModels = [
-    'qwen/qwen-2.5-vl-7b-instruct', // Proven working in logs
-    'anthropic/claude-3-haiku-20240307', // Keep a lightweight Claude vision-capable model
-    'anthropic/claude-3-sonnet-20240229', // Mid-tier fallback
+    'google/gemini-flash-1.5-8b',
+    'google/gemini-flash-1.5',
+    'qwen/qwen-2.5-vl-7b-instruct',
+    'google/gemini-1.5-pro',
+    'anthropic/claude-3-haiku-20240307',
+    'anthropic/claude-3-sonnet-20240229',
   ]
 
-  let response
+  let response: any
   let lastError: Error | null = null
 
   for (const model of visionModels) {
-    try {
-      console.log(`[skulMate OCR] Trying vision model: ${model}`)
-      response = await callOpenRouterWithKey(skulMateApiKey, {
-        model,
-        messages,
-        max_tokens: 2000,
-        temperature: 0.2,
-      })
-      console.log(`[skulMate OCR] Success with model: ${model}`)
-      break
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
-      console.warn(`[skulMate OCR] Model ${model} failed:`, lastError.message)
-      
-      // If it's a 401 (invalid API key), stop trying immediately
-      if (lastError.message.includes('401') || lastError.message.includes('User not found') || lastError.message.includes('Invalid API key')) {
-        console.error('[skulMate OCR] Invalid API key detected. Stopping all model attempts.')
-        throw new Error(`Invalid OpenRouter API key. Please check SKULMATE_OPENROUTER_API_KEY in your environment variables. The API key must be valid and have credits.`)
+    for (let i = 0; i < extractionPrompts.length; i += 1) {
+      const prompt = extractionPrompts[i]
+      try {
+        const messages = [
+          {
+            role: 'user' as const,
+            content: [
+              {
+                type: 'text' as const,
+                text: prompt,
+              },
+              {
+                type: 'image_url' as const,
+                image_url: { url: imageUrl },
+              },
+            ],
+          },
+        ]
+
+        console.log(`[skulMate OCR] Trying vision model: ${model} (pass ${i + 1})`)
+        response = await callOpenRouterWithKey(skulMateApiKey, {
+          model,
+          messages,
+          max_tokens: 2000,
+          temperature: 0.2,
+        })
+
+        const extractedText = parseOpenRouterTextResponse(response)
+        if (!isMeaningfulOcrText(extractedText)) {
+          throw new Error('OCR response was low quality or too short')
+        }
+
+        console.log(`[skulMate OCR] Success with model: ${model} (pass ${i + 1})`)
+        return extractedText
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.warn(`[skulMate OCR] Model ${model} pass ${i + 1} failed:`, lastError.message)
+
+        // If it's a 401 (invalid API key), stop trying immediately
+        if (lastError.message.includes('401') || lastError.message.includes('User not found') || lastError.message.includes('Invalid API key')) {
+          console.error('[skulMate OCR] Invalid API key detected. Stopping all model attempts.')
+          throw new Error('Invalid OpenRouter API key. Please check SKULMATE_OPENROUTER_API_KEY in your environment variables. The API key must be valid and have credits.')
+        }
       }
-      
-      continue
     }
   }
 
@@ -107,7 +160,11 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
     throw new Error(`All vision models failed. Last error: ${lastError?.message || 'Unknown error'}`)
   }
 
-  return response.choices[0]?.message?.content || ''
+  const fallbackText = parseOpenRouterTextResponse(response)
+  if (!isMeaningfulOcrText(fallbackText)) {
+    throw new Error('OCR could not extract meaningful text from this image')
+  }
+  return fallbackText
 }
 
 /**
