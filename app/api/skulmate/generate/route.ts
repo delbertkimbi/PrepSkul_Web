@@ -1379,7 +1379,12 @@ export async function POST(request: NextRequest) {
           )
         }
         
-        if (errorMessage.includes('credits') || errorMessage.includes('402')) {
+        if (
+          errorMessage.includes('credits') ||
+          errorMessage.includes('402') ||
+          errorMessage.toLowerCase().includes('provider is temporarily unavailable') ||
+          errorMessage.toLowerCase().includes('temporarily unavailable')
+        ) {
           return NextResponse.json(
             { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.' },
             { status: 503, headers: corsHeaders }
