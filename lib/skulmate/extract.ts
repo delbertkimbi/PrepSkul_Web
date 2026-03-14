@@ -49,14 +49,18 @@ function getMainSupabaseAdmin() {
 }
 
 /**
- * Get skulMate OpenRouter API key
+ * Get ordered OpenRouter keys for skulMate calls.
+ * Primary key first, then fallback key (if different).
  */
-function getSkulMateApiKey(): string {
-  const key = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-  if (!key) {
+function getSkulMateApiKeys(): string[] {
+  const primary = process.env.SKULMATE_OPENROUTER_API_KEY
+  const fallback = process.env.OPENROUTER_API_KEY
+  const keys = [primary, fallback].filter((k): k is string => Boolean(k && k.trim()))
+  const unique = [...new Set(keys)]
+  if (unique.length === 0) {
     throw new Error('Missing SKULMATE_OPENROUTER_API_KEY or OPENROUTER_API_KEY environment variable')
   }
-  return key
+  return unique
 }
 
 function normalizeExtractedText(text: string): string {
@@ -162,7 +166,7 @@ async function buildOcrVariants(
  * Extract text from image using OpenRouter Vision (skulMate-specific, uses skulMate API key)
  */
 async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
-  const skulMateApiKey = getSkulMateApiKey()
+  const apiKeys = getSkulMateApiKeys()
   const extractionPrompts = [
     'Extract all text content from this image. Preserve the structure, bullet points, and formatting. Return only the extracted text, no explanations.',
     'Carefully read handwritten and faint text in this image. Reconstruct likely words where letters are unclear using nearby context. Keep line structure. Return only extracted text with no explanation.',
@@ -182,52 +186,64 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
   let response: any
   let lastError: Error | null = null
 
-  for (const model of visionModels) {
-    for (let i = 0; i < extractionPrompts.length; i += 1) {
-      const prompt = extractionPrompts[i]
-      try {
-        const messages = [
-          {
-            role: 'user' as const,
-            content: [
-              {
-                type: 'text' as const,
-                text: prompt,
-              },
-              {
-                type: 'image_url' as const,
-                image_url: { url: imageUrl },
-              },
-            ],
-          },
-        ]
+  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
+    const apiKey = apiKeys[keyIndex]
+    let keyInvalid = false
+    for (const model of visionModels) {
+      for (let i = 0; i < extractionPrompts.length; i += 1) {
+        const prompt = extractionPrompts[i]
+        try {
+          const messages = [
+            {
+              role: 'user' as const,
+              content: [
+                {
+                  type: 'text' as const,
+                  text: prompt,
+                },
+                {
+                  type: 'image_url' as const,
+                  image_url: { url: imageUrl },
+                },
+              ],
+            },
+          ]
 
-        console.log(`[skulMate OCR] Trying vision model: ${model} (pass ${i + 1})`)
-        response = await callOpenRouterWithKey(skulMateApiKey, {
-          model,
-          messages,
-          max_tokens: 2000,
-          temperature: 0.2,
-        })
+          console.log(
+            `[skulMate OCR] Trying vision model: ${model} (pass ${i + 1}, key ${keyIndex + 1}/${apiKeys.length})`
+          )
+          response = await callOpenRouterWithKey(apiKey, {
+            model,
+            messages,
+            max_tokens: 2000,
+            temperature: 0.2,
+          })
 
-        const extractedText = parseOpenRouterTextResponse(response)
-        if (!isMeaningfulOcrText(extractedText)) {
-          throw new Error('OCR response was low quality or too short')
-        }
+          const extractedText = parseOpenRouterTextResponse(response)
+          if (!isMeaningfulOcrText(extractedText)) {
+            throw new Error('OCR response was low quality or too short')
+          }
 
-        console.log(`[skulMate OCR] Success with model: ${model} (pass ${i + 1})`)
-        return extractedText
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error))
-        console.warn(`[skulMate OCR] Model ${model} pass ${i + 1} failed:`, lastError.message)
+          console.log(`[skulMate OCR] Success with model: ${model} (pass ${i + 1})`)
+          return extractedText
+        } catch (error) {
+          lastError = error instanceof Error ? error : new Error(String(error))
+          console.warn(`[skulMate OCR] Model ${model} pass ${i + 1} failed:`, lastError.message)
 
-        // If it's a 401 (invalid API key), stop trying immediately
-        if (lastError.message.includes('401') || lastError.message.includes('User not found') || lastError.message.includes('Invalid API key')) {
-          console.error('[skulMate OCR] Invalid API key detected. Stopping all model attempts.')
-          throw new Error('Invalid OpenRouter API key. Please check SKULMATE_OPENROUTER_API_KEY in your environment variables. The API key must be valid and have credits.')
+          // Invalid key: move to next key if available.
+          const keyLooksInvalid =
+            lastError.message.includes('401') ||
+            lastError.message.includes('User not found') ||
+            lastError.message.includes('Invalid API key')
+          if (keyLooksInvalid) {
+            keyInvalid = true
+            break
+          }
         }
       }
+      if (keyInvalid) break
     }
+    if (keyInvalid) continue
   }
 
   if (!response) {
@@ -246,7 +262,7 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
  * Uses vision understanding to produce structured study material context.
  */
 async function extractVisualConceptFromImageSkulMate(imageUrl: string): Promise<string> {
-  const skulMateApiKey = getSkulMateApiKey()
+  const apiKeys = getSkulMateApiKeys()
   const visionModels = [
     'google/gemini-flash-1.5',
     'qwen/qwen-2.5-vl-7b-instruct',
@@ -261,35 +277,31 @@ async function extractVisualConceptFromImageSkulMate(imageUrl: string): Promise<
     'Main subject, key observations, related concepts, and 5 short study questions.'
 
   let lastError: Error | null = null
-  for (const model of visionModels) {
-    try {
-      const response = await callOpenRouterWithKey(skulMateApiKey, {
-        model,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              { type: 'image_url', image_url: { url: imageUrl } },
-            ],
-          },
-        ],
-        max_tokens: 1800,
-        temperature: 0.2,
-      })
-      const text = parseOpenRouterTextResponse(response)
-      if (text.length >= 30) {
-        return text
-      }
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
-      console.warn(`[skulMate OCR] Visual fallback model ${model} failed:`, lastError.message)
-      if (
-        lastError.message.includes('401') ||
-        lastError.message.includes('Invalid API key') ||
-        lastError.message.includes('User not found')
-      ) {
-        throw lastError
+  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
+    const apiKey = apiKeys[keyIndex]
+    for (const model of visionModels) {
+      try {
+        const response = await callOpenRouterWithKey(apiKey, {
+          model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: prompt },
+                { type: 'image_url', image_url: { url: imageUrl } },
+              ],
+            },
+          ],
+          max_tokens: 1800,
+          temperature: 0.2,
+        })
+        const text = parseOpenRouterTextResponse(response)
+        if (text.length >= 30) {
+          return text
+        }
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.warn(`[skulMate OCR] Visual fallback model ${model} failed:`, lastError.message)
       }
     }
   }

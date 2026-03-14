@@ -133,15 +133,18 @@ async function downloadFileFromUrl(fileUrl: string): Promise<Buffer> {
 }
 
 /**
- * Get skulMate OpenRouter API key
- * Falls back to OPENROUTER_API_KEY if SKULMATE_OPENROUTER_API_KEY is not set
+ * Get ordered OpenRouter keys for skulMate calls.
+ * Primary key first, then fallback key (if different).
  */
-function getSkulMateApiKey(): string {
-  const key = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-  if (!key) {
+function getSkulMateApiKeys(): string[] {
+  const primary = process.env.SKULMATE_OPENROUTER_API_KEY
+  const fallback = process.env.OPENROUTER_API_KEY
+  const keys = [primary, fallback].filter((k): k is string => Boolean(k && k.trim()))
+  const unique = [...new Set(keys)]
+  if (unique.length === 0) {
     throw new Error('Missing SKULMATE_OPENROUTER_API_KEY or OPENROUTER_API_KEY environment variable')
   }
-  return key
+  return unique
 }
 
 interface GenerateRequest {
@@ -871,40 +874,60 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   ]
   }
 
-  const skulMateApiKey = getSkulMateApiKey()
+  const apiKeys = getSkulMateApiKeys()
   let response
   let lastError: Error | null = null
   let successfulModel: string | undefined
+  let sawCreditsError = false
 
-  for (const model of gameModels) {
-    try {
-      console.log(`[skulMate] Trying model: ${model}`)
-      response = await callOpenRouterWithKey(skulMateApiKey, {
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-        response_format: { type: 'json_object' }, // Request JSON format
-      })
-      console.log(`[skulMate] Success with model: ${model}`)
-      successfulModel = model
-      break
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
-      console.warn(`[skulMate] Model ${model} failed:`, lastError.message)
-      
-      // If it's a credits error, stop trying (all will fail)
-      if (lastError.message.includes('402') || lastError.message.includes('credits')) {
-        throw new Error('Game generation is temporarily unavailable. Please try again shortly.')
+  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
+    const apiKey = apiKeys[keyIndex]
+    let keyInvalid = false
+
+    for (const model of gameModels) {
+      try {
+        console.log(`[skulMate] Trying model: ${model} (key ${keyIndex + 1}/${apiKeys.length})`)
+        response = await callOpenRouterWithKey(apiKey, {
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.7,
+          max_tokens: 4000,
+          response_format: { type: 'json_object' }, // Request JSON format
+        })
+        console.log(`[skulMate] Success with model: ${model}`)
+        successfulModel = model
+        break
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.warn(`[skulMate] Model ${model} failed:`, lastError.message)
+
+        if (lastError.message.includes('402') || lastError.message.toLowerCase().includes('credits')) {
+          sawCreditsError = true
+        }
+
+        // If key is invalid, move to next key.
+        if (
+          lastError.message.includes('401') ||
+          lastError.message.includes('Invalid API key') ||
+          lastError.message.includes('User not found')
+        ) {
+          keyInvalid = true
+          break
+        }
+        continue
       }
-      continue
     }
+    if (response) break
+    if (keyInvalid) continue
   }
 
   if (!response) {
+    if (sawCreditsError) {
+      throw new Error('Game generation is temporarily unavailable. Please try again shortly.')
+    }
     throw new Error(`Failed to generate game. All models failed. Last error: ${lastError?.message || 'Unknown error'}`)
   }
 
@@ -978,7 +1001,7 @@ If you generate quiz again, your response will be rejected.`
 
     try {
       // Retry with first model
-      const retryResponse = await callOpenRouterWithKey(skulMateApiKey, {
+      const retryResponse = await callOpenRouterWithKey(apiKeys[0], {
         model: gameModels[0],
         messages: [
           { role: 'system', content: systemPrompt },
