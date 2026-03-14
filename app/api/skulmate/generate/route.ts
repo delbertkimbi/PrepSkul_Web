@@ -226,7 +226,7 @@ function calculateSkulmateCreditsRequired(params: {
   numQuestions?: number
 }): number {
   const { sourceType, extractedTextLength, difficulty, numQuestions } = params
-  if (sourceType !== 'image') return 1
+  if (sourceType !== 'image') return 2
 
   // Image OCR tiers from pricing memo:
   // - normal image game: 2 credits
@@ -1351,7 +1351,7 @@ export async function POST(request: NextRequest) {
         
         // Validate extracted content is meaningful.
         // Images can now use visual-understanding fallback, so allow shorter text.
-        const minimumExtractedLength = requestedSourceType === 'image' ? 20 : 50
+        const minimumExtractedLength = 20
         if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
           console.error('[skulMate] Extracted text is too short or empty')
           return NextResponse.json(
@@ -1381,8 +1381,8 @@ export async function POST(request: NextRequest) {
         
         if (errorMessage.includes('credits') || errorMessage.includes('402')) {
           return NextResponse.json(
-            { error: 'Image processing is temporarily unavailable right now. Please try again shortly, or upload a PDF/DOCX/TXT file.' },
-            { status: 402, headers: corsHeaders }
+            { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.' },
+            { status: 503, headers: corsHeaders }
           )
         }
         
@@ -1617,11 +1617,23 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[skulMate] Error:', error)
     
-    // Check if it's a credits issue
-    if (error.message?.includes('402') || error.message?.includes('credits') || error.message?.includes('Insufficient credits')) {
+    // Return 402 only for user billing limits/insufficient balance.
+    if (
+      error.message?.includes('Free image limit reached') ||
+      error.message?.includes('Free document/text limit reached') ||
+      error.message?.includes('Insufficient credits')
+    ) {
       return NextResponse.json(
-        { error: 'Generation is temporarily unavailable right now. Please try again shortly.' },
+        { error: error.message || 'SkulMate plan required to continue.' },
         { status: 402, headers: corsHeaders }
+      )
+    }
+
+    // Provider-side credit/outage should not look like a user paywall.
+    if (error.message?.includes('credits') || error.message?.includes('402')) {
+      return NextResponse.json(
+        { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly.' },
+        { status: 503, headers: corsHeaders }
       )
     }
 
