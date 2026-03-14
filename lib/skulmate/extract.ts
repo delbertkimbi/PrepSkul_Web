@@ -433,9 +433,10 @@ async function extractImage(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     
-    // Check if it's a credits issue
+    // Upstream provider credit/outage issues should be surfaced as temporary
+    // processing outages (not as a user plan/paywall problem).
     if (errorMessage.includes('402') || errorMessage.includes('credits') || errorMessage.includes('Insufficient credits')) {
-      throw new Error(`Image OCR requires OpenRouter credits. Please purchase credits at https://openrouter.ai/settings/credits to use image processing. Alternatively, convert your image to PDF or text format for processing.`)
+      throw new Error('Image processing provider is temporarily unavailable')
     }
     
     throw new Error(`Failed to extract text from image: ${errorMessage}`)
