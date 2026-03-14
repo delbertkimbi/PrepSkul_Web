@@ -9,6 +9,8 @@ import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
 import { extractEntities } from '../extract-entities/route'
+import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
+import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
@@ -180,6 +182,177 @@ interface GameData {
   }
 }
 
+interface GenerationUsageSummary {
+  model?: string
+  usage?: {
+    prompt_tokens?: number
+    completion_tokens?: number
+    total_tokens?: number
+  }
+}
+
+type BillingMode = 'free' | 'credits'
+const FREE_DAILY_LIMIT_DOC_TEXT = 2
+const FREE_DAILY_LIMIT_IMAGE = 4
+
+function getServiceSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return createClient(url, key)
+}
+
+function getUtcDayStartIso(date: Date = new Date()): string {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  return d.toISOString()
+}
+
+function detectRequestedSourceType(fileUrl?: string, text?: string): 'text' | 'pdf' | 'docx' | 'image' {
+  if (text && text.trim().length > 0) return 'text'
+  const lower = (fileUrl || '').toLowerCase()
+  if (lower.includes('.pdf')) return 'pdf'
+  if (lower.includes('.docx')) return 'docx'
+  if (lower.includes('.txt')) return 'text'
+  return 'image'
+}
+
+function calculateSkulmateCreditsRequired(params: {
+  sourceType: 'text' | 'pdf' | 'docx' | 'image'
+  extractedTextLength: number
+  difficulty?: 'easy' | 'medium' | 'hard'
+  numQuestions?: number
+}): number {
+  const { sourceType, extractedTextLength, difficulty, numQuestions } = params
+  if (sourceType !== 'image') return 1
+
+  // Image OCR tiers from pricing memo:
+  // - normal image game: 2 credits
+  // - larger/complex image game: 3-4 credits
+  const isHard = difficulty === 'hard'
+  const hasLargeText = extractedTextLength >= 12000
+  const hasManyQuestions = (numQuestions || 0) >= 20
+
+  if ((isHard && hasLargeText) || (hasLargeText && hasManyQuestions)) return 4
+  if (isHard || hasLargeText || hasManyQuestions) return 3
+  return 2
+}
+
+async function ensureUserCreditsRow(admin: any, userId: string) {
+  const { data: existing, error: fetchError } = await admin
+    .from('user_credits')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (fetchError) {
+    throw new Error(`Failed to check user credits: ${fetchError.message}`)
+  }
+  if (existing) return
+
+  const now = new Date().toISOString()
+  const { error: insertError } = await admin.from('user_credits').insert({
+    user_id: userId,
+    balance: 0,
+    total_purchased: 0,
+    total_spent: 0,
+    created_at: now,
+    updated_at: now,
+  })
+  if (insertError) {
+    throw new Error(`Failed to initialize user credits: ${insertError.message}`)
+  }
+}
+
+async function getUserCreditsBalance(admin: any, userId: string): Promise<number> {
+  const { data, error } = await admin
+    .from('user_credits')
+    .select('balance')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (error) throw new Error(`Failed to read user credits: ${error.message}`)
+  return Number(data?.balance || 0)
+}
+
+async function countTodayFreeSkulmateGames(
+  admin: any,
+  userId: string,
+  sourceType?: 'text' | 'pdf' | 'docx' | 'image' | 'doc_text'
+): Promise<number> {
+  const dayStartIso = getUtcDayStartIso()
+  let query = admin
+    .from('skulmate_usage_events')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('event_type', 'generate_game')
+    .eq('success', true)
+    .gte('created_at', dayStartIso)
+    .contains('metadata', { billing_mode: 'free' })
+
+  if (sourceType === 'doc_text') {
+    query = query.in('source_type', ['text', 'pdf', 'docx'])
+  } else if (sourceType) {
+    query = query.eq('source_type', sourceType)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.warn('[skulMate billing] Could not count daily free games:', error.message)
+    return 0
+  }
+  return data?.length || 0
+}
+
+async function chargeSkulmateCredits(params: {
+  admin: any
+  userId: string
+  credits: number
+  description: string
+}): Promise<{ charged: boolean; balanceAfter: number }> {
+  const { admin, userId, credits, description } = params
+  if (credits <= 0) return { charged: false, balanceAfter: await getUserCreditsBalance(admin, userId) }
+
+  const { data: row, error: readError } = await admin
+    .from('user_credits')
+    .select('balance, total_spent')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (readError) throw new Error(`Failed to read credits before charging: ${readError.message}`)
+
+  const balance = Number(row?.balance || 0)
+  const totalSpent = Number(row?.total_spent || 0)
+  if (balance < credits) {
+    return { charged: false, balanceAfter: balance }
+  }
+
+  const balanceAfter = balance - credits
+  const now = new Date().toISOString()
+  const { error: updateError } = await admin
+    .from('user_credits')
+    .update({
+      balance: balanceAfter,
+      total_spent: totalSpent + credits,
+      updated_at: now,
+    })
+    .eq('user_id', userId)
+  if (updateError) throw new Error(`Failed to update credits balance: ${updateError.message}`)
+
+  const { error: txError } = await admin.from('credit_transactions').insert({
+    user_id: userId,
+    type: 'deduction',
+    amount: credits,
+    balance_before: balance,
+    balance_after: balanceAfter,
+    reference_type: 'skulmate_generate',
+    reference_id: null,
+    description,
+    created_at: now,
+  })
+  if (txError) throw new Error(`Failed to insert credit transaction: ${txError.message}`)
+
+  return { charged: true, balanceAfter }
+}
+
 /**
  * Generate game content using AI with multi-model pipeline
  * 1. Extract entities (cheaper model) - done before calling this
@@ -193,7 +366,7 @@ async function generateGameContent(
   topic?: string,
   numQuestions?: number,
   extractedEntities?: { entities: any[], relationships: any[], conflicts: any[], progression: any[] }
-): Promise<GameData> {
+): Promise<{ gameData: GameData; usageSummary: GenerationUsageSummary }> {
   // Build world context from extracted entities
   let worldContext = ''
   if (extractedEntities) {
@@ -701,6 +874,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   const skulMateApiKey = getSkulMateApiKey()
   let response
   let lastError: Error | null = null
+  let successfulModel: string | undefined
 
   for (const model of gameModels) {
     try {
@@ -716,6 +890,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
         response_format: { type: 'json_object' }, // Request JSON format
       })
       console.log(`[skulMate] Success with model: ${model}`)
+      successfulModel = model
       break
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
@@ -723,7 +898,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
       
       // If it's a credits error, stop trying (all will fail)
       if (lastError.message.includes('402') || lastError.message.includes('credits')) {
-        throw new Error('OpenRouter credits required. Please purchase credits at https://openrouter.ai/settings/credits')
+        throw new Error('Game generation is temporarily unavailable. Please try again shortly.')
       }
       continue
     }
@@ -937,7 +1112,13 @@ If you generate quiz again, your response will be rejected.`
     ...(topic && { topic }),
   }
 
-  return gameData
+  return {
+    gameData,
+    usageSummary: {
+      model: successfulModel,
+      usage: response?.usage,
+    },
+  }
 }
 
 /**
@@ -1036,8 +1217,15 @@ export async function POST(request: NextRequest) {
     }
 
     const finalUserId = userId || sessionUserId
+    const requestedSourceType = detectRequestedSourceType(fileUrl, text)
 
     let extractedText = text || ''
+    let extractionMethod = text ? 'manual-text' : 'unknown'
+    let extractionMeta: Record<string, any> = {}
+    let billingMode: BillingMode = 'free'
+    let billedCredits = 0
+    let freeGamesUsedToday = 0
+    let userCreditsBalance = 0
 
     // If fileUrl provided, download and extract text
     if (fileUrl) {
@@ -1134,13 +1322,22 @@ export async function POST(request: NextRequest) {
         // Extract using skulMate-specific extraction (uses ONLY main Supabase, not Ticha)
         const extractedContent = await extractFile(fileBuffer, mimeType)
         extractedText = extractedContent.text
+        extractionMethod = extractedContent.method
+        extractionMeta = (extractedContent.metadata || {}) as Record<string, any>
         console.log(`[skulMate] Extracted ${extractedText.length} characters using ${extractedContent.method}`)
         
-        // CRITICAL: Validate extracted text is meaningful
-        if (!extractedText || extractedText.trim().length < 50) {
+        // Validate extracted content is meaningful.
+        // Images can now use visual-understanding fallback, so allow shorter text.
+        const minimumExtractedLength = requestedSourceType === 'image' ? 20 : 50
+        if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
           console.error('[skulMate] Extracted text is too short or empty')
           return NextResponse.json(
-            { error: 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text. If using images, make sure they are clear and contain visible text.' },
+            {
+              error:
+                requestedSourceType === 'image'
+                  ? 'We could not understand enough from this image yet. Please try a clearer image, a different angle, or upload text manually.'
+                  : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
+            },
             { status: 400, headers: corsHeaders }
           )
         }
@@ -1161,15 +1358,62 @@ export async function POST(request: NextRequest) {
         
         if (errorMessage.includes('credits') || errorMessage.includes('402')) {
           return NextResponse.json(
-            { error: 'Image processing requires API credits. Please convert your image to PDF or text format, or contact support to enable image processing.' },
+            { error: 'Image processing is temporarily unavailable right now. Please try again shortly, or upload a PDF/DOCX/TXT file.' },
             { status: 402, headers: corsHeaders }
           )
         }
         
         return NextResponse.json(
-          { error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, image, or text file with readable content.` },
+          { error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, DOCX, image, or text file with readable content.` },
           { status: 400, headers: corsHeaders }
         )
+      }
+    }
+
+    // Determine billing mode after extraction (so image complexity can be priced fairly).
+    if (finalUserId) {
+      const admin = getServiceSupabaseAdmin()
+      if (admin) {
+        await ensureUserCreditsRow(admin, finalUserId)
+        userCreditsBalance = await getUserCreditsBalance(admin, finalUserId)
+
+        const creditsRequired = calculateSkulmateCreditsRequired({
+          sourceType: requestedSourceType === 'image' ? 'image' : requestedSourceType,
+          extractedTextLength: extractedText.length,
+          difficulty,
+          numQuestions,
+        })
+
+        const sourceForFreeCount = requestedSourceType === 'image' ? 'image' : 'doc_text'
+        const freeLimitForSource = sourceForFreeCount === 'image'
+          ? FREE_DAILY_LIMIT_IMAGE
+          : FREE_DAILY_LIMIT_DOC_TEXT
+
+        freeGamesUsedToday = await countTodayFreeSkulmateGames(
+          admin,
+          finalUserId,
+          sourceForFreeCount
+        )
+
+        if (freeGamesUsedToday < freeLimitForSource) {
+          billingMode = 'free'
+          billedCredits = 0
+        } else if (userCreditsBalance >= creditsRequired) {
+          billingMode = 'credits'
+          billedCredits = creditsRequired
+        } else {
+          return NextResponse.json(
+            {
+              error:
+                sourceForFreeCount === 'image'
+                  ? 'Free image limit reached (4/day). Choose a SkulMate plan to continue.'
+                  : 'Free document/text limit reached (2/day). Choose a SkulMate plan to continue.',
+            },
+            { status: 402, headers: corsHeaders }
+          )
+        }
+      } else {
+        console.warn('[skulMate billing] Service role env not set, skipping billing enforcement')
       }
     }
 
@@ -1189,7 +1433,7 @@ export async function POST(request: NextRequest) {
     // Step 2: Analyze content type & determine game type (already done in generateGameContent)
     // Step 3: Generate game world/structure (creative model for simulations/mysteries/escape rooms)
     console.log('[skulMate] Step 3b: Generating game content...')
-    const gameData = await generateGameContent(
+    const generationResult = await generateGameContent(
       extractedText, 
       gameType,
       difficulty,
@@ -1197,6 +1441,30 @@ export async function POST(request: NextRequest) {
       numQuestions,
       extractedEntities // Pass extracted entities for world-building
     )
+    const gameData = generationResult.gameData
+
+    // Charge credits before persisting game to avoid creating unpaid games.
+    if (finalUserId && billingMode === 'credits' && billedCredits > 0) {
+      const admin = getServiceSupabaseAdmin()
+      if (admin) {
+        const charge = await chargeSkulmateCredits({
+          admin,
+          userId: finalUserId,
+          credits: billedCredits,
+          description: `SkulMate generation (${requestedSourceType})`,
+        })
+        if (!charge.charged) {
+          return NextResponse.json(
+            {
+              error:
+                'Insufficient credits. Please top up credits to generate this game.',
+            },
+            { status: 402, headers: corsHeaders }
+          )
+        }
+        userCreditsBalance = charge.balanceAfter
+      }
+    }
 
     // Save to database if userId provided
     let gameId: string | null = null
@@ -1218,7 +1486,7 @@ export async function POST(request: NextRequest) {
             title: gameData.title,
             game_type: gameData.gameType,
             document_url: fileUrl || null,
-            source_type: fileUrl ? (fileUrl.endsWith('.pdf') ? 'pdf' : 'image') : 'text',
+      source_type: requestedSourceType,
           })
           .select()
           .maybeSingle()
@@ -1260,6 +1528,46 @@ export async function POST(request: NextRequest) {
     const processingTime = Date.now() - startTime
     console.log(`[skulMate] Game generated in ${processingTime}ms`)
 
+    const sourceTypeForCost = requestedSourceType
+    const itemsCountForCost = Array.isArray(gameData.items) ? gameData.items.length : 0
+    const estimated = estimateSkulmateGameCost({
+      sourceType: sourceTypeForCost as 'pdf' | 'image' | 'text' | 'unknown',
+      textLengthChars: extractedText.length,
+      itemsCount: itemsCountForCost,
+      generationModel: generationResult.usageSummary.model,
+      generationUsage: generationResult.usageSummary.usage,
+      ocrAttempts: Number(extractionMeta?.variantsAttempted || 1),
+    })
+
+    await recordSkulmateUsageEvent({
+      userId: finalUserId,
+      childId,
+      eventType: 'generate_game',
+      sourceType: sourceTypeForCost,
+      gameType: gameData.gameType,
+      gameId,
+      success: true,
+      estimatedCostUsd: estimated.estimatedCostUsd,
+      estimatedCredits: estimated.estimatedCredits,
+      metadata: {
+        extractionMethod,
+        extractionMeta,
+        textLengthChars: extractedText.length,
+        itemsCount: itemsCountForCost,
+        billing_mode: billingMode,
+        billed_credits: billedCredits,
+        free_games_used_today: freeGamesUsedToday,
+        free_limit_for_source:
+          requestedSourceType === 'image'
+            ? FREE_DAILY_LIMIT_IMAGE
+            : FREE_DAILY_LIMIT_DOC_TEXT,
+        credits_balance_after: userCreditsBalance,
+        generationModel: generationResult.usageSummary.model,
+        generationUsage: generationResult.usageSummary.usage || null,
+        costBreakdown: estimated.breakdown,
+      },
+    })
+
     return NextResponse.json({
       success: true,
       game: {
@@ -1267,6 +1575,21 @@ export async function POST(request: NextRequest) {
         ...gameData,
       },
       processingTime,
+      billing: {
+        mode: billingMode,
+        creditsCharged: billedCredits,
+      freeGamesUsedToday,
+      freeLimitForSource:
+        requestedSourceType === 'image'
+          ? FREE_DAILY_LIMIT_IMAGE
+          : FREE_DAILY_LIMIT_DOC_TEXT,
+        creditsBalance: userCreditsBalance,
+      },
+      costEstimate: {
+        estimatedCostUsd: estimated.estimatedCostUsd,
+        estimatedCredits: estimated.estimatedCredits,
+        breakdown: estimated.breakdown,
+      },
     }, { headers: corsHeaders })
   } catch (error: any) {
     console.error('[skulMate] Error:', error)
@@ -1274,7 +1597,7 @@ export async function POST(request: NextRequest) {
     // Check if it's a credits issue
     if (error.message?.includes('402') || error.message?.includes('credits') || error.message?.includes('Insufficient credits')) {
       return NextResponse.json(
-        { error: 'OpenRouter credits required. Please purchase credits at https://openrouter.ai/settings/credits to generate games. Minimum $10 recommended for testing.' },
+        { error: 'Generation is temporarily unavailable right now. Please try again shortly.' },
         { status: 402, headers: corsHeaders }
       )
     }

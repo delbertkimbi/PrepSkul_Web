@@ -14,8 +14,14 @@ export const runtime = 'nodejs';
  * Vercel free tier: ~10s timeout; we process a small batch per run.
  */
 const BATCH_SIZE = 50; // Safe for Vercel free tier timeout
+const JOB_NAME = 'process-scheduled-notifications';
 
 export async function GET(request: NextRequest) {
+  let runStatus: 'success' | 'failed' = 'failed';
+  let processedCount = 0;
+  let failedCount = 0;
+  let runError: string | null = null;
+
   try {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
@@ -24,6 +30,7 @@ export async function GET(request: NextRequest) {
         request.headers.get('user-agent')?.includes('vercel-cron') ||
         request.headers.get('x-vercel-cron') === '1';
       if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
+        runError = 'Unauthorized cron request';
         return NextResponse.json(
           { error: 'Unauthorized. Please provide Authorization: Bearer YOUR_CRON_SECRET header.' },
           { status: 401 }
@@ -52,6 +59,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!scheduledNotifications || scheduledNotifications.length === 0) {
+      runStatus = 'success';
       return NextResponse.json({
         success: true,
         processed: 0,
@@ -195,6 +203,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    runStatus = 'success';
+    processedCount = processed;
+    failedCount = failed;
     return NextResponse.json({
       success: true,
       processed,
@@ -204,9 +215,33 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('❌ Error in process-scheduled-notifications cron:', error);
+    runError = error.message || 'Failed to process scheduled notifications';
     return NextResponse.json(
       { error: error.message || 'Failed to process scheduled notifications' },
       { status: 500 }
     );
+  } finally {
+    // Best-effort heartbeat for admin diagnostics.
+    try {
+      const supabase = getSupabaseAdmin();
+      await supabase.from('cron_job_heartbeats').upsert(
+        {
+          job_name: JOB_NAME,
+          last_status: runStatus,
+          last_run_at: new Date().toISOString(),
+          last_success_at: runStatus === 'success' ? new Date().toISOString() : null,
+          last_error: runStatus === 'failed' ? runError : null,
+          processed_count: processedCount,
+          failed_count: failedCount,
+          metadata: {
+            source: 'external-cron',
+            endpoint: '/api/cron/process-scheduled-notifications',
+          },
+        },
+        { onConflict: 'job_name' }
+      );
+    } catch (heartbeatError) {
+      console.warn('Could not persist cron heartbeat (process-scheduled-notifications):', heartbeatError);
+    }
   }
 }

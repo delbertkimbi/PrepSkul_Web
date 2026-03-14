@@ -8,6 +8,11 @@
 https://www.prepskul.com/api/cron/process-scheduled-notifications
 ```
 
+### Required jobs
+
+1. `https://www.prepskul.com/api/cron/process-scheduled-notifications` (every 5-10 minutes)
+2. `https://www.prepskul.com/api/cron/daily-challenge-reminder` (once daily)
+
 **Alternative (if you have a different subdomain):**
 - If using `admin.prepskul.com`: `https://admin.prepskul.com/api/cron/process-scheduled-notifications`
 - If using `app.prepskul.com`: `https://app.prepskul.com/api/cron/process-scheduled-notifications`
