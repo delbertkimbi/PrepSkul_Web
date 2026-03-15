@@ -14,6 +14,35 @@ import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
+const DEBUG_INGEST_URL = 'http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478'
+const DEBUG_SESSION_ID = '793f36'
+
+function emitAgentDebugLog(params: {
+  runId: string
+  hypothesisId: string
+  location: string
+  message: string
+  data?: Record<string, unknown>
+}) {
+  // #region agent log
+  fetch(DEBUG_INGEST_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Debug-Session-Id': DEBUG_SESSION_ID,
+    },
+    body: JSON.stringify({
+      sessionId: DEBUG_SESSION_ID,
+      runId: params.runId,
+      hypothesisId: params.hypothesisId,
+      location: params.location,
+      message: params.message,
+      data: params.data || {},
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
+}
 
 /**
  * Download file from Supabase Storage using the signed/public URL
@@ -1150,6 +1179,16 @@ If you generate quiz again, your response will be rejected.`
  */
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
+  const debugRunId = `gen-${startTime}`
+  emitAgentDebugLog({
+    runId: debugRunId,
+    hypothesisId: 'H3',
+    location: 'app/api/skulmate/generate/route.ts:POST',
+    message: 'Generate route entered',
+    data: {
+      apiVersion: 'debug-2026-03-14-v3',
+    },
+  })
 
   // #region agent log
   const logDebug = (location: string, message: string, data: any) => {
@@ -1370,9 +1409,25 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('[skulMate] Failed to extract text:', error)
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        emitAgentDebugLog({
+          runId: debugRunId,
+          hypothesisId: 'H1',
+          location: 'app/api/skulmate/generate/route.ts:extract-catch',
+          message: 'Extraction catch reached',
+          data: {
+            requestedSourceType,
+            errorMessage,
+          },
+        })
         
         // Provide helpful error messages based on error type
         if (errorMessage.includes('Invalid OpenRouter API key') || errorMessage.includes('401')) {
+          emitAgentDebugLog({
+            runId: debugRunId,
+            hypothesisId: 'H1',
+            location: 'app/api/skulmate/generate/route.ts:extract-catch',
+            message: 'Returning 503 api-key branch',
+          })
           return NextResponse.json(
             { error: 'Image processing is currently unavailable due to API configuration. Please try uploading a PDF or text file instead, or contact support.' },
             { status: 503, headers: corsHeaders }
@@ -1385,12 +1440,28 @@ export async function POST(request: NextRequest) {
           errorMessage.toLowerCase().includes('provider is temporarily unavailable') ||
           errorMessage.toLowerCase().includes('temporarily unavailable')
         ) {
+          emitAgentDebugLog({
+            runId: debugRunId,
+            hypothesisId: 'H1',
+            location: 'app/api/skulmate/generate/route.ts:extract-catch',
+            message: 'Returning 503 provider-unavailable branch',
+            data: {
+              matchedTemporaryUnavailable: errorMessage.toLowerCase().includes('temporarily unavailable'),
+              matched402OrCredits: errorMessage.includes('402') || errorMessage.includes('credits'),
+            },
+          })
           return NextResponse.json(
             { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.' },
             { status: 503, headers: corsHeaders }
           )
         }
         
+        emitAgentDebugLog({
+          runId: debugRunId,
+          hypothesisId: 'H2',
+          location: 'app/api/skulmate/generate/route.ts:extract-catch',
+          message: 'Returning generic 400 extraction branch',
+        })
         return NextResponse.json(
           { error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, DOCX, image, or text file with readable content.` },
           { status: 400, headers: corsHeaders }
@@ -1621,6 +1692,15 @@ export async function POST(request: NextRequest) {
     }, { headers: corsHeaders })
   } catch (error: any) {
     console.error('[skulMate] Error:', error)
+    emitAgentDebugLog({
+      runId: debugRunId,
+      hypothesisId: 'H4',
+      location: 'app/api/skulmate/generate/route.ts:top-level-catch',
+      message: 'Top-level catch reached',
+      data: {
+        errorMessage: error?.message || 'unknown',
+      },
+    })
     
     // Return 402 only for user billing limits/insufficient balance.
     if (
@@ -1628,6 +1708,12 @@ export async function POST(request: NextRequest) {
       error.message?.includes('Free document/text limit reached') ||
       error.message?.includes('Insufficient credits')
     ) {
+      emitAgentDebugLog({
+        runId: debugRunId,
+        hypothesisId: 'H4',
+        location: 'app/api/skulmate/generate/route.ts:top-level-catch',
+        message: 'Returning 402 billing branch',
+      })
       return NextResponse.json(
         { error: error.message || 'SkulMate plan required to continue.' },
         { status: 402, headers: corsHeaders }
@@ -1636,6 +1722,12 @@ export async function POST(request: NextRequest) {
 
     // Provider-side credit/outage should not look like a user paywall.
     if (error.message?.includes('credits') || error.message?.includes('402')) {
+      emitAgentDebugLog({
+        runId: debugRunId,
+        hypothesisId: 'H4',
+        location: 'app/api/skulmate/generate/route.ts:top-level-catch',
+        message: 'Returning 503 provider-credit branch',
+      })
       return NextResponse.json(
         { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly.' },
         { status: 503, headers: corsHeaders }
