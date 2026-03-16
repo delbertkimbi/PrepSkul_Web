@@ -8,6 +8,8 @@ import { extractPdf } from '../ticha/extract/extractPdf'
 import { extractDocx } from '../ticha/extract/extractDocx'
 import { extractText } from '../ticha/extract/extractText'
 import { callOpenRouterWithKey } from '../ticha/openrouter'
+const DEBUG_INGEST_URL = 'http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478'
+const DEBUG_SESSION_ID = '793f36'
 const sharp = require('sharp') as typeof import('sharp')
 
 export interface ExtractedContent {
@@ -69,6 +71,33 @@ function normalizeExtractedText(text: string): string {
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+}
+
+function emitAgentDebugLog(params: {
+  runId: string
+  hypothesisId: string
+  location: string
+  message: string
+  data?: Record<string, unknown>
+}) {
+  // #region agent log
+  fetch(DEBUG_INGEST_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Debug-Session-Id': DEBUG_SESSION_ID,
+    },
+    body: JSON.stringify({
+      sessionId: DEBUG_SESSION_ID,
+      runId: params.runId,
+      hypothesisId: params.hypothesisId,
+      location: params.location,
+      message: params.message,
+      data: params.data || {},
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+  // #endregion
 }
 
 function parseOpenRouterTextResponse(response: any): string {
@@ -212,6 +241,18 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
           console.log(
             `[skulMate OCR] Trying vision model: ${model} (pass ${i + 1}, key ${keyIndex + 1}/${apiKeys.length})`
           )
+          emitAgentDebugLog({
+            runId: 'image-extract',
+            hypothesisId: 'H-img-1',
+            location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:before-call',
+            message: 'Calling OpenRouter vision for OCR',
+            data: {
+              model,
+              promptIndex: i,
+              keyIndex,
+              imageUrlPrefix: imageUrl.substring(0, 80),
+            },
+          })
           response = await callOpenRouterWithKey(apiKey, {
             model,
             messages,
@@ -229,6 +270,18 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
         } catch (error) {
           lastError = error instanceof Error ? error : new Error(String(error))
           console.warn(`[skulMate OCR] Model ${model} pass ${i + 1} failed:`, lastError.message)
+          emitAgentDebugLog({
+            runId: 'image-extract',
+            hypothesisId: 'H-img-2',
+            location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:catch',
+            message: 'OpenRouter vision OCR call failed',
+            data: {
+              model,
+              promptIndex: i,
+              keyIndex,
+              errorMessage: lastError.message,
+            },
+          })
 
           // Invalid key: move to next key if available.
           const keyLooksInvalid =
@@ -247,6 +300,15 @@ async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
   }
 
   if (!response) {
+    emitAgentDebugLog({
+      runId: 'image-extract',
+      hypothesisId: 'H-img-3',
+      location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:no-response',
+      message: 'All vision models failed with no usable response',
+      data: {
+        lastErrorMessage: lastError?.message || 'Unknown error',
+      },
+    })
     throw new Error(`All vision models failed. Last error: ${lastError?.message || 'Unknown error'}`)
   }
 
