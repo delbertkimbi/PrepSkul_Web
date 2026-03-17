@@ -224,14 +224,62 @@ interface GenerationUsageSummary {
 }
 
 type BillingMode = 'free' | 'credits'
-const FREE_DAILY_LIMIT_DOC_TEXT = 2
-const FREE_DAILY_LIMIT_IMAGE = 4
+
+type SkulmatePricingConfig = {
+  creditsPerManualTextGame: number
+  creditsPerDocTextGame: number
+  creditsPerImageGameBase: number
+  freeDocTextGamesPerDay: number
+  freeImageGamesPerDay: number
+  maxImagesPerPromptPaid: number
+}
 
 function getServiceSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return null
   return createClient(url, key)
+}
+
+async function getSkulmatePricingConfig(admin: any): Promise<SkulmatePricingConfig> {
+  const defaults: SkulmatePricingConfig = {
+    creditsPerManualTextGame: 2,
+    creditsPerDocTextGame: 5,
+    creditsPerImageGameBase: 10,
+    freeDocTextGamesPerDay: 2,
+    freeImageGamesPerDay: 4,
+    maxImagesPerPromptPaid: 5,
+  }
+
+  try {
+    const { data, error } = await admin
+      .from('skulmate_pricing')
+      .select(
+        [
+          'credits_per_manual_text_game',
+          'credits_per_doc_text_game',
+          'credits_per_image_game_base',
+          'free_doc_text_games_per_day',
+          'free_image_games_per_day',
+          'max_images_per_prompt_paid',
+        ].join(',')
+      )
+      .eq('id', 1)
+      .maybeSingle()
+
+    if (error || !data) return defaults
+
+    return {
+      creditsPerManualTextGame: Number(data.credits_per_manual_text_game ?? defaults.creditsPerManualTextGame),
+      creditsPerDocTextGame: Number(data.credits_per_doc_text_game ?? defaults.creditsPerDocTextGame),
+      creditsPerImageGameBase: Number(data.credits_per_image_game_base ?? defaults.creditsPerImageGameBase),
+      freeDocTextGamesPerDay: Number(data.free_doc_text_games_per_day ?? defaults.freeDocTextGamesPerDay),
+      freeImageGamesPerDay: Number(data.free_image_games_per_day ?? defaults.freeImageGamesPerDay),
+      maxImagesPerPromptPaid: Number(data.max_images_per_prompt_paid ?? defaults.maxImagesPerPromptPaid),
+    }
+  } catch {
+    return defaults
+  }
 }
 
 function getUtcDayStartIso(date: Date = new Date()): string {
@@ -250,23 +298,22 @@ function detectRequestedSourceType(fileUrl?: string, text?: string): 'text' | 'p
 
 function calculateSkulmateCreditsRequired(params: {
   sourceType: 'text' | 'pdf' | 'docx' | 'image'
+  isManualText?: boolean
   extractedTextLength: number
   difficulty?: 'easy' | 'medium' | 'hard'
   numQuestions?: number
+  pricing: SkulmatePricingConfig
 }): number {
-  const { sourceType, extractedTextLength, difficulty, numQuestions } = params
-  if (sourceType !== 'image') return 2
+  const { sourceType, isManualText, pricing } = params
 
-  // Image OCR tiers from pricing memo:
-  // - normal image game: 2 credits
-  // - larger/complex image game: 3-4 credits
-  const isHard = difficulty === 'hard'
-  const hasLargeText = extractedTextLength >= 12000
-  const hasManyQuestions = (numQuestions || 0) >= 20
+  // Manual text prompt (typed/pasted) is cheaper than file ingest.
+  if (sourceType === 'text' && isManualText) return Math.max(0, pricing.creditsPerManualTextGame)
 
-  if ((isHard && hasLargeText) || (hasLargeText && hasManyQuestions)) return 4
-  if (isHard || hasLargeText || hasManyQuestions) return 3
-  return 2
+  // Files (pdf/docx/txt extracted to text) share a mid-tier price.
+  if (sourceType !== 'image') return Math.max(0, pricing.creditsPerDocTextGame)
+
+  // Images are expensive; keep it simple and predictable for users.
+  return Math.max(0, pricing.creditsPerImageGameBase)
 }
 
 async function ensureUserCreditsRow(admin: any, userId: string) {
@@ -1288,6 +1335,7 @@ export async function POST(request: NextRequest) {
     let billedCredits = 0
     let freeGamesUsedToday = 0
     let userCreditsBalance = 0
+    let freeLimitForSource = 0
 
     // If fileUrl provided, download and extract text
     if (fileUrl) {
@@ -1473,20 +1521,24 @@ export async function POST(request: NextRequest) {
     if (finalUserId) {
       const admin = getServiceSupabaseAdmin()
       if (admin) {
+        const pricing = await getSkulmatePricingConfig(admin)
         await ensureUserCreditsRow(admin, finalUserId)
         userCreditsBalance = await getUserCreditsBalance(admin, finalUserId)
 
         const creditsRequired = calculateSkulmateCreditsRequired({
           sourceType: requestedSourceType === 'image' ? 'image' : requestedSourceType,
+          isManualText: Boolean(text && text.trim().length > 0 && !fileUrl),
           extractedTextLength: extractedText.length,
           difficulty,
           numQuestions,
+          pricing,
         })
 
         const sourceForFreeCount = requestedSourceType === 'image' ? 'image' : 'doc_text'
-        const freeLimitForSource = sourceForFreeCount === 'image'
-          ? FREE_DAILY_LIMIT_IMAGE
-          : FREE_DAILY_LIMIT_DOC_TEXT
+        freeLimitForSource =
+          sourceForFreeCount === 'image'
+            ? pricing.freeImageGamesPerDay
+            : pricing.freeDocTextGamesPerDay
 
         freeGamesUsedToday = await countTodayFreeSkulmateGames(
           admin,
@@ -1505,8 +1557,8 @@ export async function POST(request: NextRequest) {
             {
               error:
                 sourceForFreeCount === 'image'
-                  ? 'Free image limit reached (4/day). Choose a SkulMate plan to continue.'
-                  : 'Free document/text limit reached (2/day). Choose a SkulMate plan to continue.',
+                  ? `Free image limit reached (${pricing.freeImageGamesPerDay}/day). Choose a SkulMate plan to continue.`
+                  : `Free document/text limit reached (${pricing.freeDocTextGamesPerDay}/day). Choose a SkulMate plan to continue.`,
             },
             { status: 402, headers: corsHeaders }
           )
@@ -1656,10 +1708,7 @@ export async function POST(request: NextRequest) {
         billing_mode: billingMode,
         billed_credits: billedCredits,
         free_games_used_today: freeGamesUsedToday,
-        free_limit_for_source:
-          requestedSourceType === 'image'
-            ? FREE_DAILY_LIMIT_IMAGE
-            : FREE_DAILY_LIMIT_DOC_TEXT,
+        free_limit_for_source: freeLimitForSource,
         credits_balance_after: userCreditsBalance,
         generationModel: generationResult.usageSummary.model,
         generationUsage: generationResult.usageSummary.usage || null,
@@ -1679,9 +1728,7 @@ export async function POST(request: NextRequest) {
         creditsCharged: billedCredits,
       freeGamesUsedToday,
       freeLimitForSource:
-        requestedSourceType === 'image'
-          ? FREE_DAILY_LIMIT_IMAGE
-          : FREE_DAILY_LIMIT_DOC_TEXT,
+        freeLimitForSource,
         creditsBalance: userCreditsBalance,
       },
       costEstimate: {
