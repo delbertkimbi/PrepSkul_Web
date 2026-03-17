@@ -508,16 +508,23 @@ async function extractImage(
 /**
  * Detect file type from buffer or MIME type
  */
-function detectFileType(buffer: Buffer, mimeType?: string): {
+function detectFileType(buffer: Buffer, mimeType?: string, fileName?: string): {
   type: 'pdf' | 'docx' | 'image' | 'text' | 'unknown'
   extension: string
 } {
+  const lowerName = (fileName || '').toLowerCase().trim()
+  const nameExt = lowerName.includes('.') ? lowerName.split('.').pop() || '' : ''
+
   // Check MIME type first
   if (mimeType) {
     if (mimeType === 'application/pdf') {
       return { type: 'pdf', extension: 'pdf' }
     }
     if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      return { type: 'docx', extension: 'docx' }
+    }
+    // Some clients upload DOCX as octet-stream or zip.
+    if ((mimeType === 'application/octet-stream' || mimeType === 'application/zip') && nameExt === 'docx') {
       return { type: 'docx', extension: 'docx' }
     }
     if (mimeType.startsWith('image/')) {
@@ -538,8 +545,14 @@ function detectFileType(buffer: Buffer, mimeType?: string): {
 
   // DOCX: ZIP file with specific structure (starts with PK)
   if (signature.startsWith('504B')) {
-    const bufferStr = buffer.toString('utf-8', 0, 2000)
-    if (bufferStr.includes('word/') || bufferStr.includes('WordDocument')) {
+    // If filename says .docx, trust it (DOCX is a ZIP container).
+    if (nameExt === 'docx') {
+      return { type: 'docx', extension: 'docx' }
+    }
+
+    // Heuristic scan a larger prefix for docx folder markers
+    const bufferStr = buffer.toString('utf-8', 0, Math.min(buffer.length, 20000))
+    if (bufferStr.includes('word/') || bufferStr.includes('WordDocument') || bufferStr.includes('[Content_Types].xml')) {
       return { type: 'docx', extension: 'docx' }
     }
   }
@@ -577,7 +590,7 @@ export async function extractFile(
   mimeType?: string,
   fileName?: string
 ): Promise<ExtractedContent> {
-  const fileInfo = detectFileType(buffer, mimeType)
+  const fileInfo = detectFileType(buffer, mimeType, fileName)
 
   switch (fileInfo.type) {
     case 'pdf':
