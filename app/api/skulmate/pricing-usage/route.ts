@@ -22,13 +22,11 @@ function getUtcDayStartIso(date: Date = new Date()): string {
 async function countTodayFreeSkulmateGames(admin: any, userId: string, sourceType: 'doc_text' | 'image') {
   const dayStartIso = getUtcDayStartIso()
   let query = admin
-    .from('skulmate_usage_events')
+    .from('skulmate_games')
     .select('id')
     .eq('user_id', userId)
-    .eq('event_type', 'generate_game')
-    .eq('success', true)
+    .eq('is_deleted', false)
     .gte('created_at', dayStartIso)
-    .contains('metadata', { billing_mode: 'free' })
 
   if (sourceType === 'doc_text') {
     query = query.in('source_type', ['text', 'pdf', 'docx'])
