@@ -563,7 +563,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     // Smart game type selection based on content - only pick currently playable types.
     if (contentType === 'diagram') {
       // Diagram-heavy inputs still work well with matching/fill-blank in current app.
-      const diagramOptions = ['matching', 'fill_blank', 'drag_drop', 'quiz'];
+      const diagramOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'quiz'];
       recommendedGameType = diagramOptions[Math.floor(Math.random() * diagramOptions.length)];
     } else if (contentType === 'formula') {
       recommendedGameType = 'fill_blank'; // Best for formulas
@@ -573,14 +573,14 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
       recommendedGameType = 'quiz'; // Best for interpretation
     } else if (text.length < 500) {
       // Short content - fast, currently stable modes.
-      const shortOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop'];
+      const shortOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'bubble_pop', 'match3'];
       recommendedGameType = shortOptions[Math.floor(Math.random() * shortOptions.length)];
     } else if (text.split('\n').length > 20) {
       // Structured content - keep to stable playable modes.
       recommendedGameType = Math.random() > 0.5 ? 'matching' : 'drag_drop';
     } else {
       // For regular text, prioritize currently playable interactive modes.
-      const textOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'quiz', 'simulation', 'mystery', 'escape_room'];
+      const textOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'match3', 'bubble_pop', 'quiz', 'simulation', 'mystery', 'escape_room'];
       recommendedGameType = textOptions[Math.floor(Math.random() * textOptions.length)];
     }
     
@@ -589,13 +589,13 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     const uniqueWords = new Set(text.toLowerCase().match(/\b[a-z]{4,}\b/gi) || []).size;
     if (uniqueWords > 15 && (recommendedGameType === 'quiz' || recommendedGameType === 'flashcards')) {
       // High-vocabulary content - bias towards matching/fill-blank for now.
-      const wordGameOptions = ['matching', 'fill_blank', 'drag_drop', 'flashcards'];
+      const wordGameOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'flashcards'];
       recommendedGameType = wordGameOptions[Math.floor(Math.random() * wordGameOptions.length)];
     }
     
     // Final check: If somehow quiz was selected for auto mode, replace with interactive alternative
     if (gameType === 'auto' && recommendedGameType === 'quiz') {
-      const interactiveOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'simulation'];
+      const interactiveOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'match3', 'bubble_pop', 'simulation'];
       recommendedGameType = interactiveOptions[Math.floor(Math.random() * interactiveOptions.length)];
     }
   } else {
@@ -744,9 +744,10 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Each option must be a plausible answer related to the question and content\n';
     userPrompt += '- The correct answer must be clearly identifiable from the content\n';
     userPrompt += '- Include correct answer (0-3 index) and brief explanation based on the content\n';
-    userPrompt += '- HYBRID MODE: Include 1-3 drag-and-drop items inside the same quiz flow (not a separate drag_drop game)\n';
+    userPrompt += '- HYBRID MODE: Include 1-3 drag-and-drop OR fill-blank items inside the same quiz flow (not separate game types)\n';
     userPrompt += '- For drag-and-drop quiz items, use this structure: {"question":"...", "dragItems":[{"text":"...", "correctZone":"..."}, ...], "dropZones":[{"name":"..."}, ...], "explanation":"..."}\n';
-    userPrompt += '- Keep most items as normal MCQ; only a few should be drag-and-drop hybrid items\n';
+    userPrompt += '- For fill-blank quiz items, use this structure: {"question":"...", "blankText":"...", "correctAnswer":"...", "explanation":"..."}\n';
+    userPrompt += '- Keep most items as normal MCQ; only a few should be hybrid drag-drop/fill-blank items\n';
     userPrompt += '- For ' + contentType + 's: Focus on interpretation, identification, or application from the actual ' + contentType + '\n';
   } else if (gameTypeStr === 'flashcards') {
     userPrompt += '- Generate ' + (numQuestions || '15-20') + ' term-definition pairs based ONLY on the content provided\n';
