@@ -14,8 +14,8 @@ import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
-const DEBUG_INGEST_URL = 'http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478'
-const DEBUG_SESSION_ID = '793f36'
+const DEBUG_INGEST_URL = process.env.SKULMATE_DEBUG_INGEST_URL
+const DEBUG_SESSION_ID = process.env.SKULMATE_DEBUG_SESSION_ID || 'skulmate-debug'
 
 function emitAgentDebugLog(params: {
   runId: string
@@ -24,6 +24,7 @@ function emitAgentDebugLog(params: {
   message: string
   data?: Record<string, unknown>
 }) {
+  if (!DEBUG_INGEST_URL) return
   // #region agent log
   fetch(DEBUG_INGEST_URL, {
     method: 'POST',
@@ -44,6 +45,16 @@ function emitAgentDebugLog(params: {
   // #endregion
 }
 
+function sanitizeUrlForLogs(rawUrl: string): string {
+  try {
+    const parsed = new URL(rawUrl)
+    parsed.search = ''
+    return parsed.toString()
+  } catch {
+    return '[invalid-url]'
+  }
+}
+
 /**
  * Download file from Supabase Storage using the signed/public URL
  * This avoids needing service role key - we just fetch the file via HTTP
@@ -51,18 +62,13 @@ function emitAgentDebugLog(params: {
 async function downloadFileFromUrl(fileUrl: string): Promise<Buffer> {
   // #region agent log
   const logDebug = (location: string, message: string, data: any) => {
-    fetch('http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location,
-        message,
-        data,
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-      }),
-    }).catch(() => {});
+    emitAgentDebugLog({
+      runId: 'download-file',
+      hypothesisId: 'H3',
+      location,
+      message,
+      data,
+    })
   };
   
   logDebug('skulmate/generate:downloadFileFromUrl', 'Starting download', {
@@ -73,7 +79,9 @@ async function downloadFileFromUrl(fileUrl: string): Promise<Buffer> {
   });
   // #endregion
   
-  console.log(`[skulMate Storage] Downloading file from URL: ${fileUrl.substring(0, 100)}...`)
+  console.log(
+    `[skulMate Storage] Downloading file from URL: ${sanitizeUrlForLogs(fileUrl).substring(0, 100)}...`
+  )
   
   try {
     // #region agent log
@@ -179,6 +187,7 @@ function getSkulMateApiKeys(): string[] {
 interface GenerateRequest {
   fileUrl?: string
   text?: string
+  sourceFileName?: string
   userId?: string
   childId?: string // For parents creating games for children
   gameType?: 'quiz' | 'flashcards' | 'matching' | 'fill_blank' | 'auto' | 'match3' | 'bubble_pop' | 'word_search' | 'crossword' | 'diagram_label' | 'drag_drop' | 'puzzle_pieces' | 'simulation' | 'mystery' | 'escape_room' // auto = AI decides
@@ -1254,18 +1263,13 @@ export async function POST(request: NextRequest) {
 
   // #region agent log
   const logDebug = (location: string, message: string, data: any) => {
-    fetch('http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        location,
-        message,
-        data,
-        timestamp: Date.now(),
-        sessionId: 'debug-session',
-        runId: 'run1',
-      }),
-    }).catch(() => {});
+    emitAgentDebugLog({
+      runId: debugRunId,
+      hypothesisId: 'H3',
+      location,
+      message,
+      data,
+    })
   };
   
   logDebug('skulmate/generate/route.ts:POST', 'API route entry', {
@@ -1308,6 +1312,7 @@ export async function POST(request: NextRequest) {
     const { 
       fileUrl, 
       text, 
+      sourceFileName,
       userId, 
       childId, 
       gameType = 'auto',
@@ -1658,7 +1663,12 @@ export async function POST(request: NextRequest) {
             title: gameData.title,
             game_type: gameData.gameType,
             document_url: fileUrl || null,
-      source_type: actualSourceType,
+            source_type: actualSourceType,
+            source_file_name: sourceFileName || null,
+            source_text_snapshot:
+              actualSourceType === 'text' && text && text.trim().length >= 50
+                ? text
+                : null,
           })
           .select()
           .maybeSingle()

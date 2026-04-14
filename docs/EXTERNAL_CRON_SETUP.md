@@ -12,6 +12,9 @@ https://www.prepskul.com/api/cron/process-scheduled-notifications
 
 1. `https://www.prepskul.com/api/cron/process-scheduled-notifications` (every 5-10 minutes)
 2. `https://www.prepskul.com/api/cron/daily-challenge-reminder` (once daily)
+3. `https://www.prepskul.com/api/cron/skulmate-weekly-digest` (once weekly, e.g. Sunday 08:00 UTC — SkulMate learning digest email + in-app; use header `Authorization: Bearer YOUR_CRON_SECRET` same as other crons)
+
+**Note:** PrepSkul uses **external** cron (e.g. cron-job.org) with `CRON_SECRET`. Vercel Cron is **not** required and needs a paid Vercel plan for multiple crons; `vercel.json` does not define crons by default.
 
 **Alternative (if you have a different subdomain):**
 - If using `admin.prepskul.com`: `https://admin.prepskul.com/api/cron/process-scheduled-notifications`
