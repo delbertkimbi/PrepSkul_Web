@@ -154,8 +154,13 @@ export async function POST(request: NextRequest) {
       }
     })();
 
+    // Weekly SkulMate digest: email + in-app only (no push). Allow delivery during quiet hours
+    // so a scheduled cron can run at a fixed UTC time without skipping users who enabled quiet hours.
+    const weeklyDigestEmailOnly =
+      type === 'skulmate_weekly_digest' && sendEmail === true && sendPush === false;
+
     // Skip notification if in quiet hours
-    if (isInQuietHours) {
+    if (isInQuietHours && !weeklyDigestEmailOnly) {
       console.log(`Notification skipped for user ${userId}: quiet hours (${preferences.quiet_hours_start} - ${preferences.quiet_hours_end})`);
       return NextResponse.json({
         success: false,
