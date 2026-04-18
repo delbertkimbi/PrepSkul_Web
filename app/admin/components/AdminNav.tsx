@@ -25,6 +25,8 @@ const ambassadorsItems = [
 
 const singleItems = [
   { name: 'Dashboard', href: '/admin' },
+  { name: 'Analytics', href: '/admin/analytics' },
+  { name: 'Offline Ops', href: '/admin/offline-ops' },
   { name: 'Active Users', href: '/admin/users/active' },
   { name: 'Sessions', href: '/admin/sessions' },
   { name: 'Revenue', href: '/admin/revenue' },
