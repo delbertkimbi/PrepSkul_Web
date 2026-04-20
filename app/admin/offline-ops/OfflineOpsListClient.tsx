@@ -96,19 +96,19 @@ export default function OfflineOpsListClient({ records }: Props) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-none border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Total offline records</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{summary.total}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-none border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Active/completed journeys</p>
           <p className="text-2xl font-bold text-blue-700 mt-1">{summary.active}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-none border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Paid</p>
           <p className="text-2xl font-bold text-green-700 mt-1">{summary.paid}</p>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-none border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Converted to platform</p>
           <p className="text-2xl font-bold text-indigo-700 mt-1">{summary.converted}</p>
         </div>
@@ -156,7 +156,7 @@ export default function OfflineOpsListClient({ records }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+        <div className="bg-white border border-gray-200 rounded-none p-12 text-center">
           <MessageCircle className="mx-auto h-10 w-10 text-gray-400" />
           <p className="mt-2 text-sm text-gray-600">No offline operation records found.</p>
         </div>
@@ -165,7 +165,7 @@ export default function OfflineOpsListClient({ records }: Props) {
           {filtered.map((record) => {
             const expanded = expandedId === record.id;
             return (
-              <div key={record.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div key={record.id} className="bg-white border border-gray-200 rounded-none overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setExpandedId(expanded ? null : record.id)}

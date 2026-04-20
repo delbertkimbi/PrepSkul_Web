@@ -23,11 +23,16 @@ const ambassadorsItems = [
   { name: 'Reachout Track', href: '/admin/reachout' },
 ];
 
-const singleItems = [
-  { name: 'Dashboard', href: '/admin' },
+const operationsItems = [
   { name: 'Analytics', href: '/admin/analytics' },
   { name: 'Offline Ops', href: '/admin/offline-ops' },
+  { name: 'Feedback Inbox', href: '/admin/feedback-inbox' },
+  { name: 'Ops Events', href: '/admin/operations-events' },
   { name: 'Active Users', href: '/admin/users/active' },
+];
+
+const singleItems = [
+  { name: 'Dashboard', href: '/admin' },
   { name: 'Sessions', href: '/admin/sessions' },
   { name: 'Revenue', href: '/admin/revenue' },
   { name: 'Pricing', href: '/admin/pricing' },
@@ -40,6 +45,7 @@ export default function AdminNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileTutorsOpen, setMobileTutorsOpen] = useState(false);
   const [mobileAmbassadorsOpen, setMobileAmbassadorsOpen] = useState(false);
+  const [mobileOperationsOpen, setMobileOperationsOpen] = useState(false);
 
   const isActive = (href: string) => {
     if (href === '/admin') {
@@ -50,6 +56,7 @@ export default function AdminNav() {
 
   const isTutorsActive = tutorsItems.some((i) => isActive(i.href));
   const isAmbassadorsActive = ambassadorsItems.some((i) => isActive(i.href));
+  const isOperationsActive = operationsItems.some((i) => isActive(i.href));
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -92,6 +99,29 @@ export default function AdminNav() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="min-w-[180px]">
                   {tutorsItems.map((item) => (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link href={item.href} className="cursor-pointer">
+                        {item.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium transition-colors rounded ${
+                      isOperationsActive
+                        ? 'text-white bg-white/20'
+                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                    }`}
+                  >
+                    Operations
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-[220px]">
+                  {operationsItems.map((item) => (
                     <DropdownMenuItem key={item.href} asChild>
                       <Link href={item.href} className="cursor-pointer">
                         {item.name}
@@ -163,6 +193,38 @@ export default function AdminNav() {
                 {item.name}
               </Link>
             ))}
+            <div>
+              <button
+                type="button"
+                onClick={() => setMobileOperationsOpen(!mobileOperationsOpen)}
+                className={`w-full flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  isOperationsActive
+                    ? 'text-white bg-white/20'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                Operations
+                <ChevronRight className={`h-4 w-4 transition-transform ${mobileOperationsOpen ? 'rotate-90' : ''}`} />
+              </button>
+              {mobileOperationsOpen && (
+                <div className="pl-4 space-y-1">
+                  {operationsItems.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block px-3 py-2 text-sm rounded-md transition-colors ${
+                        isActive(item.href)
+                          ? 'text-white bg-white/15'
+                          : 'text-white/70 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
             <div>
               <button
                 type="button"
