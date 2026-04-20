@@ -28,14 +28,14 @@ export default async function OfflineOpsPage() {
           </div>
           <a
             href="/admin/offline-ops/new"
-            className="inline-flex items-center justify-center rounded-md bg-[#1B2C4F] px-4 py-2 text-sm font-medium text-white hover:bg-[#1B2C4F]/90 transition-colors"
+            className="inline-flex items-center justify-center rounded-none bg-[#1B2C4F] px-4 py-2 text-sm font-medium text-white hover:bg-[#1B2C4F]/90 transition-colors"
           >
             New offline record
           </a>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-none p-4 text-red-800 mb-6">
             Error loading records: {error.message}. Ensure the <code className="bg-red-100 px-1 rounded">offline_operations</code> table exists.
           </div>
         )}

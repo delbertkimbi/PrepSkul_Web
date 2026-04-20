@@ -30,12 +30,25 @@ export default function GrowthAnalyticsDashboard() {
   const users = useSWR('/api/admin/analytics/users', fetcher, { refreshInterval: 30000 });
   const logins = useSWR('/api/admin/analytics/logins', fetcher, { refreshInterval: 30000 });
   const sessions = useSWR('/api/admin/analytics/sessions', fetcher, { refreshInterval: 30000 });
+  const sessionApprovals = useSWR('/api/admin/analytics/session-approvals', fetcher, { refreshInterval: 30000 });
   const payments = useSWR('/api/admin/analytics/payments', fetcher, { refreshInterval: 30000 });
   const growth = useSWR('/api/admin/analytics/growth', fetcher, { refreshInterval: 30000 });
 
-  const loading = users.isLoading || logins.isLoading || sessions.isLoading || payments.isLoading || growth.isLoading;
+  const loading =
+    users.isLoading ||
+    logins.isLoading ||
+    sessions.isLoading ||
+    sessionApprovals.isLoading ||
+    payments.isLoading ||
+    growth.isLoading;
 
-  const hasError = users.error || logins.error || sessions.error || payments.error || growth.error;
+  const hasError =
+    users.error ||
+    logins.error ||
+    sessions.error ||
+    sessionApprovals.error ||
+    payments.error ||
+    growth.error;
 
   const growthRateCards = useMemo(() => {
     if (!growth.data?.growth) return [];
@@ -45,6 +58,19 @@ export default function GrowthAnalyticsDashboard() {
       { name: 'Revenue growth', value: growth.data.growth.revenue.rate },
     ];
   }, [growth.data]);
+
+  const sendReminderNow = async (sessionId: string) => {
+    try {
+      await fetch('/api/admin/operations/send-session-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      sessionApprovals.mutate();
+    } catch {
+      // silent fallback; dashboard remains usable
+    }
+  };
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -145,6 +171,19 @@ export default function GrowthAnalyticsDashboard() {
               },
             ]}
           />
+          <ActivityTable
+            title="Mobile ingestion health"
+            rows={[
+              {
+                label: 'Mobile signup events (year)',
+                value: users.data?.mobileIngestion?.mobileSignupsYearly ?? 0,
+              },
+              {
+                label: 'Mobile ingest enabled',
+                value: users.data?.mobileIngestion?.enabled ? 'Yes' : 'No',
+              },
+            ]}
+          />
         </div>
       )}
 
@@ -163,6 +202,19 @@ export default function GrowthAnalyticsDashboard() {
                 { label: 'DAU', value: logins.data?.activeUsers?.dau ?? 0 },
                 { label: 'WAU', value: logins.data?.activeUsers?.wau ?? 0 },
                 { label: 'MAU', value: logins.data?.activeUsers?.mau ?? 0 },
+              ]}
+            />
+            <ActivityTable
+              title="Mobile login ingestion"
+              rows={[
+                {
+                  label: 'Mobile login events (year)',
+                  value: logins.data?.mobileIngestion?.eventCountYearly ?? 0,
+                },
+                {
+                  label: 'Mobile ingest enabled',
+                  value: logins.data?.mobileIngestion?.enabled ? 'Yes' : 'No',
+                },
               ]}
             />
             <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -194,6 +246,62 @@ export default function GrowthAnalyticsDashboard() {
               { label: 'Yearly', value: sessions.data?.periods?.yearly ?? 0 },
             ]}
           />
+          <div className="bg-white border border-gray-200 p-5 shadow-sm rounded-none">
+            <h3 className="text-base font-semibold text-gray-900 mb-3">
+              Tutor approvals pending (detailed)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <MetricCard title="Pending approvals" value={sessionApprovals.data?.totals?.pendingCount ?? 0} />
+              <MetricCard title="Overdue 24h+" value={sessionApprovals.data?.totals?.overdue24h ?? 0} />
+              <MetricCard title="Reminders sent" value={sessionApprovals.data?.totals?.reminderSent ?? 0} />
+            </div>
+            {(sessionApprovals.data?.rows || []).length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-[920px] w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-500 border-b border-gray-100">
+                      <th className="py-2 pr-3">Tutor</th>
+                      <th className="py-2 pr-3">Learner/Parent</th>
+                      <th className="py-2 pr-3">Subject</th>
+                      <th className="py-2 pr-3">Scheduled</th>
+                      <th className="py-2 pr-3">Hours Pending</th>
+                      <th className="py-2 pr-3">Reminder Sent</th>
+                      <th className="py-2 pr-3">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(sessionApprovals.data?.rows || []).slice(0, 20).map((row: any) => (
+                      <tr key={row.sessionId} className="border-b border-gray-50">
+                        <td className="py-2 pr-3">
+                          <div className="font-medium text-gray-900">{row.tutor?.full_name || 'Unknown tutor'}</div>
+                          <div className="text-xs text-gray-500">{row.tutor?.email || ''}</div>
+                        </td>
+                        <td className="py-2 pr-3">
+                          <div className="font-medium text-gray-900">{row.learner?.full_name || 'Unknown learner'}</div>
+                          <div className="text-xs text-gray-500">{row.learner?.email || ''}</div>
+                        </td>
+                        <td className="py-2 pr-3">{row.subject || '—'}</td>
+                        <td className="py-2 pr-3">{row.scheduledDate} {row.scheduledTime?.slice?.(0, 5) || ''}</td>
+                        <td className="py-2 pr-3">{row.hoursPending}h</td>
+                        <td className="py-2 pr-3">{row.reminderSentAt ? 'Yes' : 'No'}</td>
+                        <td className="py-2 pr-3">
+                          <button
+                            type="button"
+                            onClick={() => sendReminderNow(row.sessionId)}
+                            className="border border-gray-300 px-2 py-1 text-xs font-medium text-[#1B2C4F] hover:bg-gray-50 rounded-none"
+                          >
+                            Send reminder now
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
           <ActivityTable
             title="On-platform vs off-platform sessions"
             rows={[

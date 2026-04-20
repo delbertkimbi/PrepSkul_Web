@@ -36,6 +36,24 @@ export async function GET() {
       }));
     }
 
+    // Merge Flutter-native mobile login events (if table exists/configured)
+    const { data: mobileEvents, error: mobileErr } = await supabaseAdmin
+      .from('mobile_app_events')
+      .select('user_id, user_role, event_timestamp')
+      .eq('event_type', 'login')
+      .gte('event_timestamp', ranges.yearly)
+      .order('event_timestamp', { ascending: true });
+
+    if (!mobileErr && mobileEvents) {
+      source = source.concat(
+        (mobileEvents as Array<{ user_id: string | null; user_role: string | null; event_timestamp: string }>).map((ev) => ({
+          user_id: ev.user_id || `mobile-anon-${ev.event_timestamp}`,
+          user_role: ev.user_role,
+          timestamp: ev.event_timestamp,
+        }))
+      );
+    }
+
     const since = {
       daily: new Date(ranges.daily),
       weekly: new Date(ranges.weekly),
@@ -75,6 +93,10 @@ export async function GET() {
         dailyLoginsLast30Days: groupByDay(source, 30),
       },
       source: !loginEventsError && loginEvents ? 'login_events' : 'profiles.last_seen',
+      mobileIngestion: {
+        enabled: !mobileErr,
+        eventCountYearly: !mobileErr && mobileEvents ? mobileEvents.length : 0,
+      },
     });
   } catch (error) {
     console.error('admin analytics logins error', error);

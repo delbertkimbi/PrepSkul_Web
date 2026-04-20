@@ -38,6 +38,13 @@ export async function GET() {
       .gte('created_at', ranges.monthly)
       .order('created_at', { ascending: true });
 
+    const { data: mobileSignupEvents, error: mobileSignupErr } = await supabaseAdmin
+      .from('mobile_app_events')
+      .select('event_timestamp')
+      .eq('event_type', 'signup')
+      .gte('event_timestamp', ranges.yearly)
+      .order('event_timestamp', { ascending: true });
+
     const { data: offlineRows, error: offlineError } = await supabaseAdmin
       .from('offline_operations')
       .select('customer_role, created_at')
@@ -87,6 +94,10 @@ export async function GET() {
           students: offlineStudents,
           tutors: 0,
         },
+      },
+      mobileIngestion: {
+        enabled: !mobileSignupErr,
+        mobileSignupsYearly: !mobileSignupErr && mobileSignupEvents ? mobileSignupEvents.length : 0,
       },
       growth: {
         weeklyGrowthRate,

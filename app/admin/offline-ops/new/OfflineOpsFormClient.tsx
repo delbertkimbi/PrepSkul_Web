@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,25 +20,30 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 const schema = z.object({
-  agent_name: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon'], { required_error: 'Agent is required' }),
-  source_channel: z.enum(['whatsapp_ads', 'whatsapp_direct', 'phone_call', 'walk_in', 'referral']),
-  customer_name: z.string().min(2, 'Customer name is required'),
-  customer_whatsapp: z.string().min(6, 'WhatsApp number is required'),
-  customer_role: z.enum(['Parent', 'Student']),
-  number_of_learners: z.string().min(1, 'Number of learners is required'),
-  learner_educational_level: z.string().min(1, 'Educational level is required'),
-  subjects_of_interest: z.string().min(1, 'Subjects are required'),
-  tutor_match_type: z.enum(['platform_tutor', 'off_platform_tutor']),
-  delivery_mode: z.enum(['online', 'onsite', 'hybrid']),
-  onboarding_stage: z.enum(['new_lead', 'qualified', 'matched', 'active_sessions', 'completed', 'dropped']),
-  sessions_completed: z.string().optional(),
-  payment_status: z.enum(['unpaid', 'partial', 'paid', 'refunded']),
-  payment_environment: z.enum(['real', 'sandbox']),
-  amount_paid: z.string().optional(),
-  started_at: z.string().optional(),
-  next_followup_at: z.string().optional(),
-  converted_to_platform: z.enum(['yes', 'no']),
-  notes: z.string().min(5, 'Add context notes'),
+  agentName: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon']),
+  sourceChannel: z.enum(['whatsapp_ads', 'whatsapp_direct', 'phone_call', 'walk_in', 'referral']),
+  primaryRole: z.enum(['parent', 'student']),
+  primaryFullName: z.string().min(2),
+  primaryEmail: z.string().email(),
+  primaryPhone: z.string().min(6),
+  childFullName: z.string().optional(),
+  childEmail: z.string().optional(),
+  childPhone: z.string().optional(),
+  tutorUserId: z.string().optional(),
+  tutorEmail: z.string().optional(),
+  subject: z.string().min(2),
+  weeks: z.string().min(1),
+  sessionsPerWeek: z.string().min(1),
+  weekDaysCsv: z.string().min(3),
+  sessionTime: z.string().min(4),
+  durationMinutes: z.string().min(2),
+  startDate: z.string().min(8),
+  deliveryMode: z.enum(['online', 'onsite', 'hybrid']),
+  paymentStatus: z.enum(['unpaid', 'partial', 'paid', 'refunded']),
+  paymentEnvironment: z.enum(['real', 'sandbox']),
+  amountPaid: z.string().default('0'),
+  nextFollowupAt: z.string().optional(),
+  notes: z.string().min(8),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -57,24 +61,29 @@ export default function OfflineOpsFormClient() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      agent_name: undefined,
-      source_channel: 'whatsapp_direct',
-      customer_name: '',
-      customer_whatsapp: '',
-      customer_role: undefined,
-      number_of_learners: '1',
-      learner_educational_level: '',
-      subjects_of_interest: '',
-      tutor_match_type: 'platform_tutor',
-      delivery_mode: 'online',
-      onboarding_stage: 'new_lead',
-      sessions_completed: '0',
-      payment_status: 'unpaid',
-      payment_environment: 'real',
-      amount_paid: '0',
-      started_at: '',
-      next_followup_at: '',
-      converted_to_platform: 'no',
+      agentName: 'Brian',
+      sourceChannel: 'whatsapp_direct',
+      primaryRole: 'parent',
+      primaryFullName: '',
+      primaryEmail: '',
+      primaryPhone: '',
+      childFullName: '',
+      childEmail: '',
+      childPhone: '',
+      tutorUserId: '',
+      tutorEmail: '',
+      subject: '',
+      weeks: '4',
+      sessionsPerWeek: '2',
+      weekDaysCsv: 'mon,wed',
+      sessionTime: '16:00',
+      durationMinutes: '60',
+      startDate: '',
+      deliveryMode: 'online',
+      paymentStatus: 'unpaid',
+      paymentEnvironment: 'real',
+      amountPaid: '0',
+      nextFollowupAt: '',
       notes: '',
     },
   });
@@ -82,33 +91,72 @@ export default function OfflineOpsFormClient() {
   const onSubmit = async (data: FormData) => {
     setSubmitError(null);
     try {
-      const { error } = await supabase.from('offline_operations').insert({
-        agent_name: data.agent_name,
-        source_channel: data.source_channel,
-        customer_name: data.customer_name.trim(),
-        customer_whatsapp: data.customer_whatsapp.trim(),
-        customer_role: data.customer_role,
-        number_of_learners: Number(data.number_of_learners || 1),
-        learner_educational_level: data.learner_educational_level.trim(),
-        subjects_of_interest: data.subjects_of_interest.trim(),
-        tutor_match_type: data.tutor_match_type,
-        delivery_mode: data.delivery_mode,
-        onboarding_stage: data.onboarding_stage,
-        sessions_completed: Number(data.sessions_completed || 0),
-        payment_status: data.payment_status,
-        payment_environment: data.payment_environment,
-        amount_paid: Number(data.amount_paid || 0),
-        started_at: data.started_at ? new Date(data.started_at).toISOString() : null,
-        next_followup_at: data.next_followup_at ? new Date(data.next_followup_at).toISOString() : null,
-        converted_to_platform: data.converted_to_platform === 'yes',
-        notes: data.notes.trim(),
-      });
+      if (!data.tutorUserId && !data.tutorEmail) {
+        throw new Error('Provide Tutor User ID or Tutor Email to match the learner.');
+      }
+      if (data.primaryRole === 'parent' && (!data.childFullName || !data.childEmail)) {
+        throw new Error('For parent onboarding, learner name and learner email are required.');
+      }
 
-      if (error) throw error;
+      const weekDays = data.weekDaysCsv
+        .split(',')
+        .map((x) => x.trim().toLowerCase())
+        .filter(Boolean);
+
+      const payload = {
+        agentName: data.agentName,
+        sourceChannel: data.sourceChannel,
+        primary: {
+          role: data.primaryRole,
+          fullName: data.primaryFullName.trim(),
+          email: data.primaryEmail.trim(),
+          phone: data.primaryPhone.trim(),
+        },
+        child:
+          data.primaryRole === 'parent'
+            ? {
+                fullName: (data.childFullName || '').trim(),
+                email: (data.childEmail || '').trim(),
+                phone: (data.childPhone || '').trim(),
+              }
+            : null,
+        tutor: {
+          tutorUserId: data.tutorUserId?.trim() || undefined,
+          tutorEmail: data.tutorEmail?.trim() || undefined,
+        },
+        schedule: {
+          weeks: Number(data.weeks),
+          sessionsPerWeek: Number(data.sessionsPerWeek),
+          weekDays,
+          sessionTime: data.sessionTime,
+          durationMinutes: Number(data.durationMinutes),
+          startDate: data.startDate,
+          deliveryMode: data.deliveryMode,
+          subject: data.subject.trim(),
+        },
+        notes: data.notes.trim(),
+        tracking: {
+          paymentStatus: data.paymentStatus,
+          paymentEnvironment: data.paymentEnvironment,
+          amountPaid: Number(data.amountPaid || 0),
+          nextFollowupAt: data.nextFollowupAt || undefined,
+        },
+      };
+
+      const response = await fetch('/api/admin/offline-ops/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await response.json();
+      if (!response.ok) {
+        throw new Error(json?.error || 'Failed to sync offline onboarding');
+      }
+
       router.push('/admin/offline-ops');
       router.refresh();
     } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : 'Failed to save record');
+      setSubmitError(e instanceof Error ? e.message : 'Failed to save and sync record');
     }
   };
 
@@ -122,12 +170,12 @@ export default function OfflineOpsFormClient() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Customer Intake</h2>
+        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Platform Account Creation</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>Agent *</Label>
-              <Select value={watch('agent_name')} onValueChange={(v) => setValue('agent_name', v as FormData['agent_name'])}>
+              <Select value={watch('agentName')} onValueChange={(v) => setValue('agentName', v as FormData['agentName'])}>
                 <SelectTrigger className="mt-1 border-gray-300"><SelectValue placeholder="Select agent" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Brian">Brian</SelectItem>
@@ -137,11 +185,11 @@ export default function OfflineOpsFormClient() {
                   <SelectItem value="Brandon">Brandon</SelectItem>
                 </SelectContent>
               </Select>
-              {errors.agent_name && <p className="mt-1 text-sm text-red-600">{errors.agent_name.message}</p>}
+              {errors.agentName && <p className="mt-1 text-sm text-red-600">{errors.agentName.message}</p>}
             </div>
             <div>
               <Label>Source channel *</Label>
-              <Select value={watch('source_channel')} onValueChange={(v) => setValue('source_channel', v as FormData['source_channel'])}>
+              <Select value={watch('sourceChannel')} onValueChange={(v) => setValue('sourceChannel', v as FormData['sourceChannel'])}>
                 <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="whatsapp_ads">WhatsApp ads</SelectItem>
@@ -153,46 +201,94 @@ export default function OfflineOpsFormClient() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="customer_name">Customer name *</Label>
-              <Input id="customer_name" {...register('customer_name')} className="mt-1 border-gray-300" />
-              {errors.customer_name && <p className="mt-1 text-sm text-red-600">{errors.customer_name.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="customer_whatsapp">Customer WhatsApp *</Label>
-              <Input id="customer_whatsapp" {...register('customer_whatsapp')} className="mt-1 border-gray-300" />
-              {errors.customer_whatsapp && <p className="mt-1 text-sm text-red-600">{errors.customer_whatsapp.message}</p>}
-            </div>
-            <div>
-              <Label>Customer role *</Label>
-              <Select value={watch('customer_role')} onValueChange={(v) => setValue('customer_role', v as FormData['customer_role'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue placeholder="Select role" /></SelectTrigger>
+              <Label>Primary role *</Label>
+              <Select value={watch('primaryRole')} onValueChange={(v) => setValue('primaryRole', v as FormData['primaryRole'])}>
+                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Parent">Parent</SelectItem>
-                  <SelectItem value="Student">Student</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="student">Student/Learner</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="number_of_learners">Number of learners *</Label>
-              <Input id="number_of_learners" type="number" min={1} {...register('number_of_learners')} className="mt-1 border-gray-300" />
+              <Label htmlFor="primaryFullName">Primary full name *</Label>
+              <Input id="primaryFullName" {...register('primaryFullName')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="primaryEmail">Primary email *</Label>
+              <Input id="primaryEmail" type="email" {...register('primaryEmail')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="primaryPhone">Primary phone/WhatsApp *</Label>
+              <Input id="primaryPhone" {...register('primaryPhone')} className="mt-1 border-gray-300" />
+            </div>
+            {watch('primaryRole') === 'parent' && (
+              <>
+                <div>
+                  <Label htmlFor="childFullName">Learner full name *</Label>
+                  <Input id="childFullName" {...register('childFullName')} className="mt-1 border-gray-300" />
+                </div>
+                <div>
+                  <Label htmlFor="childEmail">Learner email *</Label>
+                  <Input id="childEmail" type="email" {...register('childEmail')} className="mt-1 border-gray-300" />
+                </div>
+                <div>
+                  <Label htmlFor="childPhone">Learner phone</Label>
+                  <Input id="childPhone" {...register('childPhone')} className="mt-1 border-gray-300" />
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Verified Tutor Matching</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label htmlFor="tutorUserId">Tutor user ID</Label>
+              <Input id="tutorUserId" {...register('tutorUserId')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="tutorEmail">Tutor email (if no ID)</Label>
+              <Input id="tutorEmail" type="email" {...register('tutorEmail')} className="mt-1 border-gray-300" />
             </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Academic & Matching</h2>
+        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Auto Session Scheduling</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Label htmlFor="learner_educational_level">Educational level *</Label>
-              <Input id="learner_educational_level" {...register('learner_educational_level')} className="mt-1 border-gray-300" />
+              <Label htmlFor="subject">Subject *</Label>
+              <Input id="subject" {...register('subject')} className="mt-1 border-gray-300" />
             </div>
             <div>
-              <Label htmlFor="subjects_of_interest">Subjects of interest *</Label>
-              <Input id="subjects_of_interest" {...register('subjects_of_interest')} className="mt-1 border-gray-300" />
+              <Label htmlFor="startDate">Start date *</Label>
+              <Input id="startDate" type="date" {...register('startDate')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="weeks">Number of weeks *</Label>
+              <Input id="weeks" type="number" min={1} max={24} {...register('weeks')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="sessionsPerWeek">Sessions per week *</Label>
+              <Input id="sessionsPerWeek" type="number" min={1} max={7} {...register('sessionsPerWeek')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="weekDaysCsv">Week days (csv) *</Label>
+              <Input id="weekDaysCsv" {...register('weekDaysCsv')} placeholder="mon,wed,fri" className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="sessionTime">Session time (HH:mm) *</Label>
+              <Input id="sessionTime" type="time" {...register('sessionTime')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="durationMinutes">Duration minutes *</Label>
+              <Input id="durationMinutes" type="number" min={30} step={15} {...register('durationMinutes')} className="mt-1 border-gray-300" />
             </div>
             <div>
               <Label>Delivery mode *</Label>
-              <Select value={watch('delivery_mode')} onValueChange={(v) => setValue('delivery_mode', v as FormData['delivery_mode'])}>
+              <Select value={watch('deliveryMode')} onValueChange={(v) => setValue('deliveryMode', v as FormData['deliveryMode'])}>
                 <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="online">Online</SelectItem>
@@ -201,43 +297,15 @@ export default function OfflineOpsFormClient() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Tutor match type *</Label>
-              <Select value={watch('tutor_match_type')} onValueChange={(v) => setValue('tutor_match_type', v as FormData['tutor_match_type'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="platform_tutor">Platform tutor</SelectItem>
-                  <SelectItem value="off_platform_tutor">Off-platform tutor</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Journey stage *</Label>
-              <Select value={watch('onboarding_stage')} onValueChange={(v) => setValue('onboarding_stage', v as FormData['onboarding_stage'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new_lead">New lead</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="matched">Matched</SelectItem>
-                  <SelectItem value="active_sessions">Active sessions</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="dropped">Dropped</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="sessions_completed">Sessions completed</Label>
-              <Input id="sessions_completed" type="number" min={0} {...register('sessions_completed')} className="mt-1 border-gray-300" />
-            </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Payments & Follow-up</h2>
+        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Payments, Ops Tracking & Notes</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>Payment status *</Label>
-              <Select value={watch('payment_status')} onValueChange={(v) => setValue('payment_status', v as FormData['payment_status'])}>
+              <Select value={watch('paymentStatus')} onValueChange={(v) => setValue('paymentStatus', v as FormData['paymentStatus'])}>
                 <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
@@ -249,7 +317,7 @@ export default function OfflineOpsFormClient() {
             </div>
             <div>
               <Label>Payment environment *</Label>
-              <Select value={watch('payment_environment')} onValueChange={(v) => setValue('payment_environment', v as FormData['payment_environment'])}>
+              <Select value={watch('paymentEnvironment')} onValueChange={(v) => setValue('paymentEnvironment', v as FormData['paymentEnvironment'])}>
                 <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="real">Real</SelectItem>
@@ -258,26 +326,12 @@ export default function OfflineOpsFormClient() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="amount_paid">Amount paid (XAF)</Label>
-              <Input id="amount_paid" type="number" min={0} step="0.01" {...register('amount_paid')} className="mt-1 border-gray-300" />
+              <Label htmlFor="amountPaid">Amount paid (XAF)</Label>
+              <Input id="amountPaid" type="number" min={0} step="0.01" {...register('amountPaid')} className="mt-1 border-gray-300" />
             </div>
             <div>
-              <Label htmlFor="started_at">Start date</Label>
-              <Input id="started_at" type="date" {...register('started_at')} className="mt-1 border-gray-300" />
-            </div>
-            <div>
-              <Label htmlFor="next_followup_at">Next follow-up</Label>
-              <Input id="next_followup_at" type="datetime-local" {...register('next_followup_at')} className="mt-1 border-gray-300" />
-            </div>
-            <div>
-              <Label>Converted to platform?</Label>
-              <Select value={watch('converted_to_platform')} onValueChange={(v) => setValue('converted_to_platform', v as 'yes' | 'no')}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="no">No</SelectItem>
-                  <SelectItem value="yes">Yes</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="nextFollowupAt">Next follow-up</Label>
+              <Input id="nextFollowupAt" type="datetime-local" {...register('nextFollowupAt')} className="mt-1 border-gray-300" />
             </div>
           </div>
           <div>
@@ -287,7 +341,7 @@ export default function OfflineOpsFormClient() {
           </div>
         </section>
 
-        {submitError && <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{submitError}</div>}
+        {submitError && <div className="rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-800">{submitError}</div>}
 
         <div className="flex gap-3">
           <Button type="submit" disabled={isSubmitting} className="bg-[#1B2C4F] hover:bg-[#1B2C4F]/90 text-white">
