@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { createClient } from '@supabase/supabase-js';
 import { generateAgoraToken, generateSessionUID, getAgoraConfig } from '@/lib/services/agora/token-generator';
 import { getOrCreateChannelName, validateSessionAccess, getUserRoleInSession } from '@/lib/services/agora/session-service';

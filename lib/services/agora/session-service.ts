@@ -19,6 +19,32 @@ export function generateChannelName(sessionId: string): string {
 }
 
 /**
+ * Classroom: user enrolled in session_participants (same Agora channel as tutor + primary learner).
+ */
+async function hasClassroomParticipantAccess(
+  sessionId: string,
+  userId: string,
+  client: any
+): Promise<boolean> {
+  try {
+    const { data, error } = await client
+      .from('session_participants')
+      .select('id')
+      .eq('user_id', userId)
+      .or(`individual_session_id.eq.${sessionId},trial_session_id.eq.${sessionId}`)
+      .maybeSingle();
+    if (error) {
+      console.warn('[hasClassroomParticipantAccess]', error.message);
+      return false;
+    }
+    return !!data;
+  } catch (e) {
+    console.warn('[hasClassroomParticipantAccess]', e);
+    return false;
+  }
+}
+
+/**
  * Get or create Agora channel name for a session
  * 
  * If channel name doesn't exist, generates and stores it in the database.
@@ -187,7 +213,7 @@ export async function validateSessionAccess(
           hasAccess
         });
         
-        return hasAccess;
+        return hasAccess || (await hasClassroomParticipantAccess(sessionId, userId, client));
       } else {
         console.log('[validateSessionAccess] Session not found in trial_sessions');
       }
@@ -239,7 +265,7 @@ export async function validateSessionAccess(
     hasAccess
   });
 
-  return hasAccess;
+  return hasAccess || (await hasClassroomParticipantAccess(sessionId, userId, client));
 }
 
 /**
@@ -276,7 +302,7 @@ export async function getUserRoleInSession(
     if (session.learner_id === userId || session.parent_id === userId) {
       return 'learner';
     }
-    return null;
+    return await getRoleFromSessionParticipants(sessionId, userId, client);
   }
 
   // If not found in individual_sessions, check trial_sessions
@@ -304,10 +330,36 @@ export async function getUserRoleInSession(
     if (trialSession.learner_id === userId || trialSession.parent_id === userId) {
       return 'learner';
     }
+    const trialRole = await getRoleFromSessionParticipants(sessionId, userId, client);
+    if (trialRole) return trialRole;
     return null;
   }
 
+  const fallbackRole = await getRoleFromSessionParticipants(sessionId, userId, client);
+  if (fallbackRole) return fallbackRole;
+
   console.error('[getUserRoleInSession] Session not found in individual_sessions or trial_sessions');
   return null;
+}
+
+async function getRoleFromSessionParticipants(
+  sessionId: string,
+  userId: string,
+  client: any
+): Promise<'tutor' | 'learner' | null> {
+  try {
+    const { data, error } = await client
+      .from('session_participants')
+      .select('role')
+      .eq('user_id', userId)
+      .or(`individual_session_id.eq.${sessionId},trial_session_id.eq.${sessionId}`)
+      .maybeSingle();
+    if (error || !data?.role) return null;
+    if (data.role === 'tutor') return 'tutor';
+    if (data.role === 'learner' || data.role === 'parent_observer') return 'learner';
+    return null;
+  } catch {
+    return null;
+  }
 }
 
