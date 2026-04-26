@@ -4,6 +4,75 @@ import { generateAgoraToken, generateSessionUID, getAgoraConfig } from '@/lib/se
 import { getOrCreateChannelName, validateSessionAccess, getUserRoleInSession } from '@/lib/services/agora/session-service';
 import { RtcRole } from 'agora-token';
 
+function qaSessionJoinBypassEnabled(): boolean {
+  const enabled = (process.env.QA_SESSION_JOIN_BYPASS_ENABLED || '').toLowerCase();
+  const isProd = process.env.NODE_ENV === 'production';
+  return !isProd && (enabled === 'true' || enabled === '1' || enabled === 'yes');
+}
+
+function parseSessionStart(row: any): Date | null {
+  try {
+    if (row?.scheduled_at) {
+      const d = new Date(row.scheduled_at);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (row?.scheduled_date && row?.start_time) {
+      const d = new Date(`${row.scheduled_date}T${row.start_time}`);
+      if (!isNaN(d.getTime())) return d;
+    }
+  } catch (_) {}
+  return null;
+}
+
+function parseDurationMinutes(row: any): number {
+  const candidates = [
+    row?.duration_minutes,
+    row?.duration,
+    row?.session_duration_minutes,
+  ];
+  for (const v of candidates) {
+    const n = Number(v);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return 60;
+}
+
+async function isQaJoinWithinWindow(sessionId: string, supabase: any): Promise<boolean> {
+  try {
+    const { data: individual } = await supabase
+      .from('individual_sessions')
+      .select('id, status, scheduled_at, scheduled_date, start_time, duration_minutes, duration')
+      .eq('id', sessionId)
+      .maybeSingle();
+
+    const row = individual ?? (
+      await supabase
+        .from('trial_sessions')
+        .select('id, status, scheduled_at, scheduled_date, start_time, duration_minutes, duration')
+        .eq('id', sessionId)
+        .maybeSingle()
+    )?.data;
+
+    if (!row) return false;
+
+    const status = (row.status || '').toString().toLowerCase();
+    if (status === 'completed' || status === 'cancelled') return false;
+
+    const start = parseSessionStart(row);
+    if (!start) {
+      // Dev-only fallback: if timing metadata is missing, allow QA bypass.
+      return true;
+    }
+
+    const durationMinutes = parseDurationMinutes(row);
+    const expiresAt = new Date(start.getTime() + durationMinutes * 60 * 1000);
+    return new Date() <= expiresAt;
+  } catch (e) {
+    console.warn('[Agora Token] QA bypass window check failed:', e);
+    return false;
+  }
+}
+
 /**
  * Agora Token Generation API
  * 
@@ -37,7 +106,7 @@ export async function POST(request: NextRequest) {
   // CORS headers - when using credentials, must specify exact origin (not *)
   const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
     'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
   };
 
@@ -260,9 +329,20 @@ export async function POST(request: NextRequest) {
 
     // Validate user access to session (pass the authenticated supabase client)
     console.log(`[Agora Token] Validating access for user ${user.id} to session ${sessionId}`);
-    const hasAccess = await validateSessionAccess(sessionId, user.id, supabase);
+    let hasAccess = await validateSessionAccess(sessionId, user.id, supabase);
     console.log(`[Agora Token] Access validation result: ${hasAccess}`);
-    
+
+    if (!hasAccess && qaSessionJoinBypassEnabled()) {
+      const qaBypassRequested = request.headers.get('x-prepskul-qa-bypass') === '1';
+      if (qaBypassRequested) {
+        const withinWindow = await isQaJoinWithinWindow(sessionId, supabase);
+        if (withinWindow) {
+          hasAccess = true;
+          console.warn(`[Agora Token] QA bypass enabled for user ${user.id} on session ${sessionId}`);
+        }
+      }
+    }
+
     if (!hasAccess) {
       console.error(`[Agora Token] Access denied for user ${user.id} to session ${sessionId}`);
       return NextResponse.json(
@@ -384,7 +464,7 @@ export async function OPTIONS(request: NextRequest) {
   const corsHeaders: Record<string, string> = {
     'Access-Control-Allow-Origin': origin ?? '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
     'Access-Control-Max-Age': '86400',
   };
 

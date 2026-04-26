@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedSupabaseForApi } from '@/lib/services/group-classes/api-auth'
+import { jsonWithCors, buildCorsHeaders } from '@/lib/services/group-classes/cors'
 
 function groupClassesEnabled(): boolean {
   const v = (process.env.GROUP_CLASSES_ENABLED || 'true').toLowerCase()
@@ -12,12 +13,12 @@ export async function GET(
 ) {
   try {
     if (!groupClassesEnabled()) {
-      return NextResponse.json({ error: 'Group classes are disabled.' }, { status: 503 })
+      return jsonWithCors(request, { error: 'Group classes are disabled.' }, { status: 503 })
     }
     const { token } = await params
     const { supabase, user } = await getAuthenticatedSupabaseForApi(request)
     if (!supabase || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonWithCors(request, { error: 'Unauthorized' }, { status: 401 })
     }
 
     const { data: listing, error: listingError } = await supabase
@@ -27,11 +28,11 @@ export async function GET(
       .maybeSingle()
 
     if (listingError || !listing) {
-      return NextResponse.json({ error: 'Invalid or expired class link.' }, { status: 404 })
+      return jsonWithCors(request, { error: 'Invalid or expired class link.' }, { status: 404 })
     }
 
     if (listing.tutor_id === user.id) {
-      return NextResponse.json({
+      return jsonWithCors(request, {
         allowed: true,
         role: 'tutor',
         listingId: listing.id,
@@ -49,7 +50,8 @@ export async function GET(
       .maybeSingle()
 
     if (enrollmentError || !enrollment) {
-      return NextResponse.json(
+      return jsonWithCors(
+        request,
         {
           allowed: false,
           listingId: listing.id,
@@ -60,7 +62,7 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({
+    return jsonWithCors(request, {
       allowed: true,
       role: 'learner',
       listingId: listing.id,
@@ -68,10 +70,15 @@ export async function GET(
       title: listing.title,
     })
   } catch (error: any) {
-    return NextResponse.json(
+    return jsonWithCors(
+      request,
       { error: error?.message || 'Failed to validate class link.' },
       { status: 500 },
     )
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 200, headers: buildCorsHeaders(request) })
 }
 

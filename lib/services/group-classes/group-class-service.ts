@@ -7,6 +7,8 @@ export type GroupClassListingInput = {
   description: string
   flyerImageUrl?: string | null
   subject?: string | null
+  classType?: 'one_time' | 'training' | 'bootcamp' | 'workshop'
+  learningFocus?: string | null
   startsAt: string
   durationMinutes: number
   capacity: number
@@ -46,6 +48,8 @@ export async function createGroupClassListing(
     description: input.description.trim(),
     flyer_image_url: input.flyerImageUrl ?? null,
     subject: input.subject ?? null,
+    class_type: input.classType ?? 'one_time',
+    learning_focus: input.learningFocus?.trim() || null,
     starts_at: startsAt.toISOString(),
     duration_minutes: input.durationMinutes,
     capacity: input.capacity,
@@ -87,6 +91,10 @@ export async function updateGroupClassListing(
   if (typeof patch.description === 'string') updates.description = patch.description.trim()
   if (patch.flyerImageUrl !== undefined) updates.flyer_image_url = patch.flyerImageUrl
   if (patch.subject !== undefined) updates.subject = patch.subject
+  if (patch.classType !== undefined) updates.class_type = patch.classType
+  if (patch.learningFocus !== undefined) {
+    updates.learning_focus = patch.learningFocus?.trim() || null
+  }
   if (patch.startsAt !== undefined) {
     const startsAt = new Date(patch.startsAt)
     if (Number.isNaN(startsAt.getTime())) throw new Error('Invalid startsAt timestamp.')
@@ -231,13 +239,18 @@ export async function reserveGroupClassSeat(
 
 export async function listPublishedGroupClasses(
   supabase: SupabaseLike,
-  options?: { subject?: string; startsAfter?: string; limit?: number },
+  options?: {
+    subject?: string
+    classType?: 'one_time' | 'training' | 'bootcamp' | 'workshop'
+    startsAfter?: string
+    limit?: number
+  },
 ) {
   const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100)
   let query = supabase
     .from('group_class_listings')
     .select(
-      'id, tutor_id, title, description, flyer_image_url, subject, starts_at, duration_minutes, capacity, price_per_seat, currency_code, status, published_at',
+      'id, tutor_id, title, description, flyer_image_url, subject, class_type, learning_focus, starts_at, duration_minutes, capacity, price_per_seat, currency_code, status, published_at, approval_status',
     )
     .eq('status', 'published')
     .order('starts_at', { ascending: true })
@@ -245,6 +258,9 @@ export async function listPublishedGroupClasses(
 
   if (options?.subject) {
     query = query.eq('subject', options.subject)
+  }
+  if (options?.classType) {
+    query = query.eq('class_type', options.classType)
   }
   if (options?.startsAfter) {
     query = query.gte('starts_at', options.startsAfter)
