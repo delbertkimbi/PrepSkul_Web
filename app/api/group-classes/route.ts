@@ -79,6 +79,8 @@ export async function POST(request: NextRequest) {
       classType,
       learningFocus,
       startsAt,
+      scheduleEndAt,
+      meetingDays,
       durationMinutes,
       capacity,
       pricePerSeat,
@@ -103,6 +105,8 @@ export async function POST(request: NextRequest) {
         classType,
         learningFocus,
         startsAt,
+        scheduleEndAt,
+        meetingDays,
         durationMinutes: Number(durationMinutes),
         capacity: Number(capacity),
         pricePerSeat: Number(pricePerSeat),
@@ -118,8 +122,13 @@ export async function POST(request: NextRequest) {
     return jsonWithCors(request, { listing }, { status: 201 })
   } catch (error: any) {
     const message = error?.message || 'Failed to create group class listing.'
-    const status = message.toLowerCase().includes('verified tutors') ? 403 : 500
-    return jsonWithCors(request, { error: message }, { status })
+    const lowered = message.toLowerCase()
+    const status = lowered.includes('verified tutors') || lowered.includes('row-level security') || lowered.includes('permission denied') ? 403 : 500
+    const normalizedError =
+      lowered.includes('row-level security') || lowered.includes('permission denied')
+        ? 'Create blocked by database policy. Ensure migrations 079, 081, and 082 are applied and your tutor profile is approved.'
+        : message
+    return jsonWithCors(request, { error: normalizedError }, { status })
   }
 }
 

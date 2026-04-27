@@ -10,6 +10,8 @@ export type GroupClassListingInput = {
   classType?: 'one_time' | 'training' | 'bootcamp' | 'workshop'
   learningFocus?: string | null
   startsAt: string
+  scheduleEndAt?: string | null
+  meetingDays?: string[]
   durationMinutes: number
   capacity: number
   pricePerSeat: number
@@ -23,8 +25,22 @@ export async function isTutorVerified(userId: string, supabase: SupabaseLike): P
     .eq('user_id', userId)
     .maybeSingle()
 
-  if (error || !data) return false
-  return data.status === 'approved' || data.is_verified === true
+  if (!error && data) {
+    const status = (data.status || '').toString().toLowerCase()
+    if (status === 'approved' || status === 'verified' || data.is_verified === true) {
+      return true
+    }
+  }
+
+  // Fallback for legacy datasets where tutor verification flag can live on profiles.
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('user_type, is_verified')
+    .eq('id', userId)
+    .maybeSingle()
+  if (profileError || !profileData) return false
+  const userType = (profileData.user_type || '').toString().toLowerCase()
+  return userType === 'tutor' && profileData.is_verified === true
 }
 
 export async function createGroupClassListing(
@@ -41,6 +57,10 @@ export async function createGroupClassListing(
   if (Number.isNaN(startsAt.getTime())) {
     throw new Error('Invalid startsAt timestamp.')
   }
+  const scheduleEndAt = input.scheduleEndAt ? new Date(input.scheduleEndAt) : null
+  if (input.scheduleEndAt && (scheduleEndAt == null || Number.isNaN(scheduleEndAt.getTime()))) {
+    throw new Error('Invalid scheduleEndAt timestamp.')
+  }
 
   const payload = {
     tutor_id: userId,
@@ -51,6 +71,8 @@ export async function createGroupClassListing(
     class_type: input.classType ?? 'one_time',
     learning_focus: input.learningFocus?.trim() || null,
     starts_at: startsAt.toISOString(),
+    schedule_end_at: scheduleEndAt?.toISOString() ?? null,
+    meeting_days: input.meetingDays ?? [],
     duration_minutes: input.durationMinutes,
     capacity: input.capacity,
     price_per_seat: input.pricePerSeat,
@@ -95,6 +117,16 @@ export async function updateGroupClassListing(
   if (patch.learningFocus !== undefined) {
     updates.learning_focus = patch.learningFocus?.trim() || null
   }
+  if (patch.scheduleEndAt !== undefined) {
+    if (!patch.scheduleEndAt) {
+      updates.schedule_end_at = null
+    } else {
+      const scheduleEndAt = new Date(patch.scheduleEndAt)
+      if (Number.isNaN(scheduleEndAt.getTime())) throw new Error('Invalid scheduleEndAt timestamp.')
+      updates.schedule_end_at = scheduleEndAt.toISOString()
+    }
+  }
+  if (patch.meetingDays !== undefined) updates.meeting_days = patch.meetingDays
   if (patch.startsAt !== undefined) {
     const startsAt = new Date(patch.startsAt)
     if (Number.isNaN(startsAt.getTime())) throw new Error('Invalid startsAt timestamp.')
@@ -250,7 +282,7 @@ export async function listPublishedGroupClasses(
   let query = supabase
     .from('group_class_listings')
     .select(
-      'id, tutor_id, title, description, flyer_image_url, subject, class_type, learning_focus, starts_at, duration_minutes, capacity, price_per_seat, currency_code, status, published_at, approval_status',
+      'id, tutor_id, title, description, flyer_image_url, subject, class_type, learning_focus, schedule_end_at, meeting_days, starts_at, duration_minutes, capacity, price_per_seat, currency_code, status, published_at, approval_status',
     )
     .eq('status', 'published')
     .order('starts_at', { ascending: true })
