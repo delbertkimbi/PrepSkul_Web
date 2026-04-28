@@ -282,7 +282,7 @@ export async function listPublishedGroupClasses(
   let query = supabase
     .from('group_class_listings')
     .select(
-      'id, tutor_id, title, description, flyer_image_url, subject, class_type, learning_focus, schedule_end_at, meeting_days, starts_at, duration_minutes, capacity, price_per_seat, currency_code, status, published_at, approval_status',
+      'id, tutor_id, title, description, flyer_image_url, subject, class_type, learning_focus, schedule_end_at, meeting_days, starts_at, duration_minutes, capacity, price_per_seat, currency_code, status, published_at, approval_status, profiles!group_class_listings_tutor_id_fkey(avatar_url)',
     )
     .eq('status', 'published')
     .order('starts_at', { ascending: true })

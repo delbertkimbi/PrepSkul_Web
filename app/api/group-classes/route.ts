@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       }
       const { data, error } = await supabase
         .from('group_class_listings')
-        .select('*')
+        .select('*, profiles!group_class_listings_tutor_id_fkey(avatar_url)')
         .eq('tutor_id', user.id)
         .order('starts_at', { ascending: true })
         .limit(Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 100) : 20)

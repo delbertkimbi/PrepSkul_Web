@@ -3,6 +3,25 @@ import { createClient } from '@supabase/supabase-js';
 import { generateAgoraToken, generateSessionUID, getAgoraConfig } from '@/lib/services/agora/token-generator';
 import { getOrCreateChannelName, validateSessionAccess, getUserRoleInSession } from '@/lib/services/agora/session-service';
 import { RtcRole } from 'agora-token';
+import { buildCorsHeaders } from '@/lib/services/group-classes/cors';
+
+type TokenErrorShape = {
+  error: string
+  code: string
+  reason: string
+  hint: string
+  retryable: boolean
+}
+
+function buildTokenErrorPayload(
+  error: string,
+  code: string,
+  reason: string,
+  hint: string,
+  retryable: boolean,
+): TokenErrorShape {
+  return { error, code, reason, hint, retryable }
+}
 
 function qaSessionJoinBypassEnabled(): boolean {
   const enabled = (process.env.QA_SESSION_JOIN_BYPASS_ENABLED || '').toLowerCase();
@@ -84,88 +103,10 @@ async function isQaJoinWithinWindow(sessionId: string, supabase: any): Promise<b
  * Returns: { token: string, channelName: string, uid: number, expiresAt: string }
  */
 export async function POST(request: NextRequest) {
-  // Handle CORS for Flutter Web - define at function level so it's available everywhere
-  const origin = request.headers.get('origin');
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5000',
-    'http://localhost:5001',
-    'http://localhost:8080',
-    'http://localhost:8888',
-    'http://localhost:52988', // Flutter web default dev server
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:8080',
-    'http://127.0.0.1:5000',
-    'https://app.prepskul.com',
-    'https://www.prepskul.com',
-    'https://prepskul.com',
-    'http://10.148.224.254:5000', // Network IP for local testing
-  ];
-
-  // CORS headers - when using credentials, must specify exact origin (not *)
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
-    'Access-Control-Max-Age': '86400', // Cache preflight for 24 hours
-  };
-
-  // Helper function to check if origin is a local/network IP
-  const isLocalOrNetworkOrigin = (orig: string): boolean => {
-    // Check for localhost variations
-    if (orig.includes('localhost') || orig.includes('127.0.0.1')) {
-      return true;
-    }
-    // Check for private network IP ranges (RFC 1918)
-    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-    const ipPattern = /^http:\/\/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+$/;
-    const match = orig.match(ipPattern);
-    if (match) {
-      const ip = match[1];
-      const parts = ip.split('.').map(Number);
-      // 10.0.0.0 - 10.255.255.255
-      if (parts[0] === 10) return true;
-      // 172.16.0.0 - 172.31.255.255
-      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
-      // 192.168.0.0 - 192.168.255.255
-      if (parts[0] === 192 && parts[1] === 168) return true;
-    }
-    return false;
-  };
-
-  // Only allow specific origins
-  if (origin && allowedOrigins.includes(origin)) {
-    corsHeaders['Access-Control-Allow-Origin'] = origin;
-    corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-    console.log(`[Agora Token] Allowing origin: ${origin}`);
-  } else if (origin) {
-    // Allow localhost variations and private network IPs (for local/network testing)
-    if (isLocalOrNetworkOrigin(origin)) {
-      corsHeaders['Access-Control-Allow-Origin'] = origin;
-      corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-      console.log(`[Agora Token] Allowing network origin: ${origin}`);
-    } else {
-      // CRITICAL: Always allow prepskul.com domains (production or not)
-      // This ensures app.prepskul.com works regardless of NODE_ENV setting
-      const isPrepskulDomain = origin.includes('prepskul.com');
-      if (isPrepskulDomain) {
-        corsHeaders['Access-Control-Allow-Origin'] = origin;
-        corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-        console.log(`[Agora Token] Allowing prepskul.com domain: ${origin}`);
-      } else {
-        console.warn(`[Agora Token] Blocked origin: ${origin}`);
-        // Still set CORS headers for debugging (but don't allow credentials)
-        corsHeaders['Access-Control-Allow-Origin'] = origin || '*';
-      }
-    }
-  } else {
-    // No origin header - might be a direct request or some browsers
-    // In production, allow requests without origin (for debugging)
-    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-      console.warn('[Agora Token] No origin header - allowing in production');
-      corsHeaders['Access-Control-Allow-Origin'] = '*';
-    }
-  }
+  const corsHeaders = buildCorsHeaders(request, {
+    methods: 'POST, OPTIONS',
+    allowHeaders: 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
+  });
 
   try {
     // Get Authorization header from request (Flutter web sends token here)
@@ -174,7 +115,13 @@ export async function POST(request: NextRequest) {
 
     if (!accessToken) {
       return NextResponse.json(
-        { error: 'Missing authorization token' },
+        buildTokenErrorPayload(
+          'Missing authorization token',
+          'TOKEN_AUTH_HEADER_MISSING',
+          'auth_missing',
+          'Sign in again and retry joining the session.',
+          false,
+        ),
         { 
           status: 401,
           headers: corsHeaders,
@@ -262,7 +209,13 @@ export async function POST(request: NextRequest) {
       console.error('[Agora Token] Token validation error:', tokenError?.message || 'Unknown error');
       console.error('[Agora Token] This may be a network connectivity issue with Supabase');
       return NextResponse.json(
-        { error: 'Unauthorized. Invalid or expired token, or network connectivity issue.' },
+        buildTokenErrorPayload(
+          'Unauthorized. Invalid or expired token, or network connectivity issue.',
+          'TOKEN_AUTH_INVALID_OR_NETWORK',
+          'auth_invalid_or_network',
+          'Refresh your session. If this continues, check network connectivity and retry.',
+          true,
+        ),
         { 
           status: 401,
           headers: corsHeaders,
@@ -319,7 +272,13 @@ export async function POST(request: NextRequest) {
     if (!sessionId) {
       console.error('[Agora Token] Missing sessionId in request body');
       return NextResponse.json(
-        { error: 'Missing required field: sessionId' },
+        buildTokenErrorPayload(
+          'Missing required field: sessionId',
+          'TOKEN_SESSION_ID_MISSING',
+          'invalid_request',
+          'Pass a valid sessionId in the request body.',
+          false,
+        ),
         { 
           status: 400,
           headers: corsHeaders,
@@ -346,7 +305,13 @@ export async function POST(request: NextRequest) {
     if (!hasAccess) {
       console.error(`[Agora Token] Access denied for user ${user.id} to session ${sessionId}`);
       return NextResponse.json(
-        { error: 'Access denied. You are not a participant in this session.' },
+        buildTokenErrorPayload(
+          'Access denied. You are not a participant in this session.',
+          'TOKEN_SESSION_ACCESS_DENIED',
+          'authz_denied',
+          'Only paid/enrolled participants and session owners can join.',
+          false,
+        ),
         { 
           status: 403,
           headers: corsHeaders,
@@ -358,7 +323,13 @@ export async function POST(request: NextRequest) {
     const role = await getUserRoleInSession(sessionId, user.id, supabase);
     if (!role) {
       return NextResponse.json(
-        { error: 'Unable to determine user role in session' },
+        buildTokenErrorPayload(
+          'Unable to determine user role in session',
+          'TOKEN_ROLE_RESOLUTION_FAILED',
+          'role_resolution_failed',
+          'Verify session participant records and retry.',
+          true,
+        ),
         { 
           status: 400,
           headers: corsHeaders,
@@ -409,7 +380,13 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Error generating Agora token:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to generate token' },
+      buildTokenErrorPayload(
+        error?.message || 'Failed to generate token',
+        'TOKEN_GENERATION_FAILED',
+        'server_error',
+        'Retry shortly. If this continues, contact support with sessionId and timestamp.',
+        true,
+      ),
       { 
         status: 500,
         headers: corsHeaders,
@@ -420,82 +397,10 @@ export async function POST(request: NextRequest) {
 
 // Handle OPTIONS request for CORS preflight
 export async function OPTIONS(request: NextRequest) {
-  const origin = request.headers.get('origin');
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:5000',
-    'http://localhost:5001',
-    'http://localhost:8080',
-    'http://localhost:8888',
-    'http://localhost:52988', // Flutter web default dev server
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:8080',
-    'http://127.0.0.1:5000',
-    'https://app.prepskul.com',
-    'https://www.prepskul.com',
-    'https://prepskul.com',
-    'http://10.148.224.254:5000', // Network IP for local testing
-  ];
-
-  // Helper function to check if origin is a local/network IP
-  const isLocalOrNetworkOrigin = (orig: string): boolean => {
-    // Check for localhost variations
-    if (orig.includes('localhost') || orig.includes('127.0.0.1')) {
-      return true;
-    }
-    // Check for private network IP ranges (RFC 1918)
-    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-    const ipPattern = /^http:\/\/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+$/;
-    const match = orig.match(ipPattern);
-    if (match) {
-      const ip = match[1];
-      const parts = ip.split('.').map(Number);
-      // 10.0.0.0 - 10.255.255.255
-      if (parts[0] === 10) return true;
-      // 172.16.0.0 - 172.31.255.255
-      if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
-      // 192.168.0.0 - 192.168.255.255
-      if (parts[0] === 192 && parts[1] === 168) return true;
-    }
-    return false;
-  };
-
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Origin': origin ?? '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
-    'Access-Control-Max-Age': '86400',
-  };
-
-  // Allow specific origins or local/network IPs for development
-  if (origin) {
-    if (allowedOrigins.includes(origin) || isLocalOrNetworkOrigin(origin)) {
-      corsHeaders['Access-Control-Allow-Origin'] = origin;
-      corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-      console.log(`[Agora Token OPTIONS] Allowing origin: ${origin}`);
-    } else {
-      // CRITICAL: Always allow prepskul.com domains (production or not)
-      // This ensures app.prepskul.com works regardless of NODE_ENV setting
-      const isPrepskulDomain = origin.includes('prepskul.com');
-      if (isPrepskulDomain) {
-        corsHeaders['Access-Control-Allow-Origin'] = origin;
-        corsHeaders['Access-Control-Allow-Credentials'] = 'true';
-        console.log(`[Agora Token OPTIONS] Allowing prepskul.com domain: ${origin}`);
-      } else {
-        console.warn(`[Agora Token OPTIONS] Blocked origin: ${origin}`);
-        // Still set CORS headers for debugging
-        corsHeaders['Access-Control-Allow-Origin'] = origin;
-      }
-    }
-  } else {
-    // No origin header - might be a direct request or some browsers
-    // In production, allow requests without origin (for debugging)
-    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
-      console.warn('[Agora Token OPTIONS] No origin header - allowing in production');
-      corsHeaders['Access-Control-Allow-Origin'] = '*';
-    }
-  }
+  const corsHeaders = buildCorsHeaders(request, {
+    methods: 'POST, OPTIONS',
+    allowHeaders: 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
+  });
 
   return new NextResponse(null, {
     status: 200,

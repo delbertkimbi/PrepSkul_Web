@@ -19,12 +19,27 @@ function isPrivateNetworkOrigin(origin: string): boolean {
   return !!m
 }
 
-export function buildCorsHeaders(request: NextRequest): Record<string, string> {
+function isAllowedOrigin(origin: string | null): origin is string {
+  if (!origin) return false
+  return ALLOWED_ORIGINS.includes(origin) || isPrivateNetworkOrigin(origin) || origin.includes('prepskul.com')
+}
+
+type CorsHeaderOptions = {
+  methods?: string
+  allowHeaders?: string
+}
+
+export function buildCorsHeaders(
+  request: NextRequest,
+  options?: CorsHeaderOptions,
+): Record<string, string> {
   const origin = request.headers.get('origin')
   const headers: Record<string, string> = {
-    'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'Access-Control-Allow-Methods': options?.methods ?? 'GET, POST, PATCH, OPTIONS',
+    'Access-Control-Allow-Headers':
+      options?.allowHeaders ?? 'Content-Type, Authorization, X-Requested-With, X-PrepSkul-QA-Bypass',
     'Access-Control-Max-Age': '86400',
+    Vary: 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
   }
 
   if (!origin) {
@@ -32,13 +47,14 @@ export function buildCorsHeaders(request: NextRequest): Record<string, string> {
     return headers
   }
 
-  if (ALLOWED_ORIGINS.includes(origin) || isPrivateNetworkOrigin(origin) || origin.includes('prepskul.com')) {
+  if (isAllowedOrigin(origin)) {
     headers['Access-Control-Allow-Origin'] = origin
     headers['Access-Control-Allow-Credentials'] = 'true'
     return headers
   }
 
-  headers['Access-Control-Allow-Origin'] = origin
+  // Disallow credentialed browser use for unknown origins.
+  headers['Access-Control-Allow-Origin'] = '*'
   return headers
 }
 
