@@ -83,55 +83,60 @@ export async function resolveTutorUserId(
   }
   if (opts.tutorEmail) {
     const normalizedEmail = opts.tutorEmail.trim().toLowerCase();
-    let prof: { id: string; full_name: string | null } | null = null;
+    const candidateUserIds = new Set<string>();
+    const candidateNames = new Map<string, string>();
 
-    // Prefer exact profile email match (prevents wildcard behavior with ilike on emails).
-    const { data: profileByEmail } = await admin
+    // 1) Candidate users from exact profiles.email match.
+    const { data: profilesByEmail } = await admin
       .from('profiles')
       .select('id, full_name')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
-    prof = profileByEmail;
-
-    // Fallback to auth email lookup, then map to profile by user id.
-    if (!prof) {
-      const authLookup = await admin.auth.admin.getUserByEmail(normalizedEmail);
-      const authUserId = authLookup.data.user?.id;
-      if (authUserId) {
-        const { data: profileById } = await admin
-          .from('profiles')
-          .select('id, full_name')
-          .eq('id', authUserId)
-          .maybeSingle();
-        prof = profileById;
+      .eq('email', normalizedEmail);
+    for (const p of profilesByEmail || []) {
+      if (p?.id) {
+        candidateUserIds.add(p.id);
+        if (p.full_name) candidateNames.set(p.id, p.full_name);
       }
     }
 
-    if (prof) {
-      const { data: tp } = await admin.from('tutor_profiles').select('status, full_name').eq('user_id', prof.id).maybeSingle();
-      if (!tp || !isApproved(tp.status)) {
-        throw new Error('This tutor is not verified (approved) on PrepSkul.');
-      }
-      return { tutorUserId: prof.id, tutorName: (tp as { full_name?: string }).full_name || prof.full_name || 'Tutor' };
+    // 2) Candidate user from auth email lookup.
+    const authLookup = await admin.auth.admin.getUserByEmail(normalizedEmail);
+    const authUserId = authLookup.data.user?.id;
+    if (authUserId) {
+      candidateUserIds.add(authUserId);
+      const { data: profileById } = await admin.from('profiles').select('id, full_name').eq('id', authUserId).maybeSingle();
+      if (profileById?.full_name) candidateNames.set(authUserId, profileById.full_name);
     }
 
-    // Final fallback: some tutor records keep contact email in tutor_profiles.email.
-    const { data: tutorByProfileEmail } = await admin
+    // 3) Candidate users from tutor_profiles.email fallback.
+    const { data: tutorRowsByEmail } = await admin
       .from('tutor_profiles')
       .select('user_id, full_name, status')
-      .eq('email', normalizedEmail)
-      .maybeSingle();
+      .eq('email', normalizedEmail);
+    for (const row of tutorRowsByEmail || []) {
+      if (row?.user_id) {
+        candidateUserIds.add(row.user_id);
+        if (row.full_name) candidateNames.set(row.user_id, row.full_name);
+      }
+    }
 
-    if (!tutorByProfileEmail?.user_id) {
+    if (candidateUserIds.size === 0) {
       throw new Error('No profile found for tutor email');
     }
-    if (!isApproved(tutorByProfileEmail.status)) {
+
+    // Find an approved tutor profile among all resolved candidates.
+    const { data: candidateTutorRows } = await admin
+      .from('tutor_profiles')
+      .select('user_id, full_name, status')
+      .in('user_id', Array.from(candidateUserIds));
+
+    const approvedTutor = (candidateTutorRows || []).find((row) => row?.user_id && isApproved(row.status));
+    if (!approvedTutor?.user_id) {
       throw new Error('This tutor is not verified (approved) on PrepSkul.');
     }
 
     return {
-      tutorUserId: tutorByProfileEmail.user_id,
-      tutorName: tutorByProfileEmail.full_name || 'Tutor',
+      tutorUserId: approvedTutor.user_id,
+      tutorName: approvedTutor.full_name || candidateNames.get(approvedTutor.user_id) || 'Tutor',
     };
   }
   throw new Error('Provide tutor user id or tutor email');
