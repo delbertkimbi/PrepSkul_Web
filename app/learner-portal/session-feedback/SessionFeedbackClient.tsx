@@ -46,8 +46,8 @@ export default function SessionFeedbackClient() {
       </p>
 
       {!token && (
-        <div className="mt-4 border border-red-200 bg-red-50 p-3 text-sm text-red-700 rounded-none">
-          Missing secure token in URL. Please use the feedback link sent by PrepSkul.
+        <div className="mt-4 border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 rounded-none">
+          To submit feedback, open the personalized link PrepSkul sent you (it includes a secure token in the URL).
         </div>
       )}
 
