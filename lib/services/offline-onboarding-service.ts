@@ -80,7 +80,31 @@ export async function resolveTutorUserId(
     return { tutorUserId: opts.tutorUserId, tutorName: (tp as { full_name?: string }).full_name || profile.full_name || 'Tutor' };
   }
   if (opts.tutorEmail) {
-    const { data: prof } = await admin.from('profiles').select('id, full_name').ilike('email', opts.tutorEmail.trim()).maybeSingle();
+    const normalizedEmail = opts.tutorEmail.trim().toLowerCase();
+    let prof: { id: string; full_name: string | null } | null = null;
+
+    // Prefer exact profile email match (prevents wildcard behavior with ilike on emails).
+    const { data: profileByEmail } = await admin
+      .from('profiles')
+      .select('id, full_name')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+    prof = profileByEmail;
+
+    // Fallback to auth email lookup, then map to profile by user id.
+    if (!prof) {
+      const authLookup = await admin.auth.admin.getUserByEmail(normalizedEmail);
+      const authUserId = authLookup.data.user?.id;
+      if (authUserId) {
+        const { data: profileById } = await admin
+          .from('profiles')
+          .select('id, full_name')
+          .eq('id', authUserId)
+          .maybeSingle();
+        prof = profileById;
+      }
+    }
+
     if (!prof) throw new Error('No profile found for tutor email');
     const { data: tp } = await admin.from('tutor_profiles').select('status, full_name').eq('user_id', prof.id).maybeSingle();
     if (!tp || tp.status !== 'approved') {
