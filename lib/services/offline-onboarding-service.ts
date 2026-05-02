@@ -70,11 +70,13 @@ export async function resolveTutorUserId(
   admin: SupabaseClient,
   opts: { tutorUserId?: string | null; tutorEmail?: string | null }
 ): Promise<{ tutorUserId: string; tutorName: string }> {
+  const isApproved = (status: unknown) => String(status || '').trim().toLowerCase() === 'approved';
+
   if (opts.tutorUserId) {
     const { data: profile } = await admin.from('profiles').select('id, full_name, user_type').eq('id', opts.tutorUserId).maybeSingle();
     if (!profile) throw new Error('Tutor user id not found in profiles');
     const { data: tp } = await admin.from('tutor_profiles').select('status, full_name').eq('user_id', opts.tutorUserId).maybeSingle();
-    if (!tp || tp.status !== 'approved') {
+    if (!tp || !isApproved(tp.status)) {
       throw new Error('This tutor is not verified (approved) on PrepSkul. Only approved tutors can be matched.');
     }
     return { tutorUserId: opts.tutorUserId, tutorName: (tp as { full_name?: string }).full_name || profile.full_name || 'Tutor' };
@@ -105,12 +107,32 @@ export async function resolveTutorUserId(
       }
     }
 
-    if (!prof) throw new Error('No profile found for tutor email');
-    const { data: tp } = await admin.from('tutor_profiles').select('status, full_name').eq('user_id', prof.id).maybeSingle();
-    if (!tp || tp.status !== 'approved') {
+    if (prof) {
+      const { data: tp } = await admin.from('tutor_profiles').select('status, full_name').eq('user_id', prof.id).maybeSingle();
+      if (!tp || !isApproved(tp.status)) {
+        throw new Error('This tutor is not verified (approved) on PrepSkul.');
+      }
+      return { tutorUserId: prof.id, tutorName: (tp as { full_name?: string }).full_name || prof.full_name || 'Tutor' };
+    }
+
+    // Final fallback: some tutor records keep contact email in tutor_profiles.email.
+    const { data: tutorByProfileEmail } = await admin
+      .from('tutor_profiles')
+      .select('user_id, full_name, status')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (!tutorByProfileEmail?.user_id) {
+      throw new Error('No profile found for tutor email');
+    }
+    if (!isApproved(tutorByProfileEmail.status)) {
       throw new Error('This tutor is not verified (approved) on PrepSkul.');
     }
-    return { tutorUserId: prof.id, tutorName: (tp as { full_name?: string }).full_name || prof.full_name || 'Tutor' };
+
+    return {
+      tutorUserId: tutorByProfileEmail.user_id,
+      tutorName: tutorByProfileEmail.full_name || 'Tutor',
+    };
   }
   throw new Error('Provide tutor user id or tutor email');
 }
