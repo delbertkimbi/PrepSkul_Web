@@ -71,7 +71,7 @@ export function middleware(request: NextRequest) {
   if (isTutorSubdomain) {
     if (pathname.startsWith('/tutor-portal')) return NextResponse.next()
     if (pathname === '/' || pathname === '') {
-      return NextResponse.rewrite(new URL('/tutor-portal/session-report', request.url))
+      return NextResponse.rewrite(new URL('/tutor-portal', request.url))
     }
     return NextResponse.rewrite(new URL(`/tutor-portal${pathname}`, request.url))
   }
@@ -80,7 +80,7 @@ export function middleware(request: NextRequest) {
   if (isLearnerSubdomain) {
     if (pathname.startsWith('/learner-portal')) return NextResponse.next()
     if (pathname === '/' || pathname === '') {
-      return NextResponse.rewrite(new URL('/learner-portal/session-feedback', request.url))
+      return NextResponse.rewrite(new URL('/learner-portal', request.url))
     }
     return NextResponse.rewrite(new URL(`/learner-portal${pathname}`, request.url))
   }
