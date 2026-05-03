@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedSupabaseForApi } from '@/lib/services/group-classes/api-auth'
 import { publishGroupClassListing } from '@/lib/services/group-classes/group-class-service'
+import { jsonWithCors, buildCorsHeaders } from '@/lib/services/group-classes/cors'
 
 function groupClassesEnabled(): boolean {
   const v = (process.env.GROUP_CLASSES_ENABLED || 'true').toLowerCase()
@@ -13,12 +14,12 @@ export async function POST(
 ) {
   try {
     if (!groupClassesEnabled()) {
-      return NextResponse.json({ error: 'Group classes are disabled.' }, { status: 503 })
+      return jsonWithCors(request, { error: 'Group classes are disabled.' }, { status: 503 })
     }
     const { id } = await params
     const { supabase, user } = await getAuthenticatedSupabaseForApi(request)
     if (!supabase || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonWithCors(request, { error: 'Unauthorized' }, { status: 401 })
     }
 
     const listing = await publishGroupClassListing(id, user.id, supabase)
@@ -26,7 +27,7 @@ export async function POST(
       tutor_id: user.id,
       listing_id: id,
     })
-    return NextResponse.json({ listing }, { status: 200 })
+    return jsonWithCors(request, { listing }, { status: 200 })
   } catch (error: any) {
     const message = error?.message || 'Failed to publish listing.'
     const lower = message.toLowerCase()
@@ -35,7 +36,11 @@ export async function POST(
       : lower.includes('not found') || lower.includes('not owned')
         ? 404
         : 500
-    return NextResponse.json({ error: message }, { status })
+    return jsonWithCors(request, { error: message }, { status })
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 200, headers: buildCorsHeaders(request) })
 }
 
