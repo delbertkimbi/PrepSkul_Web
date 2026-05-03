@@ -1,3 +1,13 @@
+/**
+ * Metadata + Supabase mocks for tutor OG tags were parked in comments during refactors.
+ * Restore real coverage by uncommenting the block below once mocks align with tutor-metadata again.
+ */
+
+describe('Tutor share links (www.prepskul.com/tutor/[id])', () => {
+  it.todo('Restore generateTutorMetadata integration — see commented scaffold in this file');
+});
+
+// --- Commented scaffold (restore when stable) ---
 // import { type Metadata } from 'next';
 
 // jest.mock('@/lib/supabase-admin', () => ({
@@ -55,15 +65,12 @@
 //     expect(getSupabaseAdmin).toHaveBeenCalled();
 
 //     expect(metadata.title).toContain('John Doe');
-//     expect(metadata.description).toContain('Book John Doe for Math, Physics tutoring sessions');
-
-//     // In real production, NEXT_PUBLIC_SITE_URL is set to https://www.prepskul.com.
-//     // In Jest tests, Next.js may default this base URL to http://localhost:3000,
-//     // so we only assert that the path portion is correct.
-//     expect(metadata.openGraph?.url).toContain(
-//       `/tutor/${tutorRow.user_id}`,
+//     expect(metadata.description).toContain(
+//       'Book John Doe for Math, Physics tutoring sessions',
 //     );
-    
+
+//     expect(metadata.openGraph?.url).toContain(`/tutor/${tutorRow.user_id}`);
+
 //     const ogImages = metadata.openGraph?.images;
 //     const ogImage = Array.isArray(ogImages) ? ogImages[0] : ogImages;
 //     expect(ogImage?.url).toBe('https://cdn.prepskul.com/avatar.jpg');
