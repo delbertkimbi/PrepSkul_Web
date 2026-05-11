@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { markTokenUsed, verifyPortalToken } from '@/lib/services/session-portal-token';
+import { notifyOpsTutorReportSubmitted } from '@/lib/session-email-notifications';
 
 export const runtime = 'nodejs';
 
@@ -58,11 +59,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const ops = await notifyOpsTutorReportSubmitted({
+      sessionId: session.id,
+      tutorId: session.tutor_id,
+      attended,
+      topicsCovered: topicsCovered || null,
+      learnerEngagement: learnerEngagement || null,
+      issues: issues || null,
+    });
+    const emailsSent =
+      ops && 'to' in ops && ops.ok && Array.isArray((ops as { to: string[] }).to) ? (ops as { to: string[] }).to : [];
+
     await supabase.from('admin_operational_events').insert({
       event_type: 'tutor_session_report_submitted',
       subject: `Tutor submitted report for session ${session.id}`,
       payload: { session_id: session.id, tutor_id: session.tutor_id, attended },
-      emails_sent: [],
+      emails_sent: emailsSent,
     });
 
     await markTokenUsed(verified.id);
