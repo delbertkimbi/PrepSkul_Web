@@ -38,6 +38,82 @@ function parseTime(time: string): { h: number; m: number } {
   return { h: h || 9, m: m || 0 };
 }
 
+async function findAuthUserByEmail(admin: SupabaseClient, email: string): Promise<{ id: string } | null> {
+  // Compatibility helper: some Supabase client versions don't expose getUserByEmail.
+  const adminApi = (admin as any)?.auth?.admin;
+  if (!adminApi) return null;
+
+  const normalized = email.trim().toLowerCase();
+
+  if (typeof adminApi.getUserByEmail === 'function') {
+    const { data, error } = await adminApi.getUserByEmail(normalized);
+    if (!error && data?.user?.id) return { id: data.user.id };
+  }
+
+  // Newer GoTrue admin APIs accept an email filter on listUsers (avoids full pagination).
+  if (typeof adminApi.listUsers === 'function') {
+    try {
+      const { data: filtered } = await adminApi.listUsers({ page: 1, perPage: 2, email: normalized });
+      const users: Array<{ id: string; email?: string | null }> = filtered?.users || [];
+      const match = users.find((u) => (u.email || '').trim().toLowerCase() === normalized);
+      if (match) return { id: match.id };
+    } catch {
+      /* older servers ignore unknown listUsers keys */
+    }
+
+    let page = 1;
+    const perPage = 200;
+    while (page <= 20) {
+      const { data, error } = await adminApi.listUsers({ page, perPage });
+      if (error) break;
+      const users: Array<{ id: string; email?: string | null }> = data?.users || [];
+      const match = users.find((u) => (u.email || '').trim().toLowerCase() === normalized);
+      if (match) return { id: match.id };
+      if (users.length < perPage) break;
+      page += 1;
+    }
+  }
+
+  return null;
+}
+
+/** profiles.email and tutor_profiles.email are case-sensitive in Postgres; auth email is usually lowercase. */
+async function collectProfilesByEmailLoose(
+  admin: SupabaseClient,
+  normalizedEmail: string
+): Promise<Array<{ id: string; full_name: string | null }>> {
+  const { data: exact } = await admin.from('profiles').select('id, full_name, email').eq('email', normalizedEmail);
+  if (exact?.length) {
+    return exact.map(({ id, full_name }) => ({ id, full_name }));
+  }
+  const { data: ci } = await admin.from('profiles').select('id, full_name, email').ilike('email', normalizedEmail);
+  return (ci || [])
+    .filter((r) => r?.id && r.email && r.email.trim().toLowerCase() === normalizedEmail)
+    .map(({ id, full_name }) => ({ id, full_name }));
+}
+
+async function collectTutorRowsByEmailLoose(
+  admin: SupabaseClient,
+  normalizedEmail: string
+): Promise<Array<{ user_id: string; status: string | null }>> {
+  // Not all deployments have tutor_profiles.email; keep this best-effort and non-fatal.
+  const { data: exact, error: exactErr } = await admin
+    .from('tutor_profiles')
+    .select('user_id, status, email')
+    .eq('email', normalizedEmail);
+  if (!exactErr && exact?.length) {
+    return exact.map((r) => ({ user_id: r.user_id, status: r.status }));
+  }
+  const { data: ci, error: ciErr } = await admin
+    .from('tutor_profiles')
+    .select('user_id, status, email')
+    .ilike('email', normalizedEmail);
+  if (ciErr) return [];
+  return (ci || [])
+    .filter((r) => r?.user_id && r.email && r.email.trim().toLowerCase() === normalizedEmail)
+    .map((r) => ({ user_id: r.user_id, status: r.status }));
+}
+
 /** Enumerate session dates: for each week 0..weeks-1, for each weekday label, produce one local calendar date */
 export function enumerateSessionDates(input: OfflineScheduleInput): string[] {
   const anchor = new Date(`${input.startDate}T12:00:00`);
@@ -71,73 +147,93 @@ export async function resolveTutorUserId(
   opts: { tutorUserId?: string | null; tutorEmail?: string | null }
 ): Promise<{ tutorUserId: string; tutorName: string }> {
   const isApproved = (status: unknown) => String(status || '').trim().toLowerCase() === 'approved';
+  /** Match learner-facing discovery: approved tutors who are not hidden (see app/tutor/[id]/page.tsx). */
+  const isMatchableTutorRow = (row: { status?: string | null; is_hidden?: boolean | null }) =>
+    isApproved(row.status) && row.is_hidden !== true;
 
   if (opts.tutorUserId) {
     const { data: profile } = await admin.from('profiles').select('id, full_name, user_type').eq('id', opts.tutorUserId).maybeSingle();
     if (!profile) throw new Error('Tutor user id not found in profiles');
-    const { data: tp } = await admin.from('tutor_profiles').select('status, full_name').eq('user_id', opts.tutorUserId).maybeSingle();
-    if (!tp || !isApproved(tp.status)) {
+    if (profile.user_type && profile.user_type !== 'tutor') {
+      throw new Error('This user id is not a tutor account. Use the tutor’s auth user id or their login email.');
+    }
+    const { data: tp } = await admin
+      .from('tutor_profiles')
+      .select('status, is_hidden')
+      .eq('user_id', opts.tutorUserId)
+      .maybeSingle();
+    if (!tp || !isMatchableTutorRow(tp)) {
+      if (tp && isApproved(tp.status) && tp.is_hidden === true) {
+        throw new Error(
+          'This tutor is approved but their profile is hidden, so they do not appear in Find a tutor. Unhide the profile in admin or pick a visible tutor.'
+        );
+      }
       throw new Error('This tutor is not verified (approved) on PrepSkul. Only approved tutors can be matched.');
     }
-    return { tutorUserId: opts.tutorUserId, tutorName: (tp as { full_name?: string }).full_name || profile.full_name || 'Tutor' };
+    return { tutorUserId: opts.tutorUserId, tutorName: profile.full_name || 'Tutor' };
   }
   if (opts.tutorEmail) {
     const normalizedEmail = opts.tutorEmail.trim().toLowerCase();
     const candidateUserIds = new Set<string>();
     const candidateNames = new Map<string, string>();
 
-    // 1) Candidate users from exact profiles.email match.
-    const { data: profilesByEmail } = await admin
-      .from('profiles')
-      .select('id, full_name')
-      .eq('email', normalizedEmail);
-    for (const p of profilesByEmail || []) {
-      if (p?.id) {
-        candidateUserIds.add(p.id);
-        if (p.full_name) candidateNames.set(p.id, p.full_name);
-      }
+    const profilesByEmail = await collectProfilesByEmailLoose(admin, normalizedEmail);
+    for (const p of profilesByEmail) {
+      candidateUserIds.add(p.id);
+      if (p.full_name) candidateNames.set(p.id, p.full_name);
     }
 
-    // 2) Candidate user from auth email lookup.
-    const authLookup = await admin.auth.admin.getUserByEmail(normalizedEmail);
-    const authUserId = authLookup.data.user?.id;
+    const authUser = await findAuthUserByEmail(admin, normalizedEmail);
+    const authUserId = authUser?.id;
     if (authUserId) {
       candidateUserIds.add(authUserId);
       const { data: profileById } = await admin.from('profiles').select('id, full_name').eq('id', authUserId).maybeSingle();
       if (profileById?.full_name) candidateNames.set(authUserId, profileById.full_name);
     }
 
-    // 3) Candidate users from tutor_profiles.email fallback.
-    const { data: tutorRowsByEmail } = await admin
-      .from('tutor_profiles')
-      .select('user_id, full_name, status')
-      .eq('email', normalizedEmail);
-    for (const row of tutorRowsByEmail || []) {
-      if (row?.user_id) {
-        candidateUserIds.add(row.user_id);
-        if (row.full_name) candidateNames.set(row.user_id, row.full_name);
-      }
+    const tutorRowsByEmail = await collectTutorRowsByEmailLoose(admin, normalizedEmail);
+    for (const row of tutorRowsByEmail) {
+      candidateUserIds.add(row.user_id);
     }
 
     if (candidateUserIds.size === 0) {
       throw new Error('No profile found for tutor email');
     }
 
-    // Find an approved tutor profile among all resolved candidates.
     const { data: candidateTutorRows } = await admin
       .from('tutor_profiles')
-      .select('user_id, full_name, status')
+      .select('user_id, status, is_hidden')
       .in('user_id', Array.from(candidateUserIds));
 
-    const approvedTutor = (candidateTutorRows || []).find((row) => row?.user_id && isApproved(row.status));
-    if (!approvedTutor?.user_id) {
-      throw new Error('This tutor is not verified (approved) on PrepSkul.');
+    const approvedVisible = (candidateTutorRows || []).find((row) => row?.user_id && isMatchableTutorRow(row));
+    if (approvedVisible?.user_id) {
+      const { data: prof } = await admin.from('profiles').select('user_type').eq('id', approvedVisible.user_id).maybeSingle();
+      if (prof?.user_type && prof.user_type !== 'tutor') {
+        throw new Error(
+          'That email matched an account that is not a tutor. Use the same email the tutor uses to log in (see Admin → Tutors → profile email).'
+        );
+      }
+      return {
+        tutorUserId: approvedVisible.user_id,
+        tutorName: candidateNames.get(approvedVisible.user_id) || 'Tutor',
+      };
     }
 
-    return {
-      tutorUserId: approvedTutor.user_id,
-      tutorName: approvedTutor.full_name || candidateNames.get(approvedTutor.user_id) || 'Tutor',
-    };
+    const anyApproved = (candidateTutorRows || []).some((row) => row?.user_id && isApproved(row.status));
+    const approvedButHidden = (candidateTutorRows || []).some(
+      (row) => row?.user_id && isApproved(row.status) && row.is_hidden === true
+    );
+    if (approvedButHidden) {
+      throw new Error(
+        'This tutor is approved but their profile is hidden, so they do not appear in Find a tutor. Unhide the profile in admin or pick a visible tutor.'
+      );
+    }
+    if (anyApproved) {
+      throw new Error('This tutor could not be matched (profile state mismatch). Check tutor user id and visibility in admin.');
+    }
+    throw new Error(
+      'This tutor is not approved or not visible for matching. Only tutors who are approved and shown to learners can be matched.'
+    );
   }
   throw new Error('Provide tutor user id or tutor email');
 }
@@ -147,11 +243,11 @@ async function createAuthUserWithProfile(
   input: { email: string; fullName: string; phone?: string; userType: string }
 ): Promise<{ userId: string; isNew: boolean }> {
   const email = input.email.trim().toLowerCase();
-  const existing = await admin.auth.admin.getUserByEmail(email);
-  if (existing.data.user) {
+  const existing = await findAuthUserByEmail(admin, email);
+  if (existing?.id) {
     await admin.from('profiles').upsert(
       {
-        id: existing.data.user.id,
+        id: existing.id,
         email,
         full_name: input.fullName,
         phone_number: input.phone || null,
@@ -160,7 +256,7 @@ async function createAuthUserWithProfile(
       },
       { onConflict: 'id' }
     );
-    return { userId: existing.data.user.id, isNew: false };
+    return { userId: existing.id, isNew: false };
   }
   const password = crypto.randomBytes(18).toString('base64url');
   const { data, error } = await admin.auth.admin.createUser({

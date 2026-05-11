@@ -42,6 +42,8 @@ const schema = z.object({
   paymentStatus: z.enum(['unpaid', 'partial', 'paid', 'refunded']),
   paymentEnvironment: z.enum(['real', 'sandbox']),
   amountPaid: z.string().default('0'),
+  /** Full package / quoted total (XAF). Leave 0 to default tracking to amount paid only. */
+  packageTotalAmount: z.string().optional(),
   nextFollowupAt: z.string().optional(),
   notes: z.string().min(8),
 });
@@ -83,6 +85,7 @@ export default function OfflineOpsFormClient() {
       paymentStatus: 'unpaid',
       paymentEnvironment: 'real',
       amountPaid: '0',
+      packageTotalAmount: '',
       nextFollowupAt: '',
       notes: '',
     },
@@ -139,6 +142,9 @@ export default function OfflineOpsFormClient() {
           paymentStatus: data.paymentStatus,
           paymentEnvironment: data.paymentEnvironment,
           amountPaid: Number(data.amountPaid || 0),
+          packageTotalAmount: data.packageTotalAmount?.trim()
+            ? Number(data.packageTotalAmount)
+            : undefined,
           nextFollowupAt: data.nextFollowupAt || undefined,
         },
       };
@@ -328,6 +334,18 @@ export default function OfflineOpsFormClient() {
             <div>
               <Label htmlFor="amountPaid">Amount paid (XAF)</Label>
               <Input id="amountPaid" type="number" min={0} step="0.01" {...register('amountPaid')} className="mt-1 border-gray-300" />
+            </div>
+            <div>
+              <Label htmlFor="packageTotalAmount">Package / total due (XAF)</Label>
+              <Input
+                id="packageTotalAmount"
+                type="number"
+                min={0}
+                step="0.01"
+                {...register('packageTotalAmount')}
+                className="mt-1 border-gray-300"
+                placeholder="Optional — for partial/unpaid balance tracking"
+              />
             </div>
             <div>
               <Label htmlFor="nextFollowupAt">Next follow-up</Label>

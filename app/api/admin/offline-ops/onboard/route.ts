@@ -43,6 +43,7 @@ const payloadSchema = z.object({
     paymentStatus: z.enum(['unpaid', 'partial', 'paid', 'refunded']).default('unpaid'),
     paymentEnvironment: z.enum(['real', 'sandbox']).default('real'),
     amountPaid: z.number().min(0).default(0),
+    packageTotalAmount: z.number().min(0).optional(),
     nextFollowupAt: z.string().optional(),
   }),
   idempotencyKey: z.string().optional(),
@@ -99,8 +100,13 @@ export async function POST(request: NextRequest) {
     }
     if (!result && lastErr) throw lastErr;
 
+    const expectedTotal =
+      data.tracking.packageTotalAmount !== undefined
+        ? data.tracking.packageTotalAmount
+        : data.tracking.amountPaid;
+
     // Keep offline_operations row for analytics blending + operational list UI.
-    await supabaseAdmin.from('offline_operations').insert({
+    const { data: insertedOfflineOp } = await supabaseAdmin.from('offline_operations').insert({
       agent_name: data.agentName,
       source_channel: data.sourceChannel,
       customer_name: data.primary.fullName,
@@ -120,7 +126,26 @@ export async function POST(request: NextRequest) {
       next_followup_at: data.tracking.nextFollowupAt ? new Date(data.tracking.nextFollowupAt).toISOString() : null,
       converted_to_platform: true,
       notes: data.notes,
-    });
+    }).select('id').maybeSingle();
+
+    // Best-effort richer linkage fields (for upgraded schema).
+    if (insertedOfflineOp?.id && result) {
+      const linkagePatch: Record<string, unknown> = {
+        offline_run_id: result.runId,
+        primary_user_id: result.primaryUserId,
+        learner_user_id: result.learnerUserId,
+        tutor_user_id: result.tutorUserId,
+        recurring_session_id: result.recurringSessionId,
+        expected_total_amount: expectedTotal,
+      };
+      const { error: linkErr } = await supabaseAdmin
+        .from('offline_operations')
+        .update(linkagePatch)
+        .eq('id', insertedOfflineOp.id);
+      if (linkErr) {
+        console.warn('[offline-ops/onboard] linkage columns update skipped', linkErr.message);
+      }
+    }
 
     await sendOpsAlertEmail(
       'Offline onboarding synced',
