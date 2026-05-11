@@ -77,57 +77,6 @@ async function findAuthUserByEmail(admin: SupabaseClient, email: string): Promis
   return null;
 }
 
-async function getProfileUserType(admin: SupabaseClient, userId: string): Promise<string | null> {
-  const { data } = await admin.from('profiles').select('user_type').eq('id', userId).maybeSingle();
-  return data?.user_type ? String(data.user_type).toLowerCase() : null;
-}
-
-/**
- * Offline onboarding must not recycle emails across different people.
- * - Parent email may only reuse an existing auth user if that user is already a parent.
- * - Learner emails (child or student-primary) must be unused: each learner gets a distinct login email.
- */
-async function assertOfflineEnrollmentEmails(
-  admin: SupabaseClient,
-  params: {
-    primary: { email: string; role: 'parent' | 'student' };
-    child?: { email: string } | null;
-  }
-) {
-  const primaryEmail = params.primary.email.trim().toLowerCase();
-  if (params.primary.role === 'parent') {
-    if (!params.child?.email?.trim()) {
-      throw new Error('For parent accounts, provide learner email.');
-    }
-    const childEmail = params.child.email.trim().toLowerCase();
-    if (primaryEmail === childEmail) {
-      throw new Error('Parent email and learner email must be different for offline onboarding.');
-    }
-    const existingParent = await findAuthUserByEmail(admin, primaryEmail);
-    if (existingParent) {
-      const ut = await getProfileUserType(admin, existingParent.id);
-      if (ut !== 'parent') {
-        throw new Error(
-          `The parent email (${primaryEmail}) is already used on PrepSkul as ${ut || 'another account type'}. Use a unique parent contact email.`
-        );
-      }
-    }
-    const existingChild = await findAuthUserByEmail(admin, childEmail);
-    if (existingChild) {
-      throw new Error(
-        `The learner email (${childEmail}) is already registered on PrepSkul. Each offline learner needs a unique email so accounts are not mixed up.`
-      );
-    }
-    return;
-  }
-  const existingStudent = await findAuthUserByEmail(admin, primaryEmail);
-  if (existingStudent) {
-    throw new Error(
-      `The learner email (${primaryEmail}) is already registered on PrepSkul. Use a unique email for this offline learner.`
-    );
-  }
-}
-
 /** profiles.email and tutor_profiles.email are case-sensitive in Postgres; auth email is usually lowercase. */
 async function collectProfilesByEmailLoose(
   admin: SupabaseClient,
@@ -296,18 +245,6 @@ async function createAuthUserWithProfile(
   const email = input.email.trim().toLowerCase();
   const existing = await findAuthUserByEmail(admin, email);
   if (existing?.id) {
-    const existingType = await getProfileUserType(admin, existing.id);
-    const want = input.userType.toLowerCase();
-    if (want === 'parent' && existingType !== 'parent') {
-      throw new Error(
-        `Cannot reuse ${email}: it is already registered as ${existingType || 'another account type'}, not as a parent.`
-      );
-    }
-    if (want === 'learner' && existingType !== 'learner' && existingType !== 'student') {
-      throw new Error(
-        `Cannot reuse ${email}: it is already registered as ${existingType || 'another account type'}, not as a learner.`
-      );
-    }
     await admin.from('profiles').upsert(
       {
         id: existing.id,
@@ -373,11 +310,6 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
       };
     }
   }
-
-  await assertOfflineEnrollmentEmails(admin, {
-    primary: params.primary,
-    child: params.child ?? null,
-  });
 
   const tutorResolved = await resolveTutorUserId(admin, params.tutor);
 

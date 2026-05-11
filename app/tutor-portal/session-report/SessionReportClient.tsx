@@ -98,7 +98,7 @@ export default function SessionReportClient() {
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="inline-flex justify-center items-center min-h-[44px] rounded-md bg-[#1B2C4F] text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-[#15243d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="bg-[#1B2C4F] text-white px-4 py-2 rounded-none disabled:opacity-60"
         >
           {status === 'saving' ? 'Submitting...' : 'Submit Report'}
         </button>

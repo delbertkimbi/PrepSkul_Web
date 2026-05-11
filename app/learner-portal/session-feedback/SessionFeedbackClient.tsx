@@ -8,9 +8,11 @@ export default function SessionFeedbackClient() {
   const token = search.get('token') || '';
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
   const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const [followUpText, setFollowUpText] = useState('');
+  const [suggestedReply, setSuggestedReply] = useState('');
+  const [whatsAppLink, setWhatsAppLink] = useState<string | null>(null);
 
   const canSubmit = useMemo(() => token.length > 10 && comment.trim().length >= 3 && status !== 'saving', [token, comment, status]);
 
@@ -18,16 +20,16 @@ export default function SessionFeedbackClient() {
     if (!token) return;
     setStatus('saving');
     setMessage('');
-    setFollowUpText('');
     try {
       const res = await fetch('/api/portal/learner/session-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, rating, comment }),
+        body: JSON.stringify({ token, rating, comment, whatsappNumber }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to submit feedback');
-      setFollowUpText(json?.learnerMessage || '');
+      setSuggestedReply(json?.suggestedReply || '');
+      setWhatsAppLink(json?.whatsappLink || null);
       setStatus('done');
       setMessage('Feedback submitted. Thank you.');
     } catch (e: any) {
@@ -76,24 +78,40 @@ export default function SessionFeedbackClient() {
           />
         </label>
 
+        <label className="text-sm text-gray-700">
+          <span className="font-medium">WhatsApp number (optional)</span>
+          <input
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
+            className="mt-1 w-full border border-gray-300 p-2 rounded-none"
+            placeholder="+237..."
+          />
+        </label>
+
         <button
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="inline-flex justify-center items-center min-h-[44px] rounded-md bg-[#1B2C4F] text-white px-5 py-2.5 text-sm font-medium shadow-sm hover:bg-[#15243d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="bg-[#1B2C4F] text-white px-4 py-2 rounded-none disabled:opacity-60"
         >
           {status === 'saving' ? 'Submitting...' : 'Submit Feedback'}
         </button>
 
         {message && (
-          <div className={`text-sm p-3 border rounded-md ${status === 'done' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+          <div className={`text-sm p-3 border rounded-none ${status === 'done' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
             {message}
           </div>
         )}
 
-        {followUpText && (
-          <div className="border border-gray-200 bg-gray-50 p-4 rounded-md text-sm text-gray-800 leading-relaxed">
-            {followUpText}
+        {suggestedReply && (
+          <div className="border border-gray-200 bg-gray-50 p-3 rounded-none">
+            <p className="text-sm font-medium text-gray-800">Suggested admin reply</p>
+            <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">{suggestedReply}</p>
+            {whatsAppLink && (
+              <a href={whatsAppLink} target="_blank" rel="noreferrer" className="inline-block mt-3 text-sm text-[#1B2C4F] font-medium">
+                Open WhatsApp with preloaded reply
+              </a>
+            )}
           </div>
         )}
       </div>
