@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Search, User, Calendar, MessageCircle } from 'lucide-react';
 import {
@@ -66,31 +65,10 @@ function stageBadge(stage: OfflineOpsRecord['onboarding_stage']) {
 }
 
 export default function OfflineOpsListClient({ records }: Props) {
-  const router = useRouter();
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<OfflineOpsRecord | null>(null);
-  const [deleteBusy, setDeleteBusy] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  const confirmDelete = async () => {
-    if (!pendingDelete) return;
-    setDeleteBusy(true);
-    setDeleteError(null);
-    try {
-      const res = await fetch(`/api/admin/offline-ops/${pendingDelete.id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json?.error || 'Delete failed');
-      setPendingDelete(null);
-      router.refresh();
-    } catch (e: unknown) {
-      setDeleteError(e instanceof Error ? e.message : 'Delete failed');
-    } finally {
-      setDeleteBusy(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     let list = records;
@@ -118,40 +96,6 @@ export default function OfflineOpsListClient({ records }: Props) {
 
   return (
     <div className="space-y-6">
-      {pendingDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white max-w-md w-full border border-gray-200 rounded-lg shadow-lg p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900">Delete offline operation?</h2>
-            <p className="text-sm text-gray-600">
-              Remove the record for <strong>{pendingDelete.customer_name}</strong>? This only deletes the offline
-              operations row; it does not remove platform users or sessions.
-            </p>
-            {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={deleteBusy}
-                onClick={() => {
-                  setPendingDelete(null);
-                  setDeleteError(null);
-                }}
-                className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-medium rounded-md border border-gray-300 bg-white text-gray-800 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={deleteBusy}
-                onClick={confirmDelete}
-                className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-medium rounded-md border border-red-600 bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteBusy ? 'Deleting…' : 'Yes, delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white rounded-none border border-gray-200 p-4">
           <p className="text-xs text-gray-500">Total offline records</p>
@@ -256,20 +200,13 @@ export default function OfflineOpsListClient({ records }: Props) {
                     <p><span className="text-gray-500">Start date:</span> {formatDate(record.started_at)}</p>
                     <p><span className="text-gray-500">Next follow-up:</span> {formatDate(record.next_followup_at)}</p>
                     <p className="md:col-span-2"><span className="text-gray-500">Notes:</span> {record.notes}</p>
-                    <div className="md:col-span-2 pt-2 flex flex-wrap gap-2">
+                    <div className="md:col-span-2 pt-2">
                       <Link
                         href={`/admin/offline-ops/${record.id}`}
-                        className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-medium rounded-md border border-[#1B2C4F] bg-[#1B2C4F] text-white shadow-sm hover:bg-[#15243d]"
+                        className="inline-flex items-center px-3 py-2 text-sm bg-[#1B2C4F] text-white"
                       >
                         Open full tracking page
                       </Link>
-                      <button
-                        type="button"
-                        onClick={() => setPendingDelete(record)}
-                        className="inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-medium rounded-md border border-red-300 bg-white text-red-700 shadow-sm hover:bg-red-50"
-                      >
-                        Delete record
-                      </button>
                     </div>
                   </div>
                 )}
