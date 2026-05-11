@@ -196,6 +196,22 @@ After adding the variables, check your Vercel deployment logs for:
 
 ---
 
+## **Session feedback portals (optional overrides)**
+
+Admin “Generate secure links” uses public subdomain URLs. Defaults match production:
+
+- `https://tutor.prepskul.com`
+- `https://learner.prepskul.com`
+
+Override if needed:
+
+```env
+NEXT_PUBLIC_TUTOR_PORTAL_URL=https://tutor.prepskul.com
+NEXT_PUBLIC_LEARNER_PORTAL_URL=https://learner.prepskul.com
+```
+
+---
+
 ## 📝 **Summary**
 
 **You need to add to Vercel:**

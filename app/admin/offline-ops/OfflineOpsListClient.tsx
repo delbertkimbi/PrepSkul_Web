@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Link from 'next/link';
 
 export type OfflineOpsRecord = {
   id: string;
@@ -199,6 +200,14 @@ export default function OfflineOpsListClient({ records }: Props) {
                     <p><span className="text-gray-500">Start date:</span> {formatDate(record.started_at)}</p>
                     <p><span className="text-gray-500">Next follow-up:</span> {formatDate(record.next_followup_at)}</p>
                     <p className="md:col-span-2"><span className="text-gray-500">Notes:</span> {record.notes}</p>
+                    <div className="md:col-span-2 pt-2">
+                      <Link
+                        href={`/admin/offline-ops/${record.id}`}
+                        className="inline-flex items-center px-3 py-2 text-sm bg-[#1B2C4F] text-white"
+                      >
+                        Open full tracking page
+                      </Link>
+                    </div>
                   </div>
                 )}
               </div>
