@@ -245,7 +245,7 @@ async function createAuthUserWithProfile(
   const email = input.email.trim().toLowerCase();
   const existing = await findAuthUserByEmail(admin, email);
   if (existing?.id) {
-    await admin.from('profiles').upsert(
+    const { error: pErr } = await admin.from('profiles').upsert(
       {
         id: existing.id,
         email,
@@ -256,6 +256,18 @@ async function createAuthUserWithProfile(
       },
       { onConflict: 'id' }
     );
+    if (pErr) {
+      throw new Error(pErr.message || 'Failed to upsert profile');
+    }
+
+    // Extra safety: ensure the profile row actually exists (FKs may target profiles.id).
+    const { data: profileRow, error: checkErr } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('id', existing.id)
+      .maybeSingle();
+    if (checkErr) throw new Error(checkErr.message || 'Failed to verify profile row');
+    if (!profileRow) throw new Error('Profile row missing after upsert');
     return { userId: existing.id, isNew: false };
   }
   const password = crypto.randomBytes(18).toString('base64url');
@@ -416,7 +428,9 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     };
     const { data: ins, error: insErr } = await admin.from('individual_sessions').insert(row).select('id').maybeSingle();
     if (insErr) {
-      throw new Error(`Failed to create session for ${dateStr}: ${insErr.message}`);
+      throw new Error(
+        `Failed to create session for ${dateStr} (parent_id=${params.primary.role === 'parent' ? primaryUserId : 'null'}): ${insErr.message}`
+      );
     }
     if (ins?.id) sessionIds.push(ins.id);
   }
