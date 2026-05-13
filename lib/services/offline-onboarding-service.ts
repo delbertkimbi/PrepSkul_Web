@@ -334,7 +334,9 @@ async function scheduleOfflineSessionReminders(
 
   if (reminders.length === 0) return;
 
-  const recipientIds = Array.from(new Set([opts.tutorUserId, opts.learnerUserId, opts.parentUserId].filter(Boolean) as string[]));
+  // Email/push reminders go to tutor + primary contact only (parent if present, else learner’s own account).
+  const familyUserId = opts.parentUserId || opts.learnerUserId;
+  const recipientIds = Array.from(new Set([opts.tutorUserId, familyUserId].filter(Boolean) as string[]));
   const rows: Array<Record<string, unknown>> = [];
   for (const recipientId of recipientIds) {
     for (const reminder of reminders) {
