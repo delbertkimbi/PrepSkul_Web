@@ -41,7 +41,7 @@ async function detectIssues(
   const tutorJoinedAt = session.tutor_joined_at as string | null;
   const status = session.status as string;
 
-  if (!tutorJoinedAt && status === 'completed') {
+  if (!tutorJoinedAt && (status === 'completed' || status === 'evaluated')) {
     issues.isNoShow = true;
     return issues;
   }

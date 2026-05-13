@@ -168,3 +168,65 @@ export async function sendAdminFollowUpToParty(opts: {
 
   return { ok: true as const, email: profile.email, whatsappUrl: wa };
 }
+
+export async function sendAdminTriggeredSessionReminder(opts: {
+  sessionId: string;
+  adminName?: string;
+}) {
+  const supabase = getSupabaseAdmin();
+  const { data: session } = await supabase
+    .from('individual_sessions')
+    .select('id, tutor_id, learner_id, parent_id, subject, scheduled_date, scheduled_time')
+    .eq('id', opts.sessionId)
+    .maybeSingle();
+  if (!session) return { ok: false as const, error: 'Session not found' };
+
+  const ids = [session.tutor_id, session.learner_id, session.parent_id].filter(Boolean) as string[];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .in('id', ids);
+  const byId = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+  const tutor = byId.get(session.tutor_id);
+  const learner = session.learner_id ? byId.get(session.learner_id) : null;
+  const parent = session.parent_id ? byId.get(session.parent_id) : null;
+  const family = learner || parent;
+
+  const when = [session.scheduled_date, session.scheduled_time].filter(Boolean).join(' ') || 'scheduled time';
+  const subjectName = session.subject || 'PrepSkul session';
+
+  const sentTo: string[] = [];
+
+  if (tutor?.email) {
+    const body = `<p>Hi ${escapeHtml(tutor.full_name || 'Tutor')},</p>
+      <p>This is a reminder from PrepSkul admin for your upcoming <strong>${escapeHtml(subjectName)}</strong> session at <strong>${escapeHtml(when)}</strong>.</p>
+      <p>Please prepare and join on time.</p>`;
+    const r = await sendCustomEmail(tutor.email, tutor.full_name || 'Tutor', `Session reminder: ${subjectName}`, body);
+    if (r.success) sentTo.push(tutor.email);
+  }
+
+  if (family?.email) {
+    const body = `<p>Hi ${escapeHtml(family.full_name || 'there')},</p>
+      <p>PrepSkul admin is reminding you about your upcoming <strong>${escapeHtml(subjectName)}</strong> session at <strong>${escapeHtml(when)}</strong>.</p>
+      <p>Please join on time. We wish you a great class.</p>`;
+    const r = await sendCustomEmail(family.email, family.full_name || 'Learner', `Class reminder: ${subjectName}`, body);
+    if (r.success) sentTo.push(family.email);
+  }
+
+  const ops = await sendOpsAlertEmail(
+    `Admin triggered session reminder: ${opts.sessionId.slice(0, 8)}`,
+    `<p>Admin-triggered reminder was sent for session <code>${escapeHtml(opts.sessionId)}</code>.</p>
+    <ul>
+      <li>Admin: ${escapeHtml(opts.adminName || 'PrepSkul admin')}</li>
+      <li>Session: ${escapeHtml(subjectName)} at ${escapeHtml(when)}</li>
+      <li>Recipients: ${sentTo.length ? sentTo.map(escapeHtml).join(', ') : 'none'}</li>
+    </ul>`
+  );
+
+  return {
+    ok: true as const,
+    sentTo,
+    opsEmails: ops.ok && ops.to ? [...ops.to] : [],
+  };
+}

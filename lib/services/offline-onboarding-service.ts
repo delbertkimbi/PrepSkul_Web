@@ -314,6 +314,54 @@ function generatedOfflineLearnerEmail() {
   return `offline.learner.${crypto.randomBytes(16).toString('hex')}@account.prepskul.com`;
 }
 
+async function scheduleOfflineSessionReminders(
+  admin: SupabaseClient,
+  opts: {
+    sessionId: string;
+    sessionStartIso: string;
+    subject: string;
+    tutorUserId: string;
+    learnerUserId: string;
+    parentUserId?: string | null;
+  }
+) {
+  const start = new Date(opts.sessionStartIso);
+  const now = Date.now();
+  const reminders = [
+    { type: '24_hours', when: new Date(start.getTime() - 24 * 60 * 60 * 1000), title: 'Session reminder' },
+    { type: '1_hour', when: new Date(start.getTime() - 60 * 60 * 1000), title: 'Session starts in 1 hour' },
+  ].filter((r) => r.when.getTime() > now);
+
+  if (reminders.length === 0) return;
+
+  const recipientIds = Array.from(new Set([opts.tutorUserId, opts.learnerUserId, opts.parentUserId].filter(Boolean) as string[]));
+  const rows: Array<Record<string, unknown>> = [];
+  for (const recipientId of recipientIds) {
+    for (const reminder of reminders) {
+      rows.push({
+        user_id: recipientId,
+        notification_type: 'session_reminder',
+        title: reminder.title,
+        message: `Reminder: your ${opts.subject || 'PrepSkul'} session is upcoming.`,
+        scheduled_for: reminder.when.toISOString(),
+        status: 'pending',
+        related_id: opts.sessionId,
+        metadata: {
+          session_id: opts.sessionId,
+          reminder_type: reminder.type,
+          session_start: start.toISOString(),
+          action_url: `/sessions/${opts.sessionId}`,
+          action_text: 'View session',
+          sendEmail: true,
+          sendPush: true,
+        },
+      });
+    }
+  }
+
+  await admin.from('scheduled_notifications').insert(rows);
+}
+
 export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   idempotencyKey?: string;
   adminUserId: string;
@@ -395,7 +443,7 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     tutor_id: tutorResolved.tutorUserId,
     learner_id: learnerUserId,
     parent_id: params.primary.role === 'parent' ? primaryUserId : null,
-    status: 'pending_tutor_approval',
+    status: 'pending',
     subject: params.schedule.subject,
     updated_at: new Date().toISOString(),
   };
@@ -421,18 +469,33 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
       scheduled_date: dateStr,
       scheduled_time: timeStr,
       duration_minutes: params.schedule.durationMinutes,
-      status: 'pending_tutor_approval',
+      status: 'pending',
       location: params.schedule.deliveryMode === 'online' ? 'online' : 'onsite',
       subject: params.schedule.subject,
       created_at: new Date().toISOString(),
     };
-    const { data: ins, error: insErr } = await admin.from('individual_sessions').insert(row).select('id').maybeSingle();
+    let { data: ins, error: insErr } = await admin.from('individual_sessions').insert(row).select('id').maybeSingle();
+    if (insErr && row.parent_id && /parent_id/i.test(insErr.message || '')) {
+      // Some schemas enforce parent_id against a non-profile parent table; retry without parent_id to avoid blocking onboarding.
+      const retryRow = { ...row, parent_id: null };
+      const retry = await admin.from('individual_sessions').insert(retryRow).select('id').maybeSingle();
+      ins = retry.data;
+      insErr = retry.error;
+    }
     if (insErr) {
-      throw new Error(
-        `Failed to create session for ${dateStr} (parent_id=${params.primary.role === 'parent' ? primaryUserId : 'null'}): ${insErr.message}`
-      );
+      throw new Error(`Failed to create session for ${dateStr}: ${insErr.message}`);
     }
     if (ins?.id) sessionIds.push(ins.id);
+    if (ins?.id) {
+      await scheduleOfflineSessionReminders(admin, {
+        sessionId: ins.id,
+        sessionStartIso: `${dateStr}T${timeStr}`,
+        subject: params.schedule.subject,
+        tutorUserId: tutorResolved.tutorUserId,
+        learnerUserId,
+        parentUserId: params.primary.role === 'parent' ? primaryUserId : null,
+      });
+    }
   }
 
   const { data: run, error: runErr } = await admin

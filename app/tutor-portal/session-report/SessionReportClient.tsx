@@ -12,6 +12,7 @@ export default function SessionReportClient() {
   const [issues, setIssues] = useState('');
   const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const canSubmit = useMemo(() => token.length > 10 && status !== 'saving', [token, status]);
 
@@ -29,6 +30,7 @@ export default function SessionReportClient() {
       if (!res.ok) throw new Error(json?.error || 'Failed to submit report');
       setStatus('done');
       setMessage('Session report submitted successfully.');
+      setShowSuccessPopup(true);
     } catch (e: any) {
       setStatus('error');
       setMessage(e?.message || 'Submission failed');
@@ -109,6 +111,40 @@ export default function SessionReportClient() {
           </div>
         )}
       </div>
+
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true">
+          <div className="bg-white w-full max-w-md rounded-lg border border-gray-200 shadow-xl p-6 text-center">
+            <div className="mx-auto mb-4 relative h-16 w-16">
+              <div className="absolute inset-0 rounded-full bg-green-100 animate-ping" />
+              <div className="relative h-16 w-16 rounded-full bg-green-600 text-white flex items-center justify-center text-3xl font-bold">
+                ✓
+              </div>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Report submitted</h2>
+            <p className="text-sm text-gray-700 mt-2">
+              Thank you. We will review your submission to keep the learning experience excellent.
+            </p>
+            <div className="mt-5 flex justify-center gap-2">
+              <button
+                type="button"
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                onClick={() => setShowSuccessPopup(false)}
+              >
+                Close
+              </button>
+              <a
+                href="https://prepskul.com"
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2 rounded-md text-sm font-medium bg-[#1B2C4F] text-white hover:bg-[#15243d]"
+              >
+                Learn more
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

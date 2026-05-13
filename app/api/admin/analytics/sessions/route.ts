@@ -78,8 +78,10 @@ export async function GET() {
     };
 
     const pendingTutorApproval = rows.filter((r) => ['pending', 'pending_tutor_approval'].includes(normalizeStatus(r.status))).length;
-    const approved = rows.filter((r) => ['approved', 'scheduled', 'in_progress'].includes(normalizeStatus(r.status))).length;
-    const completed = rows.filter((r) => normalizeStatus(r.status) === 'completed').length;
+    const approved = rows.filter((r) =>
+      ['approved', 'scheduled', 'in_progress', 'pending_admin_review'].includes(normalizeStatus(r.status))
+    ).length;
+    const completed = rows.filter((r) => ['completed', 'evaluated'].includes(normalizeStatus(r.status))).length;
 
     return NextResponse.json({
       totals: {

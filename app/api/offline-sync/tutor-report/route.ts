@@ -58,27 +58,10 @@ export async function POST(request: NextRequest) {
     await supabase
       .from('individual_sessions')
       .update({
-        status: payload.attended ? 'completed' : 'scheduled',
+        status: payload.attended ? 'pending_admin_review' : 'scheduled',
         updated_at: nowIso,
       })
       .eq('id', payload.sessionId);
-
-    // Best-effort tutor profile increment (schema may differ across environments).
-    try {
-      const { data: tp } = await supabase
-        .from('tutor_profiles')
-        .select('id, sessions_completed')
-        .eq('user_id', payload.tutorUserId)
-        .maybeSingle();
-      if (tp?.id) {
-        await supabase
-          .from('tutor_profiles')
-          .update({ sessions_completed: Number((tp as any).sessions_completed || 0) + 1, updated_at: nowIso })
-          .eq('id', tp.id);
-      }
-    } catch (e) {
-      console.warn('tutor profile sessions increment skipped', e);
-    }
 
     await supabase.from('admin_operational_events').insert({
       event_type: 'tutor_session_report_submitted',

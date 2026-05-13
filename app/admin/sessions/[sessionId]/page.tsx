@@ -5,6 +5,16 @@ import AdminNav from '../../components/AdminNav';
 import ResolveIncidentForm from './ResolveIncidentForm';
 import { MapPin, Clock, User, Shield } from 'lucide-react';
 
+function humanizeSessionStatus(status: string | null | undefined) {
+  const normalized = String(status || '').toLowerCase();
+  if (!normalized) return 'unknown';
+  if (normalized === 'pending_tutor_approval') return 'pending';
+  if (normalized === 'pending_admin_review') return 'awaiting admin review';
+  if (normalized === 'evaluated') return 'evaluated';
+  if (normalized === 'not_attended') return 'not attended';
+  return normalized.replaceAll('_', ' ');
+}
+
 /**
  * Admin session detail (individual_sessions): header, safety summary, timeline, resolve incidents.
  */
@@ -115,7 +125,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             )}
             <div className="flex items-center gap-2 text-gray-700">
               <Clock className="w-5 h-5 text-gray-400" />
-              <span>{String(session.scheduled_date)} {String(session.scheduled_time)} · {String(session.status)}</span>
+              <span>{String(session.scheduled_date)} {String(session.scheduled_time)} · {humanizeSessionStatus(session.status)}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-700">
               <MapPin className="w-5 h-5 text-gray-400" />

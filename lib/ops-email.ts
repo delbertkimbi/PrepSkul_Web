@@ -11,8 +11,10 @@ export async function sendOpsAlertEmail(subject: string, html: string) {
   const to = getOpsAdminEmails();
   if (!to.length) return { ok: false, reason: 'no_recipients' as const };
 
+  const normalizedFrom = fromEmail.includes('<') ? fromEmail : `PrepSkul Ops <${fromEmail}>`;
+
   await resend.emails.send({
-    from: fromEmail.includes('@') ? `PrepSkul Ops <${fromEmail}>` : fromEmail,
+    from: normalizedFrom,
     to,
     subject: `[PrepSkul Ops] ${subject}`,
     html,
