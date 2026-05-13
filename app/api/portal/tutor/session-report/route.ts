@@ -45,18 +45,12 @@ export async function POST(request: NextRequest) {
       { onConflict: 'individual_session_id' }
     );
 
-    if (attended) {
-      await supabase.from('individual_sessions').update({ status: 'completed' }).eq('id', session.id);
-      const { data: tutorProfile } = await supabase
-        .from('tutor_profiles')
-        .select('id, total_sessions_completed')
-        .eq('user_id', session.tutor_id)
-        .maybeSingle();
-      if (tutorProfile) {
-        const next = Number((tutorProfile as any).total_sessions_completed || 0) + 1;
-        await supabase.from('tutor_profiles').update({ total_sessions_completed: next }).eq('id', tutorProfile.id);
-      }
-    }
+    // Session stays in review until an admin confirms attendance ("evaluated").
+    // Do not mark completed here — that implied the session was finished before ops review.
+    await supabase
+      .from('individual_sessions')
+      .update({ status: 'pending_admin_review', updated_at: new Date().toISOString() })
+      .eq('id', session.id);
 
     const ops = await notifyOpsTutorSessionReportSubmitted({
       sessionId: session.id,

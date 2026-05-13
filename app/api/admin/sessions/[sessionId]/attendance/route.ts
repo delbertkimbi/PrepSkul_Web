@@ -30,17 +30,34 @@ export async function PATCH(
 
     const { data: session, error: sErr } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id, scheduled_date, scheduled_time, subject')
+      .select('id, tutor_id, learner_id, parent_id, scheduled_date, scheduled_time, subject, status')
       .eq('id', sessionId)
       .maybeSingle();
     if (sErr || !session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
-    const status = attended ? 'completed' : 'scheduled';
+    const previousStatus = String(session.status || '').toLowerCase();
+    const status = attended ? 'evaluated' : 'not_attended';
     const { error: upErr } = await supabase
       .from('individual_sessions')
       .update({ status, updated_at: nowIso })
       .eq('id', sessionId);
     if (upErr) throw upErr;
+
+    if (attended && previousStatus !== 'evaluated') {
+      try {
+        const { data: tutorProfile } = await supabase
+          .from('tutor_profiles')
+          .select('id, total_sessions_completed')
+          .eq('user_id', session.tutor_id)
+          .maybeSingle();
+        if (tutorProfile?.id) {
+          const next = Number((tutorProfile as { total_sessions_completed?: number }).total_sessions_completed || 0) + 1;
+          await supabase.from('tutor_profiles').update({ total_sessions_completed: next }).eq('id', tutorProfile.id);
+        }
+      } catch (e) {
+        console.warn('[attendance] tutor_profiles increment skipped', e);
+      }
+    }
 
     await supabase.from('session_tutor_completion_reports').upsert(
       {

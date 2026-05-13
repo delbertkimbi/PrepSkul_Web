@@ -114,7 +114,12 @@ export default async function OfflineOperationDetailPage({
   }
   const sessionIds = (sessions || []).map((s: any) => s.id);
 
-  const [{ data: reports }, { data: feedbacks }] = await Promise.all([
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const endOfToday = new Date(startOfToday);
+  endOfToday.setHours(23, 59, 59, 999);
+
+  const [{ data: reports }, { data: feedbacks }, { data: dailyReminders }] = await Promise.all([
     sessionIds.length
       ? supabase
           .from('session_tutor_completion_reports')
@@ -126,6 +131,16 @@ export default async function OfflineOperationDetailPage({
           .from('session_learner_feedback')
           .select('individual_session_id, rating, comment, created_at')
           .in('individual_session_id', sessionIds)
+      : Promise.resolve({ data: [] as any[] }),
+    sessionIds.length
+      ? supabase
+          .from('scheduled_notifications')
+          .select('id, user_id, notification_type, title, message, scheduled_for, status, related_id')
+          .eq('notification_type', 'session_reminder')
+          .in('related_id', sessionIds)
+          .gte('scheduled_for', startOfToday.toISOString())
+          .lte('scheduled_for', endOfToday.toISOString())
+          .order('scheduled_for', { ascending: true })
       : Promise.resolve({ data: [] as any[] }),
   ]);
 
@@ -151,6 +166,7 @@ export default async function OfflineOperationDetailPage({
         <OfflineOpsDetailClient
           record={recordAny}
           sessions={sessionsWithInsights}
+          dailyReminders={dailyReminders || []}
           profiles={{
             primary: primaryUserId ? profileById.get(primaryUserId) || null : null,
             learner: learnerUserId ? profileById.get(learnerUserId) || null : null,

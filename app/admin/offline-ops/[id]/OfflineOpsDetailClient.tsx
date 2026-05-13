@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,16 +55,59 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString();
 }
 
+function humanSessionStatus(status?: string | null) {
+  const normalized = String(status || '').toLowerCase();
+  if (!normalized) return 'unknown';
+  if (normalized === 'pending_tutor_approval') return 'pending';
+  if (normalized === 'pending_admin_review') return 'awaiting admin review';
+  if (normalized === 'evaluated') return 'evaluated';
+  if (normalized === 'not_attended') return 'not attended';
+  return normalized.replaceAll('_', ' ');
+}
+
+function statusBadgeClass(status?: string | null) {
+  const n = String(status || '').toLowerCase();
+  if (n === 'evaluated' || n === 'completed') return 'bg-emerald-50 text-emerald-900 border-emerald-200';
+  if (n === 'pending_admin_review') return 'bg-amber-50 text-amber-900 border-amber-200';
+  if (n === 'not_attended') return 'bg-rose-50 text-rose-900 border-rose-200';
+  if (n === 'pending' || n === 'pending_tutor_approval') return 'bg-slate-100 text-slate-800 border-slate-200';
+  return 'bg-white text-[#1B2C4F] border-[#1B2C4F]/20';
+}
+
+function suggestedLearnerReply(
+  lf: { rating?: number | null; comment?: string | null },
+  learnerName?: string | null
+) {
+  const r = lf.rating ?? 0;
+  const c = (lf.comment || '').trim();
+  const greet = learnerName ? `Hi ${learnerName.split(' ')[0] || learnerName},` : 'Hi,';
+  let thanks = 'Thank you for taking a moment to share feedback after the session.';
+  if (r >= 4) thanks = 'Thank you for the positive feedback — we are glad the session was helpful.';
+  else if (r > 0 && r < 3) thanks = 'Thank you for your honest feedback. We take it seriously and will use it to improve the next lesson.';
+  const excerpt = c ? `\n\nYou mentioned: "${c.length > 320 ? `${c.slice(0, 320)}…` : c}"` : '';
+  return `${greet}\n\n${thanks}${excerpt}\n\nIf you would like anything adjusted for the next class (pace, topics, or format), reply here and we will align with your tutor.\n\n— PrepSkul`;
+}
+
 const btnBase =
   'inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-semibold rounded-md border shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed';
 
 export default function OfflineOpsDetailClient({
   record,
   sessions,
+  dailyReminders,
   profiles,
 }: {
   record: any;
   sessions: SessionInsight[];
+  dailyReminders: Array<{
+    id: string;
+    user_id: string;
+    title: string | null;
+    message: string | null;
+    scheduled_for: string | null;
+    status: string | null;
+    related_id: string | null;
+  }>;
   profiles: {
     primary: ProfileLite;
     learner: ProfileLite;
@@ -98,9 +142,12 @@ export default function OfflineOpsDetailClient({
 
   const stats = useMemo(() => {
     const total = sessionState.length;
-    const completed = sessionState.filter((s) => (s.status || '').toLowerCase() === 'completed').length;
+    const evaluated = sessionState.filter((s) =>
+      ['evaluated', 'completed'].includes((s.status || '').toLowerCase())
+    ).length;
+    const awaitingAdmin = sessionState.filter((s) => (s.status || '').toLowerCase() === 'pending_admin_review').length;
     const withFeedback = sessionState.filter((s) => !!s.learnerFeedback).length;
-    return { total, completed, withFeedback };
+    return { total, evaluated, awaitingAdmin, withFeedback };
   }, [sessionState]);
 
   const setBusy = (sessionId: string, key: string | null) => {
@@ -160,9 +207,31 @@ export default function OfflineOpsDetailClient({
             : s
         )
       );
-      setActionMsg(attended ? 'Session marked attended. Tutor and family were emailed (if addresses are on file).' : 'Session marked not attended. Ops team was notified.');
+      setActionMsg(
+        attended
+          ? 'Session marked as evaluated (admin-reviewed). Tutor and family were emailed when addresses are on file.'
+          : 'Recorded as not attended. Ops team was notified.'
+      );
+      router.refresh();
     } catch (e: any) {
       setActionMsg(e?.message || 'Attendance update failed');
+    } finally {
+      setBusy(sessionId, null);
+    }
+  };
+
+  const remindNow = async (sessionId: string) => {
+    setActionMsg('');
+    setBusy(sessionId, 'remind-now');
+    try {
+      const res = await fetch(`/api/admin/sessions/${sessionId}/send-reminder-now`, {
+        method: 'POST',
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Failed to send reminder');
+      setActionMsg(`Reminder sent now to: ${(json.sentTo || []).join(', ') || 'available session parties'}.`);
+    } catch (e: any) {
+      setActionMsg(e?.message || 'Could not send reminder');
     } finally {
       setBusy(sessionId, null);
     }
@@ -242,11 +311,8 @@ export default function OfflineOpsDetailClient({
     }
   };
 
-  const learnerEmailNote =
-    profiles.learner?.email?.includes('offline.learner.') || profiles.learner?.email?.includes('@account.prepskul.com');
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       {(!record.offline_run_id && !record.primary_user_id && sessionState.length === 0) && (
         <div className="border border-amber-200 bg-amber-50 text-amber-900 text-sm p-3 rounded-md">
           This record has no platform linkage yet (older offline row). Apply the SQL upgrade in{' '}
@@ -254,10 +320,11 @@ export default function OfflineOpsDetailClient({
           offline record” so runs link to users and sessions, or backfill IDs manually.
         </div>
       )}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap border-b border-[#1B2C4F]/15 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Offline Operation Detail</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#4A6FBF]">Offline operations</p>
+          <h1 className="text-2xl font-bold text-[#1B2C4F] mt-1">Operation detail</h1>
+          <p className="text-sm text-slate-600 mt-1">
             {record.customer_name} • {record.customer_role}
           </p>
         </div>
@@ -269,29 +336,36 @@ export default function OfflineOpsDetailClient({
           >
             Delete record
           </button>
-          <Link href="/admin/offline-ops" className="text-sm text-[#1B2C4F] font-medium hover:underline px-2 py-2">
+          <Link
+            href="/admin/offline-ops"
+            className="text-sm font-semibold px-4 py-2 rounded-md bg-[#1B2C4F] text-white hover:bg-[#15243d] shadow-sm"
+          >
             Back to list
           </Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-gray-200 p-4 rounded-md shadow-sm">
-          <p className="text-xs text-gray-500">Total sessions</p>
-          <p className="text-2xl font-bold">{stats.total}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-white border border-[#1B2C4F]/15 p-4 rounded-lg shadow-sm">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total sessions</p>
+          <p className="text-2xl font-bold text-[#1B2C4F]">{stats.total}</p>
         </div>
-        <div className="bg-white border border-gray-200 p-4 rounded-md shadow-sm">
-          <p className="text-xs text-gray-500">Completed sessions</p>
-          <p className="text-2xl font-bold text-green-700">{stats.completed}</p>
+        <div className="bg-white border border-[#1B2C4F]/15 p-4 rounded-lg shadow-sm">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Evaluated by admin</p>
+          <p className="text-2xl font-bold text-emerald-700">{stats.evaluated}</p>
         </div>
-        <div className="bg-white border border-gray-200 p-4 rounded-md shadow-sm">
-          <p className="text-xs text-gray-500">Learner feedback submitted</p>
-          <p className="text-2xl font-bold text-indigo-700">{stats.withFeedback}</p>
+        <div className="bg-white border border-[#1B2C4F]/15 p-4 rounded-lg shadow-sm">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Awaiting admin review</p>
+          <p className="text-2xl font-bold text-amber-700">{stats.awaitingAdmin}</p>
+        </div>
+        <div className="bg-white border border-[#1B2C4F]/15 p-4 rounded-lg shadow-sm">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Learner feedback in</p>
+          <p className="text-2xl font-bold text-[#4A6FBF]">{stats.withFeedback}</p>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 p-4 rounded-md shadow-sm">
-        <h2 className="font-semibold text-gray-900 mb-3">People & profile context</h2>
+      <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
+        <h2 className="font-semibold text-[#1B2C4F] mb-3 text-lg border-l-4 border-[#1B2C4F] pl-3">People & profile context</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <div>
             <p className="font-medium text-gray-800">Primary contact</p>
@@ -302,12 +376,6 @@ export default function OfflineOpsDetailClient({
           <div>
             <p className="font-medium text-gray-800">Learner</p>
             <p>{profiles.learner?.full_name || '—'}</p>
-            <p className="text-gray-500 break-all">{profiles.learner?.email || '—'}</p>
-            {learnerEmailNote && (
-              <p className="text-xs text-amber-800 mt-1">
-                System learner login email — family contact is the parent fields above. Share portal links with the parent.
-              </p>
-            )}
           </div>
           <div>
             <p className="font-medium text-gray-800">Tutor</p>
@@ -317,8 +385,8 @@ export default function OfflineOpsDetailClient({
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 p-4 space-y-3 rounded-md shadow-sm">
-        <h2 className="font-semibold text-gray-900">Tracking, payments & balances</h2>
+      <div className="bg-white border border-[#1B2C4F]/15 p-5 space-y-3 rounded-lg shadow-sm">
+        <h2 className="font-semibold text-[#1B2C4F] text-lg border-l-4 border-[#1B2C4F] pl-3">Tracking, payments & balances</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
           <label className="space-y-1">
             <span className="text-gray-600">Onboarding stage</span>
@@ -425,8 +493,30 @@ export default function OfflineOpsDetailClient({
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 p-4 rounded-md shadow-sm">
-        <h2 className="font-semibold text-gray-900 mb-3">Scheduled sessions</h2>
+      <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
+        <h2 className="font-semibold text-[#1B2C4F] mb-3 text-lg border-l-4 border-[#1B2C4F] pl-3">Today&apos;s reminder schedule</h2>
+        {dailyReminders.length === 0 ? (
+          <p className="text-sm text-gray-600">No session reminders scheduled for today.</p>
+        ) : (
+          <div className="space-y-2 text-sm">
+            {dailyReminders.map((r) => (
+              <div key={r.id} className="border border-gray-200 rounded-md p-3 bg-gray-50 flex flex-wrap items-center gap-2">
+                <code className="text-xs bg-white border px-1 py-0.5 rounded">{String(r.related_id || '').slice(0, 8)}…</code>
+                <span className="text-gray-800">{r.title || 'Session reminder'}</span>
+                <span className="text-gray-600">{formatDate(r.scheduled_for)}</span>
+                <span className="text-xs uppercase bg-white border px-2 py-0.5 rounded">{(r.status || 'pending').toLowerCase()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
+        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Sessions</h2>
+        <p className="text-sm text-slate-600 mb-4 pl-3 ml-1">
+          Tutor or learner submissions move the session to <strong>awaiting admin review</strong>. When you confirm attendance here, status becomes{' '}
+          <strong>evaluated</strong> (admin-reviewed).
+        </p>
         {sessionState.length === 0 ? (
           <p className="text-sm text-gray-600">No sessions found for this offline operation yet.</p>
         ) : (
@@ -438,57 +528,72 @@ export default function OfflineOpsDetailClient({
               const lf = s.learnerFeedback;
               const rf = getReplyDefaults(s.id);
               return (
-                <div key={s.id} className="border border-gray-200 p-4 rounded-md bg-gray-50/50 space-y-3">
+                <div
+                  key={s.id}
+                  className="border border-[#1B2C4F]/15 p-4 rounded-lg bg-gradient-to-br from-slate-50/80 to-white space-y-3 shadow-sm"
+                >
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-gray-900">Session</p>
-                    <code className="text-xs bg-white border px-1.5 py-0.5 rounded">{s.id.slice(0, 8)}…</code>
-                    <span className="text-xs font-semibold uppercase tracking-wide bg-white border px-2 py-0.5 rounded">
-                      {(s.status || 'unknown').toLowerCase()}
+                    <p className="font-semibold text-[#1B2C4F]">Session</p>
+                    <code className="text-xs bg-white border border-[#1B2C4F]/15 px-1.5 py-0.5 rounded">{s.id.slice(0, 8)}…</code>
+                    <span
+                      className={`text-xs font-semibold tracking-wide border px-2 py-0.5 rounded-md capitalize ${statusBadgeClass(s.status)}`}
+                    >
+                      {humanSessionStatus(s.status)}
                     </span>
-                    <span className="text-sm text-gray-700">{s.subject || 'Subject n/a'}</span>
-                    <span className="text-xs text-gray-500">{s.duration_minutes || 0} min</span>
-                    <span className="text-xs text-gray-600">{formatDate(`${s.scheduled_date || ''}T${s.scheduled_time || '00:00:00'}`)}</span>
+                    <span className="text-sm text-slate-800">{s.subject || 'Subject n/a'}</span>
+                    <span className="text-xs text-slate-500">{s.duration_minutes || 0} min</span>
+                    <span className="text-xs text-slate-600">{formatDate(`${s.scheduled_date || ''}T${s.scheduled_time || '00:00:00'}`)}</span>
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-3 text-sm">
-                    <div className="bg-white border rounded-md p-3 space-y-1">
-                      <p className="font-medium text-gray-800">Tutor report</p>
-                      {tr ? (
-                        <>
-                          <p className="text-gray-700">Submitted: {formatDate(tr.created_at)}</p>
-                          <p className="text-gray-700">Reported attended: {tr.attended ? 'yes' : 'no'}</p>
-                          {tr.topics_covered && (
-                            <p>
-                              <span className="text-gray-500">Topics:</span> {tr.topics_covered}
-                            </p>
-                          )}
-                          {tr.learner_engagement && (
-                            <p>
-                              <span className="text-gray-500">Engagement:</span> {tr.learner_engagement}
-                            </p>
-                          )}
-                          {tr.issues && (
-                            <p>
-                              <span className="text-gray-500">Issues:</span> {tr.issues}
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-gray-500">Not submitted yet.</p>
-                      )}
-                    </div>
-                    <div className="bg-white border rounded-md p-3 space-y-1">
-                      <p className="font-medium text-gray-800">Learner / parent feedback</p>
-                      {lf ? (
-                        <>
-                          <p className="text-gray-700">{formatDate(lf.created_at)}</p>
-                          <p className="text-gray-700">Rating: {lf.rating ?? '—'} / 5</p>
-                          <p className="text-gray-800 whitespace-pre-wrap">{lf.comment}</p>
-                        </>
-                      ) : (
-                        <p className="text-gray-500">Not submitted yet.</p>
-                      )}
-                    </div>
+                    <details className="group rounded-lg border border-[#1B2C4F]/10 bg-white open:shadow-md">
+                      <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-[#1B2C4F] hover:bg-slate-50/80 rounded-lg">
+                        <span>Tutor report {tr ? '· received' : '· pending'}</span>
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 text-[#4A6FBF]" />
+                      </summary>
+                      <div className="px-4 pb-4 pt-0 border-t border-[#1B2C4F]/10 space-y-2 text-slate-700">
+                        {tr ? (
+                          <>
+                            <p>Submitted: {formatDate(tr.created_at)}</p>
+                            <p>Reported attended: {tr.attended ? 'yes' : 'no'}</p>
+                            {tr.topics_covered && (
+                              <p>
+                                <span className="text-slate-500">Topics:</span> {tr.topics_covered}
+                              </p>
+                            )}
+                            {tr.learner_engagement && (
+                              <p>
+                                <span className="text-slate-500">Engagement:</span> {tr.learner_engagement}
+                              </p>
+                            )}
+                            {tr.issues && (
+                              <p>
+                                <span className="text-slate-500">Issues:</span> {tr.issues}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-slate-500">Not submitted yet.</p>
+                        )}
+                      </div>
+                    </details>
+                    <details className="group rounded-lg border border-[#1B2C4F]/10 bg-white open:shadow-md">
+                      <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-4 py-3 font-semibold text-[#1B2C4F] hover:bg-slate-50/80 rounded-lg">
+                        <span>Learner / parent feedback {lf ? '· received' : '· pending'}</span>
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180 text-[#4A6FBF]" />
+                      </summary>
+                      <div className="px-4 pb-4 pt-0 border-t border-[#1B2C4F]/10 space-y-2 text-slate-700">
+                        {lf ? (
+                          <>
+                            <p>{formatDate(lf.created_at)}</p>
+                            <p>Rating: {lf.rating ?? '—'} / 5</p>
+                            <p className="whitespace-pre-wrap">{lf.comment}</p>
+                          </>
+                        ) : (
+                          <p className="text-slate-500">Not submitted yet.</p>
+                        )}
+                      </div>
+                    </details>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -496,17 +601,17 @@ export default function OfflineOpsDetailClient({
                       type="button"
                       disabled={!!busy}
                       onClick={() => markAttendance(s.id, true)}
-                      className={`${btnBase} border-green-300 bg-green-600 text-white hover:bg-green-700`}
+                      className={`${btnBase} border-emerald-700/30 bg-[#1B2C4F] text-white hover:bg-[#15243d]`}
                     >
-                      {busy === 'mark-attended' ? 'Updating…' : 'Mark attended'}
+                      {busy === 'mark-attended' ? 'Saving…' : 'Confirm attended · mark evaluated'}
                     </button>
                     <button
                       type="button"
                       disabled={!!busy}
                       onClick={() => markAttendance(s.id, false)}
-                      className={`${btnBase} border-amber-300 bg-amber-500 text-white hover:bg-amber-600`}
+                      className={`${btnBase} border-rose-300 bg-white text-rose-800 hover:bg-rose-50`}
                     >
-                      {busy === 'mark-not-attended' ? 'Updating…' : 'Mark not attended'}
+                      {busy === 'mark-not-attended' ? 'Saving…' : 'Record not attended'}
                     </button>
                     <button
                       type="button"
@@ -516,10 +621,18 @@ export default function OfflineOpsDetailClient({
                     >
                       {busy === 'links' ? 'Generating…' : 'Generate secure links'}
                     </button>
+                    <button
+                      type="button"
+                      disabled={!!busy}
+                      onClick={() => remindNow(s.id)}
+                      className={`${btnBase} border-blue-300 bg-blue-600 text-white hover:bg-blue-700`}
+                    >
+                      {busy === 'remind-now' ? 'Sending…' : 'Send reminder now'}
+                    </button>
                   </div>
 
-                  <div className="border-t border-gray-200 pt-3 space-y-2">
-                    <p className="text-sm font-medium text-gray-800">Email follow-up (also logged to ops)</p>
+                  <div className="border-t border-[#1B2C4F]/10 pt-3 space-y-2">
+                    <p className="text-sm font-semibold text-[#1B2C4F]">Email follow-up (logged to ops)</p>
                     <div className="flex flex-wrap gap-2 items-end">
                       <div className="w-full sm:w-40">
                         <Select value={rf.target} onValueChange={(v) => setReplyField(s.id, { target: v as 'tutor' | 'learner' })}>
@@ -539,9 +652,30 @@ export default function OfflineOpsDetailClient({
                         onChange={(e) => setReplyField(s.id, { subject: e.target.value })}
                       />
                     </div>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <button
+                        type="button"
+                        className="text-xs font-semibold px-3 py-1.5 rounded-md border border-[#1B2C4F]/30 bg-[#1B2C4F]/5 text-[#1B2C4F] hover:bg-[#1B2C4F]/10 disabled:opacity-40"
+                        disabled={!lf}
+                        onClick={() => {
+                          if (!lf) return;
+                          const draft = suggestedLearnerReply(lf, profiles.learner?.full_name || profiles.primary?.full_name || null);
+                          setReplyField(s.id, {
+                            target: 'learner',
+                            subject: 'Follow-up from PrepSkul',
+                            message: draft,
+                          });
+                        }}
+                      >
+                        Draft reply from learner feedback
+                      </button>
+                      {!lf && (
+                        <span className="text-xs text-slate-500">Available once learner feedback is in.</span>
+                      )}
+                    </div>
                     <Textarea
-                      className="border-gray-300 min-h-[100px]"
-                      placeholder="Write your message. It will be emailed to the selected recipient and a WhatsApp link will be offered if a phone number is on file."
+                      className="border-[#1B2C4F]/20 min-h-[120px] focus-visible:ring-[#1B2C4F]"
+                      placeholder="Edit your message. It will be emailed to the selected recipient; WhatsApp link is offered when a phone number is on file."
                       value={rf.message}
                       onChange={(e) => setReplyField(s.id, { message: e.target.value })}
                     />
@@ -561,9 +695,23 @@ export default function OfflineOpsDetailClient({
                       <p>
                         <span className="font-medium">Tutor report URL:</span> {links.tutor}
                       </p>
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
+                        onClick={() => links.tutor && navigator.clipboard.writeText(links.tutor)}
+                      >
+                        Copy tutor link
+                      </button>
                       <p>
                         <span className="font-medium">Learner feedback URL:</span> {links.learner}
                       </p>
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
+                        onClick={() => links.learner && navigator.clipboard.writeText(links.learner)}
+                      >
+                        Copy learner link
+                      </button>
                     </div>
                   )}
                 </div>

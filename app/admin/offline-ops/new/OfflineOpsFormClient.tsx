@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,6 +86,20 @@ export default function OfflineOpsFormClient() {
       notes: '',
     },
   });
+  const paymentStatus = watch('paymentStatus');
+  const packageTotalAmount = watch('packageTotalAmount');
+
+  useEffect(() => {
+    if (paymentStatus === 'paid') {
+      // Fully paid: keep due amount as source of truth, amount paid mirrors it in payload.
+      setValue('amountPaid', packageTotalAmount || '0');
+      return;
+    }
+    if (paymentStatus === 'unpaid') {
+      // Unpaid keeps amount paid locked at zero.
+      setValue('amountPaid', '0');
+    }
+  }, [packageTotalAmount, paymentStatus, setValue]);
 
   const onSubmit = async (data: FormData) => {
     setSubmitError(null);
@@ -101,6 +115,14 @@ export default function OfflineOpsFormClient() {
         .split(',')
         .map((x) => x.trim().toLowerCase())
         .filter(Boolean);
+
+      const normalizedPackageTotal = Number(data.packageTotalAmount || 0);
+      const normalizedAmountPaid =
+        data.paymentStatus === 'paid'
+          ? normalizedPackageTotal
+          : data.paymentStatus === 'unpaid'
+            ? 0
+            : Number(data.amountPaid || 0);
 
       const payload = {
         agentName: data.agentName,
@@ -135,7 +157,7 @@ export default function OfflineOpsFormClient() {
         tracking: {
           paymentStatus: data.paymentStatus,
           paymentEnvironment: data.paymentEnvironment,
-          amountPaid: Number(data.amountPaid || 0),
+          amountPaid: normalizedAmountPaid,
           packageTotalAmount: data.packageTotalAmount?.trim()
             ? Number(data.packageTotalAmount)
             : undefined,
@@ -319,12 +341,20 @@ export default function OfflineOpsFormClient() {
                 </SelectContent>
               </Select>
             </div>
+            {paymentStatus === 'partial' && (
+              <div>
+                <Label htmlFor="amountPaid">Amount paid (XAF)</Label>
+                <Input id="amountPaid" type="number" min={0} step="0.01" {...register('amountPaid')} className="mt-1 border-gray-300" />
+              </div>
+            )}
+            {paymentStatus === 'unpaid' && (
+              <div>
+                <Label htmlFor="amountPaidReadonly">Amount paid (XAF)</Label>
+                <Input id="amountPaidReadonly" value="0" disabled className="mt-1 border-gray-300 bg-gray-100 text-gray-500" />
+              </div>
+            )}
             <div>
-              <Label htmlFor="amountPaid">Amount paid (XAF)</Label>
-              <Input id="amountPaid" type="number" min={0} step="0.01" {...register('amountPaid')} className="mt-1 border-gray-300" />
-            </div>
-            <div>
-              <Label htmlFor="packageTotalAmount">Package / total due (XAF)</Label>
+              <Label htmlFor="packageTotalAmount">Total due amount (XAF)</Label>
               <Input
                 id="packageTotalAmount"
                 type="number"
@@ -332,7 +362,7 @@ export default function OfflineOpsFormClient() {
                 step="0.01"
                 {...register('packageTotalAmount')}
                 className="mt-1 border-gray-300"
-                placeholder="Optional — for partial/unpaid balance tracking"
+                placeholder={paymentStatus === 'paid' ? 'Required for paid records' : 'Total invoice amount'}
               />
             </div>
             <div>

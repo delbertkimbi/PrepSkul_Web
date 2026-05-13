@@ -13,7 +13,7 @@ const schema = z.object({
 });
 
 const LEARNER_THANK_YOU =
-  'Thank you for your feedback. Our team will review it carefully to keep improving your learning experience with PrepSkul.';
+  'Thank you for your feedback. We will review it to make your learning experience the best.';
 
 export async function POST(request: NextRequest) {
   try {

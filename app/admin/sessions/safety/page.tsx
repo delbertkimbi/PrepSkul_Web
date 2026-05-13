@@ -36,7 +36,9 @@ export default async function SafetyPage() {
 
   const onsiteScheduled = (todaySessions || []).filter((s: { location?: string }) => s.location === 'onsite').length;
   const onsiteStarted = (todaySessions || []).filter((s: { status: string; location?: string }) => s.location === 'onsite' && s.status === 'in_progress').length;
-  const onsiteCompleted = (todaySessions || []).filter((s: { status: string; location?: string }) => s.location === 'onsite' && s.status === 'completed').length;
+  const onsiteCompleted = (todaySessions || []).filter((s: { status: string; location?: string }) =>
+    s.location === 'onsite' && ['completed', 'evaluated'].includes(s.status)
+  ).length;
 
   // Safety incidents (new, by severity)
   const { data: incidents } = await supabase
