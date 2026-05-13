@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
@@ -138,6 +138,21 @@ export default function OfflineOpsDetailClient({
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [reminderSentLocal, setReminderSentLocal] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    setForm((f) => {
+      if (f.payment_status === 'paid') {
+        const next = Number(f.expected_total_amount || 0);
+        if (f.amount_paid === next) return f;
+        return { ...f, amount_paid: next };
+      }
+      if (f.payment_status === 'unpaid') {
+        if (f.amount_paid === 0) return f;
+        return { ...f, amount_paid: 0 };
+      }
+      return f;
+    });
+  }, [form.payment_status, form.expected_total_amount]);
+
   const lastReminderSentAt = (sessionId: string) =>
     reminderSentLocal[sessionId] || lastManualReminderAtBySession[sessionId] || null;
 
@@ -169,11 +184,19 @@ export default function OfflineOpsDetailClient({
     setSaving(true);
     setSaveMessage('');
     try {
+      const normalizedAmountPaid =
+        form.payment_status === 'paid'
+          ? Number(form.expected_total_amount || 0)
+          : form.payment_status === 'unpaid'
+            ? 0
+            : Number(form.amount_paid || 0);
+
       const res = await fetch(`/api/admin/offline-ops/${record.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          amount_paid: normalizedAmountPaid,
           next_followup_at: form.next_followup_at ? new Date(form.next_followup_at).toISOString() : null,
         }),
       });
@@ -414,7 +437,15 @@ export default function OfflineOpsDetailClient({
             <select
               className="w-full border border-gray-300 p-2 rounded-md"
               value={form.payment_status}
-              onChange={(e) => setForm((f) => ({ ...f, payment_status: e.target.value }))}
+              onChange={(e) => {
+                const payment_status = e.target.value;
+                setForm((f) => {
+                  const next = { ...f, payment_status };
+                  if (payment_status === 'unpaid') return { ...next, amount_paid: 0 };
+                  if (payment_status === 'paid') return { ...next, amount_paid: Number(f.expected_total_amount || 0) };
+                  return next;
+                });
+              }}
             >
               {['unpaid', 'partial', 'paid', 'refunded'].map((s) => (
                 <option key={s} value={s}>
@@ -437,24 +468,40 @@ export default function OfflineOpsDetailClient({
               ))}
             </select>
           </label>
+          {(form.payment_status === 'partial' || form.payment_status === 'refunded') && (
+            <label className="space-y-1">
+              <span className="text-gray-600">Amount paid (XAF)</span>
+              <input
+                type="number"
+                min={0}
+                className="w-full border border-gray-300 p-2 rounded-md"
+                value={form.amount_paid}
+                onChange={(e) => setForm((f) => ({ ...f, amount_paid: Number(e.target.value || 0) }))}
+              />
+            </label>
+          )}
+          {form.payment_status === 'unpaid' && (
+            <label className="space-y-1">
+              <span className="text-gray-600">Amount paid (XAF)</span>
+              <input
+                type="number"
+                value={0}
+                disabled
+                className="w-full border border-gray-300 p-2 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+              />
+            </label>
+          )}
           <label className="space-y-1">
-            <span className="text-gray-600">Amount paid (XAF)</span>
-            <input
-              type="number"
-              min={0}
-              className="w-full border border-gray-300 p-2 rounded-md"
-              value={form.amount_paid}
-              onChange={(e) => setForm((f) => ({ ...f, amount_paid: Number(e.target.value || 0) }))}
-            />
-          </label>
-          <label className="space-y-1">
-            <span className="text-gray-600">Expected total (XAF)</span>
+            <span className="text-gray-600">
+              {form.payment_status === 'paid' ? 'Total due amount (XAF)' : 'Expected total (XAF)'}
+            </span>
             <input
               type="number"
               min={0}
               className="w-full border border-gray-300 p-2 rounded-md"
               value={form.expected_total_amount}
               onChange={(e) => setForm((f) => ({ ...f, expected_total_amount: Number(e.target.value || 0) }))}
+              placeholder={form.payment_status === 'paid' ? 'Full package / amount due' : 'Total invoice amount'}
             />
           </label>
           <label className="space-y-1">
