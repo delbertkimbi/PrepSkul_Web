@@ -50,3 +50,24 @@ export async function PATCH(
     return NextResponse.json({ error: error?.message || 'Failed to update offline operation' }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const user = await getServerSession();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const adminOk = await isAdmin(user.id);
+    if (!adminOk) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const { id } = await params;
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from('offline_operations').delete().eq('id', id);
+    if (error) throw error;
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('offline-op delete error', error);
+    return NextResponse.json({ error: error?.message || 'Failed to delete offline operation' }, { status: 500 });
+  }
+}

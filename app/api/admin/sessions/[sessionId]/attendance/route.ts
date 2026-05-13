@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { notifyPartiesAfterAdminMarkedAttendance } from '@/lib/offline-portal-notifications';
 
 const schema = z.object({
   attended: z.boolean(),
@@ -29,7 +30,7 @@ export async function PATCH(
 
     const { data: session, error: sErr } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id')
+      .select('id, tutor_id, learner_id, parent_id, scheduled_date, scheduled_time, subject')
       .eq('id', sessionId)
       .maybeSingle();
     if (sErr || !session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -51,11 +52,20 @@ export async function PATCH(
       { onConflict: 'individual_session_id' }
     );
 
+    const mail = await notifyPartiesAfterAdminMarkedAttendance({
+      sessionId,
+      attended,
+      scheduledDate: session.scheduled_date,
+      scheduledTime: session.scheduled_time,
+      subject: session.subject,
+    });
+    const emailsSent = [...(mail.recipientEmails || []), ...(mail.opsEmails || [])];
+
     await supabase.from('admin_operational_events').insert({
       event_type: 'admin_marked_session_attendance',
       subject: `Admin marked attendance for session ${sessionId}`,
       payload: { session_id: sessionId, attended, status },
-      emails_sent: [],
+      emails_sent: emailsSent,
     });
 
     return NextResponse.json({ success: true, status, attended });

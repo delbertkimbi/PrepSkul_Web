@@ -118,7 +118,7 @@ export default async function OfflineOperationDetailPage({
     sessionIds.length
       ? supabase
           .from('session_tutor_completion_reports')
-          .select('individual_session_id, attended, completed_at, created_at')
+          .select('individual_session_id, attended, completed_at, created_at, topics_covered, learner_engagement, issues')
           .in('individual_session_id', sessionIds)
       : Promise.resolve({ data: [] as any[] }),
     sessionIds.length

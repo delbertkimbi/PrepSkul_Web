@@ -20,7 +20,8 @@ const payloadSchema = z.object({
   child: z
     .object({
       fullName: z.string().min(2),
-      email: z.string().email(),
+      /** Legacy: optional; if omitted, server assigns a unique system learner email. */
+      email: z.string().email().optional(),
       phone: z.string().optional(),
     })
     .optional(),

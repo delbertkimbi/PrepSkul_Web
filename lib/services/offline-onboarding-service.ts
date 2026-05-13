@@ -280,13 +280,35 @@ async function createAuthUserWithProfile(
   return { userId: data.user.id, isNew: true };
 }
 
+/** Primary contact email must not already exist on any profile (avoids wrong identity merges). */
+async function assertPrimaryEmailAvailableForOfflineOnboarding(admin: SupabaseClient, email: string) {
+  const normalized = email.trim().toLowerCase();
+  const { data: exact } = await admin.from('profiles').select('id, email').eq('email', normalized).maybeSingle();
+  if (exact) {
+    throw new Error(
+      'This email is already registered on PrepSkul. Each offline parent/student contact must use a unique email that is not already used by another account.'
+    );
+  }
+  const { data: loose } = await admin.from('profiles').select('id, email').ilike('email', normalized);
+  const dup = (loose || []).find((r: any) => r.email && String(r.email).trim().toLowerCase() === normalized);
+  if (dup) {
+    throw new Error(
+      'This email is already registered on PrepSkul. Each offline parent/student contact must use a unique email that is not already used by another account.'
+    );
+  }
+}
+
+function generatedOfflineLearnerEmail() {
+  return `offline.learner.${crypto.randomBytes(16).toString('hex')}@account.prepskul.com`;
+}
+
 export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   idempotencyKey?: string;
   adminUserId: string;
   agentName: string;
   sourceChannel: string;
   primary: { fullName: string; email: string; phone?: string; role: 'parent' | 'student' };
-  child?: { fullName: string; email: string; phone?: string } | null;
+  child?: { fullName: string; email?: string; phone?: string } | null;
   tutor: { tutorUserId?: string | null; tutorEmail?: string | null };
   schedule: OfflineScheduleInput;
   notes: string;
@@ -311,6 +333,8 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     }
   }
 
+  await assertPrimaryEmailAvailableForOfflineOnboarding(admin, params.primary.email);
+
   const tutorResolved = await resolveTutorUserId(admin, params.tutor);
 
   let primaryUserId: string;
@@ -333,13 +357,19 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
       userType: 'parent',
     });
     primaryUserId = parent.userId;
-    if (!params.child?.email) {
-      throw new Error('For parent accounts, provide learner name and email (child learner account).');
+    if (!params.child?.fullName?.trim()) {
+      throw new Error('For parent accounts, provide the learner full name.');
+    }
+    const learnerEmail = params.child.email?.trim()
+      ? params.child.email.trim().toLowerCase()
+      : generatedOfflineLearnerEmail();
+    if (params.child.email?.trim()) {
+      await assertPrimaryEmailAvailableForOfflineOnboarding(admin, learnerEmail);
     }
     const child = await createAuthUserWithProfile(admin, {
-      email: params.child.email,
-      fullName: params.child.fullName,
-      phone: params.child.phone,
+      email: learnerEmail,
+      fullName: params.child.fullName.trim(),
+      phone: params.child.phone?.trim() || undefined,
       userType: 'learner',
     });
     learnerUserId = child.userId;
