@@ -159,6 +159,22 @@ export default async function OfflineOperationDetailPage({
       return da.localeCompare(db);
     });
 
+  const sessionIdSet = new Set(sessionIds);
+  const lastManualReminderAtBySession: Record<string, string> = {};
+  if (sessionIds.length) {
+    const { data: reminderEvents } = await supabase
+      .from('admin_operational_events')
+      .select('payload, created_at')
+      .eq('event_type', 'admin_triggered_session_reminder')
+      .order('created_at', { ascending: false })
+      .limit(400);
+    for (const row of reminderEvents || []) {
+      const sid = (row.payload as { session_id?: string } | null)?.session_id;
+      if (!sid || !sessionIdSet.has(sid) || lastManualReminderAtBySession[sid]) continue;
+      lastManualReminderAtBySession[sid] = row.created_at as string;
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <AdminNav />
@@ -167,6 +183,7 @@ export default async function OfflineOperationDetailPage({
           record={recordAny}
           sessions={sessionsWithInsights}
           dailyReminders={dailyReminders || []}
+          lastManualReminderAtBySession={lastManualReminderAtBySession}
           profiles={{
             primary: primaryUserId ? profileById.get(primaryUserId) || null : null,
             learner: learnerUserId ? profileById.get(learnerUserId) || null : null,

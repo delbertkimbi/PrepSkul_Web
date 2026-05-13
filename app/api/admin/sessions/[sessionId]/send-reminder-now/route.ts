@@ -33,7 +33,7 @@ export async function POST(
         admin_id: user.id,
         admin_name: adminName,
       },
-      emails_sent: [...(sent.sentTo || []), ...(sent.opsEmails || [])],
+      emails_sent: sent.sentTo || [],
     });
 
     return NextResponse.json({ success: true, sentTo: sent.sentTo || [] });

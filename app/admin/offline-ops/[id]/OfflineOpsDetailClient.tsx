@@ -95,6 +95,7 @@ export default function OfflineOpsDetailClient({
   record,
   sessions,
   dailyReminders,
+  lastManualReminderAtBySession,
   profiles,
 }: {
   record: any;
@@ -108,6 +109,7 @@ export default function OfflineOpsDetailClient({
     status: string | null;
     related_id: string | null;
   }>;
+  lastManualReminderAtBySession: Record<string, string>;
   profiles: {
     primary: ProfileLite;
     learner: ProfileLite;
@@ -134,6 +136,10 @@ export default function OfflineOpsDetailClient({
   const [replyBySession, setReplyBySession] = useState<Record<string, { target: 'tutor' | 'learner'; subject: string; message: string }>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [reminderSentLocal, setReminderSentLocal] = useState<Record<string, string>>({});
+
+  const lastReminderSentAt = (sessionId: string) =>
+    reminderSentLocal[sessionId] || lastManualReminderAtBySession[sessionId] || null;
 
   const balance = useMemo(() => {
     const total = Number(form.expected_total_amount || 0);
@@ -229,6 +235,7 @@ export default function OfflineOpsDetailClient({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to send reminder');
+      setReminderSentLocal((prev) => ({ ...prev, [sessionId]: new Date().toISOString() }));
       setActionMsg(`Reminder sent now to: ${(json.sentTo || []).join(', ') || 'available session parties'}.`);
     } catch (e: any) {
       setActionMsg(e?.message || 'Could not send reminder');
@@ -621,14 +628,21 @@ export default function OfflineOpsDetailClient({
                     >
                       {busy === 'links' ? 'Generating…' : 'Generate secure links'}
                     </button>
-                    <button
-                      type="button"
-                      disabled={!!busy}
-                      onClick={() => remindNow(s.id)}
-                      className={`${btnBase} border-blue-300 bg-blue-600 text-white hover:bg-blue-700`}
-                    >
-                      {busy === 'remind-now' ? 'Sending…' : 'Send reminder now'}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={!!busy}
+                        onClick={() => remindNow(s.id)}
+                        className={`${btnBase} border-[#4A6FBF] bg-[#1B2C4F] text-white hover:bg-[#15243d]`}
+                      >
+                        {busy === 'remind-now' ? 'Sending…' : 'Send reminder now'}
+                      </button>
+                      {lastReminderSentAt(s.id) && (
+                        <span className="text-[11px] text-slate-500 tabular-nums">
+                          Last sent {formatDate(lastReminderSentAt(s.id))}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="border-t border-[#1B2C4F]/10 pt-3 space-y-2">
@@ -659,7 +673,10 @@ export default function OfflineOpsDetailClient({
                         disabled={!lf}
                         onClick={() => {
                           if (!lf) return;
-                          const draft = suggestedLearnerReply(lf, profiles.learner?.full_name || profiles.primary?.full_name || null);
+                          const draft = suggestedLearnerReply(
+                            lf,
+                            profiles.primary?.full_name || profiles.learner?.full_name || null
+                          );
                           setReplyField(s.id, {
                             target: 'learner',
                             subject: 'Follow-up from PrepSkul',

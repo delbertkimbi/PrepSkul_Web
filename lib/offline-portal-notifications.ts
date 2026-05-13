@@ -16,6 +16,19 @@ function waLink(phoneDigits: string, text: string) {
   return `https://wa.me/${d}?text=${encodeURIComponent(text)}`;
 }
 
+/** Family-facing emails go to primary contact: parent when present, else learner (direct student uses their own email). */
+function familyNotifyProfile(
+  session: { parent_id?: string | null; learner_id?: string | null },
+  byId: Map<string, { id: string; full_name?: string | null; email?: string | null; phone_number?: string | null }>
+) {
+  if (session.parent_id) {
+    const p = byId.get(session.parent_id);
+    if (p) return p;
+  }
+  if (session.learner_id) return byId.get(session.learner_id) || null;
+  return null;
+}
+
 export async function notifyOpsLearnerFeedbackSubmitted(opts: {
   sessionId: string;
   rating: number;
@@ -83,9 +96,7 @@ export async function notifyPartiesAfterAdminMarkedAttendance(opts: {
   const byId = new Map((profiles || []).map((p: any) => [p.id, p]));
 
   const tutor = byId.get(session.tutor_id);
-  const learner = session.learner_id ? byId.get(session.learner_id) : null;
-  const parent = session.parent_id ? byId.get(session.parent_id) : null;
-  const familyRecipient = learner || parent;
+  const familyRecipient = familyNotifyProfile(session, byId);
 
   const when = [session.scheduled_date, session.scheduled_time].filter(Boolean).join(' ') || 'your session';
   const subjLine = session.subject || 'PrepSkul session';
@@ -144,7 +155,10 @@ export async function sendAdminFollowUpToParty(opts: {
     .maybeSingle();
   if (!session) return { ok: false as const, error: 'Session not found' };
 
-  const targetId = opts.target === 'tutor' ? session.tutor_id : session.learner_id || session.parent_id;
+  const targetId =
+    opts.target === 'tutor'
+      ? session.tutor_id
+      : session.parent_id || session.learner_id;
   if (!targetId) return { ok: false as const, error: 'Recipient not found for this session' };
 
   const { data: profile } = await supabase.from('profiles').select('id, full_name, email, phone_number').eq('id', targetId).maybeSingle();
@@ -159,12 +173,6 @@ export async function sendAdminFollowUpToParty(opts: {
   if (!send.success) return { ok: false as const, error: send.error || 'Email failed' };
 
   const wa = profile.phone_number ? waLink(profile.phone_number, opts.message) : null;
-  const opsHtml = `<p>Admin follow-up email sent for session <code>${escapeHtml(opts.sessionId)}</code> to <strong>${opts.target}</strong> (${escapeHtml(profile.email)}).</p>
-    <p><strong>Subject:</strong> ${escapeHtml(opts.subject)}</p>
-    <p><strong>Message:</strong></p><pre style="white-space:pre-wrap">${escapeHtml(opts.message)}</pre>
-    ${wa ? `<p><a href="${wa}">Open WhatsApp with this message</a> (recipient phone on file)</p>` : '<p>No phone on file for WhatsApp deep link.</p>'}`;
-
-  await sendOpsAlertEmail(`Admin follow-up (${opts.target}): ${opts.sessionId.slice(0, 8)}`, opsHtml);
 
   return { ok: true as const, email: profile.email, whatsappUrl: wa };
 }
@@ -189,9 +197,7 @@ export async function sendAdminTriggeredSessionReminder(opts: {
   const byId = new Map((profiles || []).map((p: any) => [p.id, p]));
 
   const tutor = byId.get(session.tutor_id);
-  const learner = session.learner_id ? byId.get(session.learner_id) : null;
-  const parent = session.parent_id ? byId.get(session.parent_id) : null;
-  const family = learner || parent;
+  const family = familyNotifyProfile(session, byId);
 
   const when = [session.scheduled_date, session.scheduled_time].filter(Boolean).join(' ') || 'scheduled time';
   const subjectName = session.subject || 'PrepSkul session';
@@ -210,23 +216,18 @@ export async function sendAdminTriggeredSessionReminder(opts: {
     const body = `<p>Hi ${escapeHtml(family.full_name || 'there')},</p>
       <p>PrepSkul admin is reminding you about your upcoming <strong>${escapeHtml(subjectName)}</strong> session at <strong>${escapeHtml(when)}</strong>.</p>
       <p>Please join on time. We wish you a great class.</p>`;
-    const r = await sendCustomEmail(family.email, family.full_name || 'Learner', `Class reminder: ${subjectName}`, body);
+    const r = await sendCustomEmail(
+      family.email,
+      family.full_name || 'PrepSkul family',
+      `Class reminder: ${subjectName}`,
+      body
+    );
     if (r.success) sentTo.push(family.email);
   }
-
-  const ops = await sendOpsAlertEmail(
-    `Admin triggered session reminder: ${opts.sessionId.slice(0, 8)}`,
-    `<p>Admin-triggered reminder was sent for session <code>${escapeHtml(opts.sessionId)}</code>.</p>
-    <ul>
-      <li>Admin: ${escapeHtml(opts.adminName || 'PrepSkul admin')}</li>
-      <li>Session: ${escapeHtml(subjectName)} at ${escapeHtml(when)}</li>
-      <li>Recipients: ${sentTo.length ? sentTo.map(escapeHtml).join(', ') : 'none'}</li>
-    </ul>`
-  );
 
   return {
     ok: true as const,
     sentTo,
-    opsEmails: ops.ok && ops.to ? [...ops.to] : [],
+    opsEmails: [] as string[],
   };
 }
