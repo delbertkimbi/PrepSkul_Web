@@ -1,8 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
-import { Search, User, Calendar, MessageCircle } from 'lucide-react';
+import { Search, User, Calendar, MessageCircle, Trash2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -65,10 +66,13 @@ function stageBadge(stage: OfflineOpsRecord['onboarding_stage']) {
 }
 
 export default function OfflineOpsListClient({ records }: Props) {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OfflineOpsRecord | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const filtered = useMemo(() => {
     let list = records;
@@ -93,6 +97,24 @@ export default function OfflineOpsListClient({ records }: Props) {
       converted: records.filter((r) => r.converted_to_platform).length,
     };
   }, [records]);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/admin/offline-ops/${deleteTarget.id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || 'Delete failed');
+      setDeleteTarget(null);
+      setExpandedId(null);
+      router.refresh();
+    } catch (e) {
+      console.error(e);
+      alert(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -200,19 +222,59 @@ export default function OfflineOpsListClient({ records }: Props) {
                     <p><span className="text-gray-500">Start date:</span> {formatDate(record.started_at)}</p>
                     <p><span className="text-gray-500">Next follow-up:</span> {formatDate(record.next_followup_at)}</p>
                     <p className="md:col-span-2"><span className="text-gray-500">Notes:</span> {record.notes}</p>
-                    <div className="md:col-span-2 pt-2">
+                    <div className="md:col-span-2 pt-2 flex flex-wrap gap-2">
                       <Link
                         href={`/admin/offline-ops/${record.id}`}
-                        className="inline-flex items-center px-3 py-2 text-sm bg-[#1B2C4F] text-white"
+                        className="inline-flex items-center px-4 py-2.5 text-sm font-semibold rounded-md bg-[#1B2C4F] text-white shadow-sm hover:bg-[#15243d] transition-colors"
                       >
                         Open full tracking page
                       </Link>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteTarget(record);
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-md border border-red-300 bg-white text-red-700 shadow-sm hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete record
+                      </button>
                     </div>
                   </div>
                 )}
               </div>
             );
           })}
+        </div>
+      )}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true">
+          <div className="bg-white max-w-md w-full border border-gray-200 rounded-lg shadow-xl p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">Delete offline record?</h3>
+            <p className="text-sm text-gray-600">
+              This removes the tracking row for <strong>{deleteTarget.customer_name}</strong> only. Platform users and
+              sessions already created are not deleted.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleteLoading}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="px-4 py-2 text-sm font-semibold rounded-md bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? 'Deleting…' : 'Yes, delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

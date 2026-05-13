@@ -27,8 +27,6 @@ const schema = z.object({
   primaryEmail: z.string().email(),
   primaryPhone: z.string().min(6),
   childFullName: z.string().optional(),
-  childEmail: z.string().optional(),
-  childPhone: z.string().optional(),
   tutorUserId: z.string().optional(),
   tutorEmail: z.string().optional(),
   subject: z.string().min(2),
@@ -70,8 +68,6 @@ export default function OfflineOpsFormClient() {
       primaryEmail: '',
       primaryPhone: '',
       childFullName: '',
-      childEmail: '',
-      childPhone: '',
       tutorUserId: '',
       tutorEmail: '',
       subject: '',
@@ -97,8 +93,8 @@ export default function OfflineOpsFormClient() {
       if (!data.tutorUserId && !data.tutorEmail) {
         throw new Error('Provide Tutor User ID or Tutor Email to match the learner.');
       }
-      if (data.primaryRole === 'parent' && (!data.childFullName || !data.childEmail)) {
-        throw new Error('For parent onboarding, learner name and learner email are required.');
+      if (data.primaryRole === 'parent' && !data.childFullName?.trim()) {
+        throw new Error('For parent onboarding, the learner full name is required.');
       }
 
       const weekDays = data.weekDaysCsv
@@ -119,8 +115,6 @@ export default function OfflineOpsFormClient() {
           data.primaryRole === 'parent'
             ? {
                 fullName: (data.childFullName || '').trim(),
-                email: (data.childEmail || '').trim(),
-                phone: (data.childPhone || '').trim(),
               }
             : null,
         tutor: {
@@ -229,20 +223,14 @@ export default function OfflineOpsFormClient() {
               <Input id="primaryPhone" {...register('primaryPhone')} className="mt-1 border-gray-300" />
             </div>
             {watch('primaryRole') === 'parent' && (
-              <>
-                <div>
-                  <Label htmlFor="childFullName">Learner full name *</Label>
-                  <Input id="childFullName" {...register('childFullName')} className="mt-1 border-gray-300" />
-                </div>
-                <div>
-                  <Label htmlFor="childEmail">Learner email *</Label>
-                  <Input id="childEmail" type="email" {...register('childEmail')} className="mt-1 border-gray-300" />
-                </div>
-                <div>
-                  <Label htmlFor="childPhone">Learner phone</Label>
-                  <Input id="childPhone" {...register('childPhone')} className="mt-1 border-gray-300" />
-                </div>
-              </>
+              <div>
+                <Label htmlFor="childFullName">Learner full name *</Label>
+                <Input id="childFullName" {...register('childFullName')} className="mt-1 border-gray-300" />
+                <p className="text-xs text-gray-500 mt-1">
+                  Contact email and WhatsApp for the family are taken from the primary parent fields above. A secure
+                  login email for the learner account is created automatically.
+                </p>
+              </div>
             )}
           </div>
         </section>

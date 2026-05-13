@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { markTokenUsed, verifyPortalToken } from '@/lib/services/session-portal-token';
+import { notifyOpsTutorSessionReportSubmitted } from '@/lib/offline-portal-notifications';
 
 export const runtime = 'nodejs';
 
@@ -46,7 +47,6 @@ export async function POST(request: NextRequest) {
 
     if (attended) {
       await supabase.from('individual_sessions').update({ status: 'completed' }).eq('id', session.id);
-      // Best-effort increment if column exists.
       const { data: tutorProfile } = await supabase
         .from('tutor_profiles')
         .select('id, total_sessions_completed')
@@ -58,11 +58,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const ops = await notifyOpsTutorSessionReportSubmitted({
+      sessionId: session.id,
+      tutorId: session.tutor_id,
+      attended,
+      topicsCovered,
+      learnerEngagement,
+      issues,
+    });
+    const emailsSent = ops.ok && 'to' in ops && ops.to ? ops.to : [];
+
     await supabase.from('admin_operational_events').insert({
       event_type: 'tutor_session_report_submitted',
       subject: `Tutor submitted report for session ${session.id}`,
       payload: { session_id: session.id, tutor_id: session.tutor_id, attended },
-      emails_sent: [],
+      emails_sent: emailsSent,
     });
 
     await markTokenUsed(verified.id);
@@ -72,4 +82,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Failed to submit session report' }, { status: 500 });
   }
 }
-
