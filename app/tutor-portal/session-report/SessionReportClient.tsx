@@ -125,10 +125,10 @@ export default function SessionReportClient() {
             <p className="text-sm text-gray-700 mt-2">
               Thank you. We will review your submission to keep the learning experience excellent.
             </p>
-            <div className="mt-5 flex justify-center gap-2">
+            <div className="mt-5 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3">
               <button
                 type="button"
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+                className="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
                 onClick={() => setShowSuccessPopup(false)}
               >
                 Close
@@ -137,9 +137,10 @@ export default function SessionReportClient() {
                 href="https://prepskul.com"
                 target="_blank"
                 rel="noreferrer"
-                className="px-4 py-2 rounded-md text-sm font-medium bg-[#1B2C4F] text-white hover:bg-[#15243d]"
+                className="inline-flex flex-col items-center justify-center gap-0.5 px-5 py-3 rounded-lg text-sm font-semibold bg-[#1B2C4F] text-white hover:bg-[#15243d] shadow-md transition-colors min-h-[3rem] sm:min-w-[14rem]"
               >
-                Learn more
+                <span className="leading-tight">Learn more about PrepSkul</span>
+                <span className="text-[11px] font-normal text-white/85">prepskul.com</span>
               </a>
             </div>
           </div>
