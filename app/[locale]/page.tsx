@@ -1,5 +1,6 @@
 "use client"
-
+import { PEAPShowcase } from "@/components/peap-showcase"
+import { getStartedUrl } from "@/lib/get-started-url"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Typewriter } from "@/components/typewriter"
@@ -57,7 +58,7 @@ export default function HomePage() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                 <Button size="lg" asChild className="w-full sm:w-auto text-base font-semibold h-12 px-8">
-                  <Link href={`/${locale}/contact`}>{t.home.hero.getStarted}</Link>
+                <Link href={getStartedUrl()}>{t.home.hero.getStarted}</Link>
                 </Button>
                 <Button
                   size="lg"
@@ -93,19 +94,19 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center space-y-2">
               <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={100} suffix="+" />
+                <AnimatedCounter end={600} suffix="+" />
               </div>
               <p className="text-sm text-muted-foreground font-medium">{t.home.stats.learnersGuided}</p>
             </div>
             <div className="text-center space-y-2">
               <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={50} suffix="+" />
+                <AnimatedCounter end={1000} suffix="+" />
               </div>
               <p className="text-sm text-muted-foreground font-medium">{t.home.stats.expertTutors}</p>
             </div>
             <div className="text-center space-y-2">
               <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={15} suffix="+" />
+                <AnimatedCounter end={130} suffix="+" />
               </div>
               <p className="text-sm text-muted-foreground font-medium">{t.home.stats.subjectsCovered}</p>
             </div>
@@ -285,6 +286,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      <PEAPShowcase locale={locale} />
 
       <TestimonialsSection />
 
