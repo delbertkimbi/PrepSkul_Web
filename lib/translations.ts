@@ -17,16 +17,16 @@ export const translations = {
     // Homepage
     home: {
       hero: {
-        title: "Find Your Perfect",
-        titleWords: ["Tutor", "Mentor", "Guide"],
-        subtitle: "Connect with experienced, qualified tutors across Cameroon for personalized learning. Whether online or at home, one-on-one or in groups, we help you achieve academic excellence.",
+        title: "Connect & Learn at the Right",
+        titleWords: ["Level", "Pace", "Stride"],
+        subtitle: "Find experienced, qualified tutors across Africa for personalized learning. Whether online or at home, one-on-one or in groups, we help you achieve academic excellence.",
         getStarted: "Get Started",
-        viewSubjects: "View Subjects"
+        viewSubjects: "View Programs"
       },
       stats: {
-        learnersGuided: "Learners Guided",
-        expertTutors: "Expert Tutors", 
-        subjectsCovered: "Subjects Covered",
+        learnersGuided: "Learners Reached",
+        expertTutors: "Sessions Covered", 
+        subjectsCovered: "Verified Tutors",
         citiesCovered: "Cities covered"
       },
       learningOptions: {
@@ -76,34 +76,34 @@ export const translations = {
     
     // Testimonials
     testimonials: {
-      title: "What Our Learners Say",
-      subtitle: "Success stories from our students and parents.",
+      title: "What PEAP Participants Say",
+      subtitle: "Success stories from students and parents who joined the PrepSkul Exam Accelerator Program.",
       items: [
         {
-          name: "Amina Njoya",
-          role: "Student, Form 5",
-          content: "PrepSkul changed my life! My math tutor helped me go from failing to getting an A. More than that, they believed in me when I didn't believe in myself.",
+          name: "Fongoh Raissa",
+          role: "Student, UpperSixth",
+          content: "I truly want to express my heartfelt gratitude for the class today. For months, I struggled to understand this topic despite many attempts, but your explanation brought a level of clarity I had never experienced before. Joining that session felt like a blessing to me. You made the concepts seem as simple as learning the letters of the alphabet. Honestly, your patience, the way you broke down the concepts, and the encouragement you gave us meant far more than I can fully express in words. I am sincerely grateful for the time and effort you invested in helping us understand. Thank you very much, sir. I truly appreciate it. May God bless you.",
           rating: 5,
           image: "/young-african-female-student-smiling.jpg"
         },
         {
           name: "Marie Fotso",
           role: "Parent",
-          content: "As a parent, I'm so grateful for PrepSkul. My son's confidence has grown tremendously, and her grades have improved across all his class 5 subjects. The tutors truly care.",
+          content: "As a parent, I'm so grateful for PrepSkul. My son's confidence has grown tremendously, and his grades have improved across all his class 5 subjects. The tutors truly care.",
           rating: 5,
           image: "/african-mother-professional.jpg"
         },
         {
           name: "Emmanuel Tabi",
           role: "Student, Upper Sixth",
-          content: "The exam preparation was incredible. My tutor gave me strategies that worked, and I passed my A-levels with flying colors. Now I'm heading to university!",
+          content: "The exam accelerator program was incredible. My tutor gave me strategies that worked, and I passed my A-levels with flying colors. Now I'm heading to university!",
           rating: 5,
           image: "/young-african-male-student-confident.jpg"
         },
         {
           name: "Grace Mbah",
           role: "Coding Student",
-          content: "I never thought I could learn to code, but my PrepSkul tutor made it fun and easy to understand. Now I'm building my own websites!",
+          content: "I never thought I could learn to code, but my PEAP tutor made it fun and easy to understand. Now I'm building my own websites!",
           rating: 5,
           image: "/young-african-female-tech-student.jpg"
         }
@@ -119,7 +119,7 @@ export const translations = {
       items: [
         {
           question: "What is PrepSkul?",
-          answer: "PrepSkul is a learning platform that connects learners across Cameroon and beyond with trusted home and online tutors. Whether it is school subjects or practical skills, we help every learner grow through personal guidance, flexible learning, and caring mentorship, all in one place. We are currently active across Cameroon and soon expanding across Africa."
+          answer: "PrepSkul is a guided and interactive learning ecosystem that connects learners to expert tutors who start by understanding their learning challenges and developing custom roadmaps to address these challenges bringing learning to every learner's level."
         },
         {
           question: "How does PrepSkul work?",
@@ -127,7 +127,7 @@ export const translations = {
         },
         {
           question: "What do you charge?",
-          answer: "Our sessions range between 2,500 XAF and 5,000 XAF, depending on the subject, skill, and duration. Fees are transparent and discussed before lessons begin, and payments are done upfront to confirm your sessions."
+          answer: "Our sessions range between 2,500 XAF and 5,000 XAF, depending on the subject, skill, and duration. Fees are transparent and discussed before lessons begin, and payments are done upfront to confirm your sessions. We also have a monthly subscription model where payments are made upfront to cover the entire month and sessions are scheduled and attended"
         },
         {
           question: "Are your tutors qualified?",
@@ -147,7 +147,7 @@ export const translations = {
         },
         {
           question: "What if I need to reschedule a session?",
-          answer: "We understand that schedules change. You can reschedule sessions with at least 24 hours notice at no charge. Just contact your tutor or our support team to arrange a new time."
+          answer: "We understand that schedules change. You can reschedule sessions with at least 24 hours notice at no charge. This feature is available on the platform for every scheduled session"
         }
       ]
     },
