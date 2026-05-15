@@ -116,32 +116,27 @@ export function PEAPShowcase({ locale }: PEAPShowcaseProps) {
           </div>
 
           {/* Photos */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="relative h-[340px] rounded-3xl overflow-hidden shadow-xl border">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+            <div className="relative h-[340px] rounded-3xl overflow-hidden ">
               <Image
-                src="/program1.jpg"
+                src="/program2.jpg"
                 alt="Students participating in PEAP session"
                 fill
-                className="object-contain p-2 bg-white group-hover:scale-105 transition-transform duration-500"
+                className="object-contain  group-hover:scale-105 transition-transform duration-500"
               />
             </div>
 
-            <div className="relative h-[340px] rounded-3xl overflow-hidden shadow-xl border mt-10">
+            <div className="relative bg-white rounded-3xl overflow-hidden  mt-10">
               <Image
-                src="/program2.jpg"
+                src="/program1.jpg"
                 alt="Learners engaged during PEAP program"
                 fill
-                className="object-contain p-2 bg-white group-hover:scale-105 transition-transform duration-500"
+                className=" group-hover:scale-105 transition-transform duration-500"
               />
             </div>
           </div>
           
         </div>
-        <Button size="lg" asChild className="text-base font-semibold px-8 w-30">
-        <Link href={getStartedUrl()}>
-                Get Started
-              </Link>
-            </Button>
       </div>
     </section>
   )
