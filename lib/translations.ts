@@ -82,7 +82,7 @@ export const translations = {
         {
           name: "Fongoh Raissa",
           role: "Student, UpperSixth",
-          content: "I truly want to express my heartfelt gratitude for the class today. For months, I struggled to understand this topic despite many attempts, but your explanation brought a level of clarity I had never experienced before. Joining that session felt like a blessing to me. You made the concepts seem as simple as learning the letters of the alphabet. Honestly, your patience, the way you broke down the concepts, and the encouragement you gave us meant far more than I can fully express in words. I am sincerely grateful for the time and effort you invested in helping us understand. Thank you very much, sir. I truly appreciate it. May God bless you.",
+          content: "I sincerely appreciate today's class. I had struggled to understand this topic for months, but your explanation made it incredibly clear and easy to grasp. Your patience, the way you simplified the concepts, and your encouragement meant a lot to me. Thank you very much.",
           rating: 5,
           image: "/young-african-female-student-smiling.jpg"
         },
