@@ -42,6 +42,20 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key  # ✅ Should already exist
 
 ---
 
+### **4. SkulMate Generation (REQUIRED for /api/skulmate/generate)**
+```env
+SKULMATE_OPENROUTER_API_KEY=sk-or-v1-...    # ✅ Required (primary)
+OPENROUTER_API_KEY=sk-or-v1-...             # Optional fallback
+```
+
+**Optional debug-only variables (leave unset in production unless needed):**
+```env
+SKULMATE_DEBUG_INGEST_URL=https://...        # Optional debug sink
+SKULMATE_DEBUG_SESSION_ID=your-session-id    # Optional debug label
+```
+
+---
+
 ## 🔍 **What Each Variable Is Used For**
 
 ### **AGORA_APP_ID**

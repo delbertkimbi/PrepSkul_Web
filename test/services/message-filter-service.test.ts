@@ -1,6 +1,6 @@
 import { filterMessage } from '@/lib/services/message-filter-service';
 
-describe('MessageFilterService', () {
+describe('MessageFilterService', () => {
   describe('filterMessage', () => {
     it('should allow clean messages', () => {
       const result = filterMessage('Hello, how are you?', 'user-123');
