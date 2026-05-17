@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendNotificationEmail } from '@/lib/notifications';
+import { sendOfflineReminderEmail, sendSessionStartEmail } from '@/lib/offline-session-emails';
 
 // Uses firebase-admin for push; ensure Node.js runtime on Vercel.
 export const runtime = 'nodejs';
@@ -121,15 +122,57 @@ export async function GET(request: NextRequest) {
                 .maybeSingle();
 
               if (userProfile?.email) {
-                await sendNotificationEmail({
-                  recipientEmail: userProfile.email,
-                  recipientName: userProfile.full_name || 'User',
-                  subject: scheduled.title,
-                  title: scheduled.title,
-                  message: scheduled.message,
-                  actionUrl: metadata.action_url,
-                  actionText: metadata.action_text || 'View Details',
-                });
+                if (metadata.offline_email && metadata.session_id) {
+                  const { data: sess } = await supabase
+                    .from('individual_sessions')
+                    .select('scheduled_date, scheduled_time, subject, delivery_mode, meet_link, onsite_location, tutor_id, learner_id, parent_id')
+                    .eq('id', metadata.session_id)
+                    .maybeSingle();
+                  const portalUrl =
+                    scheduled.user_id === sess?.tutor_id
+                      ? metadata.tutor_portal_url
+                      : metadata.learner_portal_url;
+                  if (metadata.reminder_type === 'session_start' && portalUrl) {
+                    const { data: tutorP } = await supabase.from('profiles').select('full_name').eq('id', sess?.tutor_id).maybeSingle();
+                    const { data: learnerP } = await supabase.from('profiles').select('full_name').eq('id', sess?.learner_id).maybeSingle();
+                    await sendSessionStartEmail({
+                      to: userProfile.email,
+                      recipientName: userProfile.full_name || 'there',
+                      tutorName: tutorP?.full_name || undefined,
+                      learnerName: learnerP?.full_name || undefined,
+                      scheduledDate: sess?.scheduled_date,
+                      scheduledTime: sess?.scheduled_time,
+                      subject: sess?.subject,
+                      deliveryMode: sess?.delivery_mode,
+                      meetLink: sess?.meet_link,
+                      onsiteLocation: sess?.onsite_location,
+                      portalUrl,
+                      role: scheduled.user_id === sess?.tutor_id ? 'tutor' : 'learner',
+                    });
+                  } else {
+                    await sendOfflineReminderEmail({
+                      to: userProfile.email,
+                      recipientName: userProfile.full_name || 'there',
+                      reminderLabel: metadata.reminder_label || scheduled.title,
+                      scheduledDate: sess?.scheduled_date,
+                      scheduledTime: sess?.scheduled_time,
+                      subject: sess?.subject,
+                      deliveryMode: sess?.delivery_mode,
+                      meetLink: sess?.meet_link,
+                      onsiteLocation: sess?.onsite_location,
+                    });
+                  }
+                } else {
+                  await sendNotificationEmail({
+                    recipientEmail: userProfile.email,
+                    recipientName: userProfile.full_name || 'User',
+                    subject: scheduled.title,
+                    title: scheduled.title,
+                    message: scheduled.message,
+                    actionUrl: metadata.action_url,
+                    actionText: metadata.action_text || 'View Details',
+                  });
+                }
 
                 // Mark email as sent in metadata to prevent duplicates
                 await supabase

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import AdminNav from '../components/AdminNav';
 import GrowthAnalyticsDashboard from '../dashboard/GrowthAnalyticsDashboard';
+import OperationsInsightsDashboard from '@/components/admin/analytics/OperationsInsightsDashboard';
 
 export default async function AdminAnalyticsPage() {
   const user = await getServerSession();
@@ -14,6 +15,7 @@ export default async function AdminAnalyticsPage() {
       <AdminNav />
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         <GrowthAnalyticsDashboard />
+        <OperationsInsightsDashboard />
       </main>
     </div>
   );

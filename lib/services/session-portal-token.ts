@@ -1,60 +1,135 @@
 import crypto from 'crypto';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import {
+  buildSessionPortalUrls,
+  createSessionPortalToken,
+  verifySessionPortalAccessToken,
+} from '@/lib/services/session-portal-access';
+
+export { buildSessionPortalUrls, createSessionPortalToken };
 
 function sha256(value: string) {
   return crypto.createHash('sha256').update(value).digest('hex');
 }
 
-export function hashPortalToken(rawToken: string) {
-  return sha256(rawToken);
-}
-
-export function generateRawToken() {
-  return crypto.randomBytes(32).toString('base64url');
-}
-
-export async function createPortalTokenRecord(opts: {
-  individualSessionId: string;
-  purpose: 'tutor_report' | 'learner_feedback';
-  expiresAt: string;
-}) {
-  const supabase = getSupabaseAdmin();
-  const rawToken = generateRawToken();
-  const tokenHash = hashPortalToken(rawToken);
-  const { data, error } = await supabase
-    .from('session_portal_tokens')
-    .insert({
-      individual_session_id: opts.individualSessionId,
-      purpose: opts.purpose,
-      token_hash: tokenHash,
-      expires_at: opts.expiresAt,
-    })
-    .select('id, individual_session_id, purpose, expires_at')
-    .maybeSingle();
-  if (error || !data) throw new Error(error?.message || 'Failed to create portal token');
-  return { rawToken, token: data };
+export async function ensureSessionPortalTokens(sessionId: string, expiresInDays = 90) {
+  const urls = buildSessionPortalUrls(sessionId, expiresInDays);
+  return {
+    expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString(),
+    ...urls,
+    tutorRawToken: urls.tutorToken,
+    learnerRawToken: urls.learnerToken,
+  };
 }
 
 export async function verifyPortalToken(
   rawToken: string,
   purpose: 'tutor_report' | 'learner_feedback'
 ) {
+  if (rawToken.includes('.')) {
+    try {
+      const access = verifySessionPortalAccessToken(rawToken);
+      if (access.purpose !== purpose) throw new Error('Invalid token for this portal');
+      return {
+        id: 'signed',
+        individual_session_id: access.sessionId,
+        purpose,
+        expires_at: new Date(Date.now() + 86400000).toISOString(),
+        used_at: null as string | null,
+        is_persistent: true,
+      };
+    } catch {
+      /* fall through to legacy DB token */
+    }
+  }
+
   const supabase = getSupabaseAdmin();
   const tokenHash = sha256(rawToken);
   const { data, error } = await supabase
     .from('session_portal_tokens')
-    .select('id, individual_session_id, purpose, expires_at, used_at')
+    .select('id, individual_session_id, purpose, expires_at, used_at, is_persistent')
     .eq('token_hash', tokenHash)
     .eq('purpose', purpose)
     .maybeSingle();
   if (error || !data) throw new Error('Invalid token');
-  if (data.used_at) throw new Error('Token already used');
+  if (data.is_persistent !== true && data.used_at) throw new Error('Token already used');
   if (new Date(data.expires_at).getTime() < Date.now()) throw new Error('Token expired');
   return data;
 }
 
-export async function markTokenUsed(tokenId: string) {
-  const supabase = getSupabaseAdmin();
-  await supabase.from('session_portal_tokens').update({ used_at: new Date().toISOString() }).eq('id', tokenId);
+export function verifyPortalTokenAny(rawToken: string) {
+  if (rawToken.includes('.')) {
+    const access = verifySessionPortalAccessToken(rawToken);
+    return {
+      id: 'signed',
+      individual_session_id: access.sessionId,
+      purpose: access.purpose,
+      expires_at: new Date(Date.now() + 86400000).toISOString(),
+      used_at: null as string | null,
+      is_persistent: true,
+    };
+  }
+  throw new Error('Invalid token');
 }
 
+export async function markTokenUsed(_tokenId: string) {
+  /* Signed tokens remain valid for portal hub; submission guarded by DB */
+}
+
+export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor_report' | 'learner_feedback') {
+  const verified = purpose
+    ? await verifyPortalToken(rawToken, purpose)
+    : verifyPortalTokenAny(rawToken);
+  const resolvedPurpose = (verified.purpose || purpose) as 'tutor_report' | 'learner_feedback';
+  const supabase = getSupabaseAdmin();
+  const { data: session } = await supabase
+    .from('individual_sessions')
+    .select(
+      'id, tutor_id, learner_id, parent_id, scheduled_date, scheduled_time, subject, status, delivery_mode, meet_link, onsite_location, offline_scheduling_period_id'
+    )
+    .eq('id', verified.individual_session_id)
+    .maybeSingle();
+  if (!session) throw new Error('Session not found');
+
+  let subjects: string[] = [];
+  if (session.offline_scheduling_period_id) {
+    const { data: period } = await supabase
+      .from('offline_scheduling_periods')
+      .select('subjects')
+      .eq('id', session.offline_scheduling_period_id)
+      .maybeSingle();
+    if (Array.isArray(period?.subjects)) subjects = period.subjects as string[];
+  }
+  if (!subjects.length && session.subject) subjects = [session.subject];
+
+  const { data: pendingReschedule } = await supabase
+    .from('session_reschedule_requests')
+    .select('*')
+    .eq('individual_session_id', session.id)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data: tutorReport } = await supabase
+    .from('session_tutor_completion_reports')
+    .select('id')
+    .eq('individual_session_id', session.id)
+    .maybeSingle();
+
+  const { data: learnerFeedback } = await supabase
+    .from('session_learner_feedback')
+    .select('id')
+    .eq('individual_session_id', session.id)
+    .maybeSingle();
+
+  return {
+    token: verified,
+    session,
+    subjects,
+    pendingReschedule: pendingReschedule || null,
+    hasSubmittedReport: !!tutorReport,
+    hasSubmittedFeedback: !!learnerFeedback,
+    portalRole: resolvedPurpose === 'tutor_report' ? ('tutor' as const) : ('learner' as const),
+  };
+}

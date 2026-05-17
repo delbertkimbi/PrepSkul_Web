@@ -12,13 +12,7 @@ export default async function NewOfflineOpsPage() {
   return (
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <AdminNav />
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="mb-4 sm:mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">New Offline Operation Record</h1>
-          <p className="text-gray-600 mt-1">
-            Capture WhatsApp-managed customer onboarding, matching, session, and payment activity.
-          </p>
-        </div>
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-6">
         <OfflineOpsFormClient />
       </main>
     </div>

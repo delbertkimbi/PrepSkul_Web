@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import OfflineOpsModificationsPanel from '@/components/admin/offline-ops/OfflineOpsModificationsPanel';
 
 type ProfileLite = {
   id: string;
@@ -97,6 +98,7 @@ export default function OfflineOpsDetailClient({
   dailyReminders,
   lastManualReminderAtBySession,
   profiles,
+  learners = [],
 }: {
   record: any;
   sessions: SessionInsight[];
@@ -115,6 +117,7 @@ export default function OfflineOpsDetailClient({
     learner: ProfileLite;
     tutor: ProfileLite;
   };
+  learners?: Array<{ id: string; full_name?: string | null }>;
 }) {
   const router = useRouter();
   const [form, setForm] = useState({
@@ -160,6 +163,51 @@ export default function OfflineOpsDetailClient({
     const total = Number(form.expected_total_amount || 0);
     return Math.max(0, total - Number(form.amount_paid || 0));
   }, [form.amount_paid, form.expected_total_amount]);
+
+  const nextSessionForAdmin = useMemo(() => {
+    const sorted = [...sessionState].sort((a, b) => {
+      const da = new Date(`${a.scheduled_date || ''}T${a.scheduled_time || '00:00:00'}`).getTime();
+      const db = new Date(`${b.scheduled_date || ''}T${b.scheduled_time || '00:00:00'}`).getTime();
+      return da - db;
+    });
+    const pending = sorted.filter((s) => {
+      const st = (s.status || '').toLowerCase();
+      return !['evaluated', 'completed'].includes(st);
+    });
+    return pending.length ? [pending[0]] : [];
+  }, [sessionState]);
+
+  const displaySessions = useMemo(() => {
+    const sorted = [...sessionState].sort((a, b) => {
+      const da = `${a.scheduled_date || ''}T${a.scheduled_time || '00:00:00'}`;
+      const db = `${b.scheduled_date || ''}T${b.scheduled_time || '00:00:00'}`;
+      return da.localeCompare(db);
+    });
+    const now = Date.now();
+    const next = sorted.find((s) => {
+      const st = (s.status || '').toLowerCase();
+      if (['evaluated', 'completed', 'not_attended'].includes(st)) return false;
+      const t = new Date(`${s.scheduled_date || ''}T${s.scheduled_time || '00:00:00'}`).getTime();
+      return !Number.isNaN(t) && t >= now - 60 * 60 * 1000;
+    });
+    return next ? [next] : sorted.length ? [sorted[sorted.length - 1]] : [];
+  }, [sessionState]);
+
+  useEffect(() => {
+    const sid = displaySessions[0]?.id;
+    if (!sid || linkBySession[sid]) return;
+    fetch(`/api/admin/sessions/${sid}/portal-links`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.tutorReportUrl) {
+          setLinkBySession((prev) => ({
+            ...prev,
+            [sid]: { tutor: json.tutorReportUrl, learner: json.learnerFeedbackUrl, expiresAt: json.expiresAt },
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [displaySessions, linkBySession]);
 
   const stats = useMemo(() => {
     const total = sessionState.length;
@@ -286,7 +334,7 @@ export default function OfflineOpsDetailClient({
           expiresAt: json.expiresAt,
         },
       }));
-      setActionMsg('Secure links generated. Copy and send via WhatsApp or email.');
+      setActionMsg('Session links ready. Copy tutor or learner URL below.');
     } catch (e: any) {
       setActionMsg(e?.message || 'Failed to create links');
     } finally {
@@ -393,6 +441,22 @@ export default function OfflineOpsDetailClient({
           <p className="text-2xl font-bold text-[#4A6FBF]">{stats.withFeedback}</p>
         </div>
       </div>
+
+      {record.primary_user_id && (
+        <OfflineOpsModificationsPanel
+          offlineOperationId={record.id}
+          primaryUserId={record.primary_user_id}
+          learnerUserId={record.learner_user_id}
+          tutorUserId={record.tutor_user_id}
+          learners={
+            learners.length
+              ? learners
+              : record.learner_user_id
+                ? [{ id: record.learner_user_id, full_name: profiles.learner?.full_name }]
+                : []
+          }
+        />
+      )}
 
       <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
         <h2 className="font-semibold text-[#1B2C4F] mb-3 text-lg border-l-4 border-[#1B2C4F] pl-3">People & profile context</h2>
@@ -566,16 +630,16 @@ export default function OfflineOpsDetailClient({
       </div>
 
       <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
-        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Sessions</h2>
+        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Next session</h2>
         <p className="text-sm text-slate-600 mb-4 pl-3 ml-1">
           Tutor or learner submissions move the session to <strong>awaiting admin review</strong>. When you confirm attendance here, status becomes{' '}
           <strong>evaluated</strong> (admin-reviewed).
         </p>
-        {sessionState.length === 0 ? (
+        {displaySessions.length === 0 ? (
           <p className="text-sm text-gray-600">No sessions found for this offline operation yet.</p>
         ) : (
           <div className="space-y-4">
-            {sessionState.map((s) => {
+            {displaySessions.map((s) => {
               const links = linkBySession[s.id];
               const busy = busyBySession[s.id];
               const tr = s.tutorReport;
@@ -673,7 +737,7 @@ export default function OfflineOpsDetailClient({
                       onClick={() => createLinks(s.id)}
                       className={`${btnBase} border-indigo-300 bg-indigo-600 text-white hover:bg-indigo-700`}
                     >
-                      {busy === 'links' ? 'Generating…' : 'Generate secure links'}
+                      {busy === 'links' ? 'Loading…' : 'Copy session links'}
                     </button>
                     <div className="flex flex-wrap items-center gap-2">
                       <button

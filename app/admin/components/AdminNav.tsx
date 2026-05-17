@@ -25,6 +25,7 @@ const ambassadorsItems = [
 
 const operationsItems = [
   { name: 'Analytics', href: '/admin/analytics' },
+  { name: 'Offline Users', href: '/admin/offline-ops/users' },
   { name: 'Offline Ops', href: '/admin/offline-ops' },
   { name: 'Feedback Inbox', href: '/admin/feedback-inbox' },
   { name: 'Ops Events', href: '/admin/operations-events' },

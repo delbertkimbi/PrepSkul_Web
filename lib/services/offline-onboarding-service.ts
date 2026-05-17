@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { scheduleOfflinePeriod } from '@/lib/services/offline-period-service';
+import type { DayTimeSlot } from '@/lib/services/offline-schedule';
 
 const WEEKDAY_MAP: Record<string, number> = {
   sun: 0,
@@ -24,14 +26,47 @@ export type OfflineScheduleInput = {
   sessionsPerWeek: number;
   /** e.g. ['mon','wed'] */
   weekDays: string[];
-  /** HH:mm */
+  /** HH:mm — used when dayTimeSlots omitted */
   sessionTime: string;
+  /** Per-day times (preferred) */
+  dayTimeSlots?: DayTimeSlot[];
   durationMinutes: number;
-  /** First session anchor date YYYY-MM-DD */
   startDate: string;
   deliveryMode: 'online' | 'onsite' | 'hybrid';
+  /** Primary subject (legacy single) */
   subject: string;
+  /** All subjects for the period */
+  subjects?: string[];
+  meetLink?: string | null;
+  onsiteLocation?: string | null;
+  onsitePhotoUrl?: string | null;
+  payPerMonthXaf?: number | null;
+  payMonthsCount?: number | null;
+  operationState?: 'active' | 'paused' | 'stopped';
+  startMonthLabel?: string | null;
 };
+
+function toScheduleV2(schedule: OfflineScheduleInput) {
+  const subjects =
+    schedule.subjects?.length ? schedule.subjects : [schedule.subject].filter(Boolean);
+  const dayTimeSlots =
+    schedule.dayTimeSlots?.length ?
+      schedule.dayTimeSlots
+    : (schedule.weekDays || []).map((day) => ({ day, time: schedule.sessionTime || '16:00' }));
+  if (!dayTimeSlots.length) throw new Error('Provide session days and times');
+  return {
+    weeks: schedule.weeks,
+    sessionsPerWeek: schedule.sessionsPerWeek,
+    dayTimeSlots,
+    durationMinutes: schedule.durationMinutes,
+    startDate: schedule.startDate,
+    deliveryMode: schedule.deliveryMode,
+    subjects,
+    meetLink: schedule.meetLink,
+    onsiteLocation: schedule.onsiteLocation,
+    onsitePhotoUrl: schedule.onsitePhotoUrl,
+  };
+}
 
 function parseTime(time: string): { h: number; m: number } {
   const [h, m] = time.split(':').map((x) => parseInt(x, 10));
@@ -314,56 +349,6 @@ function generatedOfflineLearnerEmail() {
   return `offline.learner.${crypto.randomBytes(16).toString('hex')}@account.prepskul.com`;
 }
 
-async function scheduleOfflineSessionReminders(
-  admin: SupabaseClient,
-  opts: {
-    sessionId: string;
-    sessionStartIso: string;
-    subject: string;
-    tutorUserId: string;
-    learnerUserId: string;
-    parentUserId?: string | null;
-  }
-) {
-  const start = new Date(opts.sessionStartIso);
-  const now = Date.now();
-  const reminders = [
-    { type: '24_hours', when: new Date(start.getTime() - 24 * 60 * 60 * 1000), title: 'Session reminder' },
-    { type: '1_hour', when: new Date(start.getTime() - 60 * 60 * 1000), title: 'Session starts in 1 hour' },
-  ].filter((r) => r.when.getTime() > now);
-
-  if (reminders.length === 0) return;
-
-  // Email/push reminders go to tutor + primary contact only (parent if present, else learner’s own account).
-  const familyUserId = opts.parentUserId || opts.learnerUserId;
-  const recipientIds = Array.from(new Set([opts.tutorUserId, familyUserId].filter(Boolean) as string[]));
-  const rows: Array<Record<string, unknown>> = [];
-  for (const recipientId of recipientIds) {
-    for (const reminder of reminders) {
-      rows.push({
-        user_id: recipientId,
-        notification_type: 'session_reminder',
-        title: reminder.title,
-        message: `Reminder: your ${opts.subject || 'PrepSkul'} session is upcoming.`,
-        scheduled_for: reminder.when.toISOString(),
-        status: 'pending',
-        related_id: opts.sessionId,
-        metadata: {
-          session_id: opts.sessionId,
-          reminder_type: reminder.type,
-          session_start: start.toISOString(),
-          action_url: `/sessions/${opts.sessionId}`,
-          action_text: 'View session',
-          sendEmail: true,
-          sendPush: true,
-        },
-      });
-    }
-  }
-
-  await admin.from('scheduled_notifications').insert(rows);
-}
-
 export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   idempotencyKey?: string;
   adminUserId: string;
@@ -437,16 +422,14 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     learnerUserId = child.userId;
   }
 
-  const dates = enumerateSessionDates(params.schedule);
-  const { h, m } = parseTime(params.schedule.sessionTime);
-  const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
+  const scheduleV2 = toScheduleV2(params.schedule);
 
   const recurringPayload: Record<string, unknown> = {
     tutor_id: tutorResolved.tutorUserId,
     learner_id: learnerUserId,
     parent_id: params.primary.role === 'parent' ? primaryUserId : null,
     status: 'pending',
-    subject: params.schedule.subject,
+    subject: scheduleV2.subjects[0] || params.schedule.subject,
     updated_at: new Date().toISOString(),
   };
 
@@ -461,44 +444,26 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     console.warn('[offline-onboarding] recurring_sessions insert failed, continuing with null FK', recErr);
   }
 
-  const sessionIds: string[] = [];
-  for (const dateStr of dates) {
-    const row: Record<string, unknown> = {
-      tutor_id: tutorResolved.tutorUserId,
-      learner_id: learnerUserId,
-      parent_id: params.primary.role === 'parent' ? primaryUserId : null,
-      recurring_session_id: recurringId,
-      scheduled_date: dateStr,
-      scheduled_time: timeStr,
-      duration_minutes: params.schedule.durationMinutes,
-      status: 'pending',
-      location: params.schedule.deliveryMode === 'online' ? 'online' : 'onsite',
-      subject: params.schedule.subject,
-      created_at: new Date().toISOString(),
-    };
-    let { data: ins, error: insErr } = await admin.from('individual_sessions').insert(row).select('id').maybeSingle();
-    if (insErr && row.parent_id && /parent_id/i.test(insErr.message || '')) {
-      // Some schemas enforce parent_id against a non-profile parent table; retry without parent_id to avoid blocking onboarding.
-      const retryRow = { ...row, parent_id: null };
-      const retry = await admin.from('individual_sessions').insert(retryRow).select('id').maybeSingle();
-      ins = retry.data;
-      insErr = retry.error;
-    }
-    if (insErr) {
-      throw new Error(`Failed to create session for ${dateStr}: ${insErr.message}`);
-    }
-    if (ins?.id) sessionIds.push(ins.id);
-    if (ins?.id) {
-      await scheduleOfflineSessionReminders(admin, {
-        sessionId: ins.id,
-        sessionStartIso: `${dateStr}T${timeStr}`,
-        subject: params.schedule.subject,
-        tutorUserId: tutorResolved.tutorUserId,
-        learnerUserId,
-        parentUserId: params.primary.role === 'parent' ? primaryUserId : null,
-      });
-    }
-  }
+  const periodResult = await scheduleOfflinePeriod(admin, {
+    adminUserId: params.adminUserId,
+    primaryUserId,
+    learnerUserId,
+    tutorUserId: tutorResolved.tutorUserId,
+    tutorName: tutorResolved.tutorName,
+    learnerDisplayNames:
+      params.primary.role === 'parent' ? params.child?.fullName?.trim() || null : params.primary.fullName,
+    schedule: scheduleV2,
+    commercial: {
+      payPerMonthXaf: params.schedule.payPerMonthXaf,
+      payMonthsCount: params.schedule.payMonthsCount,
+      operationState: params.schedule.operationState,
+      startMonthLabel: params.schedule.startMonthLabel,
+    },
+    sendWelcomeEmail: true,
+  });
+
+  const sessionIds = periodResult.sessionIds;
+  const dates = periodResult.occurrences.map((o) => o.date);
 
   const { data: run, error: runErr } = await admin
     .from('offline_onboarding_runs')
