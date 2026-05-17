@@ -34,6 +34,19 @@ export async function POST(request: NextRequest) {
     const requesterId =
       access.role === 'tutor' ? session.tutor_id : session.parent_id || session.learner_id;
 
+    const { data: existingPending } = await supabase
+      .from('session_reschedule_requests')
+      .select('id')
+      .eq('individual_session_id', session.id)
+      .eq('status', 'pending')
+      .maybeSingle();
+    if (existingPending) {
+      return NextResponse.json(
+        { error: 'A reschedule request is already pending for this session.' },
+        { status: 409 }
+      );
+    }
+
     await supabase.from('session_reschedule_requests').insert({
       individual_session_id: session.id,
       requested_by_user_id: requesterId,

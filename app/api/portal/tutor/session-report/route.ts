@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 });
     }
-    const { token, attended, topicsCovered, learnerEngagement, issues } = parsed.data;
+    const { token, attended, topicsCovered, learnerEngagement, issues, subjectTaught, preSessionPhotoUrl } =
+      parsed.data;
     const verified = await verifyPortalToken(token, 'tutor_report');
 
     const supabase = getSupabaseAdmin();

@@ -11,13 +11,29 @@ export async function GET() {
     if (!(await isAdmin(user.id))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const supabase = getSupabaseAdmin();
+
     const { data: runs } = await supabase
       .from('offline_onboarding_runs')
       .select('id, primary_user_id, learner_user_id, tutor_user_id, primary_role, created_at, metadata')
       .order('created_at', { ascending: false })
       .limit(500);
 
-    const primaryIds = [...new Set((runs || []).map((r) => r.primary_user_id))];
+    const { data: opsWithPrimary } = await supabase
+      .from('offline_operations')
+      .select('id, primary_user_id, learner_user_id, tutor_user_id, customer_name, onboarding_stage, created_at')
+      .not('primary_user_id', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(500);
+
+    const primaryIds = [
+      ...new Set([
+        ...(runs || []).map((r) => r.primary_user_id).filter(Boolean),
+        ...(opsWithPrimary || []).map((o) => o.primary_user_id).filter(Boolean),
+      ]),
+    ] as string[];
+
+    if (!primaryIds.length) return NextResponse.json({ users: [] });
+
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, full_name, email, phone_number, user_type, avatar_url')
@@ -28,29 +44,29 @@ export async function GET() {
     const users = await Promise.all(
       primaryIds.map(async (pid) => {
         const run = (runs || []).find((r) => r.primary_user_id === pid);
-        const p = byId.get(pid);
-        const { data: nextSession } = await supabase
-          .from('individual_sessions')
-          .select('id, scheduled_date, scheduled_time, status, subject')
-          .or(`learner_id.eq.${run?.learner_user_id},parent_id.eq.${pid}`)
-          .in('status', ['pending', 'scheduled', 'pending_admin_review'])
-          .gte('scheduled_date', new Date().toISOString().slice(0, 10))
-          .order('scheduled_date', { ascending: true })
-          .order('scheduled_time', { ascending: true })
-          .limit(1)
-          .maybeSingle();
+        const op = (opsWithPrimary || []).find((o) => o.primary_user_id === pid);
 
-        const { data: op } = await supabase
-          .from('offline_operations')
-          .select('id, onboarding_stage, customer_name')
-          .eq('primary_user_id', pid)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+        const learnerId = run?.learner_user_id || op?.learner_user_id;
+
+        const { data: nextSession } = learnerId
+          ? await supabase
+              .from('individual_sessions')
+              .select('id, scheduled_date, scheduled_time, status, subject')
+              .or(`learner_id.eq.${learnerId},parent_id.eq.${pid}`)
+              .in('status', ['pending', 'scheduled', 'pending_admin_review'])
+              .gte('scheduled_date', new Date().toISOString().slice(0, 10))
+              .order('scheduled_date', { ascending: true })
+              .order('scheduled_time', { ascending: true })
+              .limit(1)
+              .maybeSingle()
+          : { data: null };
+
+        const p = byId.get(pid);
+        const tutorUserId = run?.tutor_user_id || op?.tutor_user_id;
 
         let tutorName = (run?.metadata as { tutor_name?: string })?.tutor_name || null;
-        if (run?.tutor_user_id) {
-          const t = await supabase.from('profiles').select('full_name').eq('id', run.tutor_user_id).maybeSingle();
+        if (tutorUserId) {
+          const t = await supabase.from('profiles').select('full_name').eq('id', tutorUserId).maybeSingle();
           tutorName = t.data?.full_name || tutorName;
         }
 
@@ -61,15 +77,21 @@ export async function GET() {
           phone: p?.phone_number || '',
           role: run?.primary_role || p?.user_type,
           tutorName,
-          tutorUserId: run?.tutor_user_id,
-          learnerUserId: run?.learner_user_id,
+          tutorUserId,
+          learnerUserId: learnerId,
           offlineOperationId: op?.id,
           onboardingStage: op?.onboarding_stage,
           nextSession: nextSession || null,
-          createdAt: run?.created_at,
+          createdAt: run?.created_at || op?.created_at,
         };
       })
     );
+
+    users.sort((a, b) => {
+      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return tb - ta;
+    });
 
     return NextResponse.json({ users });
   } catch (e: unknown) {

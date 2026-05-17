@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
       session: ctx.session,
       subjects: ctx.subjects,
       pendingReschedule: ctx.pendingReschedule,
+      canRespondToReschedule: ctx.canRespondToReschedule,
+      awaitingRescheduleApproval: ctx.awaitingRescheduleApproval,
       hasSubmittedReport: ctx.hasSubmittedReport,
       hasSubmittedFeedback: ctx.hasSubmittedFeedback,
       portalRole: ctx.portalRole,
