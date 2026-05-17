@@ -7,6 +7,9 @@ import { CalendarClock, Loader2, Upload, X } from 'lucide-react';
 type Ctx = {
   session: {
     id: string;
+    tutor_id?: string | null;
+    learner_id?: string | null;
+    parent_id?: string | null;
     scheduled_date: string;
     scheduled_time: string;
     subject: string;
@@ -28,7 +31,12 @@ type Ctx = {
   hasSubmittedReport: boolean;
   hasSubmittedFeedback: boolean;
   portalRole: 'tutor' | 'learner';
+  rescheduleLookupError?: string | null;
 };
+
+function idsMatch(a?: string | null, b?: string | null) {
+  return !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
+}
 
 function PortalModal({
   title,
@@ -266,9 +274,22 @@ export default function SessionHubClient({ mode }: { mode: 'tutor' | 'learner' }
   if (!ctx) return <p className="p-6 text-sm text-slate-500">Loading session…</p>;
 
   const s = ctx.session;
-  const submitted = mode === 'tutor' ? ctx.hasSubmittedReport : ctx.hasSubmittedFeedback;
-  const showMainForms =
-    !submitted && !rescheduleOpen && !ctx.awaitingRescheduleApproval && !ctx.canRespondToReschedule;
+  const role = ctx.portalRole || mode;
+  const submitted = role === 'tutor' ? ctx.hasSubmittedReport : ctx.hasSubmittedFeedback;
+  const pendingActive = !!ctx.pendingReschedule;
+  const tutorRequested =
+    pendingActive && idsMatch(ctx.pendingReschedule?.requested_by_user_id, s.tutor_id);
+  const familyRequested =
+    pendingActive &&
+    (idsMatch(ctx.pendingReschedule?.requested_by_user_id, s.parent_id) ||
+      idsMatch(ctx.pendingReschedule?.requested_by_user_id, s.learner_id));
+  const canRespond =
+    ctx.canRespondToReschedule || (role === 'learner' && tutorRequested) || (role === 'tutor' && familyRequested);
+  const awaitingApproval =
+    ctx.awaitingRescheduleApproval ||
+    (role === 'tutor' && tutorRequested) ||
+    (role === 'learner' && familyRequested);
+  const showMainForms = !submitted && !rescheduleOpen && !pendingActive;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -289,7 +310,14 @@ export default function SessionHubClient({ mode }: { mode: 'tutor' | 'learner' }
         <p className="mt-3 text-sm text-red-600 bg-red-50 border border-red-200 p-2 rounded-lg">{error}</p>
       )}
 
-      {ctx.canRespondToReschedule && ctx.pendingReschedule && (
+      {ctx.rescheduleLookupError && (
+        <p className="mt-3 text-sm text-amber-900 bg-amber-50 border border-amber-200 p-3 rounded-lg">
+          We could not check for a pending reschedule ({ctx.rescheduleLookupError}). Ask your admin to run the
+          offline ops database migration, then refresh this page.
+        </p>
+      )}
+
+      {canRespond && ctx.pendingReschedule && (
         <div className="mt-5 border-2 border-amber-300 bg-amber-50 p-4 rounded-xl text-sm shadow-sm">
           <p className="font-semibold text-amber-950 text-base">Reschedule request — your response needed</p>
           <p className="mt-2 text-amber-900">{ctx.pendingReschedule.reason}</p>
@@ -316,7 +344,7 @@ export default function SessionHubClient({ mode }: { mode: 'tutor' | 'learner' }
         </div>
       )}
 
-      {ctx.awaitingRescheduleApproval && !ctx.canRespondToReschedule && (
+      {awaitingApproval && !canRespond && (
         <div className="mt-5 border border-[#4A6FBF]/30 bg-[#4A6FBF]/5 p-4 rounded-xl text-sm">
           <p className="font-semibold text-[#1B2C4F]">Reschedule pending approval</p>
           <p className="mt-1 text-slate-600">
@@ -325,7 +353,7 @@ export default function SessionHubClient({ mode }: { mode: 'tutor' | 'learner' }
         </div>
       )}
 
-      {!submitted && !ctx.canRespondToReschedule && !ctx.awaitingRescheduleApproval && (
+      {!submitted && !pendingActive && (
         <button
           type="button"
           className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-[#4A6FBF] text-[#1B2C4F] text-sm font-semibold bg-white hover:bg-[#4A6FBF]/5 transition-colors"
@@ -339,7 +367,7 @@ export default function SessionHubClient({ mode }: { mode: 'tutor' | 'learner' }
         </button>
       )}
 
-      {showMainForms && mode === 'tutor' && !ctx.hasSubmittedReport && (
+      {showMainForms && role === 'tutor' && !ctx.hasSubmittedReport && (
         <div className="mt-6 space-y-4 border-t border-slate-200 pt-6">
           <h2 className="font-semibold text-[#1B2C4F]">Tutor report</h2>
           <label className="block text-sm">
@@ -394,7 +422,7 @@ export default function SessionHubClient({ mode }: { mode: 'tutor' | 'learner' }
         </div>
       )}
 
-      {showMainForms && mode === 'learner' && !ctx.hasSubmittedFeedback && (
+      {showMainForms && role === 'learner' && !ctx.hasSubmittedFeedback && (
         <div className="mt-6 space-y-4 border-t border-slate-200 pt-6">
           <h2 className="font-semibold text-[#1B2C4F]">Your feedback</h2>
           <select

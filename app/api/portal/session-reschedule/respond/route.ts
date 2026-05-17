@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionPortalAccessToken, buildSessionPortalUrls } from '@/lib/services/session-portal-access';
 import { sendRescheduleDecisionEmail } from '@/lib/offline-session-emails';
+import { getReschedulePortalFlags } from '@/lib/services/session-reschedule';
+import { resolveParticipantContact } from '@/lib/services/session-reschedule-notify';
 
 export const runtime = 'nodejs';
 
@@ -37,11 +39,14 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
+    const portalRole = access.role === 'tutor' ? ('tutor' as const) : ('learner' as const);
+    const { canRespondToReschedule } = getReschedulePortalFlags(session, reqRow, portalRole);
+    if (!canRespondToReschedule) {
+      return NextResponse.json({ error: 'You cannot respond to this reschedule request' }, { status: 400 });
+    }
+
     const responderId =
       access.role === 'tutor' ? session.tutor_id : session.parent_id || session.learner_id;
-    if (reqRow.requested_by_user_id === responderId) {
-      return NextResponse.json({ error: 'You cannot respond to your own request' }, { status: 400 });
-    }
 
     const status = parsed.data.accept ? 'accepted' : 'rejected';
     await supabase
@@ -65,23 +70,20 @@ export async function POST(request: NextRequest) {
         .eq('id', session.id);
     }
 
-    const { data: requester } = await supabase
-      .from('profiles')
-      .select('full_name, email')
-      .eq('id', reqRow.requested_by_user_id)
-      .maybeSingle();
-
-    if (requester?.email) {
+    const requesterContact = await resolveParticipantContact(supabase, reqRow.requested_by_user_id);
+    if (requesterContact) {
       const urls = buildSessionPortalUrls(session.id);
-      const portalUrl =
-        reqRow.requested_by_user_id === session.tutor_id ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
+      const requesterIsTutor =
+        String(reqRow.requested_by_user_id).toLowerCase() === String(session.tutor_id || '').toLowerCase();
+      const portalUrl = requesterIsTutor ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
       await sendRescheduleDecisionEmail({
-        to: requester.email,
-        recipientName: requester.full_name || 'there',
+        to: requesterContact.email,
+        recipientName: requesterContact.fullName,
         accepted: parsed.data.accept,
         proposedDate: reqRow.proposed_date,
         proposedTime: String(reqRow.proposed_time),
-        portalUrl: parsed.data.accept ? portalUrl : undefined,
+        portalUrl,
+        recipientRole: requesterIsTutor ? 'tutor' : 'learner',
       });
     }
 

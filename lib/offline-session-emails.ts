@@ -37,14 +37,25 @@ function deliveryBlock(opts: {
   return '';
 }
 
+async function dispatchEmail(to: string, recipientName: string, subject: string, html: string) {
+  return sendCustomEmail(to, recipientName, subject, html);
+}
+
+function portalCta(url: string, label: string) {
+  return `
+    <p style="margin:20px 0;">
+      <a href="${escapeHtml(url)}" style="display:inline-block;background:#1B2C4F;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;font-weight:600;">${escapeHtml(label)}</a>
+    </p>
+    <p style="font-size:12px;color:#64748b;word-break:break-all;">Or open this link: <a href="${escapeHtml(url)}">${escapeHtml(url)}</a></p>`;
+}
+
 function familyEmailShell(title: string, body: string) {
   return `
-    <div>
     <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#1B2C4F;">
       <h2 style="margin:0 0 12px;font-size:20px;">${escapeHtml(title)}</h2>
       ${body}
       <p style="margin-top:24px;font-size:13px;color:#64748b;">Warm regards,<br/>The PrepSkul Team</p>
-    </motion-friendly>`;
+    </div>`;
 }
 
 function adminSessionFooter(sessionId: string) {
@@ -77,11 +88,12 @@ export async function sendOfflineWelcomeEmail(opts: {
     ${deliveryBlock(opts)}
     ${opts.learnerPortalUrl ? `<p>After each session, share feedback here: <a href="${escapeHtml(opts.learnerPortalUrl)}">Open your session page</a></p>` : ''}
     <p>We wish you a wonderful learning journey!</p>`;
-  return sendCustomEmail({
-    to: opts.to,
-    subject: `Welcome to PrepSkul — matched with ${opts.tutorName}`,
-    html: familyEmailShell('Welcome to PrepSkul', body),
-  });
+  return dispatchEmail(
+    opts.to,
+    opts.recipientName,
+    `Welcome to PrepSkul — matched with ${opts.tutorName}`,
+    familyEmailShell('Welcome to PrepSkul', body)
+  );
 }
 
 export async function sendSessionStartEmail(opts: {
@@ -110,11 +122,12 @@ export async function sendSessionStartEmail(opts: {
     ${deliveryBlock(opts)}
     <p><a href="${escapeHtml(opts.portalUrl)}" style="display:inline-block;background:#1B2C4F;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;font-weight:600;">Open session page</a></p>
     <p style="font-size:13px;color:#64748b;">Use this link after class to submit feedback or request a reschedule if needed.</p>`;
-  return sendCustomEmail({
-    to: opts.to,
-    subject: `Your PrepSkul session is starting now`,
-    html: familyEmailShell('Session starting now', body),
-  });
+  return dispatchEmail(
+    opts.to,
+    opts.recipientName,
+    'Your PrepSkul session is starting now',
+    familyEmailShell('Session starting now', body)
+  );
 }
 
 export async function sendRescheduleRequestEmail(opts: {
@@ -125,18 +138,33 @@ export async function sendRescheduleRequestEmail(opts: {
   proposedDate: string;
   proposedTime: string;
   portalUrl: string;
+  recipientRole: 'tutor' | 'learner';
+  sessionSubject?: string | null;
+  currentDate?: string | null;
+  currentTime?: string | null;
 }) {
+  const currentWhen = formatSessionWhen(opts.currentDate, opts.currentTime);
+  const proposedWhen = formatSessionWhen(opts.proposedDate, opts.proposedTime);
+  const requesterLabel =
+    opts.recipientRole === 'tutor' ? 'A parent/learner' : 'Your tutor';
+  const ctaLabel =
+    opts.recipientRole === 'tutor' ? 'Open tutor session hub' : 'Review reschedule request';
   const body = `
     <p>Hi ${escapeHtml(opts.recipientName)},</p>
-    <p><strong>${escapeHtml(opts.requesterName)}</strong> requested to reschedule a session.</p>
+    <p><strong>${escapeHtml(requesterLabel)} (${escapeHtml(opts.requesterName)})</strong> requested to reschedule a PrepSkul session.</p>
+    ${opts.sessionSubject ? `<p><strong>Subject:</strong> ${escapeHtml(opts.sessionSubject)}</p>` : ''}
+    <p><strong>Current time:</strong> ${escapeHtml(currentWhen)}</p>
+    <p><strong>Proposed new time:</strong> ${escapeHtml(proposedWhen)}</p>
     <p><strong>Reason:</strong> ${escapeHtml(opts.reason)}</p>
-    <p><strong>Proposed:</strong> ${escapeHtml(opts.proposedDate)} at ${escapeHtml(String(opts.proposedTime).slice(0, 5))}</p>
-    <p><a href="${escapeHtml(opts.portalUrl)}">Review and accept or decline</a></p>`;
-  return sendCustomEmail({
-    to: opts.to,
-    subject: 'PrepSkul — reschedule request awaiting your response',
-    html: familyEmailShell('Reschedule request', body),
-  });
+    <p>Please open your session page to <strong>approve or decline</strong> this change.</p>
+    ${portalCta(opts.portalUrl, ctaLabel)}
+    <p style="font-size:13px;color:#64748b;">This link is personal to you. Do not share it with others.</p>`;
+  return dispatchEmail(
+    opts.to,
+    opts.recipientName,
+    'PrepSkul — reschedule request awaiting your response',
+    familyEmailShell('Reschedule request', body)
+  );
 }
 
 export async function sendRescheduleDecisionEmail(opts: {
@@ -146,19 +174,25 @@ export async function sendRescheduleDecisionEmail(opts: {
   proposedDate: string;
   proposedTime: string;
   portalUrl?: string;
+  recipientRole?: 'tutor' | 'learner';
 }) {
+  const proposedWhen = formatSessionWhen(opts.proposedDate, opts.proposedTime);
+  const ctaLabel =
+    opts.recipientRole === 'tutor' ? 'Open tutor session hub' : 'Open your session page';
   const body = opts.accepted
     ? `<p>Hi ${escapeHtml(opts.recipientName)},</p>
-       <p>Your reschedule request was <strong>accepted</strong>. The session is now set for <strong>${escapeHtml(opts.proposedDate)}</strong> at <strong>${escapeHtml(String(opts.proposedTime).slice(0, 5))}</strong>.</p>
-       ${opts.portalUrl ? `<p><a href="${escapeHtml(opts.portalUrl)}">View session</a></p>` : ''}`
+       <p>Your reschedule request was <strong>accepted</strong>. The session is now scheduled for <strong>${escapeHtml(proposedWhen)}</strong>.</p>
+       ${opts.portalUrl ? portalCta(opts.portalUrl, ctaLabel) : ''}`
     : `<p>Hi ${escapeHtml(opts.recipientName)},</p>
-       <p>Your reschedule request was <strong>declined</strong>.</p>
-       <p>Please contact PrepSkul admins on WhatsApp: <strong>${ADMIN_WHATSAPP}</strong> for assistance.</p>`;
-  return sendCustomEmail({
-    to: opts.to,
-    subject: opts.accepted ? 'Reschedule accepted' : 'Reschedule declined',
-    html: familyEmailShell(opts.accepted ? 'Reschedule accepted' : 'Reschedule declined', body),
-  });
+       <p>Your reschedule request was <strong>declined</strong>. The original session time is unchanged.</p>
+       <p>Please contact PrepSkul admins on WhatsApp: <strong>${escapeHtml(ADMIN_WHATSAPP)}</strong> if you need help.</p>
+       ${opts.portalUrl ? portalCta(opts.portalUrl, ctaLabel) : ''}`;
+  return dispatchEmail(
+    opts.to,
+    opts.recipientName,
+    opts.accepted ? 'PrepSkul — reschedule accepted' : 'PrepSkul — reschedule declined',
+    familyEmailShell(opts.accepted ? 'Reschedule accepted' : 'Reschedule declined', body)
+  );
 }
 
 export async function sendOfflineReminderEmail(opts: {
@@ -177,11 +211,12 @@ export async function sendOfflineReminderEmail(opts: {
     <p>Hi ${escapeHtml(opts.recipientName)},</p>
     <p>${escapeHtml(opts.reminderLabel)}: your <strong>${escapeHtml(opts.subject || 'PrepSkul')}</strong> session is on <strong>${escapeHtml(when)}</strong>.</p>
     ${deliveryBlock(opts)}`;
-  return sendCustomEmail({
-    to: opts.to,
-    subject: `PrepSkul reminder — ${opts.reminderLabel}`,
-    html: familyEmailShell('Session reminder', body),
-  });
+  return dispatchEmail(
+    opts.to,
+    opts.recipientName,
+    `PrepSkul reminder — ${opts.reminderLabel}`,
+    familyEmailShell('Session reminder', body)
+  );
 }
 
 export async function notifyOpsWithSessionFooter(subject: string, htmlBody: string, sessionId: string) {
