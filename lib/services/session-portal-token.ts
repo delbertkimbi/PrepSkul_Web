@@ -123,13 +123,30 @@ export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor
     .eq('individual_session_id', session.id)
     .maybeSingle();
 
+  const portalRole = resolvedPurpose === 'tutor_report' ? ('tutor' as const) : ('learner' as const);
+  const participantUserId =
+    portalRole === 'tutor' ? session.tutor_id : session.parent_id || session.learner_id;
+
+  const pending = pendingReschedule || null;
+  const canRespondToReschedule =
+    !!pending &&
+    !!participantUserId &&
+    pending.requested_by_user_id !== participantUserId;
+  const awaitingRescheduleApproval =
+    !!pending &&
+    !!participantUserId &&
+    pending.requested_by_user_id === participantUserId;
+
   return {
     token: verified,
     session,
     subjects,
-    pendingReschedule: pendingReschedule || null,
+    pendingReschedule: pending,
+    canRespondToReschedule,
+    awaitingRescheduleApproval,
+    participantUserId,
     hasSubmittedReport: !!tutorReport,
     hasSubmittedFeedback: !!learnerFeedback,
-    portalRole: resolvedPurpose === 'tutor_report' ? ('tutor' as const) : ('learner' as const),
+    portalRole,
   };
 }

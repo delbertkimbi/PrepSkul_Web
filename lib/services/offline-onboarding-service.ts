@@ -486,6 +486,10 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
 
   if (runErr) {
     console.error('[offline-onboarding] run log insert failed', runErr);
+    throw new Error(
+      runErr.message ||
+        'Sessions were created but offline_onboarding_runs log failed. Run offline_onboarding_sync_schema.sql in Supabase.'
+    );
   }
 
   return {

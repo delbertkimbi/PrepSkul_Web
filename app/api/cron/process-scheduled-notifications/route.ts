@@ -47,7 +47,6 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('status', 'pending')
       .lte('scheduled_for', now)
-      .order('priority', { ascending: false })
       .order('scheduled_for', { ascending: true })
       .limit(BATCH_SIZE);
 
@@ -223,7 +222,6 @@ export async function GET(request: NextRequest) {
           .from('scheduled_notifications')
           .update({
             status: 'sent',
-            sent_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq('id', scheduled.id);
@@ -240,7 +238,6 @@ export async function GET(request: NextRequest) {
           .update({
             status: 'failed',
             updated_at: new Date().toISOString(),
-            error_message: error.message,
           })
           .eq('id', scheduled.id);
       }
