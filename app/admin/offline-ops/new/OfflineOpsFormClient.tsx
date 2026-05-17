@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import Link from 'next/link';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,152 +15,131 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import TutorPicker, { type TutorPickerValue } from '@/components/admin/offline-ops/TutorPicker';
+import DeliveryModeFields, { type DeliveryMode } from '@/components/admin/offline-ops/DeliveryModeFields';
+import {
+  SubjectListInput,
+  PerDaySchedulePanel,
+  defaultDaySlots,
+} from '@/components/admin/offline-ops/SubjectListInput';
 
-const schema = z.object({
-  agentName: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon']),
-  sourceChannel: z.enum(['whatsapp_ads', 'whatsapp_direct', 'phone_call', 'walk_in', 'referral']),
-  primaryRole: z.enum(['parent', 'student']),
-  primaryFullName: z.string().min(2),
-  primaryEmail: z.string().email(),
-  primaryPhone: z.string().min(6),
-  childFullName: z.string().optional(),
-  tutorUserId: z.string().optional(),
-  tutorEmail: z.string().optional(),
-  subject: z.string().min(2),
-  weeks: z.string().min(1),
-  sessionsPerWeek: z.string().min(1),
-  weekDaysCsv: z.string().min(3),
-  sessionTime: z.string().min(4),
-  durationMinutes: z.string().min(2),
-  startDate: z.string().min(8),
-  deliveryMode: z.enum(['online', 'onsite', 'hybrid']),
-  paymentStatus: z.enum(['unpaid', 'partial', 'paid', 'refunded']),
-  paymentEnvironment: z.enum(['real', 'sandbox']),
-  amountPaid: z.string().default('0'),
-  /** Full package / quoted total (XAF). Leave 0 to default tracking to amount paid only. */
-  packageTotalAmount: z.string().optional(),
-  nextFollowupAt: z.string().optional(),
-  notes: z.string().min(8),
-});
-
-type FormData = z.infer<typeof schema>;
+const panel =
+  'bg-white border border-[#1B2C4F]/12 shadow-sm p-5 sm:p-6 rounded-lg';
 
 export default function OfflineOpsFormClient() {
   const router = useRouter();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      agentName: 'Brian',
-      sourceChannel: 'whatsapp_direct',
-      primaryRole: 'parent',
-      primaryFullName: '',
-      primaryEmail: '',
-      primaryPhone: '',
-      childFullName: '',
-      tutorUserId: '',
-      tutorEmail: '',
-      subject: '',
-      weeks: '4',
-      sessionsPerWeek: '2',
-      weekDaysCsv: 'mon,wed',
-      sessionTime: '16:00',
-      durationMinutes: '60',
-      startDate: '',
-      deliveryMode: 'online',
-      paymentStatus: 'unpaid',
-      paymentEnvironment: 'real',
-      amountPaid: '0',
-      packageTotalAmount: '',
-      nextFollowupAt: '',
-      notes: '',
-    },
-  });
-  const paymentStatus = watch('paymentStatus');
-  const packageTotalAmount = watch('packageTotalAmount');
+  const [agentName, setAgentName] = useState('Brian');
+  const [sourceChannel, setSourceChannel] = useState('whatsapp_direct');
+  const [primaryRole, setPrimaryRole] = useState<'parent' | 'student'>('parent');
+  const [primaryFullName, setPrimaryFullName] = useState('');
+  const [primaryEmail, setPrimaryEmail] = useState('');
+  const [primaryPhone, setPrimaryPhone] = useState('');
+  const [childFullName, setChildFullName] = useState('');
+  const [tutor, setTutor] = useState<TutorPickerValue>(null);
 
-  useEffect(() => {
-    if (paymentStatus === 'paid') {
-      // Fully paid: keep due amount as source of truth, amount paid mirrors it in payload.
-      setValue('amountPaid', packageTotalAmount || '0');
+  const [subjectCount, setSubjectCount] = useState(1);
+  const [subjects, setSubjects] = useState(['']);
+  const [daySlots, setDaySlots] = useState(() => defaultDaySlots());
+  const [weeks, setWeeks] = useState('4');
+  const [sessionsPerWeek, setSessionsPerWeek] = useState('2');
+  const [durationMinutes, setDurationMinutes] = useState('60');
+  const [startDate, setStartDate] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('online');
+  const [meetLink, setMeetLink] = useState('');
+  const [onsiteLocation, setOnsiteLocation] = useState('');
+  const [onsitePhotoUrl, setOnsitePhotoUrl] = useState('');
+  const [payPerMonth, setPayPerMonth] = useState('');
+  const [payMonths, setPayMonths] = useState('1');
+  const [operationState, setOperationState] = useState<'active' | 'paused' | 'stopped'>('active');
+  const [startMonthLabel, setStartMonthLabel] = useState('');
+
+  const [paymentStatus, setPaymentStatus] = useState('unpaid');
+  const [paymentEnvironment, setPaymentEnvironment] = useState('real');
+  const [amountPaid, setAmountPaid] = useState('0');
+  const [packageTotalAmount, setPackageTotalAmount] = useState('');
+  const [nextFollowupAt, setNextFollowupAt] = useState('');
+  const [notes, setNotes] = useState('');
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitError(null);
+    if (!tutor?.tutorUserId) {
+      setSubmitError('Select a tutor from the list.');
       return;
     }
-    if (paymentStatus === 'unpaid') {
-      // Unpaid keeps amount paid locked at zero.
-      setValue('amountPaid', '0');
+    if (primaryRole === 'parent' && !childFullName.trim()) {
+      setSubmitError('Learner full name is required for parent accounts.');
+      return;
     }
-  }, [packageTotalAmount, paymentStatus, setValue]);
+    const cleanedSubjects = subjects.map((s) => s.trim()).filter(Boolean);
+    if (!cleanedSubjects.length) {
+      setSubmitError('Add at least one subject.');
+      return;
+    }
+    const enabled = daySlots.filter((d) => d.enabled);
+    if (!enabled.length) {
+      setSubmitError('Select at least one session day.');
+      return;
+    }
+    if ((deliveryMode === 'online' || deliveryMode === 'hybrid') && !meetLink.trim()) {
+      setSubmitError('Google Meet link is required for online/hybrid delivery.');
+      return;
+    }
+    if ((deliveryMode === 'onsite' || deliveryMode === 'hybrid') && !onsiteLocation.trim()) {
+      setSubmitError('Onsite location is required for onsite/hybrid delivery.');
+      return;
+    }
+    if (!notes.trim() || notes.trim().length < 8) {
+      setSubmitError('Operational notes must be at least 8 characters.');
+      return;
+    }
 
-  const onSubmit = async (data: FormData) => {
-    setSubmitError(null);
+    setIsSubmitting(true);
     try {
-      if (!data.tutorUserId && !data.tutorEmail) {
-        throw new Error('Provide Tutor User ID or Tutor Email to match the learner.');
-      }
-      if (data.primaryRole === 'parent' && !data.childFullName?.trim()) {
-        throw new Error('For parent onboarding, the learner full name is required.');
-      }
-
-      const weekDays = data.weekDaysCsv
-        .split(',')
-        .map((x) => x.trim().toLowerCase())
-        .filter(Boolean);
-
-      const normalizedPackageTotal = Number(data.packageTotalAmount || 0);
+      const normalizedPackageTotal = Number(packageTotalAmount || 0);
       const normalizedAmountPaid =
-        data.paymentStatus === 'paid'
-          ? normalizedPackageTotal
-          : data.paymentStatus === 'unpaid'
-            ? 0
-            : Number(data.amountPaid || 0);
+        paymentStatus === 'paid' ? normalizedPackageTotal : paymentStatus === 'unpaid' ? 0 : Number(amountPaid || 0);
 
       const payload = {
-        agentName: data.agentName,
-        sourceChannel: data.sourceChannel,
+        agentName,
+        sourceChannel,
         primary: {
-          role: data.primaryRole,
-          fullName: data.primaryFullName.trim(),
-          email: data.primaryEmail.trim(),
-          phone: data.primaryPhone.trim(),
+          role: primaryRole,
+          fullName: primaryFullName.trim(),
+          email: primaryEmail.trim(),
+          phone: primaryPhone.trim(),
         },
-        child:
-          data.primaryRole === 'parent'
-            ? {
-                fullName: (data.childFullName || '').trim(),
-              }
-            : null,
-        tutor: {
-          tutorUserId: data.tutorUserId?.trim() || undefined,
-          tutorEmail: data.tutorEmail?.trim() || undefined,
-        },
+        child: primaryRole === 'parent' ? { fullName: childFullName.trim() } : null,
+        tutor: { tutorUserId: tutor.tutorUserId },
         schedule: {
-          weeks: Number(data.weeks),
-          sessionsPerWeek: Number(data.sessionsPerWeek),
-          weekDays,
-          sessionTime: data.sessionTime,
-          durationMinutes: Number(data.durationMinutes),
-          startDate: data.startDate,
-          deliveryMode: data.deliveryMode,
-          subject: data.subject.trim(),
+          weeks: Number(weeks),
+          sessionsPerWeek: Number(sessionsPerWeek),
+          dayTimeSlots: enabled.map((d) => ({ day: d.day, time: d.time })),
+          weekDays: enabled.map((d) => d.day),
+          sessionTime: enabled[0].time,
+          durationMinutes: Number(durationMinutes),
+          startDate,
+          deliveryMode,
+          subject: cleanedSubjects[0],
+          subjects: cleanedSubjects,
+          meetLink: meetLink.trim() || null,
+          onsiteLocation: onsiteLocation.trim() || null,
+          onsitePhotoUrl: onsitePhotoUrl.trim() || null,
+          payPerMonthXaf: payPerMonth ? Number(payPerMonth) : null,
+          payMonthsCount: payMonths ? Number(payMonths) : null,
+          operationState,
+          startMonthLabel: startMonthLabel.trim() || null,
         },
-        notes: data.notes.trim(),
+        notes: notes.trim(),
         tracking: {
-          paymentStatus: data.paymentStatus,
-          paymentEnvironment: data.paymentEnvironment,
+          paymentStatus,
+          paymentEnvironment,
           amountPaid: normalizedAmountPaid,
-          packageTotalAmount: data.packageTotalAmount?.trim()
-            ? Number(data.packageTotalAmount)
-            : undefined,
-          nextFollowupAt: data.nextFollowupAt || undefined,
+          packageTotalAmount: packageTotalAmount.trim() ? normalizedPackageTotal : undefined,
+          nextFollowupAt: nextFollowupAt || undefined,
         },
       };
 
@@ -171,48 +149,53 @@ export default function OfflineOpsFormClient() {
         body: JSON.stringify(payload),
       });
       const json = await response.json();
-      if (!response.ok) {
-        throw new Error(json?.error || 'Failed to sync offline onboarding');
-      }
+      if (!response.ok) throw new Error(json?.error || 'Failed to sync offline onboarding');
 
-      router.push('/admin/offline-ops');
+      router.push('/admin/offline-ops/users');
       router.refresh();
-    } catch (e: unknown) {
-      setSubmitError(e instanceof Error ? e.message : 'Failed to save and sync record');
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <Link href="/admin/offline-ops" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900">
+    <div className="w-full max-w-none px-0">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-[#1B2C4F]/15 pb-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#4A6FBF]">Offline operations</p>
+          <h1 className="text-2xl font-bold text-[#1B2C4F]">New offline enrollment</h1>
+          <p className="text-sm text-slate-600 mt-1">First-time registration and session scheduling only.</p>
+        </div>
+        <Link
+          href="/admin/offline-ops/users"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#1B2C4F] hover:text-[#4A6FBF]"
+        >
           <ArrowLeft className="h-4 w-4" />
-          Back to Offline Operations
+          Offline users
         </Link>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Platform Account Creation</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+      <form onSubmit={onSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <section className={`${panel} xl:col-span-7 space-y-5`}>
+          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Identity & contact</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Agent *</Label>
-              <Select value={watch('agentName')} onValueChange={(v) => setValue('agentName', v as FormData['agentName'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue placeholder="Select agent" /></SelectTrigger>
+              <Label>Agent</Label>
+              <Select value={agentName} onValueChange={setAgentName}>
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Brian">Brian</SelectItem>
-                  <SelectItem value="Delbert">Delbert</SelectItem>
-                  <SelectItem value="Calvin">Calvin</SelectItem>
-                  <SelectItem value="Brinzel">Brinzel</SelectItem>
-                  <SelectItem value="Brandon">Brandon</SelectItem>
+                  {['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon'].map((a) => (
+                    <SelectItem key={a} value={a}>{a}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              {errors.agentName && <p className="mt-1 text-sm text-red-600">{errors.agentName.message}</p>}
             </div>
             <div>
-              <Label>Source channel *</Label>
-              <Select value={watch('sourceChannel')} onValueChange={(v) => setValue('sourceChannel', v as FormData['sourceChannel'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
+              <Label>Source</Label>
+              <Select value={sourceChannel} onValueChange={setSourceChannel}>
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="whatsapp_ads">WhatsApp ads</SelectItem>
                   <SelectItem value="whatsapp_direct">WhatsApp direct</SelectItem>
@@ -223,174 +206,159 @@ export default function OfflineOpsFormClient() {
               </Select>
             </div>
             <div>
-              <Label>Primary role *</Label>
-              <Select value={watch('primaryRole')} onValueChange={(v) => setValue('primaryRole', v as FormData['primaryRole'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
+              <Label>Primary role</Label>
+              <Select value={primaryRole} onValueChange={(v) => setPrimaryRole(v as 'parent' | 'student')}>
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="parent">Parent</SelectItem>
-                  <SelectItem value="student">Student/Learner</SelectItem>
+                  <SelectItem value="student">Student</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="primaryFullName">Primary full name *</Label>
-              <Input id="primaryFullName" {...register('primaryFullName')} className="mt-1 border-gray-300" />
+              <Label>Primary full name</Label>
+              <Input value={primaryFullName} onChange={(e) => setPrimaryFullName(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
             </div>
             <div>
-              <Label htmlFor="primaryEmail">Primary email *</Label>
-              <Input id="primaryEmail" type="email" {...register('primaryEmail')} className="mt-1 border-gray-300" />
+              <Label>Primary email (unique account)</Label>
+              <Input type="email" value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
             </div>
             <div>
-              <Label htmlFor="primaryPhone">Primary phone/WhatsApp *</Label>
-              <Input id="primaryPhone" {...register('primaryPhone')} className="mt-1 border-gray-300" />
+              <Label>Phone / WhatsApp</Label>
+              <Input value={primaryPhone} onChange={(e) => setPrimaryPhone(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
+              <p className="text-xs text-slate-500 mt-1">Not required to be unique across accounts.</p>
             </div>
-            {watch('primaryRole') === 'parent' && (
-              <div>
-                <Label htmlFor="childFullName">Learner full name *</Label>
-                <Input id="childFullName" {...register('childFullName')} className="mt-1 border-gray-300" />
-                <p className="text-xs text-gray-500 mt-1">
-                  Contact email and WhatsApp for the family are taken from the primary parent fields above. A secure
-                  login email for the learner account is created automatically.
-                </p>
+            {primaryRole === 'parent' && (
+              <div className="sm:col-span-2">
+                <Label>Learner full name</Label>
+                <Input value={childFullName} onChange={(e) => setChildFullName(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
               </div>
             )}
           </div>
         </section>
 
-        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Verified Tutor Matching</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label htmlFor="tutorUserId">Tutor user ID</Label>
-              <Input id="tutorUserId" {...register('tutorUserId')} className="mt-1 border-gray-300" />
-            </div>
-            <div>
-              <Label htmlFor="tutorEmail">Tutor email (if no ID)</Label>
-              <Input id="tutorEmail" type="email" {...register('tutorEmail')} className="mt-1 border-gray-300" />
-            </div>
-          </div>
+        <section className={`${panel} xl:col-span-5`}>
+          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3 mb-4">Tutor match</h2>
+          <TutorPicker value={tutor} onChange={setTutor} />
         </section>
 
-        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Auto Session Scheduling</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+        <section className={`${panel} xl:col-span-12 space-y-5`}>
+          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Scheduling period</h2>
+          <SubjectListInput
+            count={subjectCount}
+            subjects={subjects}
+            onCountChange={setSubjectCount}
+            onSubjectsChange={setSubjects}
+          />
+          <PerDaySchedulePanel slots={daySlots} onChange={setDaySlots} />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Label htmlFor="subject">Subject *</Label>
-              <Input id="subject" {...register('subject')} className="mt-1 border-gray-300" />
+              <Label>Start date</Label>
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
             </div>
             <div>
-              <Label htmlFor="startDate">Start date *</Label>
-              <Input id="startDate" type="date" {...register('startDate')} className="mt-1 border-gray-300" />
+              <Label>Weeks</Label>
+              <Input type="number" min={1} max={24} value={weeks} onChange={(e) => setWeeks(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label htmlFor="weeks">Number of weeks *</Label>
-              <Input id="weeks" type="number" min={1} max={24} {...register('weeks')} className="mt-1 border-gray-300" />
+              <Label>Sessions / week (reference)</Label>
+              <Input type="number" min={1} max={7} value={sessionsPerWeek} onChange={(e) => setSessionsPerWeek(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label htmlFor="sessionsPerWeek">Sessions per week *</Label>
-              <Input id="sessionsPerWeek" type="number" min={1} max={7} {...register('sessionsPerWeek')} className="mt-1 border-gray-300" />
+              <Label>Duration (min)</Label>
+              <Input type="number" min={30} step={15} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label htmlFor="weekDaysCsv">Week days (csv) *</Label>
-              <Input id="weekDaysCsv" {...register('weekDaysCsv')} placeholder="mon,wed,fri" className="mt-1 border-gray-300" />
+              <Label>Pay / month (XAF)</Label>
+              <Input type="number" min={0} value={payPerMonth} onChange={(e) => setPayPerMonth(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label htmlFor="sessionTime">Session time (HH:mm) *</Label>
-              <Input id="sessionTime" type="time" {...register('sessionTime')} className="mt-1 border-gray-300" />
+              <Label># Pay-months</Label>
+              <Input type="number" min={0.5} step={0.5} value={payMonths} onChange={(e) => setPayMonths(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label htmlFor="durationMinutes">Duration minutes *</Label>
-              <Input id="durationMinutes" type="number" min={30} step={15} {...register('durationMinutes')} className="mt-1 border-gray-300" />
+              <Label>Start month label</Label>
+              <Input value={startMonthLabel} onChange={(e) => setStartMonthLabel(e.target.value)} placeholder="Jan (12)" className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label>Delivery mode *</Label>
-              <Select value={watch('deliveryMode')} onValueChange={(v) => setValue('deliveryMode', v as FormData['deliveryMode'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
+              <Label>Operation state</Label>
+              <Select value={operationState} onValueChange={(v) => setOperationState(v as typeof operationState)}>
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="online">Online</SelectItem>
-                  <SelectItem value="onsite">Onsite</SelectItem>
-                  <SelectItem value="hybrid">Hybrid</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                  <SelectItem value="stopped">Stopped</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
         </section>
 
-        <section className="bg-white rounded-none border border-gray-200 p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-2">Payments, Ops Tracking & Notes</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+        <section className={`${panel} xl:col-span-6`}>
+          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3 mb-4">Delivery</h2>
+          <DeliveryModeFields
+            mode={deliveryMode}
+            meetLink={meetLink}
+            onsiteLocation={onsiteLocation}
+            onsitePhotoUrl={onsitePhotoUrl}
+            onModeChange={setDeliveryMode}
+            onMeetLinkChange={setMeetLink}
+            onLocationChange={setOnsiteLocation}
+            onPhotoUrlChange={setOnsitePhotoUrl}
+          />
+        </section>
+
+        <section className={`${panel} xl:col-span-6 space-y-4`}>
+          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Payments & notes</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Payment status *</Label>
-              <Select value={watch('paymentStatus')} onValueChange={(v) => setValue('paymentStatus', v as FormData['paymentStatus'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
+              <Label>Payment status</Label>
+              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
-                  <SelectItem value="partial">Partially paid</SelectItem>
+                  <SelectItem value="partial">Partial</SelectItem>
                   <SelectItem value="paid">Paid</SelectItem>
                   <SelectItem value="refunded">Refunded</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Payment environment *</Label>
-              <Select value={watch('paymentEnvironment')} onValueChange={(v) => setValue('paymentEnvironment', v as FormData['paymentEnvironment'])}>
-                <SelectTrigger className="mt-1 border-gray-300"><SelectValue /></SelectTrigger>
+              <Label>Environment</Label>
+              <Select value={paymentEnvironment} onValueChange={setPaymentEnvironment}>
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="real">Real</SelectItem>
-                  <SelectItem value="sandbox">Sandbox/Test</SelectItem>
+                  <SelectItem value="sandbox">Sandbox</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Total due (XAF)</Label>
+              <Input type="number" min={0} value={packageTotalAmount} onChange={(e) => setPackageTotalAmount(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
+            </div>
             {paymentStatus === 'partial' && (
               <div>
-                <Label htmlFor="amountPaid">Amount paid (XAF)</Label>
-                <Input id="amountPaid" type="number" min={0} step="0.01" {...register('amountPaid')} className="mt-1 border-gray-300" />
+                <Label>Amount paid</Label>
+                <Input type="number" min={0} value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
               </div>
             )}
-            {paymentStatus === 'unpaid' && (
-              <div>
-                <Label htmlFor="amountPaidReadonly">Amount paid (XAF)</Label>
-                <Input id="amountPaidReadonly" value="0" disabled className="mt-1 border-gray-300 bg-gray-100 text-gray-500" />
-              </div>
-            )}
-            <div>
-              <Label htmlFor="packageTotalAmount">Total due amount (XAF)</Label>
-              <Input
-                id="packageTotalAmount"
-                type="number"
-                min={0}
-                step="0.01"
-                {...register('packageTotalAmount')}
-                className="mt-1 border-gray-300"
-                placeholder={paymentStatus === 'paid' ? 'Required for paid records' : 'Total invoice amount'}
-              />
-            </div>
-            <div>
-              <Label htmlFor="nextFollowupAt">Next follow-up</Label>
-              <Input id="nextFollowupAt" type="datetime-local" {...register('nextFollowupAt')} className="mt-1 border-gray-300" />
-            </div>
           </div>
           <div>
-            <Label htmlFor="notes">Operational notes *</Label>
-            <Textarea id="notes" rows={4} {...register('notes')} className="mt-1 border-gray-300" placeholder="Context from onboarding, matching and follow-up calls/messages." />
-            {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes.message}</p>}
+            <Label>Operational notes</Label>
+            <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
           </div>
         </section>
 
-        {submitError && <div className="rounded-none border border-red-200 bg-red-50 p-4 text-sm text-red-800">{submitError}</div>}
+        {submitError && (
+          <div className="xl:col-span-12 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{submitError}</div>
+        )}
 
-        <div className="flex gap-3">
-          <Button type="submit" disabled={isSubmitting} className="bg-[#1B2C4F] hover:bg-[#1B2C4F]/90 text-white">
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                Saving...
-              </>
-            ) : (
-              'Save record'
-            )}
+        <div className="xl:col-span-12 flex flex-wrap gap-3">
+          <Button type="submit" disabled={isSubmitting} className="bg-[#1B2C4F] hover:bg-[#15243d] text-white">
+            {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Enrolling…</> : 'Complete enrollment'}
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.push('/admin/offline-ops')}>
+          <Button type="button" variant="outline" onClick={() => router.push('/admin/offline-ops/users')}>
             Cancel
           </Button>
         </div>
@@ -398,3 +366,4 @@ export default function OfflineOpsFormClient() {
     </div>
   );
 }
+

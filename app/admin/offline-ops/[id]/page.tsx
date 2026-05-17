@@ -189,6 +189,21 @@ export default async function OfflineOperationDetailPage({
             learner: learnerUserId ? profileById.get(learnerUserId) || null : null,
             tutor: tutorUserId ? profileById.get(tutorUserId) || null : null,
           }}
+          learners={await (async () => {
+            if (!primaryUserId) return [];
+            const { data: links } = await supabase
+              .from('parent_learners')
+              .select('learner_user_id')
+              .eq('parent_user_id', primaryUserId);
+            const ids = [
+              learnerUserId,
+              ...(links || []).map((l) => l.learner_user_id),
+            ].filter(Boolean) as string[];
+            const unique = [...new Set(ids)];
+            if (!unique.length) return [];
+            const { data: lp } = await supabase.from('profiles').select('id, full_name').in('id', unique);
+            return lp || [];
+          })()}
         />
       </main>
     </div>

@@ -29,7 +29,7 @@ export default function SessionReportClient() {
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || 'Failed to submit report');
       setStatus('done');
-      setMessage('Session report submitted successfully.');
+      setMessage('');
       setShowSuccessPopup(true);
     } catch (e: any) {
       setStatus('error');

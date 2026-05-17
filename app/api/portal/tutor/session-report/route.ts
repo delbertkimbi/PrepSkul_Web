@@ -12,6 +12,8 @@ const schema = z.object({
   topicsCovered: z.string().optional(),
   learnerEngagement: z.string().optional(),
   issues: z.string().optional(),
+  subjectTaught: z.string().optional(),
+  preSessionPhotoUrl: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -40,6 +42,8 @@ export async function POST(request: NextRequest) {
         topics_covered: topicsCovered || null,
         learner_engagement: learnerEngagement || null,
         issues: issues || null,
+        subject_taught: subjectTaught || null,
+        pre_session_photo_url: preSessionPhotoUrl || null,
         completed_at: attended ? new Date().toISOString() : null,
       },
       { onConflict: 'individual_session_id' }

@@ -30,7 +30,7 @@ export default function SessionFeedbackClient() {
       if (!res.ok) throw new Error(json?.error || 'Failed to submit feedback');
       setThankYouNote(json?.thankYouNote || '');
       setStatus('done');
-      setMessage('Feedback submitted. Thank you.');
+      setMessage('');
       setShowSuccessPopup(true);
     } catch (e: any) {
       setStatus('error');
@@ -87,17 +87,10 @@ export default function SessionFeedbackClient() {
           {status === 'saving' ? 'Submitting...' : 'Submit Feedback'}
         </button>
 
-        {message && (
-          <div className={`text-sm p-3 border rounded-md ${status === 'done' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-            {message}
-          </div>
+        {message && status === 'error' && (
+          <div className="text-sm p-3 border rounded-md bg-red-50 border-red-200 text-red-800">{message}</div>
         )}
 
-        {thankYouNote && status === 'done' && (
-          <div className="border border-gray-200 bg-gray-50 p-4 rounded-md text-sm text-gray-800 leading-relaxed">
-            {thankYouNote}
-          </div>
-        )}
       </div>
 
       {showSuccessPopup && (
