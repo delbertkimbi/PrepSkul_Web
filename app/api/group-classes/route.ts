@@ -2,11 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedSupabaseForApi } from '@/lib/services/group-classes/api-auth'
 import { createGroupClassListing, listPublishedGroupClasses } from '@/lib/services/group-classes/group-class-service'
 import { jsonWithCors, buildCorsHeaders } from '@/lib/services/group-classes/cors'
-
-function groupClassesEnabled(): boolean {
-  const v = (process.env.GROUP_CLASSES_ENABLED || 'true').toLowerCase()
-  return v === 'true' || v === '1' || v === 'yes'
-}
+import { groupClassesEnabled } from '@/lib/services/group-classes/feature-flag'
 
 export async function GET(request: NextRequest) {
   try {

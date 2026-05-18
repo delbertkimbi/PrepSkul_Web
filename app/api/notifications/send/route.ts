@@ -71,6 +71,12 @@ export async function POST(request: NextRequest) {
         effectiveMessage = "You're almost there! Add your personal statement to complete your profile and submit for verification.";
         effectiveSubject = effectiveTitle;
       }
+    } else if (type === 'identity_verification_approved') {
+      effectiveTitle = 'Identity verified – PrepSkul';
+      effectiveSubject = effectiveTitle;
+    } else if (type === 'identity_verification_rejected') {
+      effectiveTitle = 'Verification update – PrepSkul';
+      effectiveSubject = effectiveTitle;
     }
 
     // Check rate limits (per-user: 10/min, global: 1000/min)

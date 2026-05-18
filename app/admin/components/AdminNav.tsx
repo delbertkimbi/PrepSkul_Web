@@ -27,6 +27,7 @@ const operationsItems = [
   { name: 'Analytics', href: '/admin/analytics' },
   { name: 'Offline Ops', href: '/admin/offline-ops' },
   { name: 'Feedback Inbox', href: '/admin/feedback-inbox' },
+  { name: 'Identity Verifications', href: '/admin/identity-verifications' },
   { name: 'Ops Events', href: '/admin/operations-events' },
   { name: 'Active Users', href: '/admin/users/active' },
 ];

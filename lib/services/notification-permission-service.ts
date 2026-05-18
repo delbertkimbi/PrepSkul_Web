@@ -115,6 +115,8 @@ function checkRoleBasedPermissions(
     'trial_payment_failed',
     'payment_request_paid',
     'payment_request_failed',
+    'identity_verification_approved',
+    'identity_verification_rejected',
   ];
 
   // Check tutor-only types
