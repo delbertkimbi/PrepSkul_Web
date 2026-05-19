@@ -15,16 +15,18 @@ export type StartMonthValue = { month: number; year: number };
 export default function StartMonthPicker({
   value,
   onChange,
+  label = 'Start month *',
 }: {
   value: StartMonthValue;
   onChange: (v: StartMonthValue) => void;
+  label?: string;
 }) {
   const { months, years } = monthYearOptions(3, 1);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div>
-        <Label>Start month *</Label>
+        <Label>{label}</Label>
         <Select
           value={String(value.month)}
           onValueChange={(v) => onChange({ ...value, month: Number(v) })}

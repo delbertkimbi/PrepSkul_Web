@@ -54,7 +54,7 @@ export async function getOfflineUserContext(admin: SupabaseClient, primaryUserId
     .select('learner_user_id')
     .eq('parent_user_id', primaryUserId);
 
-  const { data: op } = await admin
+  let { data: op } = await admin
     .from('offline_operations')
     .select('id, customer_name, onboarding_stage, learner_user_id')
     .eq('primary_user_id', primaryUserId)
@@ -64,11 +64,22 @@ export async function getOfflineUserContext(admin: SupabaseClient, primaryUserId
 
   const learnerIds = [
     run?.learner_user_id,
-    op?.learner_user_id,
     ...(children || []).map((c) => c.learner_user_id),
   ].filter(Boolean) as string[];
 
   const uniqueLearnerIds = [...new Set(learnerIds)];
+
+  if (!op && uniqueLearnerIds.length) {
+    const { data: learnerOp } = await admin
+      .from('offline_operations')
+      .select('id, customer_name, onboarding_stage, learner_user_id')
+      .in('learner_user_id', uniqueLearnerIds)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    op = learnerOp;
+  }
+
   let learnerProfiles: Array<{ id: string; full_name?: string | null; email?: string | null }> = [];
   if (uniqueLearnerIds.length) {
     const { data } = await admin.from('profiles').select('id, full_name, email').in('id', uniqueLearnerIds);
@@ -118,6 +129,36 @@ export async function schedulePeriodForExistingUser(
   adminUserId: string,
   body: ScheduleBody
 ) {
+  const schedules = body.monthlySchedules?.length
+    ? body.monthlySchedules
+    : body.schedule
+      ? [body.schedule]
+      : [];
+  if (!schedules.length) throw new Error('Schedule payload is required.');
+
+  const results = [];
+  for (const schedule of schedules) {
+    results.push(await scheduleSinglePeriodForExistingUser(admin, primaryUserId, adminUserId, body, schedule));
+  }
+
+  if (results.length === 1) return results[0];
+
+  return {
+    periodIds: results.map((r) => r.periodId).filter(Boolean),
+    sessionIds: results.flatMap((r) => r.sessionIds || []),
+    importedMonths: results.length,
+    tutorUserId: results[0]?.tutorUserId,
+    learnerUserId: results[0]?.learnerUserId,
+  };
+}
+
+async function scheduleSinglePeriodForExistingUser(
+  admin: SupabaseClient,
+  primaryUserId: string,
+  adminUserId: string,
+  body: ScheduleBody,
+  schedule: ScheduleInput
+) {
   const ctx = await getOfflineUserContext(admin, primaryUserId);
   const learnerUserId = resolveLearnerUserIdForOfflineHub(ctx, primaryUserId, body.learnerUserId);
   if (!learnerUserId) {
@@ -130,7 +171,7 @@ export async function schedulePeriodForExistingUser(
   }
 
   const tutorResolved = await resolveTutorUserId(admin, body.tutor);
-  const scheduleV2 = toScheduleV2(body.schedule);
+  const scheduleV2 = toScheduleV2(schedule);
   const isHistorical = body.isHistoricalImport ?? false;
 
   const { data: learnerProfile } = await admin
@@ -148,10 +189,10 @@ export async function schedulePeriodForExistingUser(
     learnerDisplayNames: learnerProfile?.full_name || null,
     schedule: scheduleV2,
     commercial: {
-      payPerMonthXaf: body.schedule.payPerMonthXaf,
-      payMonthsCount: body.schedule.payMonthsCount,
-      operationState: body.schedule.operationState,
-      startMonthLabel: body.schedule.startMonthLabel,
+      payPerMonthXaf: schedule.payPerMonthXaf,
+      payMonthsCount: schedule.payMonthsCount,
+      operationState: schedule.operationState,
+      startMonthLabel: schedule.startMonthLabel,
     },
     isHistoricalImport: isHistorical,
     offlineOperationId: ctx.offlineOperationId,
@@ -395,7 +436,9 @@ export function parseHistoricalCsv(text: string): ScheduleInput[] {
       onsiteLocation: get('onsitelocation', 'onsite_location') || null,
       payPerMonthXaf: get('paypermonth', 'pay_per_month') ? Number(get('paypermonth', 'pay_per_month')) : null,
       payMonthsCount: get('paymonths', 'pay_months') ? Number(get('paymonths', 'pay_months')) : null,
-      operationState: (get('state', 'operation_state') || 'stopped') as ScheduleInput['operationState'],
+      operationState: get('state', 'operation_state')
+        ? (get('state', 'operation_state') as ScheduleInput['operationState'])
+        : undefined,
       startMonthLabel: get('startmonth', 'start_month_label') || null,
     });
   }

@@ -29,7 +29,7 @@ const operationsItems = [
   { name: 'Offline Ops', href: '/admin/offline-ops' },
   { name: 'Feedback Inbox', href: '/admin/feedback-inbox' },
   { name: 'Ops Events', href: '/admin/operations-events' },
-  { name: 'Active Users', href: '/admin/users/active' },
+  { name: 'Active Mobile Users', href: '/admin/users/active' },
 ];
 
 const singleItems = [

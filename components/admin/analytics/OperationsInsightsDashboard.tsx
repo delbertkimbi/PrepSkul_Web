@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { COMMISSION_RATE, TUTOR_EARNINGS_RATE } from '@/lib/offline-ops-constants';
 
 type Scope = 'on' | 'off' | 'combined';
@@ -13,6 +14,99 @@ const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then((r) => {
 
 function money(n: number) {
   return Number(n || 0).toLocaleString();
+}
+
+function normalizeTutorNames(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string' && value.trim()) {
+    return value.split(',').map((part) => part.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function TutorNamesDropdown({ names }: { names: string[] }) {
+  const [open, setOpen] = useState(false);
+  const clean = names.filter(Boolean);
+  if (!clean.length) return <span>—</span>;
+  if (clean.length === 1) return <span>{clean[0]}</span>;
+
+  return (
+    <div className="relative inline-block text-left">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1 rounded-md border border-[#1B2C4F]/20 bg-white px-2 py-1 text-xs font-medium text-[#1B2C4F] hover:bg-slate-50"
+      >
+        {clean.length} tutors
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-20 mt-1 min-w-[180px] rounded-md border border-slate-200 bg-white p-2 shadow-lg">
+          <ul className="space-y-1 text-xs text-slate-700">
+            {clean.map((name) => (
+              <li key={name} className="px-1 py-0.5">
+                {name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthlySummaryTable({
+  rows,
+}: {
+  rows: Array<{
+    month: string;
+    tutorNames: string[];
+    revenue: number;
+    commission: number;
+    tutorShare: number;
+    studentCount: number;
+  }>;
+}) {
+  return (
+    <div className="bg-white border border-[#1B2C4F]/15 rounded-lg overflow-hidden shadow-sm">
+      <h3 className="text-sm font-bold text-white bg-[#1B2C4F] px-4 py-3">Monthly summary</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-[#2d4a3e] text-left text-xs uppercase text-white">
+              {['Month', 'Tutors', 'Revenue', 'PrepSkul profit', 'Tutor earnings', 'Students'].map((h) => (
+                <th key={h} className="px-3 py-2 font-semibold whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                  No data for this view yet.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, i) => (
+                <tr key={row.month} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}>
+                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{row.month}</td>
+                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                    <TutorNamesDropdown names={row.tutorNames} />
+                  </td>
+                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{money(row.revenue)}</td>
+                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{money(row.commission)}</td>
+                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{money(row.tutorShare)}</td>
+                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{row.studentCount}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function OpsTable({
@@ -106,14 +200,14 @@ export default function OperationsInsightsDashboard() {
     ]) || [];
 
   const monthlyRows =
-    data?.monthlySummary?.map((m: Record<string, unknown>) => [
-      String(m.month),
-      String(m.tutorNames ?? m.tutorInitials ?? ''),
-      money(Number(m.revenue)),
-      money(Number(m.commission)),
-      money(Number(m.tutorShare)),
-      String(m.studentCount),
-    ]) || [];
+    data?.monthlySummary?.map((m: Record<string, unknown>) => ({
+      month: String(m.month),
+      tutorNames: normalizeTutorNames(m.tutorNames ?? m.tutorInitials ?? ''),
+      revenue: Number(m.revenue || 0),
+      commission: Number(m.commission || 0),
+      tutorShare: Number(m.tutorShare || 0),
+      studentCount: Number(m.studentCount || 0),
+    })) || [];
 
   const grandRows = data?.grandTotals
     ? [
@@ -130,7 +224,7 @@ export default function OperationsInsightsDashboard() {
         <div>
           <h2 className="text-lg font-bold text-[#1B2C4F]">Operations insights</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Simple tables aligned with your offline ops spreadsheet — active operations drive revenue totals.
+            Offline revenue totals include historical imports. Active live operations still drive current-state totals; admins control operation state on the detail page.
           </p>
         </div>
         <div className="flex rounded-lg border border-[#1B2C4F]/20 overflow-hidden">
@@ -197,13 +291,7 @@ export default function OperationsInsightsDashboard() {
         />
       )}
 
-      {monthlyRows.length > 0 && (
-        <OpsTable
-          title="Monthly summary"
-          headers={['Month', 'Tutors', 'Revenue', 'PrepSkul profit', 'Tutor earnings', 'Students']}
-          rows={monthlyRows}
-        />
-      )}
+      {monthlyRows.length > 0 && <MonthlySummaryTable rows={monthlyRows} />}
 
       {grandRows.length > 0 && scope === 'off' && (
         <OpsTable title="Grand totals (offline)" headers={['Item', 'Amount (XAF)']} rows={grandRows} />

@@ -63,21 +63,44 @@ export default function OfflineUsersListClient() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {users.map((u) => (
-          <Link
+          <div
             key={u.primaryUserId}
-            href={`/admin/offline-ops/users/${u.primaryUserId}`}
-            className="block bg-white border border-[#1B2C4F]/12 rounded-lg p-4 shadow-sm hover:border-[#4A6FBF]/40 transition-colors"
+            className="bg-white border border-[#1B2C4F]/12 rounded-lg p-4 shadow-sm space-y-3"
           >
-            <p className="font-semibold text-[#1B2C4F]">{u.fullName}</p>
-            <p className="text-xs text-slate-500 truncate">{u.email}</p>
-            <p className="text-xs text-slate-600 mt-2">Tutor: {u.tutorName || '—'}</p>
-            <p className="text-xs text-slate-600 capitalize">Stage: {u.onboardingStage?.replace(/_/g, ' ') || '—'}</p>
-            {u.nextSession && (
-              <p className="text-xs mt-2 text-[#4A6FBF] font-medium">
-                Next: {u.nextSession.scheduled_date} {String(u.nextSession.scheduled_time).slice(0, 5)}
+            <Link href={`/admin/offline-ops/users/${u.primaryUserId}`} className="block hover:opacity-90">
+              <p className="font-semibold text-[#1B2C4F]">{u.fullName}</p>
+              <p className="text-xs text-slate-500 truncate">{u.email}</p>
+              <p className="text-xs text-slate-600 mt-2">Tutor: {u.tutorName || '—'}</p>
+              <p className="text-xs text-slate-600 capitalize">
+                Stage: {u.onboardingStage?.replace(/_/g, ' ') || '—'}
               </p>
-            )}
-          </Link>
+              {u.nextSession && (
+                <p className="text-xs mt-2 text-[#4A6FBF] font-medium">
+                  Next: {u.nextSession.scheduled_date} {String(u.nextSession.scheduled_time).slice(0, 5)}
+                </p>
+              )}
+            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href={`/admin/offline-ops/users/${u.primaryUserId}`}
+                className="text-xs font-semibold px-3 py-1.5 rounded-md border border-[#1B2C4F]/20 text-[#1B2C4F] hover:bg-slate-50"
+              >
+                Manage user
+              </Link>
+              {u.offlineOperationId ? (
+                <Link
+                  href={`/admin/offline-ops/${u.offlineOperationId}`}
+                  className="text-xs font-semibold px-3 py-1.5 rounded-md bg-[#1B2C4F] text-white hover:bg-[#15243d]"
+                >
+                  Operation detail
+                </Link>
+              ) : (
+                <span className="text-xs px-3 py-1.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200">
+                  No detail record yet
+                </span>
+              )}
+            </div>
+          </div>
         ))}
       </div>
 

@@ -57,7 +57,6 @@ export default function OfflineOpsFormClient() {
   const [payPerMonth, setPayPerMonth] = useState('');
   const [payMonths, setPayMonths] = useState('1');
   const [operationState, setOperationState] = useState<'active' | 'paused' | 'stopped'>('active');
-  const [startMonthLabel, setStartMonthLabel] = useState('');
 
   const [paymentStatus, setPaymentStatus] = useState('unpaid');
   const [paymentEnvironment, setPaymentEnvironment] = useState('real');
@@ -138,13 +137,14 @@ export default function OfflineOpsFormClient() {
               : primaryEmail.trim(),
           phone: primaryPhone.trim(),
         },
-        child: primaryRole === 'parent' || (existingUser?.userType === 'parent')
-          ? { fullName: childFullName.trim() }
-          : null,
+        child:
+          primaryRole === 'parent' || existingUser?.userType === 'parent'
+            ? { fullName: childFullName.trim() }
+            : undefined,
         tutor: { tutorUserId: tutor.tutorUserId },
         schedule: {
           weeks: Number(weeks),
-          sessionsPerWeek: Number(sessionsPerWeek),
+          sessionsPerWeek: Math.max(1, enabled.length),
           dayTimeSlots: enabled.map((d) => ({ day: d.day, time: d.time })),
           weekDays: enabled.map((d) => d.day),
           sessionTime: enabled[0].time,
@@ -159,7 +159,6 @@ export default function OfflineOpsFormClient() {
           payPerMonthXaf: payPerMonth ? Number(payPerMonth) : null,
           payMonthsCount: payMonths ? Number(payMonths) : null,
           operationState,
-          startMonthLabel: startMonthLabel.trim() || null,
         },
         notes: notes.trim(),
         tracking: {
@@ -177,9 +176,22 @@ export default function OfflineOpsFormClient() {
         body: JSON.stringify(payload),
       });
       const json = await response.json();
-      if (!response.ok) throw new Error(json?.error || 'Failed to sync offline onboarding');
+      if (!response.ok) {
+        const details = json?.details?.fieldErrors
+          ? Object.entries(json.details.fieldErrors)
+              .map(([field, messages]) => `${field}: ${(messages as string[]).join(', ')}`)
+              .join(' | ')
+          : '';
+        throw new Error(details ? `${json?.error || 'Invalid payload'} — ${details}` : json?.error || 'Failed to sync offline onboarding');
+      }
 
-      router.push('/admin/offline-ops/users');
+      if (json.offlineOperationId) {
+        router.push(`/admin/offline-ops/${json.offlineOperationId}`);
+      } else if (json.run?.primaryUserId) {
+        router.push(`/admin/offline-ops/users/${json.run.primaryUserId}`);
+      } else {
+        router.push('/admin/offline-ops/users');
+      }
       router.refresh();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to save');
@@ -309,7 +321,13 @@ export default function OfflineOpsFormClient() {
             onCountChange={setSubjectCount}
             onSubjectsChange={setSubjects}
           />
-          <PerDaySchedulePanel slots={daySlots} onChange={setDaySlots} />
+          <PerDaySchedulePanel
+            slots={daySlots}
+            onChange={(slots) => {
+              setDaySlots(slots);
+              setSessionsPerWeek(String(Math.max(1, slots.filter((d) => d.enabled).length)));
+            }}
+          />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label>Start date</Label>
@@ -320,8 +338,16 @@ export default function OfflineOpsFormClient() {
               <Input type="number" min={1} max={24} value={weeks} onChange={(e) => setWeeks(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label>Sessions / week (reference)</Label>
-              <Input type="number" min={1} max={7} value={sessionsPerWeek} onChange={(e) => setSessionsPerWeek(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
+              <Label>Sessions / week</Label>
+              <Input
+                type="number"
+                min={1}
+                max={7}
+                value={String(Math.max(1, daySlots.filter((d) => d.enabled).length || Number(sessionsPerWeek)))}
+                readOnly
+                className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">Auto-filled from selected session days.</p>
             </div>
             <div>
               <Label>Duration (min)</Label>
@@ -334,10 +360,6 @@ export default function OfflineOpsFormClient() {
             <div>
               <Label># Pay-months</Label>
               <Input type="number" min={0.5} step={0.5} value={payMonths} onChange={(e) => setPayMonths(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-            </div>
-            <div>
-              <Label>Start month label</Label>
-              <Input value={startMonthLabel} onChange={(e) => setStartMonthLabel(e.target.value)} placeholder="Jan (12)" className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
               <Label>Operation state</Label>

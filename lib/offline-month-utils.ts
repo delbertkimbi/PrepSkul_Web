@@ -57,6 +57,32 @@ export function formatStartMonthLabel(year: number, month: number, startDate?: s
   return `${short} ${year}`;
 }
 
+export function monthKeyFromYearMonth(year: number, month: number) {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+export function enumerateMonthRange(
+  start: { year: number; month: number },
+  end: { year: number; month: number }
+) {
+  const startIndex = start.year * 12 + (start.month - 1);
+  const endIndex = end.year * 12 + (end.month - 1);
+  if (endIndex < startIndex) return [];
+
+  const months: Array<{ year: number; month: number; key: string; label: string }> = [];
+  for (let i = startIndex; i <= endIndex; i++) {
+    const year = Math.floor(i / 12);
+    const month = (i % 12) + 1;
+    months.push({
+      year,
+      month,
+      key: monthKeyFromYearMonth(year, month),
+      label: `${MONTH_NAMES[month - 1]} ${year}`,
+    });
+  }
+  return months;
+}
+
 export function monthYearOptions(yearsBack = 2, yearsForward = 1) {
   const now = new Date();
   const years: number[] = [];

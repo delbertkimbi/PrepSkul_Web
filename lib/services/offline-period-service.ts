@@ -50,6 +50,10 @@ async function insertSessionRow(
   return ins?.id || null;
 }
 
+function monthLabelFromDate(dateLike?: string | null) {
+  return dateLike ? dateLike.slice(0, 7) : null;
+}
+
 export async function scheduleOfflinePeriod(admin: SupabaseClient, params: SchedulePeriodParams) {
   const occurrences = enumerateSessionOccurrences(params.schedule);
   const primarySubject = params.schedule.subjects[0] || 'PrepSkul session';
@@ -84,10 +88,10 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
     pay_per_month_xaf: payPerMonth,
     pay_months_count: payMonths,
     expected_period_revenue_xaf: expectedRevenue,
-    operation_state: params.commercial?.operationState || (params.isHistoricalImport ? 'stopped' : 'active'),
+    operation_state: params.commercial?.operationState || 'active',
     period_start: periodStart,
     period_end: periodEnd,
-    start_month_label: params.commercial?.startMonthLabel || null,
+    start_month_label: params.commercial?.startMonthLabel || monthLabelFromDate(periodStart),
     is_historical_import: params.isHistoricalImport ?? false,
     source: 'admin_form',
     created_by_admin_id: params.adminUserId,

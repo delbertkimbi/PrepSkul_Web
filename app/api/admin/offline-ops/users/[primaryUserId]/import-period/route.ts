@@ -27,15 +27,9 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const schedule = {
-      ...parsed.data.schedule,
-      operationState: parsed.data.schedule.operationState || ('stopped' as const),
-    };
-
     const supabase = getSupabaseAdmin();
     const result = await schedulePeriodForExistingUser(supabase, primaryUserId, user.id, {
       ...parsed.data,
-      schedule,
       isHistoricalImport: true,
       sendWelcomeEmail: false,
     });
