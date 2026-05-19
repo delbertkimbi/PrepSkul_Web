@@ -7,3 +7,4 @@ ALTER TABLE IF EXISTS public.profiles
 
 DROP INDEX IF EXISTS public.profiles_unique_phone_number_not_null;
 
+NOTIFY pgrst, 'reload schema';
