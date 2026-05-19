@@ -459,6 +459,37 @@ async function countOfflineOperationsTouchingUser(admin: SupabaseClient, userId:
   return (c1 || 0) + (c2 || 0);
 }
 
+function missingPostgrestColumnName(error: { message?: string; code?: string } | null | undefined) {
+  if (!isPostgrestMissingColumnError(error)) return null;
+  return String(error?.message || '').match(/'([^']+)' column/)?.[1] || null;
+}
+
+async function insertOfflineOperationCompat(admin: SupabaseClient, row: Record<string, unknown>) {
+  let payload = { ...row };
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { data, error } = await admin.from('offline_operations').insert(payload).select('id').maybeSingle();
+    if (!error || !missingPostgrestColumnName(error)) return { data, error };
+    const missing = missingPostgrestColumnName(error);
+    if (!missing || !(missing in payload)) return { data, error };
+    delete payload[missing];
+  }
+  return admin.from('offline_operations').insert(payload).select('id').maybeSingle();
+}
+
+async function updateOfflineOperationCompat(admin: SupabaseClient, id: string, row: Record<string, unknown>) {
+  let payload = { ...row };
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const { error } = await admin.from('offline_operations').update(payload).eq('id', id);
+    if (!error || !missingPostgrestColumnName(error)) return error;
+    const missing = missingPostgrestColumnName(error);
+    if (!missing || !(missing in payload)) return error;
+    delete payload[missing];
+    if (Object.keys(payload).length === 0) return null;
+  }
+  const { error } = await admin.from('offline_operations').update(payload).eq('id', id);
+  return error;
+}
+
 function userTypeMatchesExpectedForOfflineEnrollment(
   dbUserType: string | null | undefined,
   expect: 'parent' | 'learner'
@@ -557,9 +588,7 @@ async function createOfflineOperationForEnrollment(
       ? input.tracking.packageTotalAmount
       : input.tracking?.amountPaid;
 
-  const { data: inserted, error } = await admin
-    .from('offline_operations')
-    .insert({
+  const { data: inserted, error } = await insertOfflineOperationCompat(admin, {
       agent_name: input.agentName,
       source_channel: input.sourceChannel,
       customer_name: input.primaryFullName,
@@ -582,9 +611,7 @@ async function createOfflineOperationForEnrollment(
         : null,
       converted_to_platform: true,
       notes: input.notes,
-    })
-    .select('id')
-    .maybeSingle();
+    });
 
   if (error || !inserted?.id) {
     throw new Error(error?.message || 'Failed to create offline operation');
@@ -598,10 +625,7 @@ async function createOfflineOperationForEnrollment(
     recurring_session_id: input.recurringSessionId || null,
     expected_total_amount: expectedTotal,
   };
-  const { error: linkErr } = await admin
-    .from('offline_operations')
-    .update(linkagePatch)
-    .eq('id', inserted.id);
+  const linkErr = await updateOfflineOperationCompat(admin, inserted.id, linkagePatch);
   if (linkErr) {
     console.warn('[offline-onboarding] offline_operations linkage update skipped', linkErr.message);
   }
