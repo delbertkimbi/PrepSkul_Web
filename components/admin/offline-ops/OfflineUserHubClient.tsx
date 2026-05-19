@@ -26,7 +26,7 @@ type HubProps = {
   defaultTutorUserId: string | null;
 };
 
-type Panel = 'schedule' | 'child' | 'import' | 'csv' | 'anonymize' | null;
+type Panel = 'schedule' | 'child' | 'import' | 'csv' | 'anonymize' | 'delete' | null;
 
 export default function OfflineUserHubClient(props: HubProps) {
   const router = useRouter();
@@ -47,6 +47,7 @@ export default function OfflineUserHubClient(props: HubProps) {
   const [childEmail, setChildEmail] = useState('');
   const [csvText, setCsvText] = useState('');
   const [confirmAnonymize, setConfirmAnonymize] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState('');
 
   const patchSchedule = (p: Partial<SchedulePeriodFormState>) =>
     setScheduleState((s) => ({ ...s, ...p }));
@@ -55,12 +56,12 @@ export default function OfflineUserHubClient(props: HubProps) {
 
   const submitSchedule = async (historical: boolean) => {
     setError(null);
-    const err = validateSchedulePeriodState(scheduleState);
+    const err = validateSchedulePeriodState(scheduleState, { historical });
     if (err) {
       setError(err);
       return;
     }
-    const { schedule } = buildSchedulePayload(scheduleState);
+    const { schedule } = buildSchedulePayload(scheduleState, { historical });
     setBusy(true);
     try {
       const res = await fetch(historical ? `${base}/import-period` : `${base}/schedule-period`, {
@@ -165,12 +166,33 @@ export default function OfflineUserHubClient(props: HubProps) {
     }
   };
 
+  const submitDelete = async () => {
+    if (confirmDelete !== 'DELETE') {
+      setError('Type DELETE to confirm.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`${base}/delete`, { method: 'POST' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed');
+      setMessage('User deleted. Session counts and tutor ratings preserved.');
+      router.push('/admin/offline-ops/users');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const cards: { id: Panel; title: string; desc: string; show: boolean }[] = [
     { id: 'schedule', title: 'Schedule new period', desc: 'Add sessions for a new billing period', show: true },
     { id: 'child', title: 'Add child learner', desc: 'Link another learner to this parent', show: props.userType === 'parent' },
     { id: 'import', title: 'Import past period', desc: 'Backfill Jan–Apr style history (no emails)', show: true },
     { id: 'csv', title: 'CSV import', desc: 'Bulk import multiple historical periods', show: true },
     { id: 'anonymize', title: 'Soft anonymize', desc: 'Remove PII; keep sessions for analytics', show: true },
+    { id: 'delete', title: 'Delete user', desc: 'Erase the account; keep session counts + tutor ratings', show: true },
   ];
 
   return (
@@ -226,7 +248,7 @@ export default function OfflineUserHubClient(props: HubProps) {
                 state={scheduleState}
                 onChange={patchSchedule}
                 learners={props.learners}
-                showLearnerSelect={props.learners.length > 1}
+                showLearnerSelect={props.learners.length >= 1 && props.userType === 'parent'}
                 historicalDefaults={panel === 'import'}
               />
               <Button
@@ -302,6 +324,24 @@ export default function OfflineUserHubClient(props: HubProps) {
               />
               <Button type="button" variant="destructive" disabled={busy} onClick={submitAnonymize}>
                 Soft anonymize user
+              </Button>
+            </div>
+          )}
+
+          {panel === 'delete' && (
+            <div className="space-y-4 max-w-md">
+              <p className="text-sm text-slate-600">
+                Removes the auth account and profile so this user can no longer sign in. Tutor session counts, learner
+                feedback, ratings, and revenue rows are kept (anonymized references). Type <strong>DELETE</strong> to
+                confirm.
+              </p>
+              <Input
+                value={confirmDelete}
+                onChange={(e) => setConfirmDelete(e.target.value)}
+                placeholder="DELETE"
+              />
+              <Button type="button" variant="destructive" disabled={busy} onClick={submitDelete}>
+                Delete user account
               </Button>
             </div>
           )}

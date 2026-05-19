@@ -17,6 +17,11 @@ import {
   defaultDaySlots,
   type DaySlot,
 } from '@/components/admin/offline-ops/SubjectListInput';
+import StartMonthPicker, { type StartMonthValue } from '@/components/admin/offline-ops/StartMonthPicker';
+import {
+  deriveStartDateFromMonthYear,
+  formatStartMonthLabel,
+} from '@/lib/offline-month-utils';
 
 export type SchedulePeriodFormState = {
   tutor: TutorPickerValue;
@@ -36,6 +41,7 @@ export type SchedulePeriodFormState = {
   payMonths: string;
   operationState: 'active' | 'paused' | 'stopped';
   startMonthLabel: string;
+  startMonthYear: StartMonthValue;
 };
 
 export function defaultSchedulePeriodState(): SchedulePeriodFormState {
@@ -57,21 +63,33 @@ export function defaultSchedulePeriodState(): SchedulePeriodFormState {
     payMonths: '1',
     operationState: 'active',
     startMonthLabel: '',
+    startMonthYear: { month: new Date().getMonth() + 1, year: new Date().getFullYear() },
   };
 }
 
-export function buildSchedulePayload(state: SchedulePeriodFormState) {
+export function buildSchedulePayload(state: SchedulePeriodFormState, opts?: { historical?: boolean }) {
   const cleanedSubjects = state.subjects.map((s) => s.trim()).filter(Boolean);
   const enabled = state.daySlots.filter((d) => d.enabled);
+  const dayTimeSlots = enabled.map((d) => ({ day: d.day, time: d.time }));
+  let startDate = state.startDate;
+  let startMonthLabel = state.startMonthLabel.trim() || null;
+  if (opts?.historical) {
+    startDate = deriveStartDateFromMonthYear(
+      state.startMonthYear.year,
+      state.startMonthYear.month,
+      dayTimeSlots
+    );
+    startMonthLabel = formatStartMonthLabel(state.startMonthYear.year, state.startMonthYear.month, startDate);
+  }
   return {
     cleanedSubjects,
     enabled,
     schedule: {
       weeks: Number(state.weeks),
       sessionsPerWeek: Number(state.sessionsPerWeek),
-      dayTimeSlots: enabled.map((d) => ({ day: d.day, time: d.time })),
+      dayTimeSlots,
       durationMinutes: Number(state.durationMinutes),
-      startDate: state.startDate,
+      startDate,
       deliveryMode: state.deliveryMode,
       subjects: cleanedSubjects,
       meetLink: state.meetLink.trim() || null,
@@ -80,20 +98,21 @@ export function buildSchedulePayload(state: SchedulePeriodFormState) {
       payPerMonthXaf: state.payPerMonth ? Number(state.payPerMonth) : null,
       payMonthsCount: state.payMonths ? Number(state.payMonths) : null,
       operationState: state.operationState,
-      startMonthLabel: state.startMonthLabel.trim() || null,
+      startMonthLabel,
     },
   };
 }
 
 export function validateSchedulePeriodState(
   state: SchedulePeriodFormState,
-  opts?: { requireTutor?: boolean }
+  opts?: { requireTutor?: boolean; historical?: boolean }
 ): string | null {
   if (opts?.requireTutor !== false && !state.tutor?.tutorUserId) return 'Select a tutor.';
-  const { cleanedSubjects, enabled } = buildSchedulePayload(state);
+  const { cleanedSubjects, enabled } = buildSchedulePayload(state, { historical: opts?.historical });
   if (!cleanedSubjects.length) return 'Add at least one subject.';
   if (!enabled.length) return 'Select at least one session day.';
-  if (!state.startDate) return 'Start date is required.';
+  if (!opts?.historical && !state.startDate) return 'Start date is required.';
+  if (opts?.historical && !state.startMonthYear.month) return 'Select a start month.';
   if ((state.deliveryMode === 'online' || state.deliveryMode === 'hybrid') && !state.meetLink.trim()) {
     return 'Google Meet link is required for online/hybrid.';
   }
@@ -131,7 +150,7 @@ export default function OfflineSchedulePeriodFields({
         </div>
       )}
 
-      {showLearnerSelect && learners && learners.length > 1 && (
+      {showLearnerSelect && learners && learners.length >= 1 && (
         <div>
           <Label>Learner</Label>
           <Select value={state.learnerUserId} onValueChange={(v) => onChange({ learnerUserId: v })}>
@@ -188,16 +207,30 @@ export default function OfflineSchedulePeriodFields({
             className="mt-1 border-[#1B2C4F]/20"
           />
         </div>
-        <div>
-          <Label>Start date *</Label>
-          <Input
-            type="date"
-            value={state.startDate}
-            onChange={(e) => onChange({ startDate: e.target.value })}
-            className="mt-1 border-[#1B2C4F]/20"
+        {!historicalDefaults && (
+          <div>
+            <Label>Start date *</Label>
+            <Input
+              type="date"
+              value={state.startDate}
+              onChange={(e) => onChange({ startDate: e.target.value })}
+              className="mt-1 border-[#1B2C4F]/20"
+            />
+          </div>
+        )}
+      </div>
+
+      {historicalDefaults && (
+        <div className="rounded-md border border-[#1B2C4F]/15 bg-slate-50 p-4">
+          <p className="text-xs text-slate-600 mb-3">
+            Pick the calendar month when this period started. Sessions are generated from your weekly schedule and stored as past (evaluated) records, so they show up in analytics and tutor session counts.
+          </p>
+          <StartMonthPicker
+            value={state.startMonthYear}
+            onChange={(startMonthYear) => onChange({ startMonthYear })}
           />
         </div>
-      </div>
+      )}
 
       <DeliveryModeFields
         mode={state.deliveryMode}
@@ -230,15 +263,17 @@ export default function OfflineSchedulePeriodFields({
             className="mt-1 border-[#1B2C4F]/20"
           />
         </div>
-        <div>
-          <Label>Start month label</Label>
-          <Input
-            value={state.startMonthLabel}
-            onChange={(e) => onChange({ startMonthLabel: e.target.value })}
-            placeholder="e.g. Jan 2026"
-            className="mt-1 border-[#1B2C4F]/20"
-          />
-        </div>
+        {!historicalDefaults && (
+          <div>
+            <Label>Start month label</Label>
+            <Input
+              value={state.startMonthLabel}
+              onChange={(e) => onChange({ startMonthLabel: e.target.value })}
+              placeholder="e.g. Jan (12)"
+              className="mt-1 border-[#1B2C4F]/20"
+            />
+          </div>
+        )}
         {!historicalDefaults && (
           <div>
             <Label>Operation state</Label>

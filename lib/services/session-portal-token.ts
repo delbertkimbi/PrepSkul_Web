@@ -134,6 +134,10 @@ export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor
     portalRole
   );
 
+  const urls = buildSessionPortalUrls(session.id);
+  const rescheduleUrl = portalRole === 'tutor' ? urls.tutorRescheduleUrl : urls.learnerRescheduleUrl;
+  const feedbackUrl = portalRole === 'tutor' ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
+
   return {
     token: verified,
     session,
@@ -146,5 +150,7 @@ export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor
     hasSubmittedFeedback: !!learnerFeedback,
     portalRole,
     rescheduleLookupError,
+    rescheduleUrl,
+    feedbackUrl,
   };
 }

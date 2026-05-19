@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendNotificationEmail } from '@/lib/notifications';
-import { sendOfflineReminderEmail, sendSessionStartEmail } from '@/lib/offline-session-emails';
+import {
+  sendOfflineMatchNotificationEmail,
+  sendOfflineReminderEmail,
+  sendSessionStartEmail,
+} from '@/lib/offline-session-emails';
 
 // Uses firebase-admin for push; ensure Node.js runtime on Vercel.
 export const runtime = 'nodejs';
@@ -113,16 +117,32 @@ export async function GET(request: NextRequest) {
                 .maybeSingle();
 
               if (userProfile?.email) {
-                if (metadata.offline_email && metadata.session_id) {
+                if (metadata.offline_match_email) {
+                  await sendOfflineMatchNotificationEmail({
+                    to: userProfile.email,
+                    recipientName: userProfile.full_name || 'there',
+                    tutorName: metadata.tutor_name || 'your tutor',
+                    nextDate: metadata.next_date,
+                    nextTime: metadata.next_time,
+                    subject: metadata.subject,
+                    deliveryMode: metadata.delivery_mode,
+                    meetLink: metadata.meet_link,
+                    onsiteLocation: metadata.onsite_location,
+                    portalUrl: metadata.portal_url,
+                    rescheduleUrl: metadata.reschedule_url,
+                    role: metadata.recipient_role === 'tutor' ? 'tutor' : 'learner',
+                  });
+                } else if (metadata.offline_email && metadata.session_id) {
                   const { data: sess } = await supabase
                     .from('individual_sessions')
                     .select('scheduled_date, scheduled_time, subject, delivery_mode, meet_link, onsite_location, tutor_id, learner_id, parent_id')
                     .eq('id', metadata.session_id)
                     .maybeSingle();
-                  const portalUrl =
-                    scheduled.user_id === sess?.tutor_id
-                      ? metadata.tutor_portal_url
-                      : metadata.learner_portal_url;
+                  const isTutor = scheduled.user_id === sess?.tutor_id;
+                  const portalUrl = isTutor ? metadata.tutor_portal_url : metadata.learner_portal_url;
+                  const rescheduleUrl = isTutor
+                    ? metadata.tutor_reschedule_url
+                    : metadata.learner_reschedule_url;
                   if (metadata.reminder_type === 'session_start' && portalUrl) {
                     const { data: tutorP } = await supabase.from('profiles').select('full_name').eq('id', sess?.tutor_id).maybeSingle();
                     const { data: learnerP } = await supabase.from('profiles').select('full_name').eq('id', sess?.learner_id).maybeSingle();
@@ -151,6 +171,11 @@ export async function GET(request: NextRequest) {
                       deliveryMode: sess?.delivery_mode,
                       meetLink: sess?.meet_link,
                       onsiteLocation: sess?.onsite_location,
+                      rescheduleUrl:
+                        metadata.reminder_type === '24_hours' || metadata.reminder_type === '1_hour'
+                          ? rescheduleUrl
+                          : undefined,
+                      feedbackUrl: portalUrl,
                     });
                   }
                 } else {

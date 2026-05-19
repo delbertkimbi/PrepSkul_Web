@@ -1,12 +1,12 @@
 import { Suspense } from 'react';
 import { PortalShell } from '@/components/portals/PortalShell';
-import SessionReportClient from './SessionReportClient';
+import SessionRescheduleClient from '@/components/portals/SessionRescheduleClient';
 
-export default function TutorSessionReportPortalPage() {
+export default function LearnerSessionReschedulePage() {
   return (
-    <PortalShell title="Tutor session report">
+    <PortalShell title="Reschedule">
       <Suspense fallback={<p className="text-sm text-slate-600">Loading…</p>}>
-        <SessionReportClient />
+        <SessionRescheduleClient mode="learner" />
       </Suspense>
     </PortalShell>
   );

@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { CalendarClock } from 'lucide-react';
 
 export default function SessionFeedbackClient() {
   const search = useSearchParams();
@@ -12,8 +14,26 @@ export default function SessionFeedbackClient() {
   const [message, setMessage] = useState('');
   const [thankYouNote, setThankYouNote] = useState('');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [rescheduleUrl, setRescheduleUrl] = useState('');
 
-  const canSubmit = useMemo(() => token.length > 10 && comment.trim().length >= 3 && status !== 'saving', [token, comment, status]);
+  const loadLinks = useCallback(() => {
+    if (!token) return;
+    fetch(`/api/portal/session/context?token=${encodeURIComponent(token)}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.rescheduleUrl) setRescheduleUrl(j.rescheduleUrl);
+      })
+      .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    loadLinks();
+  }, [loadLinks]);
+
+  const canSubmit = useMemo(
+    () => token.length > 10 && comment.trim().length >= 3 && status !== 'saving',
+    [token, comment, status]
+  );
 
   const submit = async () => {
     if (!token) return;
@@ -32,49 +52,59 @@ export default function SessionFeedbackClient() {
       setStatus('done');
       setMessage('');
       setShowSuccessPopup(true);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setStatus('error');
-      setMessage(e?.message || 'Submission failed');
+      setMessage(e instanceof Error ? e.message : 'Submission failed');
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto bg-white border border-gray-200 rounded-none p-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Session Feedback</h1>
-      <p className="text-sm text-gray-600 mt-1">
-        Share your session experience. This helps improve tutoring quality and support.
+    <div className="bg-white border border-[#1B2C4F]/10 rounded-xl shadow-sm p-6 sm:p-8">
+      <h1 className="text-2xl font-semibold text-[#1B2C4F]">How was your session?</h1>
+      <p className="text-sm text-slate-600 mt-1">
+        Your feedback helps us support you and your tutor. Thank you for taking a moment to share.
       </p>
 
       {!token && (
-        <div className="mt-4 border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 rounded-none">
-          To submit feedback, open the personalized link PrepSkul sent you (it includes a secure token in the URL).
+        <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 rounded-lg">
+          Please open the personal link PrepSkul sent you after your class.
         </div>
       )}
 
+      {rescheduleUrl && (
+        <Link
+          href={rescheduleUrl}
+          className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-[#4A6FBF] text-[#1B2C4F] text-sm font-semibold bg-white hover:bg-[#4A6FBF]/5 transition-colors"
+        >
+          <CalendarClock className="h-4 w-4 text-[#4A6FBF]" />
+          Need to reschedule this session?
+        </Link>
+      )}
+
       <div className="mt-6 grid gap-4">
-        <label className="text-sm text-gray-700">
-          <span className="font-medium">Rating (1-5)</span>
+        <label className="text-sm text-slate-700">
+          <span className="font-medium">Rating</span>
           <select
             value={String(rating)}
             onChange={(e) => setRating(Number(e.target.value))}
-            className="mt-1 w-full border border-gray-300 p-2 rounded-none bg-white"
+            className="mt-1 w-full border border-slate-200 p-2.5 rounded-lg bg-white text-sm"
           >
-            <option value="5">5 - Excellent</option>
-            <option value="4">4 - Good</option>
-            <option value="3">3 - Fair</option>
-            <option value="2">2 - Poor</option>
-            <option value="1">1 - Very poor</option>
+            <option value="5">5 stars — Excellent</option>
+            <option value="4">4 stars — Good</option>
+            <option value="3">3 stars — Fair</option>
+            <option value="2">2 stars — Poor</option>
+            <option value="1">1 star — Very poor</option>
           </select>
         </label>
 
-        <label className="text-sm text-gray-700">
-          <span className="font-medium">Feedback comment</span>
+        <label className="text-sm text-slate-700">
+          <span className="font-medium">Your comments</span>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={5}
-            className="mt-1 w-full border border-gray-300 p-2 rounded-none"
-            placeholder="Tell us what went well or what needs improvement."
+            className="mt-1 w-full border border-slate-200 p-3 rounded-lg text-sm"
+            placeholder="What went well? What could be better?"
           />
         </label>
 
@@ -82,46 +112,31 @@ export default function SessionFeedbackClient() {
           type="button"
           onClick={submit}
           disabled={!canSubmit}
-          className="bg-[#1B2C4F] text-white px-4 py-3 rounded-md font-medium shadow-sm hover:bg-[#15243d] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="bg-[#1B2C4F] text-white px-4 py-3 rounded-lg font-semibold hover:bg-[#15243d] disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          {status === 'saving' ? 'Submitting...' : 'Submit Feedback'}
+          {status === 'saving' ? 'Submitting…' : 'Submit feedback'}
         </button>
 
         {message && status === 'error' && (
-          <div className="text-sm p-3 border rounded-md bg-red-50 border-red-200 text-red-800">{message}</div>
+          <p className="text-sm p-3 border rounded-lg bg-red-50 border-red-200 text-red-800">{message}</p>
         )}
-
       </div>
 
       {showSuccessPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true">
-          <div className="bg-white w-full max-w-md rounded-lg border border-gray-200 shadow-xl p-6 text-center">
-            <div className="mx-auto mb-4 relative h-16 w-16">
-              <div className="absolute inset-0 rounded-full bg-green-100 animate-ping" />
-              <div className="relative h-16 w-16 rounded-full bg-green-600 text-white flex items-center justify-center text-3xl font-bold">
-                ✓
-              </div>
+          <div className="bg-white w-full max-w-md rounded-xl border border-slate-200 shadow-xl p-6 text-center">
+            <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-green-600 text-white flex items-center justify-center text-3xl font-bold">
+              ✓
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Feedback submitted</h2>
-            <p className="text-sm text-gray-700 mt-2">{thankYouNote || 'Thank you for sharing your experience with us.'}</p>
-            <div className="mt-5 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3">
-              <button
-                type="button"
-                className="px-4 py-2.5 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-                onClick={() => setShowSuccessPopup(false)}
-              >
-                Close
-              </button>
-              <a
-                href="https://prepskul.com"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex flex-col items-center justify-center gap-0.5 px-5 py-3 rounded-lg text-sm font-semibold bg-[#1B2C4F] text-white hover:bg-[#15243d] shadow-md transition-colors min-h-[3rem] sm:min-w-[14rem]"
-              >
-                <span className="leading-tight">Learn more about PrepSkul</span>
-                <span className="text-[11px] font-normal text-white/85">prepskul.com</span>
-              </a>
-            </div>
+            <h2 className="text-xl font-semibold text-[#1B2C4F]">Thank you!</h2>
+            <p className="text-sm text-slate-600 mt-2">{thankYouNote || 'We appreciate you sharing your experience.'}</p>
+            <button
+              type="button"
+              className="mt-5 px-6 py-2.5 bg-[#1B2C4F] text-white rounded-lg text-sm font-semibold"
+              onClick={() => setShowSuccessPopup(false)}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

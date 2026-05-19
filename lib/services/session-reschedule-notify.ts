@@ -71,7 +71,7 @@ export async function emailRescheduleRequestToCounterparty(
   }
 
   const urls = buildSessionPortalUrls(opts.session.id);
-  const portalUrl = counterpartyRole === 'tutor' ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
+  const portalUrl = counterpartyRole === 'tutor' ? urls.tutorRescheduleUrl : urls.learnerRescheduleUrl;
 
   const result = await sendRescheduleRequestEmail({
     to: contact.email,

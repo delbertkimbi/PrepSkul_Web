@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import TutorPicker, { type TutorPickerValue } from '@/components/admin/offline-ops/TutorPicker';
+import LearnerPicker, { type LearnerPickerValue } from '@/components/admin/offline-ops/LearnerPicker';
 import DeliveryModeFields, { type DeliveryMode } from '@/components/admin/offline-ops/DeliveryModeFields';
 import {
   SubjectListInput,
@@ -31,6 +32,8 @@ export default function OfflineOpsFormClient() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [enrollmentKind, setEnrollmentKind] = useState<'new' | 'existing'>('new');
+  const [existingUser, setExistingUser] = useState<LearnerPickerValue>(null);
   const [agentName, setAgentName] = useState('Brian');
   const [sourceChannel, setSourceChannel] = useState('whatsapp_direct');
   const [primaryRole, setPrimaryRole] = useState<'parent' | 'student'>('parent');
@@ -70,8 +73,20 @@ export default function OfflineOpsFormClient() {
       setSubmitError('Select a tutor from the list.');
       return;
     }
-    if (primaryRole === 'parent' && !childFullName.trim()) {
+    if (enrollmentKind === 'existing' && !existingUser?.userId) {
+      setSubmitError('Search and select the existing PrepSkul account.');
+      return;
+    }
+    if (enrollmentKind === 'new' && !primaryEmail.trim()) {
+      setSubmitError('Email is required for new accounts.');
+      return;
+    }
+    if (enrollmentKind === 'new' && primaryRole === 'parent' && !childFullName.trim()) {
       setSubmitError('Learner full name is required for parent accounts.');
+      return;
+    }
+    if (enrollmentKind === 'existing' && existingUser?.userType === 'parent' && !childFullName.trim()) {
+      setSubmitError('Enter the learner full name for this parent account.');
       return;
     }
     const cleanedSubjects = subjects.map((s) => s.trim()).filter(Boolean);
@@ -106,13 +121,26 @@ export default function OfflineOpsFormClient() {
       const payload = {
         agentName,
         sourceChannel,
+        enrollmentKind,
+        existingPrimaryUserId: enrollmentKind === 'existing' ? existingUser?.userId : undefined,
         primary: {
-          role: primaryRole,
-          fullName: primaryFullName.trim(),
-          email: primaryEmail.trim(),
+          role:
+            enrollmentKind === 'existing' && existingUser
+              ? existingUser.userType
+              : primaryRole,
+          fullName:
+            enrollmentKind === 'existing' && existingUser
+              ? existingUser.fullName
+              : primaryFullName.trim(),
+          email:
+            enrollmentKind === 'existing' && existingUser
+              ? existingUser.email
+              : primaryEmail.trim(),
           phone: primaryPhone.trim(),
         },
-        child: primaryRole === 'parent' ? { fullName: childFullName.trim() } : null,
+        child: primaryRole === 'parent' || (existingUser?.userType === 'parent')
+          ? { fullName: childFullName.trim() }
+          : null,
         tutor: { tutorUserId: tutor.tutorUserId },
         schedule: {
           weeks: Number(weeks),
@@ -166,7 +194,9 @@ export default function OfflineOpsFormClient() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-[#4A6FBF]">Offline operations</p>
           <h1 className="text-2xl font-bold text-[#1B2C4F]">New offline enrollment</h1>
-          <p className="text-sm text-slate-600 mt-1">First-time registration and session scheduling only.</p>
+          <p className="text-sm text-slate-600 mt-1">
+            Enroll a new family or link an existing PrepSkul account to offline tutoring.
+          </p>
         </div>
         <Link
           href="/admin/offline-ops/users"
@@ -180,6 +210,34 @@ export default function OfflineOpsFormClient() {
       <form onSubmit={onSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <section className={`${panel} xl:col-span-7 space-y-5`}>
           <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Identity & contact</h2>
+
+          <div className="rounded-md border border-[#1B2C4F]/15 bg-slate-50 p-4 space-y-3">
+            <Label className="text-slate-700 font-medium">Enrollment type</Label>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="enrollmentKind" checked={enrollmentKind === 'new'} onChange={() => { setEnrollmentKind('new'); setExistingUser(null); }} />
+                New user (not on PrepSkul yet)
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="enrollmentKind" checked={enrollmentKind === 'existing'} onChange={() => setEnrollmentKind('existing')} />
+                Existing PrepSkul account
+              </label>
+            </div>
+          </div>
+
+          {enrollmentKind === 'existing' && (
+            <div className="space-y-4 mb-2">
+              <LearnerPicker value={existingUser} onChange={setExistingUser} filterRole="all" />
+              {existingUser?.userType === 'parent' && (
+                <div>
+                  <Label>Learner full name *</Label>
+                  <Input value={childFullName} onChange={(e) => setChildFullName(e.target.value)} placeholder="Child being tutored" className="mt-1 border-[#1B2C4F]/20" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {enrollmentKind === 'new' && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label>Agent</Label>
@@ -235,6 +293,7 @@ export default function OfflineOpsFormClient() {
               </div>
             )}
           </div>
+          )}
         </section>
 
         <section className={`${panel} xl:col-span-5`}>

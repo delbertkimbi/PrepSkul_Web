@@ -349,6 +349,153 @@ function generatedOfflineLearnerEmail() {
   return `offline.learner.${crypto.randomBytes(16).toString('hex')}@account.prepskul.com`;
 }
 
+/**
+ * Onboard a learner who already has a PrepSkul account. We skip auth.user creation
+ * and email-uniqueness checks; we just link the existing primary user (and optional
+ * existing child) into the offline scheduling pipeline.
+ */
+export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient, params: {
+  idempotencyKey?: string;
+  adminUserId: string;
+  agentName: string;
+  sourceChannel: string;
+  primaryUserId: string;
+  primaryRole: 'parent' | 'student';
+  childUserId?: string | null;
+  childFullName?: string | null;
+  tutor: { tutorUserId?: string | null; tutorEmail?: string | null };
+  schedule: OfflineScheduleInput;
+  notes: string;
+}) {
+  if (params.idempotencyKey) {
+    const { data: existing } = await admin
+      .from('offline_onboarding_runs')
+      .select('id, primary_user_id, learner_user_id, tutor_user_id, recurring_session_id, metadata')
+      .eq('idempotency_key', params.idempotencyKey)
+      .maybeSingle();
+    if (existing) {
+      return {
+        runId: existing.id,
+        primaryUserId: existing.primary_user_id,
+        learnerUserId: existing.learner_user_id,
+        tutorUserId: existing.tutor_user_id,
+        tutorName: (existing.metadata as any)?.tutor_name || 'Tutor',
+        recurringSessionId: existing.recurring_session_id,
+        individualSessionIds: ((existing.metadata as any)?.session_ids || []) as string[],
+        idempotentReplay: true,
+      };
+    }
+  }
+
+  const { data: primaryProfile } = await admin
+    .from('profiles')
+    .select('id, full_name, email, user_type')
+    .eq('id', params.primaryUserId)
+    .maybeSingle();
+  if (!primaryProfile) throw new Error('Existing PrepSkul account not found.');
+
+  const tutorResolved = await resolveTutorUserId(admin, params.tutor);
+
+  let learnerUserId = params.primaryUserId;
+  if (params.primaryRole === 'parent') {
+    if (params.childUserId) {
+      learnerUserId = params.childUserId;
+    } else if (params.childFullName?.trim()) {
+      const { data: existingLink } = await admin
+        .from('parent_learners')
+        .select('learner_user_id')
+        .eq('parent_user_id', params.primaryUserId)
+        .limit(1)
+        .maybeSingle();
+      if (existingLink?.learner_user_id) {
+        learnerUserId = existingLink.learner_user_id;
+      } else {
+        const generatedEmail = generatedOfflineLearnerEmail();
+        const child = await createAuthUserWithProfile(admin, {
+          email: generatedEmail,
+          fullName: params.childFullName.trim(),
+          userType: 'learner',
+        });
+        learnerUserId = child.userId;
+      }
+    } else {
+      throw new Error('For parent accounts, provide the learner full name or pick an existing child.');
+    }
+  }
+
+  const scheduleV2 = toScheduleV2(params.schedule);
+  const recurringPayload: Record<string, unknown> = {
+    tutor_id: tutorResolved.tutorUserId,
+    learner_id: learnerUserId,
+    parent_id: params.primaryRole === 'parent' ? params.primaryUserId : null,
+    status: 'pending',
+    subject: scheduleV2.subjects[0] || params.schedule.subject,
+    updated_at: new Date().toISOString(),
+  };
+  const { data: recurring } = await admin
+    .from('recurring_sessions')
+    .insert(recurringPayload)
+    .select('id')
+    .maybeSingle();
+  const recurringId: string | null = recurring?.id || null;
+
+  const periodResult = await scheduleOfflinePeriod(admin, {
+    adminUserId: params.adminUserId,
+    primaryUserId: params.primaryUserId,
+    learnerUserId,
+    tutorUserId: tutorResolved.tutorUserId,
+    tutorName: tutorResolved.tutorName,
+    learnerDisplayNames:
+      params.primaryRole === 'parent'
+        ? params.childFullName?.trim() || null
+        : primaryProfile.full_name,
+    schedule: scheduleV2,
+    commercial: {
+      payPerMonthXaf: params.schedule.payPerMonthXaf,
+      payMonthsCount: params.schedule.payMonthsCount,
+      operationState: params.schedule.operationState,
+      startMonthLabel: params.schedule.startMonthLabel,
+    },
+    sendWelcomeEmail: true,
+  });
+
+  const sessionIds = periodResult.sessionIds;
+  const dates = periodResult.occurrences.map((o) => o.date);
+
+  const { data: run } = await admin
+    .from('offline_onboarding_runs')
+    .insert({
+      idempotency_key: params.idempotencyKey || null,
+      created_by_admin_id: params.adminUserId,
+      agent_name: params.agentName,
+      source_channel: params.sourceChannel,
+      primary_user_id: params.primaryUserId,
+      primary_role: params.primaryRole,
+      learner_user_id: learnerUserId,
+      tutor_user_id: tutorResolved.tutorUserId,
+      recurring_session_id: recurringId,
+      scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
+      status: 'completed',
+      metadata: {
+        session_ids: sessionIds,
+        tutor_name: tutorResolved.tutorName,
+        existing_user: true,
+      },
+    })
+    .select('id')
+    .maybeSingle();
+
+  return {
+    runId: run?.id || null,
+    primaryUserId: params.primaryUserId,
+    learnerUserId,
+    tutorUserId: tutorResolved.tutorUserId,
+    tutorName: tutorResolved.tutorName,
+    recurringSessionId: recurringId,
+    individualSessionIds: sessionIds,
+  };
+}
+
 export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   idempotencyKey?: string;
   adminUserId: string;

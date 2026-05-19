@@ -1,8 +1,7 @@
 import { sendCustomEmail } from '@/lib/notifications';
 import { sendOpsAlertEmail } from '@/lib/ops-email';
 
-const ADMIN_WHATSAPP = '+237653301997';
-const COMMISSION_RATE = Number(process.env.PREPSKUL_COMMISSION_RATE || '0.15');
+import { ADMIN_WHATSAPP, COMMISSION_RATE, TUTOR_EARNINGS_RATE } from '@/lib/offline-ops-constants';
 
 function escapeHtml(s: string) {
   return s
@@ -66,6 +65,43 @@ function adminSessionFooter(sessionId: string) {
       <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;user-select:all;">${escapeHtml(sessionId)}</code><br/>
       Use this ID in Admin → Sessions to locate this session.
     </p>`;
+}
+
+export async function sendOfflineMatchNotificationEmail(opts: {
+  to: string;
+  recipientName: string;
+  tutorName: string;
+  nextDate?: string | null;
+  nextTime?: string | null;
+  subject?: string | null;
+  deliveryMode?: string | null;
+  meetLink?: string | null;
+  onsiteLocation?: string | null;
+  portalUrl?: string | null;
+  rescheduleUrl?: string | null;
+  role: 'tutor' | 'learner';
+}) {
+  const when = formatSessionWhen(opts.nextDate, opts.nextTime);
+  const isTutor = opts.role === 'tutor';
+  const body = isTutor
+    ? `<p>Hi ${escapeHtml(opts.recipientName)},</p>
+       <p>You have been successfully matched with a learner on PrepSkul for <strong>${escapeHtml(opts.subject || 'your lessons')}</strong>.</p>
+       <p>Your first session is planned for <strong>${escapeHtml(when)}</strong>. We will email you ahead of each class with reminders and updates.</p>
+       ${deliveryBlock(opts)}
+       <p>We wish you and your learner a wonderful experience on PrepSkul!</p>
+       ${opts.portalUrl ? portalCta(opts.portalUrl, 'Open your tutor session page') : ''}`
+    : `<p>Hi ${escapeHtml(opts.recipientName)},</p>
+       <p>Wonderful news — you are now matched with tutor <strong>${escapeHtml(opts.tutorName)}</strong> on PrepSkul for <strong>${escapeHtml(opts.subject || 'your lessons')}</strong>.</p>
+       <p>Your first session is planned for <strong>${escapeHtml(when)}</strong>. We will notify you ahead of time for each class and keep you updated on any changes.</p>
+       ${deliveryBlock(opts)}
+       ${opts.rescheduleUrl ? portalCta(opts.rescheduleUrl, 'View or reschedule sessions') : ''}
+       <p>We wish you a great learning journey!</p>`;
+  return dispatchEmail(
+    opts.to,
+    opts.recipientName,
+    isTutor ? 'You have a new PrepSkul learner match' : 'You are matched on PrepSkul',
+    familyEmailShell(isTutor ? 'New learner match' : 'Welcome to your match', body)
+  );
 }
 
 export async function sendOfflineWelcomeEmail(opts: {
@@ -147,8 +183,7 @@ export async function sendRescheduleRequestEmail(opts: {
   const proposedWhen = formatSessionWhen(opts.proposedDate, opts.proposedTime);
   const requesterLabel =
     opts.recipientRole === 'tutor' ? 'A parent/learner' : 'Your tutor';
-  const ctaLabel =
-    opts.recipientRole === 'tutor' ? 'Open tutor session hub' : 'Review reschedule request';
+  const ctaLabel = 'Review and respond to reschedule';
   const body = `
     <p>Hi ${escapeHtml(opts.recipientName)},</p>
     <p><strong>${escapeHtml(requesterLabel)} (${escapeHtml(opts.requesterName)})</strong> requested to reschedule a PrepSkul session.</p>
@@ -162,7 +197,7 @@ export async function sendRescheduleRequestEmail(opts: {
   return dispatchEmail(
     opts.to,
     opts.recipientName,
-    'PrepSkul — reschedule request awaiting your response',
+    'Someone requested to reschedule your PrepSkul session',
     familyEmailShell('Reschedule request', body)
   );
 }
@@ -205,17 +240,29 @@ export async function sendOfflineReminderEmail(opts: {
   deliveryMode?: string | null;
   meetLink?: string | null;
   onsiteLocation?: string | null;
+  rescheduleUrl?: string | null;
+  feedbackUrl?: string | null;
 }) {
   const when = formatSessionWhen(opts.scheduledDate, opts.scheduledTime);
   const body = `
     <p>Hi ${escapeHtml(opts.recipientName)},</p>
-    <p>${escapeHtml(opts.reminderLabel)}: your <strong>${escapeHtml(opts.subject || 'PrepSkul')}</strong> session is on <strong>${escapeHtml(when)}</strong>.</p>
-    ${deliveryBlock(opts)}`;
+    <p>Just a friendly heads-up — your <strong>${escapeHtml(opts.subject || 'PrepSkul')}</strong> session is coming up on <strong>${escapeHtml(when)}</strong>.</p>
+    ${deliveryBlock(opts)}
+  ${
+    opts.rescheduleUrl
+      ? `<p>If you need to move this session, you can request a new time here:</p>${portalCta(opts.rescheduleUrl, 'Reschedule this session')}`
+      : ''
+  }
+  ${
+    opts.feedbackUrl
+      ? `<p style="font-size:13px;color:#64748b;margin-top:16px;">After class, share feedback on your <a href="${escapeHtml(opts.feedbackUrl)}">session page</a>.</p>`
+      : ''
+  }`;
   return dispatchEmail(
     opts.to,
     opts.recipientName,
-    `PrepSkul reminder — ${opts.reminderLabel}`,
-    familyEmailShell('Session reminder', body)
+    'A friendly reminder about your upcoming PrepSkul session',
+    familyEmailShell('Upcoming session', body)
   );
 }
 
@@ -223,4 +270,4 @@ export async function notifyOpsWithSessionFooter(subject: string, htmlBody: stri
   return sendOpsAlertEmail(subject, htmlBody + adminSessionFooter(sessionId));
 }
 
-export { COMMISSION_RATE, ADMIN_WHATSAPP };
+export { COMMISSION_RATE, ADMIN_WHATSAPP, TUTOR_EARNINGS_RATE } from '@/lib/offline-ops-constants';

@@ -1,7 +1,7 @@
 import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import AdminNav from '../components/AdminNav';
-import OfflineOpsListClient from './OfflineOpsListClient';
+import OfflineOpsStatsSummary from '@/components/admin/offline-ops/OfflineOpsStatsSummary';
 
 export default async function OfflineOpsPage() {
   const user = await getServerSession();
@@ -19,28 +19,36 @@ export default async function OfflineOpsPage() {
     <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       <AdminNav />
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Offline Operations</h1>
-            <p className="text-gray-600 mt-1">
-              Track WhatsApp-managed and off-platform customers to keep analytics synced with real growth.
-            </p>
-          </div>
-          <a
-            href="/admin/offline-ops/new"
-            className="inline-flex items-center justify-center rounded-none bg-[#1B2C4F] px-4 py-2 text-sm font-medium text-white hover:bg-[#1B2C4F]/90 transition-colors"
-          >
-            New offline record
-          </a>
+        <div className="mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Offline Operations</h1>
+          <p className="text-gray-600 mt-1 max-w-2xl">
+            Overview of WhatsApp and off-platform customer records. To enroll families or schedule sessions, use{' '}
+            <a href="/admin/offline-ops/users" className="text-[#4A6FBF] font-medium underline">
+              Offline Users
+            </a>
+            .
+          </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-none p-4 text-red-800 mb-6">
-            Error loading records: {error.message}. Ensure the <code className="bg-red-100 px-1 rounded">offline_operations</code> table exists.
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800 mb-6">
+            Error loading records: {error.message}
           </div>
         )}
 
-        <OfflineOpsListClient records={records || []} />
+        <OfflineOpsStatsSummary records={records || []} />
+
+        <p className="mt-8 text-sm text-slate-600">
+          Open a record from the list on{' '}
+          <a href="/admin/offline-ops/users" className="text-[#4A6FBF] underline font-medium">
+            Offline Users
+          </a>{' '}
+          to view schedules, history, and modifications. Detailed analytics are on the{' '}
+          <a href="/admin/analytics" className="text-[#4A6FBF] underline font-medium">
+            Analytics
+          </a>{' '}
+          page.
+        </p>
       </main>
     </div>
   );

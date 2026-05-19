@@ -31,6 +31,8 @@ export async function POST(
       expiresAt: links.expiresAt,
       tutorReportUrl: links.tutorReportUrl,
       learnerFeedbackUrl: links.learnerFeedbackUrl,
+      tutorRescheduleUrl: links.tutorRescheduleUrl,
+      learnerRescheduleUrl: links.learnerRescheduleUrl,
     });
   } catch (error: any) {
     console.error('admin session portal-links error', error);

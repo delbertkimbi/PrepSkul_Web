@@ -5,6 +5,7 @@ import { verifySessionPortalAccessToken, buildSessionPortalUrls } from '@/lib/se
 import { sendRescheduleDecisionEmail } from '@/lib/offline-session-emails';
 import { getReschedulePortalFlags } from '@/lib/services/session-reschedule';
 import { resolveParticipantContact } from '@/lib/services/session-reschedule-notify';
+import { replaceSessionRemindersAfterReschedule } from '@/lib/services/session-notification-scheduler';
 
 export const runtime = 'nodejs';
 
@@ -68,6 +69,7 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', session.id);
+      await replaceSessionRemindersAfterReschedule(supabase, session.id);
     }
 
     const requesterContact = await resolveParticipantContact(supabase, reqRow.requested_by_user_id);
@@ -75,7 +77,7 @@ export async function POST(request: NextRequest) {
       const urls = buildSessionPortalUrls(session.id);
       const requesterIsTutor =
         String(reqRow.requested_by_user_id).toLowerCase() === String(session.tutor_id || '').toLowerCase();
-      const portalUrl = requesterIsTutor ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
+      const portalUrl = requesterIsTutor ? urls.tutorRescheduleUrl : urls.learnerRescheduleUrl;
       await sendRescheduleDecisionEmail({
         to: requesterContact.email,
         recipientName: requesterContact.fullName,
