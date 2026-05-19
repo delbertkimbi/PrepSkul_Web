@@ -17,16 +17,21 @@ export const offlineScheduleSchema = z.object({
   startMonthLabel: z.string().nullable().optional(),
 });
 
-export const schedulePeriodBodySchema = z.object({
-  learnerUserId: z.string().uuid().optional(),
-  tutor: z.object({
-    tutorUserId: z.string().uuid().optional(),
-    tutorEmail: z.string().email().optional(),
-  }),
-  schedule: offlineScheduleSchema,
-  sendWelcomeEmail: z.boolean().optional(),
-  isHistoricalImport: z.boolean().optional(),
-});
+export const schedulePeriodBodySchema = z
+  .object({
+    learnerUserId: z.string().uuid().optional(),
+    tutor: z.object({
+      tutorUserId: z.string().uuid().optional(),
+      tutorEmail: z.string().email().optional(),
+    }),
+    schedule: offlineScheduleSchema.optional(),
+    monthlySchedules: z.array(offlineScheduleSchema).min(1).optional(),
+    sendWelcomeEmail: z.boolean().optional(),
+    isHistoricalImport: z.boolean().optional(),
+  })
+  .refine((data) => Boolean(data.schedule || data.monthlySchedules?.length), {
+    message: 'Either schedule or monthlySchedules is required',
+  });
 
 export const addChildBodySchema = z.object({
   fullName: z.string().min(2),

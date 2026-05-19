@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { verifyExternalCron } from '@/lib/cron-auth';
 
 const QA_WINDOW_HOURS = 24;
 const BATCH_SIZE = 50;
@@ -100,19 +101,8 @@ function hasIssues(issues: SessionIssues): boolean {
  */
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret) {
-      const isVercelCron =
-        request.headers.get('user-agent')?.includes('vercel-cron') ||
-        request.headers.get('x-vercel-cron') === '1';
-      if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json(
-          { error: 'Unauthorized. Please provide Authorization: Bearer YOUR_CRON_SECRET header.' },
-          { status: 401 }
-        );
-      }
-    }
+    const authError = verifyExternalCron(request);
+    if (authError) return authError;
 
     const supabase = getSupabaseAdmin();
     const now = new Date();

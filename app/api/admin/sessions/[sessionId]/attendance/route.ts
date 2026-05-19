@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { notifyPartiesAfterAdminMarkedAttendance } from '@/lib/offline-portal-notifications';
+import { refreshTutorPublicStats, computeTutorPublicStats } from '@/lib/services/tutor-public-stats';
 
 const schema = z.object({
   attended: z.boolean(),
@@ -35,7 +36,6 @@ export async function PATCH(
       .maybeSingle();
     if (sErr || !session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
 
-    const previousStatus = String(session.status || '').toLowerCase();
     const status = attended ? 'evaluated' : 'not_attended';
     const { error: upErr } = await supabase
       .from('individual_sessions')
@@ -43,19 +43,24 @@ export async function PATCH(
       .eq('id', sessionId);
     if (upErr) throw upErr;
 
-    if (attended && previousStatus !== 'evaluated') {
+    if (attended && session.tutor_id) {
       try {
-        const { data: tutorProfile } = await supabase
-          .from('tutor_profiles')
-          .select('id, total_sessions_completed')
-          .eq('user_id', session.tutor_id)
-          .maybeSingle();
-        if (tutorProfile?.id) {
-          const next = Number((tutorProfile as { total_sessions_completed?: number }).total_sessions_completed || 0) + 1;
-          await supabase.from('tutor_profiles').update({ total_sessions_completed: next }).eq('id', tutorProfile.id);
-        }
+        await refreshTutorPublicStats(supabase, session.tutor_id);
       } catch (e) {
-        console.warn('[attendance] tutor_profiles increment skipped', e);
+        console.warn('[attendance] refresh_tutor_public_stats skipped, using fallback', e);
+        try {
+          const computed = await computeTutorPublicStats(supabase, session.tutor_id);
+          await supabase
+            .from('tutor_profiles')
+            .update({
+              total_sessions_completed: computed.totalSessions,
+              total_students: computed.totalStudents,
+              offline_tutor_earnings_xaf: computed.offlineEarningsXaf,
+            })
+            .eq('user_id', session.tutor_id);
+        } catch (fallbackErr) {
+          console.warn('[attendance] tutor_profiles fallback update skipped', fallbackErr);
+        }
       }
     }
 

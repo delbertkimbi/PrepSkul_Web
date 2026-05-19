@@ -30,6 +30,7 @@ const payloadSchema = z.object({
       email: z.string().email().optional(),
       phone: z.string().optional(),
     })
+    .nullable()
     .optional(),
   tutor: z.object({
     tutorUserId: z.string().uuid().optional(),
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
             tutor: data.tutor,
             schedule: data.schedule,
             notes: data.notes,
+            tracking: data.tracking,
           });
         } else {
           if (!data.primary.email) {
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
             tutor: data.tutor,
             schedule: data.schedule,
             notes: data.notes,
+            tracking: data.tracking,
           });
         }
         break;
@@ -137,71 +140,26 @@ export async function POST(request: NextRequest) {
       }
     }
     if (!result && lastErr) throw lastErr;
-
-    const expectedTotal =
-      data.tracking.packageTotalAmount !== undefined
-        ? data.tracking.packageTotalAmount
-        : data.tracking.amountPaid;
-
-    // Keep offline_operations row for analytics blending + operational list UI.
-    const { data: insertedOfflineOp } = await supabaseAdmin.from('offline_operations').insert({
-      agent_name: data.agentName,
-      source_channel: data.sourceChannel,
-      customer_name: data.primary.fullName,
-      customer_whatsapp: data.primary.phone || '',
-      origin_kind: data.enrollmentKind,
-      customer_role: data.primary.role === 'parent' ? 'Parent' : 'Student',
-      number_of_learners: data.primary.role === 'parent' ? 1 : 1,
-      learner_educational_level: 'Captured in onboarding notes',
-      subjects_of_interest: (data.schedule.subjects || [data.schedule.subject]).join(', '),
-      tutor_match_type: 'platform_tutor',
-      delivery_mode: data.schedule.deliveryMode,
-      onboarding_stage: 'matched',
-      sessions_completed: 0,
-      payment_status: data.tracking.paymentStatus,
-      payment_environment: data.tracking.paymentEnvironment,
-      amount_paid: data.tracking.amountPaid,
-      started_at: `${data.schedule.startDate}T00:00:00.000Z`,
-      next_followup_at: data.tracking.nextFollowupAt ? new Date(data.tracking.nextFollowupAt).toISOString() : null,
-      converted_to_platform: true,
-      notes: data.notes,
-    }).select('id').maybeSingle();
-
-    // Best-effort richer linkage fields (for upgraded schema).
-    if (insertedOfflineOp?.id && result) {
-      const linkagePatch: Record<string, unknown> = {
-        offline_run_id: result.runId,
-        primary_user_id: result.primaryUserId,
-        learner_user_id: result.learnerUserId,
-        tutor_user_id: result.tutorUserId,
-        recurring_session_id: result.recurringSessionId,
-        expected_total_amount: expectedTotal,
-      };
-      const { error: linkErr } = await supabaseAdmin
-        .from('offline_operations')
-        .update(linkagePatch)
-        .eq('id', insertedOfflineOp.id);
-      if (linkErr) {
-        console.warn('[offline-ops/onboard] linkage columns update skipped', linkErr.message);
-      }
-    }
+    if (!result) throw new Error('Offline onboarding did not complete.');
+    const completedResult = result;
 
     await sendOpsAlertEmail(
       'Offline onboarding synced',
       `<p>An offline onboarding run was completed.</p>
       <ul>
-        <li><strong>Run ID:</strong> ${result.runId ?? 'n/a'}</li>
+        <li><strong>Run ID:</strong> ${completedResult.runId ?? 'n/a'}</li>
         <li><strong>Idempotency key:</strong> ${idempotencyKey.slice(0, 12)}...</li>
         <li><strong>Agent:</strong> ${data.agentName}</li>
         <li><strong>Primary user:</strong> ${data.primary.fullName} (${data.primary.email})</li>
-        <li><strong>Tutor:</strong> ${result.tutorName}</li>
-        <li><strong>Scheduled sessions:</strong> ${result.individualSessionIds.length}</li>
+        <li><strong>Tutor:</strong> ${completedResult.tutorName}</li>
+        <li><strong>Scheduled sessions:</strong> ${completedResult.individualSessionIds.length}</li>
       </ul>`
     );
 
     return NextResponse.json({
       success: true,
-      run: result,
+      run: completedResult,
+      offlineOperationId: completedResult.offlineOperationId || null,
       idempotencyKey,
     });
   } catch (error: any) {

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import OfflineSchedulePeriodFields, {
+  buildHistoricalMonthlyPayloads,
   buildSchedulePayload,
   defaultSchedulePeriodState,
   validateSchedulePeriodState,
@@ -62,6 +63,7 @@ export default function OfflineUserHubClient(props: HubProps) {
       return;
     }
     const { schedule } = buildSchedulePayload(scheduleState, { historical });
+    const monthlySchedules = historical ? buildHistoricalMonthlyPayloads(scheduleState) : undefined;
     setBusy(true);
     try {
       const res = await fetch(historical ? `${base}/import-period` : `${base}/schedule-period`, {
@@ -70,14 +72,15 @@ export default function OfflineUserHubClient(props: HubProps) {
         body: JSON.stringify({
           learnerUserId: scheduleState.learnerUserId || undefined,
           tutor: { tutorUserId: scheduleState.tutor?.tutorUserId },
-          schedule: historical ? { ...schedule, operationState: 'stopped' as const } : schedule,
+          schedule: historical ? undefined : schedule,
+          monthlySchedules,
         }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed');
       setMessage(
         historical
-          ? `Imported ${json.sessionIds?.length || 0} historical sessions.`
+          ? `Imported ${json.importedMonths || monthlySchedules?.length || 0} month(s), ${json.sessionIds?.length || 0} historical sessions.`
           : `Scheduled ${json.sessionIds?.length || 0} sessions.`
       );
       setPanel(null);
@@ -205,11 +208,20 @@ export default function OfflineUserHubClient(props: HubProps) {
         {props.offlineOperationId && (
           <Link
             href={`/admin/offline-ops/${props.offlineOperationId}`}
-            className="bg-white border border-[#1B2C4F]/12 p-4 rounded-lg shadow-sm hover:border-[#4A6FBF]/40"
+            className="bg-[#1B2C4F] border border-[#1B2C4F] p-4 rounded-lg shadow-sm hover:bg-[#15243d] text-white"
           >
-            <p className="font-semibold text-[#1B2C4F]">Operation detail</p>
-            <p className="text-xs text-slate-500 mt-1">Sessions, payments, next session</p>
+            <p className="font-semibold">Open operation detail</p>
+            <p className="text-xs text-white/75 mt-1">Sessions, payments, links, attendance</p>
           </Link>
+        )}
+        {!props.offlineOperationId && (
+          <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg shadow-sm">
+            <p className="font-semibold text-amber-900">No operation detail yet</p>
+            <p className="text-xs text-amber-800 mt-1">
+              This account exists, but no offline operation record is linked to it yet. Schedule a new period or complete a
+              new enrollment to create the detail page.
+            </p>
+          </div>
         )}
         {cards
           .filter((c) => c.show)

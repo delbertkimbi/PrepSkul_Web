@@ -21,13 +21,82 @@ function mondayOfWeekContaining(d: Date): Date {
   return x;
 }
 
+/** PostgREST when a column is absent from the table / API schema cache */
+function isPostgrestMissingColumnError(error: { message?: string; code?: string } | null | undefined) {
+  const m = String(error?.message || '');
+  const c = String(error?.code || '');
+  return c === 'PGRST204' || m.includes('Could not find the') || m.includes('schema cache');
+}
+
+async function insertRecurringSessionCompat(
+  admin: SupabaseClient,
+  payload: Record<string, unknown>
+): Promise<{ id: string | null; error: { message?: string; code?: string } | null }> {
+  let { data, error } = await admin.from('recurring_sessions').insert(payload).select('id').maybeSingle();
+  if (error && isPostgrestMissingColumnError(error) && 'parent_id' in payload) {
+    const { parent_id: _p, ...rest } = payload;
+    const r2 = await admin.from('recurring_sessions').insert(rest).select('id').maybeSingle();
+    data = r2.data;
+    error = r2.error;
+  }
+  return { id: (data as { id?: string } | null)?.id ?? null, error };
+}
+
+async function insertOfflineOnboardingRunCompat(
+  admin: SupabaseClient,
+  row: Record<string, unknown>
+): Promise<{ id: string | null; error: { message?: string; code?: string } | null }> {
+  let { data, error } = await admin.from('offline_onboarding_runs').insert(row).select('id').maybeSingle();
+  if (error && isPostgrestMissingColumnError(error) && 'idempotency_key' in row) {
+    const { idempotency_key: _ik, ...rest } = row;
+    const r2 = await admin.from('offline_onboarding_runs').insert(rest).select('id').maybeSingle();
+    data = r2.data;
+    error = r2.error;
+  }
+  return { id: (data as { id?: string } | null)?.id ?? null, error };
+}
+
+async function findOfflineRunByIdempotencyKeyCompat(
+  admin: SupabaseClient,
+  key: string | null | undefined
+): Promise<{
+  id: string;
+  primary_user_id: string;
+  learner_user_id: string | null;
+  tutor_user_id: string;
+  recurring_session_id: string | null;
+  metadata: unknown;
+} | null> {
+  if (!key) return null;
+  const { data, error } = await admin
+    .from('offline_onboarding_runs')
+    .select('id, primary_user_id, learner_user_id, tutor_user_id, recurring_session_id, metadata')
+    .eq('idempotency_key', key)
+    .maybeSingle();
+  if (error && isPostgrestMissingColumnError(error)) {
+    console.warn(
+      '[offline-onboarding] idempotency_key column missing on offline_onboarding_runs; idempotent replay disabled'
+    );
+    return null;
+  }
+  if (error) throw new Error(error.message || 'Failed to look up offline onboarding run');
+  return data as {
+    id: string;
+    primary_user_id: string;
+    learner_user_id: string | null;
+    tutor_user_id: string;
+    recurring_session_id: string | null;
+    metadata: unknown;
+  } | null;
+}
+
 export type OfflineScheduleInput = {
   weeks: number;
   sessionsPerWeek: number;
   /** e.g. ['mon','wed'] */
-  weekDays: string[];
+  weekDays?: string[];
   /** HH:mm — used when dayTimeSlots omitted */
-  sessionTime: string;
+  sessionTime?: string;
   /** Per-day times (preferred) */
   dayTimeSlots?: DayTimeSlot[];
   durationMinutes: number;
@@ -44,6 +113,14 @@ export type OfflineScheduleInput = {
   payMonthsCount?: number | null;
   operationState?: 'active' | 'paused' | 'stopped';
   startMonthLabel?: string | null;
+};
+
+type OfflineOnboardingTrackingInput = {
+  paymentStatus: 'unpaid' | 'partial' | 'paid' | 'refunded';
+  paymentEnvironment: 'real' | 'sandbox';
+  amountPaid: number;
+  packageTotalAmount?: number;
+  nextFollowupAt?: string;
 };
 
 function toScheduleV2(schedule: OfflineScheduleInput) {
@@ -152,9 +229,12 @@ async function collectTutorRowsByEmailLoose(
 /** Enumerate session dates: for each week 0..weeks-1, for each weekday label, produce one local calendar date */
 export function enumerateSessionDates(input: OfflineScheduleInput): string[] {
   const anchor = new Date(`${input.startDate}T12:00:00`);
-  const tokens = input.weekDays.map((d) => d.trim().toLowerCase().slice(0, 3));
+  const weekDays = input.weekDays?.length
+    ? input.weekDays
+    : (input.dayTimeSlots || []).map((slot) => slot.day);
+  const tokens = weekDays.map((d) => d.trim().toLowerCase().slice(0, 3));
   if (tokens.some((t) => WEEKDAY_MAP[t] === undefined)) {
-    const bad = input.weekDays.find((d) => WEEKDAY_MAP[d.trim().toLowerCase().slice(0, 3)] === undefined);
+    const bad = weekDays.find((d) => WEEKDAY_MAP[d.trim().toLowerCase().slice(0, 3)] === undefined);
     throw new Error(`Invalid weekday token: ${bad}. Use mon, tue, wed, thu, fri, sat, sun`);
   }
 
@@ -164,7 +244,7 @@ export function enumerateSessionDates(input: OfflineScheduleInput): string[] {
   for (let w = 0; w < input.weeks; w++) {
     const weekStart = new Date(monday0);
     weekStart.setDate(weekStart.getDate() + w * 7);
-    for (const wd of input.weekDays) {
+    for (const wd of weekDays) {
       const targetDow = WEEKDAY_MAP[wd.trim().toLowerCase().slice(0, 3)];
       const d = new Date(weekStart);
       d.setDate(d.getDate() + ((targetDow + 7 - d.getDay()) % 7));
@@ -285,7 +365,7 @@ async function createAuthUserWithProfile(
         id: existing.id,
         email,
         full_name: input.fullName,
-        phone_number: input.phone || null,
+        phone_number: null,
         user_type: input.userType,
         updated_at: new Date().toISOString(),
       },
@@ -312,12 +392,32 @@ async function createAuthUserWithProfile(
     email_confirm: true,
     user_metadata: { full_name: input.fullName, phone_number: input.phone || null },
   });
-  if (error || !data.user) throw new Error(error?.message || 'Failed to create auth user');
+  if (error || !data.user) {
+    if (/already|exist|registered/i.test(error?.message || '')) {
+      const recovered = await findAuthUserByEmail(admin, email);
+      if (recovered?.id) {
+        const { error: recoverErr } = await admin.from('profiles').upsert(
+          {
+            id: recovered.id,
+            email,
+            full_name: input.fullName,
+            phone_number: null,
+            user_type: input.userType,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+        if (recoverErr) throw new Error(recoverErr.message || 'Failed to recover existing auth profile');
+        return { userId: recovered.id, isNew: false };
+      }
+    }
+    throw new Error(error?.message || 'Failed to create auth user');
+  }
   const { error: pErr } = await admin.from('profiles').insert({
     id: data.user.id,
     email,
     full_name: input.fullName,
-    phone_number: input.phone || null,
+    phone_number: null,
     user_type: input.userType,
   });
   if (pErr) {
@@ -333,20 +433,119 @@ async function assertPrimaryEmailAvailableForOfflineOnboarding(admin: SupabaseCl
   const { data: exact } = await admin.from('profiles').select('id, email').eq('email', normalized).maybeSingle();
   if (exact) {
     throw new Error(
-      'This email is already registered on PrepSkul. Each offline parent/student contact must use a unique email that is not already used by another account.'
+      'This email is already registered on PrepSkul (profiles table). If a previous enrollment failed partway, use "Existing PrepSkul account" or remove the test profile in Supabase, then try again.'
     );
   }
   const { data: loose } = await admin.from('profiles').select('id, email').ilike('email', normalized);
   const dup = (loose || []).find((r: any) => r.email && String(r.email).trim().toLowerCase() === normalized);
   if (dup) {
     throw new Error(
-      'This email is already registered on PrepSkul. Each offline parent/student contact must use a unique email that is not already used by another account.'
+      'This email is already registered on PrepSkul (profiles table). If a previous enrollment failed partway, use "Existing PrepSkul account" or remove the test profile in Supabase, then try again.'
     );
+  }
+
+  const authUser = await findAuthUserByEmail(admin, normalized);
+  if (authUser?.id) {
+    // A previous failed offline onboarding may have created auth.users but failed
+    // before profiles insert. Let createAuthUserWithProfile reclaim that auth user.
+    const { data: profileById } = await admin.from('profiles').select('id').eq('id', authUser.id).maybeSingle();
+    if (profileById?.id) {
+      throw new Error(
+        'This email is already registered on PrepSkul. If a previous enrollment failed partway, use "Existing PrepSkul account" or remove the test profile in Supabase, then try again.'
+      );
+    }
   }
 }
 
 function generatedOfflineLearnerEmail() {
   return `offline.learner.${crypto.randomBytes(16).toString('hex')}@account.prepskul.com`;
+}
+
+async function createOfflineOperationForEnrollment(
+  admin: SupabaseClient,
+  input: {
+    agentName: string;
+    sourceChannel: string;
+    enrollmentKind: 'new' | 'existing';
+    primaryUserId: string;
+    primaryRole: 'parent' | 'student';
+    primaryFullName: string;
+    primaryPhone?: string | null;
+    learnerUserId: string;
+    tutorUserId: string;
+    recurringSessionId?: string | null;
+    offlineRunId?: string | null;
+    schedule: OfflineScheduleInput;
+    notes: string;
+    tracking?: OfflineOnboardingTrackingInput;
+  }
+) {
+  const expectedTotal =
+    input.tracking?.packageTotalAmount !== undefined
+      ? input.tracking.packageTotalAmount
+      : input.tracking?.amountPaid;
+
+  const { data: inserted, error } = await admin
+    .from('offline_operations')
+    .insert({
+      agent_name: input.agentName,
+      source_channel: input.sourceChannel,
+      customer_name: input.primaryFullName,
+      customer_whatsapp: input.primaryPhone || '',
+      origin_kind: input.enrollmentKind,
+      customer_role: input.primaryRole === 'parent' ? 'Parent' : 'Student',
+      number_of_learners: 1,
+      learner_educational_level: 'Captured in onboarding notes',
+      subjects_of_interest: (input.schedule.subjects || [input.schedule.subject]).join(', '),
+      tutor_match_type: 'platform_tutor',
+      delivery_mode: input.schedule.deliveryMode,
+      onboarding_stage: 'matched',
+      sessions_completed: 0,
+      payment_status: input.tracking?.paymentStatus || 'unpaid',
+      payment_environment: input.tracking?.paymentEnvironment || 'real',
+      amount_paid: input.tracking?.amountPaid || 0,
+      started_at: `${input.schedule.startDate}T00:00:00.000Z`,
+      next_followup_at: input.tracking?.nextFollowupAt
+        ? new Date(input.tracking.nextFollowupAt).toISOString()
+        : null,
+      converted_to_platform: true,
+      notes: input.notes,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (error || !inserted?.id) {
+    throw new Error(error?.message || 'Failed to create offline operation');
+  }
+
+  const linkagePatch: Record<string, unknown> = {
+    offline_run_id: input.offlineRunId || null,
+    primary_user_id: input.primaryUserId,
+    learner_user_id: input.learnerUserId,
+    tutor_user_id: input.tutorUserId,
+    recurring_session_id: input.recurringSessionId || null,
+    expected_total_amount: expectedTotal,
+  };
+  const { error: linkErr } = await admin
+    .from('offline_operations')
+    .update(linkagePatch)
+    .eq('id', inserted.id);
+  if (linkErr) {
+    console.warn('[offline-onboarding] offline_operations linkage update skipped', linkErr.message);
+  }
+
+  return inserted.id as string;
+}
+
+async function findLatestOfflineOperationId(admin: SupabaseClient, primaryUserId: string) {
+  const { data } = await admin
+    .from('offline_operations')
+    .select('id')
+    .eq('primary_user_id', primaryUserId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.id || null;
 }
 
 /**
@@ -366,13 +565,10 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
   tutor: { tutorUserId?: string | null; tutorEmail?: string | null };
   schedule: OfflineScheduleInput;
   notes: string;
+  tracking?: OfflineOnboardingTrackingInput;
 }) {
   if (params.idempotencyKey) {
-    const { data: existing } = await admin
-      .from('offline_onboarding_runs')
-      .select('id, primary_user_id, learner_user_id, tutor_user_id, recurring_session_id, metadata')
-      .eq('idempotency_key', params.idempotencyKey)
-      .maybeSingle();
+    const existing = await findOfflineRunByIdempotencyKeyCompat(admin, params.idempotencyKey);
     if (existing) {
       return {
         runId: existing.id,
@@ -382,6 +578,7 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
         tutorName: (existing.metadata as any)?.tutor_name || 'Tutor',
         recurringSessionId: existing.recurring_session_id,
         individualSessionIds: ((existing.metadata as any)?.session_ids || []) as string[],
+        offlineOperationId: await findLatestOfflineOperationId(admin, params.primaryUserId),
         idempotentReplay: true,
       };
     }
@@ -432,12 +629,26 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
     subject: scheduleV2.subjects[0] || params.schedule.subject,
     updated_at: new Date().toISOString(),
   };
-  const { data: recurring } = await admin
-    .from('recurring_sessions')
-    .insert(recurringPayload)
-    .select('id')
-    .maybeSingle();
-  const recurringId: string | null = recurring?.id || null;
+  const { id: recurringId, error: recErr } = await insertRecurringSessionCompat(admin, recurringPayload);
+  if (recErr) {
+    console.warn('[offline-onboarding] recurring_sessions insert failed, continuing with null FK', recErr);
+  }
+
+  const offlineOperationId = await createOfflineOperationForEnrollment(admin, {
+    agentName: params.agentName,
+    sourceChannel: params.sourceChannel,
+    enrollmentKind: 'existing',
+    primaryUserId: params.primaryUserId,
+    primaryRole: params.primaryRole,
+    primaryFullName: primaryProfile.full_name || 'Offline user',
+    primaryPhone: null,
+    learnerUserId,
+    tutorUserId: tutorResolved.tutorUserId,
+    recurringSessionId: recurringId,
+    schedule: params.schedule,
+    notes: params.notes,
+    tracking: params.tracking,
+  });
 
   const periodResult = await scheduleOfflinePeriod(admin, {
     adminUserId: params.adminUserId,
@@ -450,6 +661,7 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
         ? params.childFullName?.trim() || null
         : primaryProfile.full_name,
     schedule: scheduleV2,
+    offlineOperationId,
     commercial: {
       payPerMonthXaf: params.schedule.payPerMonthXaf,
       payMonthsCount: params.schedule.payMonthsCount,
@@ -462,37 +674,47 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
   const sessionIds = periodResult.sessionIds;
   const dates = periodResult.occurrences.map((o) => o.date);
 
-  const { data: run } = await admin
-    .from('offline_onboarding_runs')
-    .insert({
-      idempotency_key: params.idempotencyKey || null,
-      created_by_admin_id: params.adminUserId,
-      agent_name: params.agentName,
-      source_channel: params.sourceChannel,
-      primary_user_id: params.primaryUserId,
-      primary_role: params.primaryRole,
-      learner_user_id: learnerUserId,
-      tutor_user_id: tutorResolved.tutorUserId,
-      recurring_session_id: recurringId,
-      scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
-      status: 'completed',
-      metadata: {
-        session_ids: sessionIds,
-        tutor_name: tutorResolved.tutorName,
-        existing_user: true,
-      },
-    })
-    .select('id')
-    .maybeSingle();
+  const { id: runId, error: runErr } = await insertOfflineOnboardingRunCompat(admin, {
+    idempotency_key: params.idempotencyKey || null,
+    created_by_admin_id: params.adminUserId,
+    agent_name: params.agentName,
+    source_channel: params.sourceChannel,
+    primary_user_id: params.primaryUserId,
+    primary_role: params.primaryRole,
+    learner_user_id: learnerUserId,
+    tutor_user_id: tutorResolved.tutorUserId,
+    recurring_session_id: recurringId,
+    scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
+    status: 'completed',
+    metadata: {
+      session_ids: sessionIds,
+      tutor_name: tutorResolved.tutorName,
+      existing_user: true,
+    },
+  });
+  if (runErr) {
+    console.warn('[offline-onboarding] offline_onboarding_runs insert failed (existing user path)', runErr);
+  }
+
+  if (runId) {
+    const { error: opRunLinkErr } = await admin
+      .from('offline_operations')
+      .update({ offline_run_id: runId })
+      .eq('id', offlineOperationId);
+    if (opRunLinkErr) {
+      console.warn('[offline-onboarding] offline operation run link update skipped', opRunLinkErr.message);
+    }
+  }
 
   return {
-    runId: run?.id || null,
+    runId: runId || null,
     primaryUserId: params.primaryUserId,
     learnerUserId,
     tutorUserId: tutorResolved.tutorUserId,
     tutorName: tutorResolved.tutorName,
     recurringSessionId: recurringId,
     individualSessionIds: sessionIds,
+    offlineOperationId,
   };
 }
 
@@ -506,13 +728,10 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   tutor: { tutorUserId?: string | null; tutorEmail?: string | null };
   schedule: OfflineScheduleInput;
   notes: string;
+  tracking?: OfflineOnboardingTrackingInput;
 }) {
   if (params.idempotencyKey) {
-    const { data: existing } = await admin
-      .from('offline_onboarding_runs')
-      .select('id, primary_user_id, learner_user_id, tutor_user_id, recurring_session_id, metadata')
-      .eq('idempotency_key', params.idempotencyKey)
-      .maybeSingle();
+    const existing = await findOfflineRunByIdempotencyKeyCompat(admin, params.idempotencyKey);
     if (existing) {
       return {
         runId: existing.id,
@@ -522,6 +741,7 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
         tutorName: (existing.metadata as any)?.tutor_name || 'Tutor',
         recurringSessionId: existing.recurring_session_id,
         individualSessionIds: ((existing.metadata as any)?.session_ids || []) as string[],
+        offlineOperationId: await findLatestOfflineOperationId(admin, existing.primary_user_id),
         idempotentReplay: true,
       };
     }
@@ -567,6 +787,10 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
       userType: 'learner',
     });
     learnerUserId = child.userId;
+    await admin.from('parent_learners').upsert(
+      { parent_user_id: primaryUserId, learner_user_id: learnerUserId },
+      { onConflict: 'parent_user_id,learner_user_id' }
+    );
   }
 
   const scheduleV2 = toScheduleV2(params.schedule);
@@ -580,16 +804,26 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     updated_at: new Date().toISOString(),
   };
 
-  const { data: recurring, error: recErr } = await admin
-    .from('recurring_sessions')
-    .insert(recurringPayload)
-    .select('id')
-    .maybeSingle();
-
-  let recurringId: string | null = recurring?.id || null;
+  const { id: recurringId, error: recErr } = await insertRecurringSessionCompat(admin, recurringPayload);
   if (recErr) {
     console.warn('[offline-onboarding] recurring_sessions insert failed, continuing with null FK', recErr);
   }
+
+  const offlineOperationId = await createOfflineOperationForEnrollment(admin, {
+    agentName: params.agentName,
+    sourceChannel: params.sourceChannel,
+    enrollmentKind: 'new',
+    primaryUserId,
+    primaryRole: params.primary.role,
+    primaryFullName: params.primary.fullName,
+    primaryPhone: params.primary.phone || null,
+    learnerUserId,
+    tutorUserId: tutorResolved.tutorUserId,
+    recurringSessionId: recurringId,
+    schedule: params.schedule,
+    notes: params.notes,
+    tracking: params.tracking,
+  });
 
   const periodResult = await scheduleOfflinePeriod(admin, {
     adminUserId: params.adminUserId,
@@ -600,6 +834,7 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     learnerDisplayNames:
       params.primary.role === 'parent' ? params.child?.fullName?.trim() || null : params.primary.fullName,
     schedule: scheduleV2,
+    offlineOperationId,
     commercial: {
       payPerMonthXaf: params.schedule.payPerMonthXaf,
       payMonthsCount: params.schedule.payMonthsCount,
@@ -612,40 +847,43 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   const sessionIds = periodResult.sessionIds;
   const dates = periodResult.occurrences.map((o) => o.date);
 
-  const { data: run, error: runErr } = await admin
-    .from('offline_onboarding_runs')
-    .insert({
-      idempotency_key: params.idempotencyKey || null,
-      created_by_admin_id: params.adminUserId,
-      agent_name: params.agentName,
-      source_channel: params.sourceChannel,
-      primary_user_id: primaryUserId,
-      primary_role: params.primary.role,
-      learner_user_id: learnerUserId,
-      tutor_user_id: tutorResolved.tutorUserId,
-      recurring_session_id: recurringId,
-      scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
-      status: 'completed',
-      metadata: { session_ids: sessionIds, tutor_name: tutorResolved.tutorName },
-    })
-    .select('id')
-    .maybeSingle();
+  const { id: runId, error: runErr } = await insertOfflineOnboardingRunCompat(admin, {
+    idempotency_key: params.idempotencyKey || null,
+    created_by_admin_id: params.adminUserId,
+    agent_name: params.agentName,
+    source_channel: params.sourceChannel,
+    primary_user_id: primaryUserId,
+    primary_role: params.primary.role,
+    learner_user_id: learnerUserId,
+    tutor_user_id: tutorResolved.tutorUserId,
+    recurring_session_id: recurringId,
+    scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
+    status: 'completed',
+    metadata: { session_ids: sessionIds, tutor_name: tutorResolved.tutorName },
+  });
 
   if (runErr) {
-    console.error('[offline-onboarding] run log insert failed', runErr);
-    throw new Error(
-      runErr.message ||
-        'Sessions were created but offline_onboarding_runs log failed. Run offline_onboarding_sync_schema.sql in Supabase.'
-    );
+    console.warn('[offline-onboarding] run log insert failed; operation and sessions were created', runErr);
+  }
+
+  if (runId) {
+    const { error: opRunLinkErr } = await admin
+      .from('offline_operations')
+      .update({ offline_run_id: runId })
+      .eq('id', offlineOperationId);
+    if (opRunLinkErr) {
+      console.warn('[offline-onboarding] offline operation run link update skipped', opRunLinkErr.message);
+    }
   }
 
   return {
-    runId: run?.id || null,
+    runId: runId || null,
     primaryUserId,
     learnerUserId,
     tutorUserId: tutorResolved.tutorUserId,
     tutorName: tutorResolved.tutorName,
     recurringSessionId: recurringId,
     individualSessionIds: sessionIds,
+    offlineOperationId,
   };
 }
