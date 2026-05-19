@@ -427,34 +427,106 @@ async function createAuthUserWithProfile(
   return { userId: data.user.id, isNew: true };
 }
 
-/** Primary contact email must not already exist on any profile (avoids wrong identity merges). */
-async function assertPrimaryEmailAvailableForOfflineOnboarding(admin: SupabaseClient, email: string) {
-  const normalized = email.trim().toLowerCase();
-  const { data: exact } = await admin.from('profiles').select('id, email').eq('email', normalized).maybeSingle();
-  if (exact) {
-    throw new Error(
-      'This email is already registered on PrepSkul (profiles table). If a previous enrollment failed partway, use "Existing PrepSkul account" or remove the test profile in Supabase, then try again.'
-    );
-  }
-  const { data: loose } = await admin.from('profiles').select('id, email').ilike('email', normalized);
-  const dup = (loose || []).find((r: any) => r.email && String(r.email).trim().toLowerCase() === normalized);
-  if (dup) {
-    throw new Error(
-      'This email is already registered on PrepSkul (profiles table). If a previous enrollment failed partway, use "Existing PrepSkul account" or remove the test profile in Supabase, then try again.'
-    );
+/** Profiles created by a failed "new enrollment" can be safely retried within this window if they never got an offline operation. */
+const OFFLINE_NEW_ENROLLMENT_GHOST_MAX_AGE_MS = 3 * 60 * 60 * 1000;
+
+async function getProfileByNormalizedEmail(
+  admin: SupabaseClient,
+  normalized: string
+): Promise<{
+  id: string;
+  user_type: string | null;
+  created_at: string | null;
+  full_name: string | null;
+  email: string | null;
+} | null> {
+  const { data: exact } = await admin
+    .from('profiles')
+    .select('id, user_type, created_at, full_name, email')
+    .eq('email', normalized)
+    .maybeSingle();
+  if (exact) return exact as any;
+  const { data: loose } = await admin.from('profiles').select('id, user_type, created_at, full_name, email').ilike('email', normalized);
+  const row = (loose || []).find((r: any) => r.email && String(r.email).trim().toLowerCase() === normalized);
+  return (row as any) || null;
+}
+
+async function countOfflineOperationsTouchingUser(admin: SupabaseClient, userId: string): Promise<number> {
+  const [{ count: c1 }, { count: c2 }] = await Promise.all([
+    admin.from('offline_operations').select('id', { count: 'exact', head: true }).eq('primary_user_id', userId),
+    admin.from('offline_operations').select('id', { count: 'exact', head: true }).eq('learner_user_id', userId),
+  ]);
+  return (c1 || 0) + (c2 || 0);
+}
+
+function userTypeMatchesExpectedForOfflineEnrollment(
+  dbUserType: string | null | undefined,
+  expect: 'parent' | 'learner'
+): boolean {
+  const ut = String(dbUserType || '').trim().toLowerCase();
+  if (!ut) return true;
+  if (expect === 'parent') return ut === 'parent';
+  return ut === 'learner' || ut === 'student';
+}
+
+type ResolvedEmailForNewOfflineEnrollment =
+  | { kind: 'available' }
+  | { kind: 'reuse_recent_ghost'; userId: string }
+  | { kind: 'conflict'; message: string };
+
+/**
+ * Decide whether a contact email can be used for "new" offline enrollment.
+ * Allows retry after partial failure: recent profile with no offline_operations row yet.
+ */
+async function resolveContactEmailForNewOfflineEnrollment(
+  admin: SupabaseClient,
+  args: { email: string; expectUserType: 'parent' | 'learner' }
+): Promise<ResolvedEmailForNewOfflineEnrollment> {
+  const normalized = args.email.trim().toLowerCase();
+  const profile = await getProfileByNormalizedEmail(admin, normalized);
+  if (!profile) {
+    const authUser = await findAuthUserByEmail(admin, normalized);
+    if (authUser?.id) {
+      const { data: profileById } = await admin.from('profiles').select('id').eq('id', authUser.id).maybeSingle();
+      if (profileById?.id) {
+        return {
+          kind: 'conflict',
+          message:
+            'This email is already registered on PrepSkul. Use "Existing PrepSkul account" or remove the duplicate test profile in Supabase.',
+        };
+      }
+    }
+    return { kind: 'available' };
   }
 
-  const authUser = await findAuthUserByEmail(admin, normalized);
-  if (authUser?.id) {
-    // A previous failed offline onboarding may have created auth.users but failed
-    // before profiles insert. Let createAuthUserWithProfile reclaim that auth user.
-    const { data: profileById } = await admin.from('profiles').select('id').eq('id', authUser.id).maybeSingle();
-    if (profileById?.id) {
-      throw new Error(
-        'This email is already registered on PrepSkul. If a previous enrollment failed partway, use "Existing PrepSkul account" or remove the test profile in Supabase, then try again.'
-      );
-    }
+  if (!userTypeMatchesExpectedForOfflineEnrollment(profile.user_type, args.expectUserType)) {
+    return {
+      kind: 'conflict',
+      message:
+        'This email is already registered with a different account type. Use "Existing PrepSkul account" or another email.',
+    };
   }
+
+  const opCount = await countOfflineOperationsTouchingUser(admin, profile.id);
+  if (opCount > 0) {
+    return {
+      kind: 'conflict',
+      message:
+        'This email is already linked to an offline enrollment. Open Offline users or use "Existing PrepSkul account" to continue.',
+    };
+  }
+
+  const createdMs = profile.created_at ? new Date(profile.created_at).getTime() : NaN;
+  const ageMs = Number.isFinite(createdMs) ? Date.now() - createdMs : Infinity;
+  if (ageMs >= 0 && ageMs <= OFFLINE_NEW_ENROLLMENT_GHOST_MAX_AGE_MS) {
+    return { kind: 'reuse_recent_ghost', userId: profile.id };
+  }
+
+  return {
+    kind: 'conflict',
+    message:
+      'This email is already registered on PrepSkul. If an old enrollment attempt left an unused profile, use "Existing PrepSkul account" or remove that profile in Supabase, then try again.',
+  };
 }
 
 function generatedOfflineLearnerEmail() {
@@ -747,50 +819,147 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     }
   }
 
-  await assertPrimaryEmailAvailableForOfflineOnboarding(admin, params.primary.email);
+  const primaryEmailRes = await resolveContactEmailForNewOfflineEnrollment(admin, {
+    email: params.primary.email,
+    expectUserType: params.primary.role === 'parent' ? 'parent' : 'learner',
+  });
+  if (primaryEmailRes.kind === 'conflict') {
+    throw new Error(primaryEmailRes.message);
+  }
 
   const tutorResolved = await resolveTutorUserId(admin, params.tutor);
 
   let primaryUserId: string;
   let learnerUserId: string;
 
+  async function touchPrimaryProfileFromForm(uid: string) {
+    await admin
+      .from('profiles')
+      .update({
+        full_name: params.primary.fullName.trim(),
+        phone_number: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', uid);
+  }
+
   if (params.primary.role === 'student') {
-    const u = await createAuthUserWithProfile(admin, {
-      email: params.primary.email,
-      fullName: params.primary.fullName,
-      phone: params.primary.phone,
-      userType: 'learner',
-    });
-    primaryUserId = u.userId;
-    learnerUserId = u.userId;
+    if (primaryEmailRes.kind === 'reuse_recent_ghost') {
+      console.warn('[offline-onboarding] reusing recent profile for primary/student email (likely retry after partial failure)');
+      primaryUserId = primaryEmailRes.userId;
+      learnerUserId = primaryEmailRes.userId;
+      await touchPrimaryProfileFromForm(primaryUserId);
+    } else {
+      const u = await createAuthUserWithProfile(admin, {
+        email: params.primary.email,
+        fullName: params.primary.fullName,
+        phone: params.primary.phone,
+        userType: 'learner',
+      });
+      primaryUserId = u.userId;
+      learnerUserId = u.userId;
+    }
   } else {
-    const parent = await createAuthUserWithProfile(admin, {
-      email: params.primary.email,
-      fullName: params.primary.fullName,
-      phone: params.primary.phone,
-      userType: 'parent',
-    });
-    primaryUserId = parent.userId;
+    if (primaryEmailRes.kind === 'reuse_recent_ghost') {
+      console.warn('[offline-onboarding] reusing recent profile for parent email (likely retry after partial failure)');
+      primaryUserId = primaryEmailRes.userId;
+      await touchPrimaryProfileFromForm(primaryUserId);
+    } else {
+      const parent = await createAuthUserWithProfile(admin, {
+        email: params.primary.email,
+        fullName: params.primary.fullName,
+        phone: params.primary.phone,
+        userType: 'parent',
+      });
+      primaryUserId = parent.userId;
+    }
+
     if (!params.child?.fullName?.trim()) {
       throw new Error('For parent accounts, provide the learner full name.');
     }
-    const learnerEmail = params.child.email?.trim()
-      ? params.child.email.trim().toLowerCase()
-      : generatedOfflineLearnerEmail();
-    if (params.child.email?.trim()) {
-      await assertPrimaryEmailAvailableForOfflineOnboarding(admin, learnerEmail);
+
+    const { data: existingLink } = await admin
+      .from('parent_learners')
+      .select('learner_user_id')
+      .eq('parent_user_id', primaryUserId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingLink?.learner_user_id) {
+      learnerUserId = existingLink.learner_user_id;
+      const typedChildEmail = params.child.email?.trim() ? params.child.email.trim().toLowerCase() : null;
+      if (typedChildEmail) {
+        const { data: lp } = await admin.from('profiles').select('email').eq('id', learnerUserId).maybeSingle();
+        const linkedLearnerEmail = (lp?.email || '').trim().toLowerCase();
+        if (linkedLearnerEmail && linkedLearnerEmail !== typedChildEmail) {
+          throw new Error(
+            'This parent account is already linked to a learner with a different email. Use "Existing PrepSkul account" to select them, or adjust the learner email to match the linked account.'
+          );
+        }
+        const childRes = await resolveContactEmailForNewOfflineEnrollment(admin, {
+          email: typedChildEmail,
+          expectUserType: 'learner',
+        });
+        if (childRes.kind === 'conflict') throw new Error(childRes.message);
+        if (childRes.kind === 'reuse_recent_ghost' && childRes.userId !== learnerUserId) {
+          throw new Error(
+            'The learner email you entered belongs to a different account than the one linked to this parent. Use "Existing PrepSkul account" or fix the link in Supabase.'
+          );
+        }
+      }
+      await admin
+        .from('profiles')
+        .update({
+          full_name: params.child.fullName.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', learnerUserId);
+    } else {
+      const learnerEmail = params.child.email?.trim()
+        ? params.child.email.trim().toLowerCase()
+        : generatedOfflineLearnerEmail();
+
+      if (params.child.email?.trim()) {
+        const childRes = await resolveContactEmailForNewOfflineEnrollment(admin, {
+          email: learnerEmail,
+          expectUserType: 'learner',
+        });
+        if (childRes.kind === 'conflict') throw new Error(childRes.message);
+        if (childRes.kind === 'reuse_recent_ghost') {
+          console.warn('[offline-onboarding] reusing recent profile for child learner email (likely retry after partial failure)');
+          learnerUserId = childRes.userId;
+          await admin
+            .from('profiles')
+            .update({
+              full_name: params.child.fullName.trim(),
+              phone_number: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', learnerUserId);
+        } else {
+          const child = await createAuthUserWithProfile(admin, {
+            email: learnerEmail,
+            fullName: params.child.fullName.trim(),
+            phone: params.child.phone?.trim() || undefined,
+            userType: 'learner',
+          });
+          learnerUserId = child.userId;
+        }
+      } else {
+        const child = await createAuthUserWithProfile(admin, {
+          email: learnerEmail,
+          fullName: params.child.fullName.trim(),
+          phone: params.child.phone?.trim() || undefined,
+          userType: 'learner',
+        });
+        learnerUserId = child.userId;
+      }
+
+      await admin.from('parent_learners').upsert(
+        { parent_user_id: primaryUserId, learner_user_id: learnerUserId },
+        { onConflict: 'parent_user_id,learner_user_id' }
+      );
     }
-    const child = await createAuthUserWithProfile(admin, {
-      email: learnerEmail,
-      fullName: params.child.fullName.trim(),
-      phone: params.child.phone?.trim() || undefined,
-      userType: 'learner',
-    });
-    learnerUserId = child.userId;
-    await admin.from('parent_learners').upsert(
-      { parent_user_id: primaryUserId, learner_user_id: learnerUserId },
-      { onConflict: 'parent_user_id,learner_user_id' }
-    );
   }
 
   const scheduleV2 = toScheduleV2(params.schedule);

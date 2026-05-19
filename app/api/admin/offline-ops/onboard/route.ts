@@ -94,54 +94,43 @@ export async function POST(request: NextRequest) {
       notes: data.notes,
     });
 
-    let result: Awaited<ReturnType<typeof runOfflineOnboarding>> | null = null;
-    let lastErr: unknown = null;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        if (data.enrollmentKind === 'existing') {
-          if (!data.existingPrimaryUserId) {
-            throw new Error('Pick an existing PrepSkul account to enroll.');
-          }
-          result = await runOfflineOnboardingForExistingUser(supabaseAdmin, {
-            idempotencyKey,
-            adminUserId: user.id,
-            agentName: data.agentName,
-            sourceChannel: data.sourceChannel,
-            primaryUserId: data.existingPrimaryUserId,
-            primaryRole: data.primary.role,
-            childUserId: data.existingChildUserId || null,
-            childFullName: data.child?.fullName || null,
-            tutor: data.tutor,
-            schedule: data.schedule,
-            notes: data.notes,
-            tracking: data.tracking,
-          });
-        } else {
-          if (!data.primary.email) {
-            throw new Error('Email is required for new-user enrollment.');
-          }
-          result = await runOfflineOnboarding(supabaseAdmin, {
-            idempotencyKey,
-            adminUserId: user.id,
-            agentName: data.agentName,
-            sourceChannel: data.sourceChannel,
-            primary: { ...data.primary, email: data.primary.email },
-            child: data.child ?? null,
-            tutor: data.tutor,
-            schedule: data.schedule,
-            notes: data.notes,
-            tracking: data.tracking,
-          });
-        }
-        break;
-      } catch (err) {
-        lastErr = err;
-        if (attempt === 2) throw err;
+    /** One attempt only: a retry after partial success would recreate auth/profiles then fail the email check. */
+    let completedResult: Awaited<ReturnType<typeof runOfflineOnboarding>>;
+    if (data.enrollmentKind === 'existing') {
+      if (!data.existingPrimaryUserId) {
+        throw new Error('Pick an existing PrepSkul account to enroll.');
       }
+      completedResult = await runOfflineOnboardingForExistingUser(supabaseAdmin, {
+        idempotencyKey,
+        adminUserId: user.id,
+        agentName: data.agentName,
+        sourceChannel: data.sourceChannel,
+        primaryUserId: data.existingPrimaryUserId,
+        primaryRole: data.primary.role,
+        childUserId: data.existingChildUserId || null,
+        childFullName: data.child?.fullName || null,
+        tutor: data.tutor,
+        schedule: data.schedule,
+        notes: data.notes,
+        tracking: data.tracking,
+      });
+    } else {
+      if (!data.primary.email) {
+        throw new Error('Email is required for new-user enrollment.');
+      }
+      completedResult = await runOfflineOnboarding(supabaseAdmin, {
+        idempotencyKey,
+        adminUserId: user.id,
+        agentName: data.agentName,
+        sourceChannel: data.sourceChannel,
+        primary: { ...data.primary, email: data.primary.email },
+        child: data.child ?? null,
+        tutor: data.tutor,
+        schedule: data.schedule,
+        notes: data.notes,
+        tracking: data.tracking,
+      });
     }
-    if (!result && lastErr) throw lastErr;
-    if (!result) throw new Error('Offline onboarding did not complete.');
-    const completedResult = result;
 
     await sendOpsAlertEmail(
       'Offline onboarding synced',
