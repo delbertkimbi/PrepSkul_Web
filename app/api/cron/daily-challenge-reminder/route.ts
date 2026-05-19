@@ -13,8 +13,14 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * - /api/notifications/send enforces preferences and quiet hours.
  */
 const MAX_USERS_PER_RUN = 500;
+const JOB_NAME = 'daily-challenge-reminder';
 
 export async function GET(request: NextRequest) {
+  let runStatus: 'success' | 'failed' = 'failed';
+  let processedCount = 0;
+  let failedCount = 0;
+  let runError: string | null = null;
+
   try {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
@@ -23,6 +29,7 @@ export async function GET(request: NextRequest) {
         request.headers.get('user-agent')?.includes('vercel-cron') ||
         request.headers.get('x-vercel-cron') === '1';
       if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
+        runError = 'Unauthorized cron request';
         return NextResponse.json(
           { error: 'Unauthorized. Provide Authorization: Bearer YOUR_CRON_SECRET.' },
           { status: 401 },
@@ -53,6 +60,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!statsRows || statsRows.length === 0) {
+      runStatus = 'success';
       return NextResponse.json({
         success: true,
         processed: 0,
@@ -83,6 +91,7 @@ export async function GET(request: NextRequest) {
     }).map((p: any) => p.id as string);
 
     if (learnerIds.length === 0) {
+      runStatus = 'success';
       return NextResponse.json({
         success: true,
         processed: 0,
@@ -112,6 +121,7 @@ export async function GET(request: NextRequest) {
     const eligible = learnerIds.filter((id) => !alreadySent.has(id)).slice(0, MAX_USERS_PER_RUN);
 
     if (eligible.length === 0) {
+      runStatus = 'success';
       return NextResponse.json({
         success: true,
         processed: 0,
@@ -125,6 +135,7 @@ export async function GET(request: NextRequest) {
 
     if (!baseUrl) {
       console.warn('daily-challenge-reminder: no base URL; skipping send');
+      runError = 'Missing NEXT_PUBLIC_APP_URL or VERCEL_URL';
       return NextResponse.json({
         success: true,
         processed: 0,
@@ -174,6 +185,9 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    runStatus = 'success';
+    processedCount = processed;
+    failedCount = failed;
     return NextResponse.json({
       success: true,
       processed,
@@ -183,9 +197,33 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error('daily-challenge-reminder cron error:', error);
+    runError = (error as Error)?.message ?? String(error);
     return NextResponse.json(
       { error: 'Cron failed', details: (error as Error)?.message ?? String(error) },
       { status: 500 },
     );
+  } finally {
+    // Best-effort heartbeat for admin diagnostics.
+    try {
+      const supabaseAdmin = getSupabaseAdmin();
+      await supabaseAdmin.from('cron_job_heartbeats').upsert(
+        {
+          job_name: JOB_NAME,
+          last_status: runStatus,
+          last_run_at: new Date().toISOString(),
+          last_success_at: runStatus === 'success' ? new Date().toISOString() : null,
+          last_error: runStatus === 'failed' ? runError : null,
+          processed_count: processedCount,
+          failed_count: failedCount,
+          metadata: {
+            source: 'external-cron',
+            endpoint: '/api/cron/daily-challenge-reminder',
+          },
+        },
+        { onConflict: 'job_name' },
+      );
+    } catch (heartbeatError) {
+      console.warn('Could not persist cron heartbeat (daily-challenge-reminder):', heartbeatError);
+    }
   }
 }
