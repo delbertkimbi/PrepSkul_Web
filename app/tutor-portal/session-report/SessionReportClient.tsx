@@ -1,7 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { CalendarClock } from 'lucide-react';
 
 export default function SessionReportClient() {
   const search = useSearchParams();
@@ -13,6 +15,21 @@ export default function SessionReportClient() {
   const [status, setStatus] = useState<'idle' | 'saving' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [rescheduleUrl, setRescheduleUrl] = useState('');
+
+  const loadLinks = useCallback(() => {
+    if (!token) return;
+    fetch(`/api/portal/session/context?token=${encodeURIComponent(token)}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (j.rescheduleUrl) setRescheduleUrl(j.rescheduleUrl);
+      })
+      .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    loadLinks();
+  }, [loadLinks]);
 
   const canSubmit = useMemo(() => token.length > 10 && status !== 'saving', [token, status]);
 
@@ -45,9 +62,19 @@ export default function SessionReportClient() {
       </p>
 
       {!token && (
-        <div className="mt-4 border border-gray-200 bg-gray-50 p-3 text-sm text-gray-700 rounded-none">
-          To submit a report, open the personalized link PrepSkul sent you (it includes a secure token in the URL).
+        <div className="mt-4 border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 rounded-lg">
+          Please open the personal link PrepSkul sent you after your session.
         </div>
+      )}
+
+      {rescheduleUrl && (
+        <Link
+          href={rescheduleUrl}
+          className="mt-5 inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border-2 border-[#4A6FBF] text-[#1B2C4F] text-sm font-semibold bg-white hover:bg-[#4A6FBF]/5"
+        >
+          <CalendarClock className="h-4 w-4 text-[#4A6FBF]" />
+          Need to reschedule this session?
+        </Link>
       )}
 
       <div className="mt-6 grid gap-4">

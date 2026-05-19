@@ -3,7 +3,10 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { runOfflineOnboarding } from '@/lib/services/offline-onboarding-service';
+import {
+  runOfflineOnboarding,
+  runOfflineOnboardingForExistingUser,
+} from '@/lib/services/offline-onboarding-service';
 import { sendOpsAlertEmail } from '@/lib/ops-email';
 
 export const runtime = 'nodejs';
@@ -11,10 +14,13 @@ export const runtime = 'nodejs';
 const payloadSchema = z.object({
   agentName: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon']),
   sourceChannel: z.enum(['whatsapp_ads', 'whatsapp_direct', 'phone_call', 'walk_in', 'referral']),
+  enrollmentKind: z.enum(['new', 'existing']).default('new'),
+  existingPrimaryUserId: z.string().uuid().optional(),
+  existingChildUserId: z.string().uuid().optional(),
   primary: z.object({
     role: z.enum(['parent', 'student']),
     fullName: z.string().min(2),
-    email: z.string().email(),
+    email: z.string().email().optional(),
     phone: z.string().optional(),
   }),
   child: z
@@ -91,17 +97,39 @@ export async function POST(request: NextRequest) {
     let lastErr: unknown = null;
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        result = await runOfflineOnboarding(supabaseAdmin, {
-          idempotencyKey,
-          adminUserId: user.id,
-          agentName: data.agentName,
-          sourceChannel: data.sourceChannel,
-          primary: data.primary,
-          child: data.child ?? null,
-          tutor: data.tutor,
-          schedule: data.schedule,
-          notes: data.notes,
-        });
+        if (data.enrollmentKind === 'existing') {
+          if (!data.existingPrimaryUserId) {
+            throw new Error('Pick an existing PrepSkul account to enroll.');
+          }
+          result = await runOfflineOnboardingForExistingUser(supabaseAdmin, {
+            idempotencyKey,
+            adminUserId: user.id,
+            agentName: data.agentName,
+            sourceChannel: data.sourceChannel,
+            primaryUserId: data.existingPrimaryUserId,
+            primaryRole: data.primary.role,
+            childUserId: data.existingChildUserId || null,
+            childFullName: data.child?.fullName || null,
+            tutor: data.tutor,
+            schedule: data.schedule,
+            notes: data.notes,
+          });
+        } else {
+          if (!data.primary.email) {
+            throw new Error('Email is required for new-user enrollment.');
+          }
+          result = await runOfflineOnboarding(supabaseAdmin, {
+            idempotencyKey,
+            adminUserId: user.id,
+            agentName: data.agentName,
+            sourceChannel: data.sourceChannel,
+            primary: { ...data.primary, email: data.primary.email },
+            child: data.child ?? null,
+            tutor: data.tutor,
+            schedule: data.schedule,
+            notes: data.notes,
+          });
+        }
         break;
       } catch (err) {
         lastErr = err;
@@ -121,6 +149,7 @@ export async function POST(request: NextRequest) {
       source_channel: data.sourceChannel,
       customer_name: data.primary.fullName,
       customer_whatsapp: data.primary.phone || '',
+      origin_kind: data.enrollmentKind,
       customer_role: data.primary.role === 'parent' ? 'Parent' : 'Student',
       number_of_learners: data.primary.role === 'parent' ? 1 : 1,
       learner_educational_level: 'Captured in onboarding notes',

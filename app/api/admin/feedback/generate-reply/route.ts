@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdminOrDeny } from '../../analytics/_lib';
+import {
+  buildWhatsAppUrl,
+  composeAdminFeedbackReply,
+  type TutorReportInput,
+} from '@/lib/services/admin-feedback-reply-engine';
 
 export const runtime = 'nodejs';
 
 const schema = z.object({
   feedbackId: z.string().uuid(),
 });
-
-function suggestReply(rating: number, comment: string) {
-  const c = (comment || '').toLowerCase();
-  if (rating >= 4) return 'Thank you for the positive feedback. We are glad the session helped and will maintain this quality.';
-  if (c.includes('late') || c.includes('delay')) return 'Thank you for the feedback. We apologize for the delay and have addressed punctuality with the tutor.';
-  if (rating <= 2) return 'Thank you for your feedback. We are sorry for this experience and are escalating this case for immediate correction.';
-  return 'Thank you for the feedback. We appreciate your input and will improve the next sessions.';
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,27 +30,83 @@ export async function POST(request: NextRequest) {
       .maybeSingle();
     if (!feedback) return NextResponse.json({ error: 'Feedback not found' }, { status: 404 });
 
+    const { data: session } = await supabaseAdmin
+      .from('individual_sessions')
+      .select('id, tutor_id, subject, scheduled_date, scheduled_time, parent_id, learner_id')
+      .eq('id', feedback.individual_session_id)
+      .maybeSingle();
+
     const { data: author } = await supabaseAdmin
       .from('profiles')
       .select('id, full_name, phone_number')
       .eq('id', feedback.author_user_id)
       .maybeSingle();
 
-    const reply = suggestReply(Number(feedback.rating || 0), feedback.comment || '');
-    const waTarget = (author?.phone_number || '').replace(/[^\d]/g, '');
-    const waLink = waTarget ? `https://wa.me/${waTarget}?text=${encodeURIComponent(reply)}` : null;
+    let tutorReport: TutorReportInput = null;
+    let tutorName: string | null = null;
+    if (session?.id) {
+      const { data: tr } = await supabaseAdmin
+        .from('session_tutor_completion_reports')
+        .select('attended, topics_covered, learner_engagement, issues, subject_taught')
+        .eq('individual_session_id', session.id)
+        .maybeSingle();
+      if (tr) tutorReport = tr;
+    }
+    if (session?.tutor_id) {
+      const { data: tutor } = await supabaseAdmin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', session.tutor_id)
+        .maybeSingle();
+      tutorName = tutor?.full_name || null;
+    }
+
+    const familyPhone =
+      author?.phone_number ||
+      (session?.parent_id
+        ? (
+            await supabaseAdmin
+              .from('profiles')
+              .select('phone_number')
+              .eq('id', session.parent_id)
+              .maybeSingle()
+          ).data?.phone_number
+        : null);
+
+    const reply = composeAdminFeedbackReply(
+      { rating: Number(feedback.rating || 0), comment: feedback.comment || '' },
+      tutorReport,
+      {
+        recipientName: author?.full_name,
+        tutorName,
+        sessionSubject: session?.subject,
+        sessionDate: session?.scheduled_date,
+      }
+    );
+
+    const waLink = buildWhatsAppUrl(familyPhone, reply);
 
     await supabaseAdmin.from('admin_operational_events').insert({
       event_type: 'feedback_reply_generated',
       subject: `Reply generated for feedback ${feedback.id}`,
-      payload: { feedback_id: feedback.id, session_id: feedback.individual_session_id, reply, whatsapp_link: waLink },
+      payload: {
+        feedback_id: feedback.id,
+        session_id: feedback.individual_session_id,
+        reply,
+        whatsapp_link: waLink,
+        themes_used: true,
+      },
       emails_sent: [],
     });
 
-    return NextResponse.json({ success: true, suggestedReply: reply, whatsappLink: waLink });
-  } catch (err: any) {
+    return NextResponse.json({
+      success: true,
+      suggestedReply: reply,
+      whatsappLink: waLink,
+      hasTutorReport: !!tutorReport,
+    });
+  } catch (err: unknown) {
     console.error('generate feedback reply error', err);
-    return NextResponse.json({ error: err?.message || 'Failed to generate reply' }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to generate reply' }, { status: 500 });
   }
 }
-

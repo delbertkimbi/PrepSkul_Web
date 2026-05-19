@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { verifySessionPortalAccessToken, buildSessionPortalUrls } from '@/lib/services/session-portal-access';
-import { sendRescheduleRequestEmail } from '@/lib/offline-session-emails';
+import { verifySessionPortalAccessToken } from '@/lib/services/session-portal-access';
+import {
+  fetchPendingRescheduleRequest,
+  insertPendingRescheduleRequest,
+} from '@/lib/services/session-reschedule';
+import { emailRescheduleRequestToCounterparty } from '@/lib/services/session-reschedule-notify';
 
 export const runtime = 'nodejs';
 
@@ -26,7 +30,7 @@ export async function POST(request: NextRequest) {
 
     const { data: session } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id')
+      .select('id, tutor_id, learner_id, parent_id, subject, scheduled_date, scheduled_time')
       .eq('id', access.sessionId)
       .maybeSingle();
     if (!session) return NextResponse.json({ error: 'Session not found' }, { status: 404 });
@@ -34,12 +38,7 @@ export async function POST(request: NextRequest) {
     const requesterId =
       access.role === 'tutor' ? session.tutor_id : session.parent_id || session.learner_id;
 
-    const { data: existingPending } = await supabase
-      .from('session_reschedule_requests')
-      .select('id')
-      .eq('individual_session_id', session.id)
-      .eq('status', 'pending')
-      .maybeSingle();
+    const { row: existingPending } = await fetchPendingRescheduleRequest(supabase, session.id);
     if (existingPending) {
       return NextResponse.json(
         { error: 'A reschedule request is already pending for this session.' },
@@ -47,35 +46,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await supabase.from('session_reschedule_requests').insert({
-      individual_session_id: session.id,
-      requested_by_user_id: requesterId,
-      reason: parsed.data.reason,
-      proposed_date: parsed.data.proposedDate,
-      proposed_time: parsed.data.proposedTime.length === 5 ? `${parsed.data.proposedTime}:00` : parsed.data.proposedTime,
-      status: 'pending',
-    });
-
-    const counterpartyId = access.role === 'tutor' ? session.parent_id || session.learner_id : session.tutor_id;
-    const { data: requester } = await supabase.from('profiles').select('full_name').eq('id', requesterId).maybeSingle();
-    const { data: counter } = await supabase.from('profiles').select('full_name, email').eq('id', counterpartyId).maybeSingle();
-
-    if (counter?.email) {
-      const role = access.role === 'tutor' ? 'learner' : 'tutor';
-      const urls = buildSessionPortalUrls(session.id);
-      const portalUrl = role === 'tutor' ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
-      await sendRescheduleRequestEmail({
-        to: counter.email,
-        recipientName: counter.full_name || 'there',
-        requesterName: requester?.full_name || 'A participant',
-        reason: parsed.data.reason,
-        proposedDate: parsed.data.proposedDate,
-        proposedTime: parsed.data.proposedTime,
-        portalUrl,
-      });
+    if (!requesterId) {
+      return NextResponse.json({ error: 'Session is missing participant information.' }, { status: 400 });
     }
 
-    return NextResponse.json({ success: true, message: 'Reschedule request submitted. Awaiting approval from the other participant.' });
+    const proposedTime =
+      parsed.data.proposedTime.length === 5 ? `${parsed.data.proposedTime}:00` : parsed.data.proposedTime;
+
+    const inserted = await insertPendingRescheduleRequest(supabase, {
+      sessionId: session.id,
+      requestedByUserId: requesterId,
+      reason: parsed.data.reason,
+      proposedDate: parsed.data.proposedDate,
+      proposedTime,
+    });
+    if (!inserted.ok) {
+      const hint =
+        /relation|does not exist|42P01/i.test(inserted.error) ?
+          ' Run supabase/offline_ops_phase2_schema_fix.sql in Supabase.'
+        : '';
+      return NextResponse.json(
+        { error: `Could not save reschedule request: ${inserted.error}${hint}` },
+        { status: 500 }
+      );
+    }
+
+    const { data: requester } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', requesterId)
+      .maybeSingle();
+
+    const emailResult = await emailRescheduleRequestToCounterparty(supabase, {
+      session,
+      requesterRole: access.role,
+      requesterName: requester?.full_name || 'A participant',
+      reason: parsed.data.reason,
+      proposedDate: parsed.data.proposedDate,
+      proposedTime: parsed.data.proposedTime,
+    });
+
+    return NextResponse.json({
+      success: true,
+      emailSent: emailResult.sent,
+      emailError: emailResult.error,
+      message: emailResult.sent
+        ? 'Reschedule request submitted. The other participant was emailed to approve or decline.'
+        : 'Reschedule request submitted. We could not email the other participant — share your session link with them directly.',
+    });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Failed' }, { status: 500 });
   }

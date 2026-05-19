@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
-    const userType = searchParams.get('type') || 'all'; // 'all', 'student', 'tutor'
+    const userType = searchParams.get('type') || 'all'; // 'all', 'parent', 'learner', 'student', 'tutor'
     const limit = parseInt(searchParams.get('limit') || '20');
 
     const supabase = await createServerSupabaseClient();
@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
 
     // Filter by user type if specified
     if (userType !== 'all') {
-      dbQuery = dbQuery.eq('user_type', userType);
+      const normalized =
+        userType === 'student' ? 'learner' : userType === 'parent' ? 'parent' : userType;
+      dbQuery = dbQuery.eq('user_type', normalized);
     }
 
     // Search by name or email if query provided
