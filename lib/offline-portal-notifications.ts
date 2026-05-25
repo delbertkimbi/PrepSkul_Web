@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendOpsAlertEmail } from '@/lib/ops-email';
 import { sendCustomEmail } from '@/lib/notifications';
+import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email_templates/branded-layout';
 
 function escapeHtml(s: string) {
   return s
@@ -204,23 +205,33 @@ export async function sendAdminTriggeredSessionReminder(opts: {
 
   const sentTo: string[] = [];
 
+  const brandedReminder = (name: string) =>
+    buildBrandedEmailHtml({
+      recipientName: name,
+      title: 'Session reminder',
+      bodyHtml: `<p>Our team wanted to remind you about your upcoming <strong>${escapeHtml(subjectName)}</strong> session.</p>
+        <div class="detail-box"><p><strong>When:</strong> ${escapeHtml(when)}</p></div>
+        <p>Please be ready to join on time. If you have any trouble, reply to us on WhatsApp and we'll help.</p>`,
+    });
+
   if (tutor?.email) {
-    const body = `<p>Hi ${escapeHtml(tutor.full_name || 'Tutor')},</p>
-      <p>This is a reminder from PrepSkul admin for your upcoming <strong>${escapeHtml(subjectName)}</strong> session at <strong>${escapeHtml(when)}</strong>.</p>
-      <p>Please prepare and join on time.</p>`;
-    const r = await sendCustomEmail(tutor.email, tutor.full_name || 'Tutor', `Session reminder: ${subjectName}`, body);
+    const html = brandedReminder(tutor.full_name || 'Tutor');
+    const r = await sendCustomEmail(
+      tutor.email,
+      tutor.full_name || 'Tutor',
+      `Session reminder: ${subjectName}`,
+      html
+    );
     if (r.success) sentTo.push(tutor.email);
   }
 
   if (family?.email) {
-    const body = `<p>Hi ${escapeHtml(family.full_name || 'there')},</p>
-      <p>PrepSkul admin is reminding you about your upcoming <strong>${escapeHtml(subjectName)}</strong> session at <strong>${escapeHtml(when)}</strong>.</p>
-      <p>Please join on time. We wish you a great class.</p>`;
+    const html = brandedReminder(family.full_name || 'there');
     const r = await sendCustomEmail(
       family.email,
       family.full_name || 'PrepSkul family',
       `Class reminder: ${subjectName}`,
-      body
+      html
     );
     if (r.success) sentTo.push(family.email);
   }

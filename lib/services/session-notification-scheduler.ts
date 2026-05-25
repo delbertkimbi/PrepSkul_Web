@@ -3,6 +3,32 @@ import { buildSessionPortalUrls } from '@/lib/services/session-portal-access';
 
 type Occurrence = { date: string; time: string };
 
+const WEST_AFRICA_TIME_OFFSET_MINUTES = 60;
+
+/**
+ * Offline sessions store date/time as Cameroon/West Africa local business time.
+ * Build the UTC instant explicitly instead of relying on the server timezone
+ * (Vercel runs in UTC, which would shift "1 hour before" reminders one hour late).
+ */
+function westAfricaLocalDateTimeToUtc(date: string, time: string) {
+  const [year, month, day] = date.slice(0, 10).split('-').map((part) => Number(part));
+  const [hour = 9, minute = 0, second = 0] = String(time || '09:00:00')
+    .slice(0, 8)
+    .split(':')
+    .map((part) => Number(part));
+
+  return new Date(
+    Date.UTC(
+      year,
+      (month || 1) - 1,
+      day || 1,
+      (hour || 0) - WEST_AFRICA_TIME_OFFSET_MINUTES / 60,
+      minute || 0,
+      second || 0
+    )
+  );
+}
+
 async function scheduleSessionNotifications(
   admin: SupabaseClient,
   opts: {
@@ -17,7 +43,7 @@ async function scheduleSessionNotifications(
     urls: ReturnType<typeof buildSessionPortalUrls>;
   }
 ) {
-  const start = new Date(`${opts.occurrence.date}T${opts.occurrence.time}`);
+  const start = westAfricaLocalDateTimeToUtc(opts.occurrence.date, opts.occurrence.time);
   const now = Date.now();
   const userIds = [opts.tutorUserId, opts.familyUserId];
 
