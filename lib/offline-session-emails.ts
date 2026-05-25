@@ -1,60 +1,55 @@
 import { sendCustomEmail } from '@/lib/notifications';
 import { sendOpsAlertEmail } from '@/lib/ops-email';
+import {
+  buildBrandedEmailHtml,
+  escapeHtml,
+  sessionDetailsBox,
+} from '@/lib/email_templates/branded-layout';
 
 import { ADMIN_WHATSAPP, COMMISSION_RATE, TUTOR_EARNINGS_RATE } from '@/lib/offline-ops-constants';
 
-function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function formatSessionWhen(date?: string | null, time?: string | null) {
   if (!date) return 'your upcoming session';
-  const t = time ? String(time).slice(0, 5) : '';
-  return `${date}${t ? ` at ${t}` : ''}`;
+  const timeStr = time ? String(time).slice(0, 5) : '';
+  try {
+    const parsed = new Date(`${date}T${timeStr || '09:00'}:00`);
+    if (!Number.isNaN(parsed.getTime())) {
+      const datePart = parsed.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      });
+      if (!timeStr) return datePart;
+      const timePart = parsed.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+      return `${datePart} at ${timePart}`;
+    }
+  } catch {
+    /* fall through */
+  }
+  return timeStr ? `${date} at ${timeStr}` : date;
 }
 
-function deliveryBlock(opts: {
-  deliveryMode?: string | null;
-  meetLink?: string | null;
-  onsiteLocation?: string | null;
-}) {
-  const mode = (opts.deliveryMode || 'online').toLowerCase();
-  if (mode === 'online' || mode === 'hybrid') {
-    if (opts.meetLink) {
-      return `<p><strong>Join online:</strong> <a href="${escapeHtml(opts.meetLink)}">${escapeHtml(opts.meetLink)}</a></p>`;
-    }
-  }
-  if (mode === 'onsite' || mode === 'hybrid') {
-    if (opts.onsiteLocation) {
-      return `<p><strong>Onsite location:</strong> ${escapeHtml(opts.onsiteLocation)}</p>`;
-    }
-  }
-  return '';
-}
-
-async function dispatchEmail(to: string, recipientName: string, subject: string, html: string) {
+async function sendBrandedOfflineEmail(
+  to: string,
+  recipientName: string,
+  subject: string,
+  title: string,
+  bodyHtml: string,
+  actionUrl?: string,
+  actionText?: string
+) {
+  const html = buildBrandedEmailHtml({
+    recipientName,
+    title,
+    bodyHtml,
+    actionUrl,
+    actionText,
+  });
   return sendCustomEmail(to, recipientName, subject, html);
-}
-
-function portalCta(url: string, label: string) {
-  return `
-    <p style="margin:20px 0;">
-      <a href="${escapeHtml(url)}" style="display:inline-block;background:#1B2C4F;color:#fff;padding:12px 20px;text-decoration:none;border-radius:6px;font-weight:600;">${escapeHtml(label)}</a>
-    </p>
-    <p style="font-size:12px;color:#64748b;word-break:break-all;">Or open this link: <a href="${escapeHtml(url)}">${escapeHtml(url)}</a></p>`;
-}
-
-function familyEmailShell(title: string, body: string) {
-  return `
-    <div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#1B2C4F;">
-      <h2 style="margin:0 0 12px;font-size:20px;">${escapeHtml(title)}</h2>
-      ${body}
-      <p style="margin-top:24px;font-size:13px;color:#64748b;">Warm regards,<br/>The PrepSkul Team</p>
-    </div>`;
 }
 
 function adminSessionFooter(sessionId: string) {
@@ -82,25 +77,39 @@ export async function sendOfflineMatchNotificationEmail(opts: {
   role: 'tutor' | 'learner';
 }) {
   const when = formatSessionWhen(opts.nextDate, opts.nextTime);
+  const lessonSubject = opts.subject || 'your lessons';
   const isTutor = opts.role === 'tutor';
-  const body = isTutor
-    ? `<p>Hi ${escapeHtml(opts.recipientName)},</p>
-       <p>You have been successfully matched with a learner on PrepSkul for <strong>${escapeHtml(opts.subject || 'your lessons')}</strong>.</p>
-       <p>Your first session is planned for <strong>${escapeHtml(when)}</strong>. We will email you ahead of each class with reminders and updates.</p>
-       ${deliveryBlock(opts)}
-       <p>We wish you and your learner a wonderful experience on PrepSkul!</p>
-       ${opts.portalUrl ? portalCta(opts.portalUrl, 'Open your tutor session page') : ''}`
-    : `<p>Hi ${escapeHtml(opts.recipientName)},</p>
-       <p>Wonderful news — you are now matched with tutor <strong>${escapeHtml(opts.tutorName)}</strong> on PrepSkul for <strong>${escapeHtml(opts.subject || 'your lessons')}</strong>.</p>
-       <p>Your first session is planned for <strong>${escapeHtml(when)}</strong>. We will notify you ahead of time for each class and keep you updated on any changes.</p>
-       ${deliveryBlock(opts)}
-       ${opts.rescheduleUrl ? portalCta(opts.rescheduleUrl, 'View or reschedule sessions') : ''}
-       <p>We wish you a great learning journey!</p>`;
-  return dispatchEmail(
+
+  const bodyHtml = isTutor
+    ? `<p>You're all set on PrepSkul — we've matched you with a new learner for <strong>${escapeHtml(lessonSubject)}</strong>.</p>
+       <p>Your first session is on <strong>${escapeHtml(when)}</strong>. We'll send you a short email before each class so nothing slips through the cracks.</p>
+       ${sessionDetailsBox({
+         subject: lessonSubject,
+         when,
+         deliveryMode: opts.deliveryMode,
+         meetLink: opts.meetLink,
+         onsiteLocation: opts.onsiteLocation,
+       })}
+       <p>Thanks for teaching with us — we hope you and your learner have a great experience.</p>`
+    : `<p>Good news — you're now matched with <strong>${escapeHtml(opts.tutorName)}</strong> on PrepSkul for <strong>${escapeHtml(lessonSubject)}</strong>.</p>
+       <p>Your first session is on <strong>${escapeHtml(when)}</strong>. We'll email you ahead of each class with the time and any updates.</p>
+       ${sessionDetailsBox({
+         subject: lessonSubject,
+         when,
+         deliveryMode: opts.deliveryMode,
+         meetLink: opts.meetLink,
+         onsiteLocation: opts.onsiteLocation,
+       })}
+       <p>If anything changes, you can request a new time from your session page.</p>`;
+
+  return sendBrandedOfflineEmail(
     opts.to,
     opts.recipientName,
     isTutor ? 'You have a new PrepSkul learner match' : 'You are matched on PrepSkul',
-    familyEmailShell(isTutor ? 'New learner match' : 'Welcome to your match', body)
+    isTutor ? 'New learner match' : "You're matched — here's what's next",
+    bodyHtml,
+    isTutor ? opts.portalUrl || undefined : opts.rescheduleUrl || opts.portalUrl || undefined,
+    isTutor ? 'Open your tutor session page' : 'View or reschedule sessions'
   );
 }
 
@@ -117,18 +126,28 @@ export async function sendOfflineWelcomeEmail(opts: {
   learnerPortalUrl?: string | null;
 }) {
   const when = formatSessionWhen(opts.nextDate, opts.nextTime);
-  const body = `
-    <p>Hi ${escapeHtml(opts.recipientName)},</p>
-    <p>Welcome to PrepSkul! You have been matched with tutor <strong>${escapeHtml(opts.tutorName)}</strong> for <strong>${escapeHtml(opts.subject || 'your lessons')}</strong>.</p>
-    <p>Your next session is scheduled for <strong>${escapeHtml(when)}</strong>.</p>
-    ${deliveryBlock(opts)}
-    ${opts.learnerPortalUrl ? `<p>After each session, share feedback here: <a href="${escapeHtml(opts.learnerPortalUrl)}">Open your session page</a></p>` : ''}
-    <p>We wish you a wonderful learning journey!</p>`;
-  return dispatchEmail(
+  const lessonSubject = opts.subject || 'your lessons';
+
+  const bodyHtml = `
+    <p>Welcome to PrepSkul — you've been matched with <strong>${escapeHtml(opts.tutorName)}</strong> for <strong>${escapeHtml(lessonSubject)}</strong>.</p>
+    <p>Your next session is on <strong>${escapeHtml(when)}</strong>.</p>
+    ${sessionDetailsBox({
+      subject: lessonSubject,
+      when,
+      deliveryMode: opts.deliveryMode,
+      meetLink: opts.meetLink,
+      onsiteLocation: opts.onsiteLocation,
+    })}
+    <p>After each class, you can leave quick feedback from your session page — it helps us keep improving your experience.</p>`;
+
+  return sendBrandedOfflineEmail(
     opts.to,
     opts.recipientName,
     `Welcome to PrepSkul — matched with ${opts.tutorName}`,
-    familyEmailShell('Welcome to PrepSkul', body)
+    'Welcome to PrepSkul',
+    bodyHtml,
+    opts.learnerPortalUrl || undefined,
+    'Open your session page'
   );
 }
 
@@ -151,18 +170,27 @@ export async function sendSessionStartEmail(opts: {
     opts.role === 'tutor'
       ? opts.learnerName || 'your learner'
       : opts.tutorName || 'your tutor';
-  const body = `
-    <p>Hi ${escapeHtml(opts.recipientName)},</p>
-    <p>It is time for your PrepSkul session with <strong>${escapeHtml(counterpart)}</strong> (${escapeHtml(opts.subject || 'lesson')}) — <strong>${escapeHtml(when)}</strong>.</p>
-    <p>We hope you have a wonderful session!</p>
-    ${deliveryBlock(opts)}
-    <p><a href="${escapeHtml(opts.portalUrl)}" style="display:inline-block;background:#1B2C4F;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;font-weight:600;">Open session page</a></p>
-    <p style="font-size:13px;color:#64748b;">Use this link after class to submit feedback or request a reschedule if needed.</p>`;
-  return dispatchEmail(
+  const lessonSubject = opts.subject || 'your session';
+
+  const bodyHtml = `
+    <p>Your PrepSkul session with <strong>${escapeHtml(counterpart)}</strong> is starting now.</p>
+    ${sessionDetailsBox({
+      subject: lessonSubject,
+      when,
+      deliveryMode: opts.deliveryMode,
+      meetLink: opts.meetLink,
+      onsiteLocation: opts.onsiteLocation,
+    })}
+    <p>Open your session page below when you're ready — you can submit feedback or request a reschedule there after class if you need to.</p>`;
+
+  return sendBrandedOfflineEmail(
     opts.to,
     opts.recipientName,
     'Your PrepSkul session is starting now',
-    familyEmailShell('Session starting now', body)
+    'Session starting now',
+    bodyHtml,
+    opts.portalUrl,
+    'Open session page'
   );
 }
 
@@ -182,23 +210,29 @@ export async function sendRescheduleRequestEmail(opts: {
   const currentWhen = formatSessionWhen(opts.currentDate, opts.currentTime);
   const proposedWhen = formatSessionWhen(opts.proposedDate, opts.proposedTime);
   const requesterLabel =
-    opts.recipientRole === 'tutor' ? 'A parent/learner' : 'Your tutor';
-  const ctaLabel = 'Review and respond to reschedule';
-  const body = `
-    <p>Hi ${escapeHtml(opts.recipientName)},</p>
-    <p><strong>${escapeHtml(requesterLabel)} (${escapeHtml(opts.requesterName)})</strong> requested to reschedule a PrepSkul session.</p>
-    ${opts.sessionSubject ? `<p><strong>Subject:</strong> ${escapeHtml(opts.sessionSubject)}</p>` : ''}
-    <p><strong>Current time:</strong> ${escapeHtml(currentWhen)}</p>
-    <p><strong>Proposed new time:</strong> ${escapeHtml(proposedWhen)}</p>
-    <p><strong>Reason:</strong> ${escapeHtml(opts.reason)}</p>
-    <p>Please open your session page to <strong>approve or decline</strong> this change.</p>
-    ${portalCta(opts.portalUrl, ctaLabel)}
-    <p style="font-size:13px;color:#64748b;">This link is personal to you. Do not share it with others.</p>`;
-  return dispatchEmail(
+    opts.recipientRole === 'tutor' ? 'A parent or learner' : 'Your tutor';
+
+  const bodyHtml = `
+    <p><strong>${escapeHtml(requesterLabel)}</strong> (${escapeHtml(opts.requesterName)}) asked to move a PrepSkul session to a new time.</p>
+    ${sessionDetailsBox({
+      subject: opts.sessionSubject,
+      when: currentWhen,
+      extraLines: [
+        `<p><strong>Proposed new time:</strong> ${escapeHtml(proposedWhen)}</p>`,
+        `<p><strong>Reason:</strong> ${escapeHtml(opts.reason)}</p>`,
+      ],
+    })}
+    <p>Please review the request and let us know if the new time works for you.</p>
+    <p style="font-size:13px;color:#64748b;">This link is personal to you — please don't share it.</p>`;
+
+  return sendBrandedOfflineEmail(
     opts.to,
     opts.recipientName,
     'Someone requested to reschedule your PrepSkul session',
-    familyEmailShell('Reschedule request', body)
+    'Reschedule request',
+    bodyHtml,
+    opts.portalUrl,
+    'Review and respond'
   );
 }
 
@@ -213,20 +247,22 @@ export async function sendRescheduleDecisionEmail(opts: {
 }) {
   const proposedWhen = formatSessionWhen(opts.proposedDate, opts.proposedTime);
   const ctaLabel =
-    opts.recipientRole === 'tutor' ? 'Open tutor session hub' : 'Open your session page';
-  const body = opts.accepted
-    ? `<p>Hi ${escapeHtml(opts.recipientName)},</p>
-       <p>Your reschedule request was <strong>accepted</strong>. The session is now scheduled for <strong>${escapeHtml(proposedWhen)}</strong>.</p>
-       ${opts.portalUrl ? portalCta(opts.portalUrl, ctaLabel) : ''}`
-    : `<p>Hi ${escapeHtml(opts.recipientName)},</p>
-       <p>Your reschedule request was <strong>declined</strong>. The original session time is unchanged.</p>
-       <p>Please contact PrepSkul admins on WhatsApp: <strong>${escapeHtml(ADMIN_WHATSAPP)}</strong> if you need help.</p>
-       ${opts.portalUrl ? portalCta(opts.portalUrl, ctaLabel) : ''}`;
-  return dispatchEmail(
+    opts.recipientRole === 'tutor' ? 'Open tutor session page' : 'Open your session page';
+
+  const bodyHtml = opts.accepted
+    ? `<p>Your reschedule request was <strong>accepted</strong>. The session is now set for <strong>${escapeHtml(proposedWhen)}</strong>.</p>
+       <p>We've updated your reminders accordingly. See you then!</p>`
+    : `<p>Your reschedule request was <strong>declined</strong>, so the original session time stays as planned.</p>
+       <p>If you still need help, reach us on WhatsApp at <strong>${escapeHtml(ADMIN_WHATSAPP)}</strong> and we'll sort it out with you.</p>`;
+
+  return sendBrandedOfflineEmail(
     opts.to,
     opts.recipientName,
     opts.accepted ? 'PrepSkul — reschedule accepted' : 'PrepSkul — reschedule declined',
-    familyEmailShell(opts.accepted ? 'Reschedule accepted' : 'Reschedule declined', body)
+    opts.accepted ? 'Reschedule accepted' : 'Reschedule declined',
+    bodyHtml,
+    opts.portalUrl,
+    ctaLabel
   );
 }
 
@@ -244,25 +280,56 @@ export async function sendOfflineReminderEmail(opts: {
   feedbackUrl?: string | null;
 }) {
   const when = formatSessionWhen(opts.scheduledDate, opts.scheduledTime);
-  const body = `
-    <p>Hi ${escapeHtml(opts.recipientName)},</p>
-    <p>Just a friendly heads-up — your <strong>${escapeHtml(opts.subject || 'PrepSkul')}</strong> session is coming up on <strong>${escapeHtml(when)}</strong>.</p>
-    ${deliveryBlock(opts)}
-  ${
-    opts.rescheduleUrl
-      ? `<p>If you need to move this session, you can request a new time here:</p>${portalCta(opts.rescheduleUrl, 'Reschedule this session')}`
-      : ''
+  const lessonSubject = opts.subject || 'PrepSkul';
+  const label = (opts.reminderLabel || '').toLowerCase();
+
+  let intro = '';
+  if (label.includes('24 hour') || label.includes('24-hour')) {
+    intro = `<p>Quick heads-up — your <strong>${escapeHtml(lessonSubject)}</strong> session is tomorrow.</p>`;
+  } else if (label.includes('1 hour') || label.includes('hour before')) {
+    intro = `<p>Your <strong>${escapeHtml(lessonSubject)}</strong> session is about an hour away — just wanted to give you time to get ready.</p>`;
+  } else if (label.includes('starting now') || label.includes('start')) {
+    intro = `<p>Your <strong>${escapeHtml(lessonSubject)}</strong> session is starting now.</p>`;
+  } else {
+    intro = `<p>Just a reminder — your <strong>${escapeHtml(lessonSubject)}</strong> session is coming up soon.</p>`;
   }
-  ${
-    opts.feedbackUrl
-      ? `<p style="font-size:13px;color:#64748b;margin-top:16px;">After class, share feedback on your <a href="${escapeHtml(opts.feedbackUrl)}">session page</a>.</p>`
-      : ''
-  }`;
-  return dispatchEmail(
+
+  const bodyHtml = `
+    ${intro}
+    ${sessionDetailsBox({
+      subject: lessonSubject,
+      when,
+      deliveryMode: opts.deliveryMode,
+      meetLink: opts.meetLink,
+      onsiteLocation: opts.onsiteLocation,
+    })}
+    ${
+      opts.rescheduleUrl
+        ? `<p>Need to move this session? You can request a new time from your session page.</p>`
+        : ''
+    }
+    ${
+      opts.feedbackUrl && !opts.rescheduleUrl
+        ? `<p style="font-size:14px;color:#555;">After class, you can share feedback on your <a href="${escapeHtml(opts.feedbackUrl)}">session page</a>.</p>`
+        : ''
+    }`;
+
+  const emailTitle =
+    label.includes('starting now') || label.includes('start')
+      ? 'Session starting now'
+      : 'Session reminder';
+
+  const primaryUrl = opts.rescheduleUrl || opts.feedbackUrl;
+  const primaryLabel = opts.rescheduleUrl ? 'View or reschedule' : 'View session';
+
+  return sendBrandedOfflineEmail(
     opts.to,
     opts.recipientName,
-    'A friendly reminder about your upcoming PrepSkul session',
-    familyEmailShell('Upcoming session', body)
+    'Reminder: your upcoming PrepSkul session',
+    emailTitle,
+    bodyHtml,
+    primaryUrl || undefined,
+    primaryLabel
   );
 }
 

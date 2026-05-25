@@ -5,6 +5,8 @@
  * Uses Resend for emails and Twilio for SMS (when configured)
  */
 
+import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email_templates/branded-layout';
+
 // Initialize Resend at runtime (not module level) to avoid build-time errors
 async function getResend() {
   if (!process.env.RESEND_API_KEY) {
@@ -721,76 +723,34 @@ function buildNotificationEmailHtml({
   senderAvatarUrl,
   messagePreview,
 }: Omit<NotificationEmailParams, 'recipientEmail' | 'subject'>): string {
-  const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com';
-  const resolvedActionUrl = actionUrl
-    ? (actionUrl.startsWith('http') ? actionUrl : `${appBaseUrl}${actionUrl}`)
-    : appBaseUrl;
-  const buttonText = actionText || 'Open PrepSkul';
   const isMessageNotification = !!senderName;
   const previewText = messagePreview || message;
 
-  return `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          body { font-family: 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background: #f2f4f8; }
-          .container { max-width: 640px; margin: 0 auto; background: #ffffff; }
-          .header { background: linear-gradient(135deg, #1B2C4F 0%, #4A6FBF 100%); color: white; padding: 32px 28px; text-align: center; }
-          .logo { max-width: 120px; height: auto; margin: 0 auto 16px; display: block; }
-          .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
-          .content { padding: 32px 28px; background: #ffffff; }
-          .sender-section { display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #eee; }
-          .sender-avatar { width: 48px; height: 48px; border-radius: 50%; margin-right: 12px; object-fit: cover; background: #e0e0e0; }
-          .sender-info { flex: 1; }
-          .sender-label { font-size: 12px; color: #666; margin-bottom: 4px; }
-          .sender-name { font-size: 16px; font-weight: 600; color: #1B2C4F; margin: 0; }
-          .title { color: #1B2C4F; font-size: 20px; font-weight: 700; margin: 0 0 12px; }
-          .message { font-size: 15px; margin: 0 0 20px; white-space: pre-wrap; }
-          .message-preview { background: #f8f9fa; border-left: 3px solid #4A6FBF; padding: 16px; margin: 20px 0; border-radius: 4px; font-size: 14px; color: #333; line-height: 1.6; }
-          .button { display: inline-block; background: #4A6FBF; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; }
-          .link-note { font-size: 12px; color: #666; margin-top: 16px; word-break: break-all; }
-          .footer { background: #f9f9f9; padding: 20px 28px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <img src="https://prepskul.com/logo-white.png" alt="PrepSkul" class="logo" />
-            <h1>PrepSkul</h1>
-          </div>
-          <div class="content">
-            <p style="margin: 0 0 12px;">Hi <strong>${recipientName}</strong>,</p>
-            ${isMessageNotification && senderName ? `
-            <div class="sender-section">
-              ${senderAvatarUrl ? `<img src="${senderAvatarUrl}" alt="${senderName}" class="sender-avatar" />` : `<div class="sender-avatar" style="display: flex; align-items: center; justify-content: center; color: #666; font-weight: 600;">${senderName.charAt(0).toUpperCase()}</div>`}
-              <div class="sender-info">
-                <div class="sender-label">From</div>
-                <div class="sender-name">${senderName}</div>
-              </div>
-            </div>
-            ` : ''}
-            <h2 class="title">${title}</h2>
-            ${isMessageNotification && messagePreview ? `
-            <div class="message-preview">${previewText}</div>
-            ` : `<p class="message">${message}</p>`}
-            <p style="text-align: center; margin: 24px 0;">
-              <a href="${resolvedActionUrl}" class="button">${buttonText}</a>
-            </p>
-            <p class="link-note">
-              If the button doesn't work, copy and paste this link into your browser:<br />
-              <a href="${resolvedActionUrl}">${resolvedActionUrl}</a>
-            </p>
-          </div>
-          <div class="footer">
-            © ${new Date().getFullYear()} PrepSkul. All rights reserved.<br />
-            This is an automated email. Please do not reply.
-          </div>
-        </div>
-      </body>
-    </html>
-  `;
+  let bodyHtml = '';
+  if (isMessageNotification && senderName) {
+    const initial = escapeHtml(senderName.charAt(0).toUpperCase());
+    const avatarBlock = senderAvatarUrl
+      ? `<img src="${escapeHtml(senderAvatarUrl)}" alt="${escapeHtml(senderName)}" style="width:48px;height:48px;border-radius:50%;margin-right:12px;vertical-align:middle;" />`
+      : `<span style="display:inline-block;width:48px;height:48px;border-radius:50%;background:#e0e0e0;text-align:center;line-height:48px;margin-right:12px;font-weight:600;color:#666;">${initial}</span>`;
+    bodyHtml += `<p style="margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #eee;">
+      ${avatarBlock}
+      <span style="font-size:12px;color:#666;">From</span><br />
+      <strong style="color:#1B2C4F;">${escapeHtml(senderName)}</strong>
+    </p>`;
+  }
+  if (isMessageNotification && messagePreview) {
+    bodyHtml += `<div class="detail-box">${escapeHtml(previewText)}</div>`;
+  } else {
+    bodyHtml += `<p>${escapeHtml(message)}</p>`;
+  }
+
+  return buildBrandedEmailHtml({
+    recipientName,
+    title,
+    bodyHtml,
+    actionUrl: actionUrl || process.env.NEXT_PUBLIC_APP_URL || 'https://app.prepskul.com',
+    actionText: actionText || 'Open PrepSkul',
+  });
 }
 
 export async function sendNotificationEmail({

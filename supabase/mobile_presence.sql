@@ -11,3 +11,8 @@ CREATE INDEX IF NOT EXISTS idx_profiles_last_seen_mobile ON public.profiles (las
 COMMENT ON COLUMN public.profiles.last_seen IS 'Last activity timestamp (mobile ping or web session).';
 COMMENT ON COLUMN public.profiles.last_seen_source IS 'mobile | web';
 COMMENT ON COLUMN public.profiles.last_seen_platform IS 'ios | android | web';
+
+
+
+
+
