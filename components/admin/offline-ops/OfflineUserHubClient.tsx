@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import OfflineSchedulePeriodFields, {
   buildHistoricalMonthlyPayloads,
   buildSchedulePayload,
+  defaultHistoricalMonthRecord,
   defaultSchedulePeriodState,
   validateSchedulePeriodState,
   type SchedulePeriodFormState,
@@ -57,7 +58,7 @@ export default function OfflineUserHubClient(props: HubProps) {
 
   const submitSchedule = async (historical: boolean) => {
     setError(null);
-    const err = validateSchedulePeriodState(scheduleState, { historical });
+    const err = validateSchedulePeriodState(scheduleState, { historical, requireTutor: !historical });
     if (err) {
       setError(err);
       return;
@@ -232,6 +233,14 @@ export default function OfflineUserHubClient(props: HubProps) {
               onClick={() => {
                 setPanel(c.id);
                 setError(null);
+                if (c.id === 'import' && !scheduleState.historicalMonthRecords.length) {
+                  const enabled = scheduleState.daySlots.filter((d) => d.enabled).length;
+                  patchSchedule({
+                    historicalMonthRecords: [
+                      defaultHistoricalMonthRecord(enabled, scheduleState.payPerMonth),
+                    ],
+                  });
+                }
               }}
               className="text-left bg-white border border-[#1B2C4F]/12 p-4 rounded-lg shadow-sm hover:border-[#4A6FBF]/40"
             >
@@ -260,6 +269,7 @@ export default function OfflineUserHubClient(props: HubProps) {
                 state={scheduleState}
                 onChange={patchSchedule}
                 learners={props.learners}
+                showTutorPicker={panel !== 'import'}
                 showLearnerSelect={props.learners.length >= 1 && props.userType === 'parent'}
                 historicalDefaults={panel === 'import'}
               />

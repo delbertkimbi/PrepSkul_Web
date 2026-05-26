@@ -21,9 +21,34 @@ import {
 import StartMonthPicker, { type StartMonthValue } from '@/components/admin/offline-ops/StartMonthPicker';
 import {
   deriveStartDateFromMonthYear,
-  enumerateMonthRange,
   formatStartMonthLabel,
 } from '@/lib/offline-month-utils';
+
+export type HistoricalMonthRecord = {
+  id: string;
+  monthYear: StartMonthValue;
+  tutor: TutorPickerValue | null;
+  subjectCount: number;
+  subjects: string[];
+  sessionsPerWeek: string;
+  payPerMonth: string;
+};
+
+export function defaultHistoricalMonthRecord(
+  enabledDayCount: number,
+  payPerMonth: string
+): HistoricalMonthRecord {
+  const now = new Date();
+  return {
+    id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    monthYear: { month: now.getMonth() + 1, year: now.getFullYear() },
+    tutor: null,
+    subjectCount: 1,
+    subjects: [''],
+    sessionsPerWeek: String(enabledDayCount || 1),
+    payPerMonth,
+  };
+}
 
 export type SchedulePeriodFormState = {
   tutor: TutorPickerValue;
@@ -43,9 +68,8 @@ export type SchedulePeriodFormState = {
   payMonths: string;
   operationState: 'active' | 'paused' | 'stopped';
   startMonthLabel: string;
-  startMonthYear: StartMonthValue;
-  endMonthYear: StartMonthValue;
-  historicalMonthEntries: Record<string, { sessionsPerWeek: string; payPerMonth: string }>;
+  /** One row per billing month for historical import (replaces start/end range). */
+  historicalMonthRecords: HistoricalMonthRecord[];
 };
 
 export function defaultSchedulePeriodState(): SchedulePeriodFormState {
@@ -67,9 +91,7 @@ export function defaultSchedulePeriodState(): SchedulePeriodFormState {
     payMonths: '1',
     operationState: 'active',
     startMonthLabel: '',
-    startMonthYear: { month: new Date().getMonth() + 1, year: new Date().getFullYear() },
-    endMonthYear: { month: new Date().getMonth() + 1, year: new Date().getFullYear() },
-    historicalMonthEntries: {},
+    historicalMonthRecords: [],
   };
 }
 
@@ -80,13 +102,10 @@ export function buildSchedulePayload(state: SchedulePeriodFormState, opts?: { hi
   const sessionsPerWeek = Math.max(1, enabled.length);
   let startDate = state.startDate;
   let startMonthLabel = state.startMonthLabel.trim() || null;
-  if (opts?.historical) {
-    startDate = deriveStartDateFromMonthYear(
-      state.startMonthYear.year,
-      state.startMonthYear.month,
-      dayTimeSlots
-    );
-    startMonthLabel = formatStartMonthLabel(state.startMonthYear.year, state.startMonthYear.month, startDate);
+  if (opts?.historical && state.historicalMonthRecords[0]) {
+    const first = state.historicalMonthRecords[0];
+    startDate = deriveStartDateFromMonthYear(first.monthYear.year, first.monthYear.month, dayTimeSlots);
+    startMonthLabel = formatStartMonthLabel(first.monthYear.year, first.monthYear.month, startDate);
   }
   return {
     cleanedSubjects,
@@ -111,24 +130,32 @@ export function buildSchedulePayload(state: SchedulePeriodFormState, opts?: { hi
 }
 
 export function buildHistoricalMonthlyPayloads(state: SchedulePeriodFormState) {
-  const base = buildSchedulePayload(state, { historical: true });
-  const months = enumerateMonthRange(state.startMonthYear, state.endMonthYear);
+  const enabled = state.daySlots.filter((d) => d.enabled);
+  const dayTimeSlots = enabled.map((d) => ({ day: d.day, time: d.time }));
+  const fallbackSubjects = state.subjects.map((s) => s.trim()).filter(Boolean);
 
-  return months.map((month) => {
-    const entry = state.historicalMonthEntries[month.key];
-    const enabled = state.daySlots.filter((d) => d.enabled);
-    const dayTimeSlots = enabled.map((d) => ({ day: d.day, time: d.time }));
-    const startDate = deriveStartDateFromMonthYear(month.year, month.month, dayTimeSlots);
-
+  return state.historicalMonthRecords.map((record) => {
+    const cleanedSubjects = record.subjects.map((s) => s.trim()).filter(Boolean);
+    const startDate = deriveStartDateFromMonthYear(
+      record.monthYear.year,
+      record.monthYear.month,
+      dayTimeSlots
+    );
     return {
-      ...base.schedule,
       weeks: 4,
-      sessionsPerWeek: Number(entry?.sessionsPerWeek || enabled.length || 1),
+      sessionsPerWeek: Number(record.sessionsPerWeek || enabled.length || 1),
+      dayTimeSlots,
+      durationMinutes: Number(state.durationMinutes),
       startDate,
-      payPerMonthXaf: entry?.payPerMonth ? Number(entry.payPerMonth) : base.schedule.payPerMonthXaf,
+      deliveryMode: state.deliveryMode,
+      subjects: cleanedSubjects.length ? cleanedSubjects : fallbackSubjects,
+      meetLink: state.meetLink.trim() || null,
+      onsiteLocation: state.onsiteLocation.trim() || null,
+      onsitePhotoUrl: state.onsitePhotoUrl.trim() || null,
+      payPerMonthXaf: record.payPerMonth ? Number(record.payPerMonth) : null,
       payMonthsCount: 1,
-      startMonthLabel: formatStartMonthLabel(month.year, month.month, startDate),
-      operationState: undefined,
+      startMonthLabel: formatStartMonthLabel(record.monthYear.year, record.monthYear.month, startDate),
+      tutorUserId: record.tutor?.tutorUserId,
     };
   });
 }
@@ -142,10 +169,15 @@ export function validateSchedulePeriodState(
   if (!cleanedSubjects.length) return 'Add at least one subject.';
   if (!enabled.length) return 'Select at least one session day.';
   if (!opts?.historical && !state.startDate) return 'Start date is required.';
-  if (opts?.historical && !state.startMonthYear.month) return 'Select a start month.';
   if (opts?.historical) {
-    const months = enumerateMonthRange(state.startMonthYear, state.endMonthYear);
-    if (!months.length) return 'End month must be the same as, or after, the start month.';
+    if (!state.historicalMonthRecords.length) return 'Add at least one month of past data.';
+    for (let i = 0; i < state.historicalMonthRecords.length; i++) {
+      const rec = state.historicalMonthRecords[i];
+      if (!rec.tutor?.tutorUserId) return `Month ${i + 1}: select a tutor.`;
+      const subs = rec.subjects.map((s) => s.trim()).filter(Boolean);
+      if (!subs.length) return `Month ${i + 1}: add at least one subject.`;
+      if (!rec.payPerMonth?.trim()) return `Month ${i + 1}: enter pay per month (XAF).`;
+    }
   }
   if ((state.deliveryMode === 'online' || state.deliveryMode === 'hybrid') && !state.meetLink.trim()) {
     return 'Google Meet link is required for online/hybrid.';
@@ -176,24 +208,11 @@ export default function OfflineSchedulePeriodFields({
     () => state.daySlots.filter((d) => d.enabled).length,
     [state.daySlots]
   );
-  const historicalMonths = useMemo(
-    () => enumerateMonthRange(state.startMonthYear, state.endMonthYear),
-    [state.startMonthYear, state.endMonthYear]
-  );
-
-  const patchHistoricalMonthEntry = (
-    monthKey: string,
-    patch: Partial<{ sessionsPerWeek: string; payPerMonth: string }>
-  ) => {
-    const current = state.historicalMonthEntries[monthKey] || {
-      sessionsPerWeek: String(enabledDayCount || 1),
-      payPerMonth: state.payPerMonth,
-    };
+  const patchHistoricalRecord = (id: string, patch: Partial<HistoricalMonthRecord>) => {
     onChange({
-      historicalMonthEntries: {
-        ...state.historicalMonthEntries,
-        [monthKey]: { ...current, ...patch },
-      },
+      historicalMonthRecords: state.historicalMonthRecords.map((r) =>
+        r.id === id ? { ...r, ...patch } : r
+      ),
     });
   };
 
@@ -203,19 +222,11 @@ export default function OfflineSchedulePeriodFields({
       daySlots,
       sessionsPerWeek: String(Math.max(1, enabledCount)),
     };
-    if (historicalDefaults) {
-      const monthEntries = { ...state.historicalMonthEntries };
-      for (const month of historicalMonths) {
-        const current = monthEntries[month.key] || {
-          sessionsPerWeek: String(enabledCount || 1),
-          payPerMonth: state.payPerMonth,
-        };
-        monthEntries[month.key] = {
-          ...current,
-          sessionsPerWeek: String(enabledCount || 1),
-        };
-      }
-      next.historicalMonthEntries = monthEntries;
+    if (historicalDefaults && state.historicalMonthRecords.length) {
+      next.historicalMonthRecords = state.historicalMonthRecords.map((r) => ({
+        ...r,
+        sessionsPerWeek: String(enabledCount || 1),
+      }));
     }
     onChange(next);
   };
@@ -308,66 +319,96 @@ export default function OfflineSchedulePeriodFields({
 
       {historicalDefaults && (
         <div className="rounded-md border border-[#1B2C4F]/15 bg-slate-50 p-4 space-y-4">
-          <p className="text-xs text-slate-600">
-            Pick the start and end months for this historical period. Each month is stored as its own 4-week billing period with evaluated sessions. Operation state is not changed by imports — admins control that on the operation detail page.
-          </p>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <StartMonthPicker
-              label="Start month *"
-              value={state.startMonthYear}
-              onChange={(startMonthYear) => onChange({ startMonthYear })}
-            />
-            <StartMonthPicker
-              label="End month *"
-              value={state.endMonthYear}
-              onChange={(endMonthYear) => onChange({ endMonthYear })}
-            />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-600 max-w-xl">
+              Add each past month separately — tutor, subjects, and pay for that month. Each month is stored as its own billing period (4 weeks, evaluated sessions) so analytics match the correct month.
+            </p>
+            <button
+              type="button"
+              className="text-xs font-semibold text-[#1B2C4F] border border-[#1B2C4F]/25 rounded-md px-3 py-1.5 bg-white hover:bg-slate-50"
+              onClick={() =>
+                onChange({
+                  historicalMonthRecords: [
+                    ...state.historicalMonthRecords,
+                    defaultHistoricalMonthRecord(enabledDayCount, state.payPerMonth),
+                  ],
+                })
+              }
+            >
+              + Add month
+            </button>
           </div>
-          {historicalMonths.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                Monthly billing ({historicalMonths.length} month{historicalMonths.length === 1 ? '' : 's'})
-              </p>
-              {historicalMonths.map((month) => {
-                const entry = state.historicalMonthEntries[month.key] || {
-                  sessionsPerWeek: String(enabledDayCount || 1),
-                  payPerMonth: state.payPerMonth,
-                };
-                return (
-                  <div
-                    key={month.key}
-                    className="grid gap-3 sm:grid-cols-3 bg-white border border-[#1B2C4F]/10 rounded-md p-3"
-                  >
+          {state.historicalMonthRecords.length === 0 ? (
+            <p className="text-sm text-slate-500">No months yet. Click &quot;Add month&quot; to record past data.</p>
+          ) : (
+            <div className="space-y-4">
+              {state.historicalMonthRecords.map((record, index) => (
+                <div
+                  key={record.id}
+                  className="bg-white border border-[#1B2C4F]/12 rounded-lg p-4 space-y-4"
+                >
+                  <div className="flex justify-between items-center gap-2">
+                    <p className="text-sm font-semibold text-[#1B2C4F]">Month {index + 1}</p>
+                    <button
+                      type="button"
+                      className="text-xs text-red-600 hover:underline"
+                      onClick={() =>
+                        onChange({
+                          historicalMonthRecords: state.historicalMonthRecords.filter((r) => r.id !== record.id),
+                        })
+                      }
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    <StartMonthPicker
+                      label="Billing month *"
+                      value={record.monthYear}
+                      onChange={(monthYear) => patchHistoricalRecord(record.id, { monthYear })}
+                    />
                     <div>
-                      <Label className="text-xs text-slate-600">Month</Label>
-                      <p className="mt-1 text-sm font-semibold text-[#1B2C4F]">{month.label}</p>
-                      <p className="text-[11px] text-slate-500">4 weeks per month</p>
+                      <Label className="text-slate-700 font-medium">Tutor for this month *</Label>
+                      <div className="mt-2">
+                        <TutorPicker
+                          value={record.tutor}
+                          onChange={(t) => patchHistoricalRecord(record.id, { tutor: t })}
+                        />
+                      </div>
                     </div>
+                  </div>
+                  <SubjectListInput
+                    count={record.subjectCount}
+                    subjects={record.subjects}
+                    onCountChange={(n) => patchHistoricalRecord(record.id, { subjectCount: n })}
+                    onSubjectsChange={(s) => patchHistoricalRecord(record.id, { subjects: s })}
+                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <Label>Sessions / week</Label>
                       <Input
                         type="number"
                         min={1}
                         max={7}
-                        value={entry.sessionsPerWeek}
+                        value={record.sessionsPerWeek}
                         onChange={(e) =>
-                          patchHistoricalMonthEntry(month.key, { sessionsPerWeek: e.target.value })
+                          patchHistoricalRecord(record.id, { sessionsPerWeek: e.target.value })
                         }
                         className="mt-1 border-[#1B2C4F]/20"
                       />
                     </div>
                     <div>
-                      <Label>Pay / month (XAF)</Label>
+                      <Label>Pay / month (XAF) *</Label>
                       <Input
                         type="number"
-                        value={entry.payPerMonth}
-                        onChange={(e) => patchHistoricalMonthEntry(month.key, { payPerMonth: e.target.value })}
+                        value={record.payPerMonth}
+                        onChange={(e) => patchHistoricalRecord(record.id, { payPerMonth: e.target.value })}
                         className="mt-1 border-[#1B2C4F]/20"
                       />
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           )}
         </div>

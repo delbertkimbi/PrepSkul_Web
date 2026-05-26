@@ -170,7 +170,10 @@ async function scheduleSinglePeriodForExistingUser(
     );
   }
 
-  const tutorResolved = await resolveTutorUserId(admin, body.tutor);
+  const tutorResolved = await resolveTutorUserId(
+    admin,
+    schedule.tutorUserId ? { tutorUserId: schedule.tutorUserId } : body.tutor
+  );
   const scheduleV2 = toScheduleV2(schedule);
   const isHistorical = body.isHistoricalImport ?? false;
 

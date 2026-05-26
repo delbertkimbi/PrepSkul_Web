@@ -50,7 +50,7 @@ const LEAD_STATUSES = ['Contacted', 'Interested', 'Follow Up Needed', 'Applied',
 const ACTIVITY_TYPES = [
   'WhatsApp Community',
   'Telegram Group',
-  'Discord Community',
+  'Street Campaign',
   'Campus Event',
   'Classroom Talk',
   'Online Community',

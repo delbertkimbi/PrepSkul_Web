@@ -15,6 +15,8 @@ export const offlineScheduleSchema = z.object({
   payMonthsCount: z.number().nullable().optional(),
   operationState: z.enum(['active', 'paused', 'stopped']).optional(),
   startMonthLabel: z.string().nullable().optional(),
+  /** Per-month historical import: tutor for this billing month only */
+  tutorUserId: z.string().uuid().optional(),
 });
 
 export const schedulePeriodBodySchema = z

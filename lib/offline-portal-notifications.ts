@@ -36,15 +36,17 @@ export async function notifyOpsLearnerFeedbackSubmitted(opts: {
   comment: string;
 }) {
   const html = `
-    <p>New <strong>learner session feedback</strong> was submitted.</p>
-    <ul>
-      <li><strong>Session:</strong> ${escapeHtml(opts.sessionId)}</li>
-      <li><strong>Rating:</strong> ${opts.rating}</li>
-      <li><strong>Comment:</strong> ${escapeHtml(opts.comment)}</li>
-    </ul>
-    <p>Open the offline operation detail page in admin to review and follow up.</p>
-  `;
-  return sendOpsAlertEmail(`Learner feedback: session ${opts.sessionId.slice(0, 8)}`, html);
+    <p>A learner left feedback on an offline session. Please review when you can.</p>
+    <div class="detail-box">
+      <p><strong>Session ID:</strong> ${escapeHtml(opts.sessionId)}</p>
+      <p><strong>Rating:</strong> ${opts.rating} / 5</p>
+      <p><strong>Comment:</strong> ${escapeHtml(opts.comment || '—')}</p>
+    </div>`;
+  return sendOpsAlertEmail(`Learner feedback: session ${opts.sessionId.slice(0, 8)}`, html, {
+    title: 'New learner feedback',
+    actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops`,
+    actionText: 'Review in admin',
+  });
 }
 
 export async function notifyOpsTutorSessionReportSubmitted(opts: {
@@ -56,18 +58,20 @@ export async function notifyOpsTutorSessionReportSubmitted(opts: {
   issues?: string | null;
 }) {
   const html = `
-    <p>A <strong>tutor session report</strong> was submitted via the tutor portal.</p>
-    <ul>
-      <li><strong>Session:</strong> ${escapeHtml(opts.sessionId)}</li>
-      <li><strong>Tutor user:</strong> ${escapeHtml(opts.tutorId)}</li>
-      <li><strong>Reported attended:</strong> ${opts.attended ? 'yes' : 'no'}</li>
-      <li><strong>Topics:</strong> ${escapeHtml(opts.topicsCovered || '—')}</li>
-      <li><strong>Engagement:</strong> ${escapeHtml(opts.learnerEngagement || '—')}</li>
-      <li><strong>Issues:</strong> ${escapeHtml(opts.issues || '—')}</li>
-    </ul>
-    <p><em>Learner/tutor confirmation emails are sent only after an admin marks the session attended in the offline ops detail view.</em></p>
-  `;
-  return sendOpsAlertEmail(`Tutor report submitted: session ${opts.sessionId.slice(0, 8)}`, html);
+    <p>A tutor submitted a session report through the portal.</p>
+    <div class="detail-box">
+      <p><strong>Session ID:</strong> ${escapeHtml(opts.sessionId)}</p>
+      <p><strong>Reported attended:</strong> ${opts.attended ? 'Yes' : 'No'}</p>
+      <p><strong>Topics covered:</strong> ${escapeHtml(opts.topicsCovered || '—')}</p>
+      <p><strong>Learner engagement:</strong> ${escapeHtml(opts.learnerEngagement || '—')}</p>
+      <p><strong>Issues noted:</strong> ${escapeHtml(opts.issues || '—')}</p>
+    </div>
+    <p style="font-size:13px;color:#64748b;">Family/tutor confirmation emails go out after you mark attendance in admin.</p>`;
+  return sendOpsAlertEmail(`Tutor report submitted: session ${opts.sessionId.slice(0, 8)}`, html, {
+    title: 'Tutor session report',
+    actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops`,
+    actionText: 'Open offline ops',
+  });
 }
 
 /** After admin marks attended — notify tutor, learner/parent, and ops. */
