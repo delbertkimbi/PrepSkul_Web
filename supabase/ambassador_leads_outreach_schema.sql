@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS outreach_activities (
   activity_type TEXT NOT NULL CHECK (activity_type IN (
   'WhatsApp Community',
   'Telegram Group',
-  'Discord Community',
+  'Street Campaign',
   'Campus Event',
   'Classroom Talk',
   'Online Community'

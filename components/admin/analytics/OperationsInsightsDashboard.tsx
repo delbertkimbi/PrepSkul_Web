@@ -1,19 +1,40 @@
 'use client';
 
 import useSWR from 'swr';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { COMMISSION_RATE, TUTOR_EARNINGS_RATE } from '@/lib/offline-ops-constants';
 
 type Scope = 'on' | 'off' | 'combined';
+type ViewMode = 'tables' | 'charts';
 
-const fetcher = (url: string) => fetch(url, { cache: 'no-store' }).then((r) => {
-  if (!r.ok) throw new Error('Failed to load operations insights');
-  return r.json();
-});
+const fetcher = (url: string) =>
+  fetch(url, { cache: 'no-store' }).then((r) => {
+    if (!r.ok) throw new Error('Failed to load operations insights');
+    return r.json();
+  });
 
 function money(n: number) {
   return Number(n || 0).toLocaleString();
+}
+
+function formatMonthLabel(monthKey: string) {
+  if (!monthKey || monthKey.length < 7) return monthKey;
+  const [y, m] = monthKey.split('-');
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 }
 
 function normalizeTutorNames(value: unknown): string[] {
@@ -67,6 +88,11 @@ function MonthlySummaryTable({
     studentCount: number;
   }>;
 }) {
+  const totalRevenue = rows.reduce((s, r) => s + r.revenue, 0);
+  const totalCommission = rows.reduce((s, r) => s + r.commission, 0);
+  const totalTutor = rows.reduce((s, r) => s + r.tutorShare, 0);
+  const totalStudents = rows.reduce((s, r) => s + r.studentCount, 0);
+
   return (
     <div className="bg-white border border-[#1B2C4F]/15 rounded-lg overflow-hidden shadow-sm">
       <h3 className="text-sm font-bold text-white bg-[#1B2C4F] px-4 py-3">Monthly summary</h3>
@@ -89,18 +115,38 @@ function MonthlySummaryTable({
                 </td>
               </tr>
             ) : (
-              rows.map((row, i) => (
-                <tr key={row.month} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}>
-                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{row.month}</td>
-                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
-                    <TutorNamesDropdown names={row.tutorNames} />
-                  </td>
-                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{money(row.revenue)}</td>
-                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{money(row.commission)}</td>
-                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{money(row.tutorShare)}</td>
-                  <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">{row.studentCount}</td>
+              <>
+                {rows.map((row, i) => (
+                  <tr key={row.month} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}>
+                    <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                      {formatMonthLabel(row.month)}
+                    </td>
+                    <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                      <TutorNamesDropdown names={row.tutorNames} />
+                    </td>
+                    <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                      {money(row.revenue)}
+                    </td>
+                    <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                      {money(row.commission)}
+                    </td>
+                    <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                      {money(row.tutorShare)}
+                    </td>
+                    <td className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                      {row.studentCount}
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-[#1B2C4F]/8 font-semibold">
+                  <td className="px-3 py-2 border-t border-slate-200">Total</td>
+                  <td className="px-3 py-2 border-t border-slate-200">—</td>
+                  <td className="px-3 py-2 border-t border-slate-200">{money(totalRevenue)}</td>
+                  <td className="px-3 py-2 border-t border-slate-200">{money(totalCommission)}</td>
+                  <td className="px-3 py-2 border-t border-slate-200">{money(totalTutor)}</td>
+                  <td className="px-3 py-2 border-t border-slate-200">{totalStudents}</td>
                 </tr>
-              ))
+              </>
             )}
           </tbody>
         </table>
@@ -113,10 +159,12 @@ function OpsTable({
   title,
   headers,
   rows,
+  footerRow,
 }: {
   title: string;
   headers: string[];
-  rows: (string | number)[][];
+  rows: (string | number | ReactNode)[][];
+  footerRow?: (string | number | ReactNode)[];
 }) {
   return (
     <div className="bg-white border border-[#1B2C4F]/15 rounded-lg overflow-hidden shadow-sm">
@@ -140,15 +188,26 @@ function OpsTable({
                 </td>
               </tr>
             ) : (
-              rows.map((row, i) => (
-                <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}>
-                  {row.map((cell, j) => (
-                    <td key={j} className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
-                      {typeof cell === 'number' ? money(cell) : cell}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              <>
+                {rows.map((row, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50/80'}>
+                    {row.map((cell, j) => (
+                      <td key={j} className="px-3 py-2 text-slate-800 border-t border-slate-100 whitespace-nowrap">
+                        {typeof cell === 'number' ? money(cell) : cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+                {footerRow && (
+                  <tr className="bg-[#1B2C4F]/8 font-semibold">
+                    {footerRow.map((cell, j) => (
+                      <td key={j} className="px-3 py-2 border-t border-slate-200 whitespace-nowrap">
+                        {typeof cell === 'number' ? money(cell) : cell}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </>
             )}
           </tbody>
         </table>
@@ -157,8 +216,99 @@ function OpsTable({
   );
 }
 
+function MonthlyCharts({
+  rows,
+}: {
+  rows: Array<{ month: string; revenue: number; commission: number; studentCount: number }>;
+}) {
+  const chartData = rows.map((r) => ({
+    month: formatMonthLabel(r.month),
+    revenue: r.revenue,
+    profit: r.commission,
+    students: r.studentCount,
+  }));
+
+  if (!chartData.length) {
+    return <p className="text-sm text-slate-500">No monthly data to chart yet.</p>;
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <div className="bg-white border border-[#1B2C4F]/15 rounded-lg p-4 shadow-sm">
+        <h3 className="text-sm font-bold text-[#1B2C4F] mb-4">Revenue &amp; PrepSkul profit by month</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} />
+              <Tooltip formatter={(v: number) => money(v)} />
+              <Legend />
+              <Bar dataKey="revenue" name="Revenue" fill="#4A6FBF" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="profit" name="PrepSkul profit" fill="#1B2C4F" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="bg-white border border-[#1B2C4F]/15 rounded-lg p-4 shadow-sm">
+        <h3 className="text-sm font-bold text-[#1B2C4F] mb-4">Students by month</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="students" name="Students" stroke="#eab308" strokeWidth={2} dot />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TutorPerformanceChart({
+  rows,
+}: {
+  rows: Array<{ tutorName: string; totalSessions: number; totalRevenueXaf: number }>;
+}) {
+  const chartData = rows
+    .slice()
+    .sort((a, b) => b.totalRevenueXaf - a.totalRevenueXaf)
+    .slice(0, 12)
+    .map((t) => ({
+      name: t.tutorName.length > 14 ? `${t.tutorName.slice(0, 12)}…` : t.tutorName,
+      sessions: t.totalSessions,
+      revenue: t.totalRevenueXaf,
+    }));
+
+  if (!chartData.length) return null;
+
+  return (
+    <div className="bg-white border border-[#1B2C4F]/15 rounded-lg p-4 shadow-sm">
+      <h3 className="text-sm font-bold text-[#1B2C4F] mb-4">Tutor performance (top by revenue)</h3>
+      <div className="h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} layout="vertical" margin={{ left: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis type="number" tick={{ fontSize: 11 }} />
+            <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10 }} />
+            <Tooltip formatter={(v: number) => money(v)} />
+            <Legend />
+            <Bar dataKey="revenue" name="Revenue (XAF)" fill="#c53030" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="sessions" name="Sessions" fill="#4A6FBF" radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 export default function OperationsInsightsDashboard() {
   const [scope, setScope] = useState<Scope>('off');
+  const [viewMode, setViewMode] = useState<ViewMode>('tables');
   const { data, error, isLoading } = useSWR(`/api/admin/analytics/operations-insights?scope=${scope}`, fetcher, {
     refreshInterval: 60000,
   });
@@ -189,15 +339,35 @@ export default function OperationsInsightsDashboard() {
       money(Number(r.tutorEarnings)),
     ]) || [];
 
-  const tutorRows =
-    data?.tutorSummary?.map((t: Record<string, unknown>) => [
-      String(t.tutorName),
-      String(t.totalSessions),
-      money(Number(t.totalRevenueXaf)),
-      money(Number(t.prepskulProfit)),
-      money(Number(t.tutorEarnings)),
-      String(t.state),
-    ]) || [];
+  const tutorSummaryRaw =
+    data?.tutorSummary?.map((t: Record<string, unknown>) => ({
+      tutorName: String(t.tutorName),
+      totalSessions: Number(t.totalSessions),
+      totalRevenueXaf: Number(t.totalRevenueXaf),
+      prepskulProfit: Number(t.prepskulProfit),
+      tutorEarnings: Number(t.tutorEarnings),
+      state: String(t.state),
+    })) || [];
+
+  const tutorRows = tutorSummaryRaw.map((t) => [
+    t.tutorName,
+    t.totalSessions,
+    t.totalRevenueXaf,
+    t.prepskulProfit,
+    t.tutorEarnings,
+    t.state,
+  ]);
+
+  const tutorFooter: (string | number)[] | undefined = tutorRows.length
+    ? [
+        'Total',
+        tutorSummaryRaw.reduce((s, t) => s + t.totalSessions, 0),
+        tutorSummaryRaw.reduce((s, t) => s + t.totalRevenueXaf, 0),
+        tutorSummaryRaw.reduce((s, t) => s + t.prepskulProfit, 0),
+        tutorSummaryRaw.reduce((s, t) => s + t.tutorEarnings, 0),
+        '—',
+      ]
+    : undefined;
 
   const monthlyRows =
     data?.monthlySummary?.map((m: Record<string, unknown>) => ({
@@ -209,14 +379,17 @@ export default function OperationsInsightsDashboard() {
       studentCount: Number(m.studentCount || 0),
     })) || [];
 
-  const grandRows = data?.grandTotals
+  const grandTotals = data?.grandTotals;
+  const grandRows = grandTotals
     ? [
-        ['Sessions revenue', money(Number(data.grandTotals.sessionsRevenue))],
-        ['PrepSkul profit (' + commissionPct + '%)', money(Number(data.grandTotals.prepskulProfit))],
-        ['Tutor earnings (' + tutorPct + '%)', money(Number(data.grandTotals.tutorEarnings))],
-        ['Total learner payments', money(Number(data.grandTotals.totalRevenue))],
+        ['Sessions revenue', money(Number(grandTotals.sessionsRevenue))],
+        [`PrepSkul profit (${commissionPct}%)`, money(Number(grandTotals.prepskulProfit))],
+        [`Tutor earnings (${tutorPct}%)`, money(Number(grandTotals.tutorEarnings))],
+        ['Total learner payments', money(Number(grandTotals.totalRevenue))],
       ]
     : [];
+
+  const showOfflineTables = scope !== 'on';
 
   return (
     <section className="mt-10 border-t border-gray-200 pt-8 space-y-8">
@@ -224,22 +397,38 @@ export default function OperationsInsightsDashboard() {
         <div>
           <h2 className="text-lg font-bold text-[#1B2C4F]">Operations insights</h2>
           <p className="text-sm text-gray-600 mt-1">
-            Offline revenue totals include historical imports. Active live operations still drive current-state totals; admins control operation state on the detail page.
+            Revenue, tutors, and monthly trends. Historical imports count toward offline totals.
           </p>
         </div>
-        <div className="flex rounded-lg border border-[#1B2C4F]/20 overflow-hidden">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setScope(t.id)}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                scope === t.id ? 'bg-[#1B2C4F] text-white' : 'bg-white text-[#1B2C4F] hover:bg-slate-50'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex rounded-lg border border-[#1B2C4F]/20 overflow-hidden">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setScope(t.id)}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  scope === t.id ? 'bg-[#1B2C4F] text-white' : 'bg-white text-[#1B2C4F] hover:bg-slate-50'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex rounded-lg border border-slate-300 overflow-hidden">
+            {(['tables', 'charts'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setViewMode(mode)}
+                className={`px-3 py-2 text-sm font-medium capitalize ${
+                  viewMode === mode ? 'bg-slate-700 text-white' : 'bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -252,7 +441,10 @@ export default function OperationsInsightsDashboard() {
             { label: 'Sessions tracked', value: totals.sessions },
             { label: 'Learner payments (XAF)', value: money(totals.revenue) },
             { label: `PrepSkul profit (${commissionPct}%)`, value: money(totals.commission) },
-            { label: `Tutor earnings (${tutorPct}%)`, value: money(totals.tutorEarnings ?? Math.round(totals.revenue * TUTOR_EARNINGS_RATE)) },
+            {
+              label: `Tutor earnings (${tutorPct}%)`,
+              value: money(totals.tutorEarnings ?? Math.round(totals.revenue * TUTOR_EARNINGS_RATE)),
+            },
           ].map((c) => (
             <div key={c.label} className="bg-white border border-[#1B2C4F]/15 rounded-lg p-4 shadow-sm">
               <p className="text-xs uppercase text-slate-500 font-medium">{c.label}</p>
@@ -262,39 +454,49 @@ export default function OperationsInsightsDashboard() {
         </div>
       )}
 
-      {scope !== 'on' && (
-        <OpsTable
-          title="Offline operations (by period)"
-          headers={[
-            'Tutor',
-            'Parent',
-            'Student(s)',
-            'Sessions/wk',
-            'Location',
-            'Pay/mo (XAF)',
-            'Pay months',
-            'Start',
-            'State',
-            'Revenue',
-            'PrepSkul profit',
-            'Tutor earnings',
-          ]}
-          rows={periodRows}
-        />
-      )}
+      {viewMode === 'charts' ? (
+        <div className="space-y-6">
+          <MonthlyCharts rows={monthlyRows} />
+          {tutorSummaryRaw.length > 0 && <TutorPerformanceChart rows={tutorSummaryRaw} />}
+        </div>
+      ) : (
+        <>
+          {showOfflineTables && (
+            <OpsTable
+              title={scope === 'combined' ? 'All operations (by period)' : 'Offline operations (by period)'}
+              headers={[
+                'Tutor',
+                'Parent',
+                'Student(s)',
+                'Sessions/wk',
+                'Location',
+                'Pay/mo (XAF)',
+                'Pay months',
+                'Start',
+                'State',
+                'Revenue',
+                'PrepSkul profit',
+                'Tutor earnings',
+              ]}
+              rows={periodRows}
+            />
+          )}
 
-      {scope !== 'on' && tutorRows.length > 0 && (
-        <OpsTable
-          title="Tutor summary"
-          headers={['Tutor', 'Total sessions', 'Revenue', 'PrepSkul profit', 'Tutor earnings', 'State']}
-          rows={tutorRows}
-        />
-      )}
+          {tutorRows.length > 0 && (
+            <OpsTable
+              title="Tutor summary"
+              headers={['Tutor', 'Total sessions', 'Revenue', 'PrepSkul profit', 'Tutor earnings', 'State']}
+              rows={tutorRows}
+              footerRow={tutorFooter}
+            />
+          )}
 
-      {monthlyRows.length > 0 && <MonthlySummaryTable rows={monthlyRows} />}
+          {monthlyRows.length > 0 && <MonthlySummaryTable rows={monthlyRows} />}
 
-      {grandRows.length > 0 && scope === 'off' && (
-        <OpsTable title="Grand totals (offline)" headers={['Item', 'Amount (XAF)']} rows={grandRows} />
+          {grandRows.length > 0 && (
+            <OpsTable title={`Grand totals (${scope})`} headers={['Item', 'Amount (XAF)']} rows={grandRows} />
+          )}
+        </>
       )}
     </section>
   );

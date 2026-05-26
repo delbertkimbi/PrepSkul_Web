@@ -27,6 +27,7 @@ function addMonths(year: number, monthIndex: number, offset: number) {
 
 function distributePeriodRevenueAcrossMonths(period: {
   period_start?: string | null;
+  start_month_label?: string | null;
   pay_per_month_xaf?: number | null;
   pay_months_count?: number | null;
   expected_period_revenue_xaf?: number | null;
@@ -38,6 +39,12 @@ function distributePeriodRevenueAcrossMonths(period: {
   const totalExpected = Number(period.expected_period_revenue_xaf || payPerMonth * payMonths);
   const countedTotal = revenueForState(period.operation_state, totalExpected, period.is_historical_import);
   if (!countedTotal) return [] as Array<{ month: string; revenue: number }>;
+
+  // Historical imports are one month per period — attribute all revenue to that billing month.
+  if (period.is_historical_import && payMonths === 1) {
+    const key = monthKey(period.period_start);
+    if (key) return [{ month: key, revenue: countedTotal }];
+  }
 
   const start = period.period_start ? new Date(`${period.period_start}T12:00:00`) : null;
   if (!start || Number.isNaN(start.getTime())) {
@@ -343,6 +350,36 @@ export async function GET(request: NextRequest) {
       },
     };
 
+    const combinedMonthlyMap = new Map<
+      string,
+      { revenue: number; commission: number; tutorShare: number; studentCount: number; tutors: Set<string> }
+    >();
+    for (const row of [...offMonthlySummary, ...onMonthlySummary]) {
+      const cur = combinedMonthlyMap.get(row.month) || {
+        revenue: 0,
+        commission: 0,
+        tutorShare: 0,
+        studentCount: 0,
+        tutors: new Set<string>(),
+      };
+      cur.revenue += row.revenue;
+      cur.commission += row.commission;
+      cur.tutorShare += row.tutorShare;
+      cur.studentCount += row.studentCount;
+      for (const name of row.tutorNames) cur.tutors.add(name);
+      combinedMonthlyMap.set(row.month, cur);
+    }
+    const combinedMonthlySummary = [...combinedMonthlyMap.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, v]) => ({
+        month,
+        tutorNames: [...v.tutors],
+        revenue: v.revenue,
+        commission: v.commission,
+        tutorShare: v.tutorShare,
+        studentCount: v.studentCount,
+      }));
+
     const pick =
       scope === 'on'
         ? { records: onRecords, tutorSummary: onTutorSummary, monthlySummary: onMonthlySummary, totals: scopeTotals.on }
@@ -351,16 +388,25 @@ export async function GET(request: NextRequest) {
           : {
               records: [...offRecords, ...onRecords],
               tutorSummary: [...offTutorSummary, ...onTutorSummary],
-              monthlySummary: [...offMonthlySummary, ...onMonthlySummary],
+              monthlySummary: combinedMonthlySummary,
               totals: scopeTotals.combined,
             };
+
+    const scopeRevenue = pick.totals.revenue;
+    const grandTotals = {
+      sessionsRevenue: scopeRevenue,
+      prepskulProfit: Math.round(scopeRevenue * COMMISSION_RATE),
+      tutorEarnings: Math.round(scopeRevenue * TUTOR_EARNINGS_RATE),
+      totalRevenue: scopeRevenue,
+    };
 
     const combinedRevenue = onRevenue + offRevenue;
 
     return NextResponse.json({
       scope,
       ...pick,
-      grandTotals: {
+      grandTotals,
+      platformGrandTotals: {
         sessionsRevenue: combinedRevenue,
         prepskulProfit: Math.round(combinedRevenue * COMMISSION_RATE),
         tutorEarnings: Math.round(combinedRevenue * TUTOR_EARNINGS_RATE),
