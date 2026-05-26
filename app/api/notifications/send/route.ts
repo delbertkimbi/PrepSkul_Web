@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendNotificationEmail } from '@/lib/notifications';
 import { shouldReceiveNotification } from '@/lib/services/notification-permission-service';
+import { isEngagementNotificationType } from '@/lib/notifications/engagement-types';
 import { checkRateLimit } from '@/lib/services/rate-limiter';
 
 // Required: push notifications use `firebase-admin` which needs Node.js runtime (not Edge).
@@ -208,7 +209,17 @@ export async function POST(request: NextRequest) {
 
     // Determine which channels to use
     const shouldSendEmail = sendEmail && (preferences?.channels?.email !== false) && !alreadyEmailed;
-    const shouldSendPush = sendPush && (preferences?.channels?.push !== false);
+    let shouldSendPush = sendPush && (preferences?.channels?.push !== false);
+
+    if (shouldSendPush && isEngagementNotificationType(type || '')) {
+      const engagementDisabled =
+        preferences?.engagement_push_enabled === false ||
+        preferences?.channels?.engagement_push === false;
+      if (engagementDisabled) {
+        shouldSendPush = false;
+        console.log(`Engagement push disabled for user ${userId}, type ${type}`);
+      }
+    }
     console.log(
       `ℹ️ notification channels user=${userId} type=${type || 'general'} shouldSendPush=${shouldSendPush} shouldSendEmail=${shouldSendEmail}`
     );

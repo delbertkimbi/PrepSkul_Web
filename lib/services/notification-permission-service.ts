@@ -109,6 +109,28 @@ function checkRoleBasedPermissions(
     'tutor_request_matched',
   ];
 
+  // Student/parent engagement (not for tutors)
+  const studentParentEngagementTypes = [
+    'daily_inactivity_nudge',
+    'monday_engagement',
+    'monthly_engagement',
+    'calendar_engagement',
+    'behaviour_tutor_browse',
+    'daily_challenge_reminder',
+    'daily_challenge',
+    'daily_matched_tutors',
+    'skulmate_weekly_digest',
+  ];
+
+  if (studentParentEngagementTypes.includes(notificationType)) {
+    if (userRole !== 'student' && userRole !== 'parent' && userRole !== 'learner') {
+      return {
+        allowed: false,
+        reason: `Notification type '${notificationType}' is for students/parents only`,
+      };
+    }
+  }
+
   // Student-specific notification types
   const studentOnlyTypes = [
     'trial_payment_completed',

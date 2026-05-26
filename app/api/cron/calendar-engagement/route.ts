@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { persistCronHeartbeat, verifyCronAuth } from '@/lib/cron/persist-cron-heartbeat';
-import { isFirstOfMonthInWat } from '@/lib/notifications/timezone-wat';
+import { getCalendarEventToday } from '@/lib/notifications/calendar-cm';
 import { runEngagementBatch } from '@/lib/notifications/send-engagement';
 
-const JOB_NAME = 'monthly-engagement';
+const JOB_NAME = 'calendar-engagement';
 const MAX_USERS_PER_RUN = 500;
 
+/** Cameroon special-day messages only (~08:00 WAT). */
 export async function GET(request: NextRequest) {
   let runStatus: 'success' | 'failed' = 'failed';
   let processedCount = 0;
@@ -20,9 +21,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: runError }, { status: 401 });
     }
 
-    if (!isFirstOfMonthInWat()) {
+    const todayEvent = getCalendarEventToday();
+    if (!todayEvent) {
       runStatus = 'success';
-      return NextResponse.json({ success: true, processed: 0, message: 'Not first of month in WAT' });
+      return NextResponse.json({
+        success: true,
+        processed: 0,
+        message: 'No calendar event today',
+      });
     }
 
     const supabaseAdmin = getSupabaseAdmin();
@@ -38,7 +44,7 @@ export async function GET(request: NextRequest) {
 
     const result = await runEngagementBatch({
       profiles: profiles || [],
-      mode: 'month_start_only',
+      mode: 'calendar_only',
       maxUsers: MAX_USERS_PER_RUN,
     });
 
@@ -48,6 +54,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      calendarEvent: todayEvent.id,
       processed: result.processed,
       failed: result.failed,
       skipped: result.skipped,
@@ -62,7 +69,7 @@ export async function GET(request: NextRequest) {
       processedCount,
       failedCount,
       error: runError,
-      metadata: { endpoint: '/api/cron/monthly-engagement' },
+      metadata: { endpoint: '/api/cron/calendar-engagement' },
     });
   }
 }

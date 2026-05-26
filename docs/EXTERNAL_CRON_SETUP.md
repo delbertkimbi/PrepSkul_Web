@@ -10,9 +10,24 @@ https://www.prepskul.com/api/cron/process-scheduled-notifications
 
 ### Required jobs
 
-1. `https://www.prepskul.com/api/cron/process-scheduled-notifications` (every 5-10 minutes)
-2. `https://www.prepskul.com/api/cron/daily-challenge-reminder` (once daily)
-3. `https://www.prepskul.com/api/cron/skulmate-weekly-digest` (once weekly, e.g. Sunday 08:00 UTC — SkulMate learning digest email + in-app; use header `Authorization: Bearer YOUR_CRON_SECRET` same as other crons)
+Use `Authorization: Bearer YOUR_CRON_SECRET` on every job. Full list: **`CRON_JOB_REGISTRY.md`**.
+
+| Job | URL path | Schedule (WAT unless noted) |
+|-----|----------|----------------------------|
+| Process scheduled | `/api/cron/process-scheduled-notifications` | Every 5–10 min |
+| Daily engagement boost | `/api/cron/daily-inactivity` | Daily ~18:00 |
+| Monday week start | `/api/cron/monday-engagement` | Monday ~20:00 |
+| Month start | `/api/cron/monthly-engagement` | 1st of month ~09:00 |
+| Calendar special days | `/api/cron/calendar-engagement` | Daily ~08:00 |
+| Behavioural | `/api/cron/behavioural-engagement` | Every 6 hours |
+| SkulMate daily | `/api/cron/daily-challenge-reminder` | Daily ~17:00 |
+| SkulMate weekly digest | `/api/cron/skulmate-weekly-digest` | Sunday 08:00 UTC |
+| Abandoned booking | `/api/cron/process-abandoned-booking-reminders` | Daily |
+| Tutor onboarding | `/api/cron/onboarding-reminders` | Daily |
+| Pending earnings | `/api/cron/process-pending-earnings` | Daily |
+| Matched tutors | `/api/cron/daily-matched-tutors` | Daily if `ENABLE_DAILY_MATCHED_TUTORS=true` |
+
+Architecture and meaningful-activity rules: **`NOTIFICATION_SYSTEM.md`**. Cameroon dates: **`CAMEROON_ENGAGEMENT_CALENDAR.md`**.
 
 **Note:** PrepSkul uses **external** cron (e.g. cron-job.org) with `CRON_SECRET`. Vercel Cron is **not** required and needs a paid Vercel plan for multiple crons; `vercel.json` does not define crons by default.
 

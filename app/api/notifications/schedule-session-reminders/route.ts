@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendCustomEmail } from '@/lib/notifications';
 
 /**
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createServerSupabaseClient();
+    const supabase = getSupabaseAdmin();
     const sessionStartTime = new Date(sessionStart);
     const now = new Date();
 
@@ -138,7 +138,15 @@ export async function POST(request: NextRequest) {
 
     // Insert scheduled notifications
     if (scheduledNotifications.length > 0) {
-      await supabase.from('scheduled_notifications').insert(scheduledNotifications);
+      const { error: insertError } = await supabase
+        .from('scheduled_notifications')
+        .insert(scheduledNotifications);
+      if (insertError) {
+        return NextResponse.json(
+          { error: 'Failed to schedule session reminders', details: insertError.message },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
