@@ -81,6 +81,7 @@ export function enumerateSessionOccurrences(input: OfflineScheduleInputV2): Sess
   const dayTimeMap = resolveDayTimeMap(input);
   const anchor = new Date(`${input.startDate}T12:00:00`);
   const monday0 = mondayOfWeekContaining(anchor);
+  const startDateKey = input.startDate.slice(0, 10);
   const tokens = [...dayTimeMap.keys()];
   const out: SessionOccurrence[] = [];
 
@@ -94,7 +95,10 @@ export function enumerateSessionOccurrences(input: OfflineScheduleInputV2): Sess
       const y = d.getFullYear();
       const mo = String(d.getMonth() + 1).padStart(2, '0');
       const da = String(d.getDate()).padStart(2, '0');
-      out.push({ date: `${y}-${mo}-${da}`, time: dayTimeMap.get(token)! });
+      const date = `${y}-${mo}-${da}`;
+      if (date >= startDateKey) {
+        out.push({ date, time: dayTimeMap.get(token)! });
+      }
     }
   }
 

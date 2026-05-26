@@ -5,11 +5,9 @@ import {
   type SessionOccurrence,
 } from '@/lib/services/offline-schedule';
 import { buildSessionPortalUrls } from '@/lib/services/session-portal-access';
-import {
-  sendOfflineWelcomeEmail,
-  sendSessionStartEmail,
-  sendOfflineReminderEmail,
-} from '@/lib/offline-session-emails';
+import { scheduleSessionNotifications } from '@/lib/services/session-notification-scheduler';
+import { sendSessionStartEmail, sendOfflineReminderEmail } from '@/lib/offline-session-emails';
+import { scheduleOfflineMatchEmails } from '@/lib/services/offline-match-notify';
 
 export type PeriodCommercial = {
   payPerMonthXaf?: number | null;
@@ -52,66 +50,8 @@ async function insertSessionRow(
   return ins?.id || null;
 }
 
-async function scheduleSessionNotifications(
-  admin: SupabaseClient,
-  opts: {
-    sessionId: string;
-    occurrence: SessionOccurrence;
-    subject: string;
-    tutorUserId: string;
-    familyUserId: string;
-    deliveryMode?: string;
-    meetLink?: string | null;
-    onsiteLocation?: string | null;
-    tutorPortalUrl: string;
-    learnerPortalUrl: string;
-    skipReminders?: boolean;
-  }
-) {
-  if (opts.skipReminders) return;
-
-  const start = new Date(`${opts.occurrence.date}T${opts.occurrence.time}`);
-  const now = Date.now();
-  const familyIds = [opts.tutorUserId, opts.familyUserId];
-
-  const reminders: Array<{ type: string; when: Date; title: string; label: string }> = [
-    { type: '24_hours', when: new Date(start.getTime() - 24 * 60 * 60 * 1000), title: 'Session reminder', label: '24 hours before your session' },
-    { type: '1_hour', when: new Date(start.getTime() - 60 * 60 * 1000), title: 'Session starts in 1 hour', label: '1 hour before your session' },
-    { type: 'session_start', when: start, title: 'Your session is starting now', label: 'Starting now' },
-  ].filter((r) => r.when.getTime() > now - 60_000);
-
-  const rows: Record<string, unknown>[] = [];
-  for (const uid of familyIds) {
-    for (const r of reminders) {
-      rows.push({
-        user_id: uid,
-        notification_type: r.type === 'session_start' ? 'session_start' : 'session_reminder',
-        title: r.title,
-        message:
-          r.type === 'session_start'
-            ? 'Your PrepSkul session is starting now. Open your session page to join and submit feedback after class.'
-            : `Reminder: your ${opts.subject || 'PrepSkul'} session is upcoming.`,
-        scheduled_for: r.when.toISOString(),
-        status: 'pending',
-        related_id: opts.sessionId,
-        metadata: {
-          session_id: opts.sessionId,
-          reminder_type: r.type,
-          session_start: start.toISOString(),
-          sendEmail: true,
-          sendPush: r.type === '1_hour' || r.type === 'session_start',
-          offline_email: true,
-          delivery_mode: opts.deliveryMode,
-          meet_link: opts.meetLink,
-          onsite_location: opts.onsiteLocation,
-          tutor_portal_url: opts.tutorPortalUrl,
-          learner_portal_url: opts.learnerPortalUrl,
-          reminder_label: r.label,
-        },
-      });
-    }
-  }
-  if (rows.length) await admin.from('scheduled_notifications').insert(rows);
+function monthLabelFromDate(dateLike?: string | null) {
+  return dateLike ? dateLike.slice(0, 7) : null;
 }
 
 export async function scheduleOfflinePeriod(admin: SupabaseClient, params: SchedulePeriodParams) {
@@ -148,10 +88,10 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
     pay_per_month_xaf: payPerMonth,
     pay_months_count: payMonths,
     expected_period_revenue_xaf: expectedRevenue,
-    operation_state: params.commercial?.operationState || (params.isHistoricalImport ? 'stopped' : 'active'),
+    operation_state: params.commercial?.operationState || 'active',
     period_start: periodStart,
     period_end: periodEnd,
-    start_month_label: params.commercial?.startMonthLabel || null,
+    start_month_label: params.commercial?.startMonthLabel || monthLabelFromDate(periodStart),
     is_historical_import: params.isHistoricalImport ?? false,
     source: 'admin_form',
     created_by_admin_id: params.adminUserId,
@@ -219,56 +159,36 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
     const urls = buildSessionPortalUrls(sessionId);
     const familyUserId = parentId || params.learnerUserId;
 
-    await scheduleSessionNotifications(admin, {
-      sessionId,
-      occurrence: occ,
-      subject: primarySubject,
-      tutorUserId: params.tutorUserId,
-      familyUserId,
-      deliveryMode: params.schedule.deliveryMode,
-      meetLink: params.schedule.meetLink,
-      onsiteLocation: params.schedule.onsiteLocation,
-      tutorPortalUrl: urls.tutorReportUrl,
-      learnerPortalUrl: urls.learnerFeedbackUrl,
-      skipReminders: params.skipReminders || params.isHistoricalImport,
-    });
+    if (!params.skipReminders && !params.isHistoricalImport) {
+      await scheduleSessionNotifications(admin, {
+        sessionId,
+        occurrence: occ,
+        subject: primarySubject,
+        tutorUserId: params.tutorUserId,
+        familyUserId,
+        deliveryMode: params.schedule.deliveryMode,
+        meetLink: params.schedule.meetLink,
+        onsiteLocation: params.schedule.onsiteLocation,
+        urls,
+      });
+    }
   }
 
   if (params.sendWelcomeEmail && sessionIds.length && !params.isHistoricalImport) {
     const firstOcc = occurrences[0];
-    const familyEmail = parentProfile?.email || learnerProfile?.email;
-    const familyName = parentProfile?.full_name || learnerProfile?.full_name || 'there';
-    if (familyEmail) {
-      const urls = buildSessionPortalUrls(sessionIds[0]);
-      await sendOfflineWelcomeEmail({
-        to: familyEmail,
-        recipientName: familyName,
-        tutorName: params.tutorName,
-        nextDate: firstOcc?.date,
-        nextTime: firstOcc?.time,
-        subject: primarySubject,
-        deliveryMode: params.schedule.deliveryMode,
-        meetLink: params.schedule.meetLink,
-        onsiteLocation: params.schedule.onsiteLocation,
-        learnerPortalUrl: urls.learnerFeedbackUrl,
-      });
-    }
-    const { data: tutorProf } = await admin.from('profiles').select('email, full_name').eq('id', params.tutorUserId).maybeSingle();
-    if (tutorProf?.email) {
-      const urls = buildSessionPortalUrls(sessionIds[0]);
-      await sendOfflineWelcomeEmail({
-        to: tutorProf.email,
-        recipientName: tutorProf.full_name || 'Tutor',
-        tutorName: params.tutorName,
-        nextDate: firstOcc?.date,
-        nextTime: firstOcc?.time,
-        subject: primarySubject,
-        deliveryMode: params.schedule.deliveryMode,
-        meetLink: params.schedule.meetLink,
-        onsiteLocation: params.schedule.onsiteLocation,
-        learnerPortalUrl: urls.tutorReportUrl,
-      });
-    }
+    await scheduleOfflineMatchEmails(admin, {
+      primaryUserId: params.primaryUserId,
+      learnerUserId: params.learnerUserId,
+      tutorUserId: params.tutorUserId,
+      tutorName: params.tutorName,
+      firstSessionId: sessionIds[0],
+      subject: primarySubject,
+      nextDate: firstOcc?.date,
+      nextTime: firstOcc?.time,
+      deliveryMode: params.schedule.deliveryMode,
+      meetLink: params.schedule.meetLink,
+      onsiteLocation: params.schedule.onsiteLocation,
+    });
   }
 
   return { periodId, sessionIds, occurrences };

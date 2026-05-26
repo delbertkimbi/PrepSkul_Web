@@ -3,7 +3,10 @@ import { z } from 'zod';
 import crypto from 'crypto';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { runOfflineOnboarding } from '@/lib/services/offline-onboarding-service';
+import {
+  runOfflineOnboarding,
+  runOfflineOnboardingForExistingUser,
+} from '@/lib/services/offline-onboarding-service';
 import { sendOpsAlertEmail } from '@/lib/ops-email';
 
 export const runtime = 'nodejs';
@@ -11,10 +14,13 @@ export const runtime = 'nodejs';
 const payloadSchema = z.object({
   agentName: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon']),
   sourceChannel: z.enum(['whatsapp_ads', 'whatsapp_direct', 'phone_call', 'walk_in', 'referral']),
+  enrollmentKind: z.enum(['new', 'existing']).default('new'),
+  existingPrimaryUserId: z.string().uuid().optional(),
+  existingChildUserId: z.string().uuid().optional(),
   primary: z.object({
     role: z.enum(['parent', 'student']),
     fullName: z.string().min(2),
-    email: z.string().email(),
+    email: z.string().email().optional(),
     phone: z.string().optional(),
   }),
   child: z
@@ -24,6 +30,7 @@ const payloadSchema = z.object({
       email: z.string().email().optional(),
       phone: z.string().optional(),
     })
+    .nullable()
     .optional(),
   tutor: z.object({
     tutorUserId: z.string().uuid().optional(),
@@ -87,92 +94,61 @@ export async function POST(request: NextRequest) {
       notes: data.notes,
     });
 
-    let result: Awaited<ReturnType<typeof runOfflineOnboarding>> | null = null;
-    let lastErr: unknown = null;
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      try {
-        result = await runOfflineOnboarding(supabaseAdmin, {
-          idempotencyKey,
-          adminUserId: user.id,
-          agentName: data.agentName,
-          sourceChannel: data.sourceChannel,
-          primary: data.primary,
-          child: data.child ?? null,
-          tutor: data.tutor,
-          schedule: data.schedule,
-          notes: data.notes,
-        });
-        break;
-      } catch (err) {
-        lastErr = err;
-        if (attempt === 2) throw err;
+    /** One attempt only: a retry after partial success would recreate auth/profiles then fail the email check. */
+    let completedResult: Awaited<ReturnType<typeof runOfflineOnboarding>>;
+    if (data.enrollmentKind === 'existing') {
+      if (!data.existingPrimaryUserId) {
+        throw new Error('Pick an existing PrepSkul account to enroll.');
       }
-    }
-    if (!result && lastErr) throw lastErr;
-
-    const expectedTotal =
-      data.tracking.packageTotalAmount !== undefined
-        ? data.tracking.packageTotalAmount
-        : data.tracking.amountPaid;
-
-    // Keep offline_operations row for analytics blending + operational list UI.
-    const { data: insertedOfflineOp } = await supabaseAdmin.from('offline_operations').insert({
-      agent_name: data.agentName,
-      source_channel: data.sourceChannel,
-      customer_name: data.primary.fullName,
-      customer_whatsapp: data.primary.phone || '',
-      customer_role: data.primary.role === 'parent' ? 'Parent' : 'Student',
-      number_of_learners: data.primary.role === 'parent' ? 1 : 1,
-      learner_educational_level: 'Captured in onboarding notes',
-      subjects_of_interest: (data.schedule.subjects || [data.schedule.subject]).join(', '),
-      tutor_match_type: 'platform_tutor',
-      delivery_mode: data.schedule.deliveryMode,
-      onboarding_stage: 'matched',
-      sessions_completed: 0,
-      payment_status: data.tracking.paymentStatus,
-      payment_environment: data.tracking.paymentEnvironment,
-      amount_paid: data.tracking.amountPaid,
-      started_at: `${data.schedule.startDate}T00:00:00.000Z`,
-      next_followup_at: data.tracking.nextFollowupAt ? new Date(data.tracking.nextFollowupAt).toISOString() : null,
-      converted_to_platform: true,
-      notes: data.notes,
-    }).select('id').maybeSingle();
-
-    // Best-effort richer linkage fields (for upgraded schema).
-    if (insertedOfflineOp?.id && result) {
-      const linkagePatch: Record<string, unknown> = {
-        offline_run_id: result.runId,
-        primary_user_id: result.primaryUserId,
-        learner_user_id: result.learnerUserId,
-        tutor_user_id: result.tutorUserId,
-        recurring_session_id: result.recurringSessionId,
-        expected_total_amount: expectedTotal,
-      };
-      const { error: linkErr } = await supabaseAdmin
-        .from('offline_operations')
-        .update(linkagePatch)
-        .eq('id', insertedOfflineOp.id);
-      if (linkErr) {
-        console.warn('[offline-ops/onboard] linkage columns update skipped', linkErr.message);
+      completedResult = await runOfflineOnboardingForExistingUser(supabaseAdmin, {
+        idempotencyKey,
+        adminUserId: user.id,
+        agentName: data.agentName,
+        sourceChannel: data.sourceChannel,
+        primaryUserId: data.existingPrimaryUserId,
+        primaryRole: data.primary.role,
+        childUserId: data.existingChildUserId || null,
+        childFullName: data.child?.fullName || null,
+        tutor: data.tutor,
+        schedule: data.schedule,
+        notes: data.notes,
+        tracking: data.tracking,
+      });
+    } else {
+      if (!data.primary.email) {
+        throw new Error('Email is required for new-user enrollment.');
       }
+      completedResult = await runOfflineOnboarding(supabaseAdmin, {
+        idempotencyKey,
+        adminUserId: user.id,
+        agentName: data.agentName,
+        sourceChannel: data.sourceChannel,
+        primary: { ...data.primary, email: data.primary.email },
+        child: data.child ?? null,
+        tutor: data.tutor,
+        schedule: data.schedule,
+        notes: data.notes,
+        tracking: data.tracking,
+      });
     }
 
     await sendOpsAlertEmail(
       'Offline onboarding synced',
       `<p>An offline onboarding run was completed.</p>
       <ul>
-        <li><strong>Run ID:</strong> ${result.runId ?? 'n/a'}</li>
+        <li><strong>Run ID:</strong> ${completedResult.runId ?? 'n/a'}</li>
         <li><strong>Idempotency key:</strong> ${idempotencyKey.slice(0, 12)}...</li>
         <li><strong>Agent:</strong> ${data.agentName}</li>
         <li><strong>Primary user:</strong> ${data.primary.fullName} (${data.primary.email})</li>
-        <li><strong>Tutor:</strong> ${result.tutorName}</li>
-        <li><strong>Scheduled sessions:</strong> ${result.individualSessionIds.length}</li>
+        <li><strong>Tutor:</strong> ${completedResult.tutorName}</li>
+        <li><strong>Scheduled sessions:</strong> ${completedResult.individualSessionIds.length}</li>
       </ul>`
     );
 
     return NextResponse.json({
       success: true,
-      run: result,
+      run: completedResult,
+      offlineOperationId: completedResult.offlineOperationId || null,
       idempotencyKey,
     });
   } catch (error: any) {

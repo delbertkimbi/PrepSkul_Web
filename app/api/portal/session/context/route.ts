@@ -17,6 +17,9 @@ export async function GET(request: NextRequest) {
       hasSubmittedReport: ctx.hasSubmittedReport,
       hasSubmittedFeedback: ctx.hasSubmittedFeedback,
       portalRole: ctx.portalRole,
+      rescheduleLookupError: ctx.rescheduleLookupError,
+      rescheduleUrl: ctx.rescheduleUrl,
+      feedbackUrl: ctx.feedbackUrl,
     });
   } catch (e: unknown) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Invalid token' }, { status: 401 });

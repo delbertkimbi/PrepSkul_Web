@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
+import { PortalShell } from '@/components/portals/PortalShell';
 import SessionFeedbackClient from './SessionFeedbackClient';
 
 export default function LearnerSessionFeedbackPortalPage() {
   return (
-    <main className="min-h-screen bg-[#F7F8FB] px-4 py-8">
-      <Suspense fallback={<div className="max-w-3xl mx-auto text-sm text-gray-600">Loading feedback form...</div>}>
+    <PortalShell title="Session feedback">
+      <Suspense fallback={<p className="text-sm text-slate-600">Loading…</p>}>
         <SessionFeedbackClient />
       </Suspense>
-    </main>
+    </PortalShell>
   );
 }
-

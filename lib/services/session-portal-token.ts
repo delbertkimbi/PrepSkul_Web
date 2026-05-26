@@ -5,6 +5,10 @@ import {
   createSessionPortalToken,
   verifySessionPortalAccessToken,
 } from '@/lib/services/session-portal-access';
+import {
+  fetchPendingRescheduleRequest,
+  getReschedulePortalFlags,
+} from '@/lib/services/session-reschedule';
 
 export { buildSessionPortalUrls, createSessionPortalToken };
 
@@ -102,14 +106,10 @@ export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor
   }
   if (!subjects.length && session.subject) subjects = [session.subject];
 
-  const { data: pendingReschedule } = await supabase
-    .from('session_reschedule_requests')
-    .select('*')
-    .eq('individual_session_id', session.id)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { row: pendingReschedule, error: rescheduleLookupError } = await fetchPendingRescheduleRequest(
+    supabase,
+    session.id
+  );
 
   const { data: tutorReport } = await supabase
     .from('session_tutor_completion_reports')
@@ -128,14 +128,15 @@ export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor
     portalRole === 'tutor' ? session.tutor_id : session.parent_id || session.learner_id;
 
   const pending = pendingReschedule || null;
-  const canRespondToReschedule =
-    !!pending &&
-    !!participantUserId &&
-    pending.requested_by_user_id !== participantUserId;
-  const awaitingRescheduleApproval =
-    !!pending &&
-    !!participantUserId &&
-    pending.requested_by_user_id === participantUserId;
+  const { canRespondToReschedule, awaitingRescheduleApproval } = getReschedulePortalFlags(
+    session,
+    pending,
+    portalRole
+  );
+
+  const urls = buildSessionPortalUrls(session.id);
+  const rescheduleUrl = portalRole === 'tutor' ? urls.tutorRescheduleUrl : urls.learnerRescheduleUrl;
+  const feedbackUrl = portalRole === 'tutor' ? urls.tutorReportUrl : urls.learnerFeedbackUrl;
 
   return {
     token: verified,
@@ -148,5 +149,8 @@ export async function getSessionPortalContext(rawToken: string, purpose?: 'tutor
     hasSubmittedReport: !!tutorReport,
     hasSubmittedFeedback: !!learnerFeedback,
     portalRole,
+    rescheduleLookupError,
+    rescheduleUrl,
+    feedbackUrl,
   };
 }

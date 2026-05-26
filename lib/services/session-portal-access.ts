@@ -51,10 +51,20 @@ export function verifySessionPortalAccessToken(token: string) {
 export function buildSessionPortalUrls(sessionId: string, expiresInDays = 90) {
   const tutorToken = createSessionPortalToken(sessionId, 'tutor', expiresInDays);
   const learnerToken = createSessionPortalToken(sessionId, 'learner', expiresInDays);
+  const tutorQ = encodeURIComponent(tutorToken);
+  const learnerQ = encodeURIComponent(learnerToken);
+  const tutorBase = TUTOR_BASE();
+  const learnerBase = LEARNER_BASE();
+
   return {
-    tutorReportUrl: `${TUTOR_BASE()}/session-hub?token=${encodeURIComponent(tutorToken)}`,
-    learnerFeedbackUrl: `${LEARNER_BASE()}/session-hub?token=${encodeURIComponent(learnerToken)}`,
     tutorToken,
     learnerToken,
+    tutorReportUrl: `${tutorBase}/session-report?token=${tutorQ}`,
+    learnerFeedbackUrl: `${learnerBase}/session-feedback?token=${learnerQ}`,
+    tutorRescheduleUrl: `${tutorBase}/session-reschedule?token=${tutorQ}`,
+    learnerRescheduleUrl: `${learnerBase}/session-reschedule?token=${learnerQ}`,
+    /** @deprecated Prefer session-report / session-feedback */
+    tutorHubUrl: `${tutorBase}/session-hub?token=${tutorQ}`,
+    learnerHubUrl: `${learnerBase}/session-hub?token=${learnerQ}`,
   };
 }

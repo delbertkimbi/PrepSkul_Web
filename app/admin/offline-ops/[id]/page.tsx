@@ -63,10 +63,13 @@ export default async function OfflineOperationDetailPage({
 
   let sessions: any[] | null = null;
 
+  const sessionCols =
+    'id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, delivery_mode, meet_link, onsite_location, onsite_photo_url, created_at, updated_at';
+
   if (sessionIdsFromRun.length) {
     const { data } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, created_at, updated_at')
+      .select(sessionCols)
       .in('id', sessionIdsFromRun)
       .order('scheduled_date', { ascending: true })
       .order('scheduled_time', { ascending: true });
@@ -74,7 +77,7 @@ export default async function OfflineOperationDetailPage({
   } else if (recurringSessionId) {
     const { data } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, created_at, updated_at')
+      .select(sessionCols)
       .eq('recurring_session_id', recurringSessionId)
       .order('scheduled_date', { ascending: true })
       .order('scheduled_time', { ascending: true })
@@ -83,7 +86,7 @@ export default async function OfflineOperationDetailPage({
   } else if (learnerUserId && tutorUserId) {
     const { data } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, created_at, updated_at')
+      .select(sessionCols)
       .eq('learner_id', learnerUserId)
       .eq('tutor_id', tutorUserId)
       .order('scheduled_date', { ascending: true })
@@ -93,7 +96,7 @@ export default async function OfflineOperationDetailPage({
   } else if (learnerUserId) {
     const { data } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, created_at, updated_at')
+      .select(sessionCols)
       .eq('learner_id', learnerUserId)
       .order('scheduled_date', { ascending: true })
       .order('scheduled_time', { ascending: true })
@@ -102,7 +105,7 @@ export default async function OfflineOperationDetailPage({
   } else if (primaryUserId && tutorUserId) {
     const { data } = await supabase
       .from('individual_sessions')
-      .select('id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, created_at, updated_at')
+      .select(sessionCols)
       .eq('parent_id', primaryUserId)
       .eq('tutor_id', tutorUserId)
       .order('scheduled_date', { ascending: true })
@@ -112,6 +115,9 @@ export default async function OfflineOperationDetailPage({
   } else {
     sessions = [];
   }
+
+  const venuePhoto =
+    (sessions || []).find((s: any) => s?.onsite_photo_url)?.onsite_photo_url || null;
   const sessionIds = (sessions || []).map((s: any) => s.id);
 
   const startOfToday = new Date();
@@ -182,6 +188,7 @@ export default async function OfflineOperationDetailPage({
         <OfflineOpsDetailClient
           record={recordAny}
           sessions={sessionsWithInsights}
+          venuePhotoUrl={venuePhoto}
           dailyReminders={dailyReminders || []}
           lastManualReminderAtBySession={lastManualReminderAtBySession}
           profiles={{

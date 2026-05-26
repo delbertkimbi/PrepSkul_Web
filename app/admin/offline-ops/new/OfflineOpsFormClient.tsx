@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import TutorPicker, { type TutorPickerValue } from '@/components/admin/offline-ops/TutorPicker';
+import LearnerPicker, { type LearnerPickerValue } from '@/components/admin/offline-ops/LearnerPicker';
 import DeliveryModeFields, { type DeliveryMode } from '@/components/admin/offline-ops/DeliveryModeFields';
 import {
   SubjectListInput,
@@ -31,6 +32,8 @@ export default function OfflineOpsFormClient() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [enrollmentKind, setEnrollmentKind] = useState<'new' | 'existing'>('new');
+  const [existingUser, setExistingUser] = useState<LearnerPickerValue>(null);
   const [agentName, setAgentName] = useState('Brian');
   const [sourceChannel, setSourceChannel] = useState('whatsapp_direct');
   const [primaryRole, setPrimaryRole] = useState<'parent' | 'student'>('parent');
@@ -54,7 +57,6 @@ export default function OfflineOpsFormClient() {
   const [payPerMonth, setPayPerMonth] = useState('');
   const [payMonths, setPayMonths] = useState('1');
   const [operationState, setOperationState] = useState<'active' | 'paused' | 'stopped'>('active');
-  const [startMonthLabel, setStartMonthLabel] = useState('');
 
   const [paymentStatus, setPaymentStatus] = useState('unpaid');
   const [paymentEnvironment, setPaymentEnvironment] = useState('real');
@@ -70,8 +72,20 @@ export default function OfflineOpsFormClient() {
       setSubmitError('Select a tutor from the list.');
       return;
     }
-    if (primaryRole === 'parent' && !childFullName.trim()) {
+    if (enrollmentKind === 'existing' && !existingUser?.userId) {
+      setSubmitError('Search and select the existing PrepSkul account.');
+      return;
+    }
+    if (enrollmentKind === 'new' && !primaryEmail.trim()) {
+      setSubmitError('Email is required for new accounts.');
+      return;
+    }
+    if (enrollmentKind === 'new' && primaryRole === 'parent' && !childFullName.trim()) {
       setSubmitError('Learner full name is required for parent accounts.');
+      return;
+    }
+    if (enrollmentKind === 'existing' && existingUser?.userType === 'parent' && !childFullName.trim()) {
+      setSubmitError('Enter the learner full name for this parent account.');
       return;
     }
     const cleanedSubjects = subjects.map((s) => s.trim()).filter(Boolean);
@@ -106,17 +120,31 @@ export default function OfflineOpsFormClient() {
       const payload = {
         agentName,
         sourceChannel,
+        enrollmentKind,
+        existingPrimaryUserId: enrollmentKind === 'existing' ? existingUser?.userId : undefined,
         primary: {
-          role: primaryRole,
-          fullName: primaryFullName.trim(),
-          email: primaryEmail.trim(),
+          role:
+            enrollmentKind === 'existing' && existingUser
+              ? existingUser.userType
+              : primaryRole,
+          fullName:
+            enrollmentKind === 'existing' && existingUser
+              ? existingUser.fullName
+              : primaryFullName.trim(),
+          email:
+            enrollmentKind === 'existing' && existingUser
+              ? existingUser.email
+              : primaryEmail.trim(),
           phone: primaryPhone.trim(),
         },
-        child: primaryRole === 'parent' ? { fullName: childFullName.trim() } : null,
+        child:
+          primaryRole === 'parent' || existingUser?.userType === 'parent'
+            ? { fullName: childFullName.trim() }
+            : undefined,
         tutor: { tutorUserId: tutor.tutorUserId },
         schedule: {
           weeks: Number(weeks),
-          sessionsPerWeek: Number(sessionsPerWeek),
+          sessionsPerWeek: Math.max(1, enabled.length),
           dayTimeSlots: enabled.map((d) => ({ day: d.day, time: d.time })),
           weekDays: enabled.map((d) => d.day),
           sessionTime: enabled[0].time,
@@ -131,7 +159,6 @@ export default function OfflineOpsFormClient() {
           payPerMonthXaf: payPerMonth ? Number(payPerMonth) : null,
           payMonthsCount: payMonths ? Number(payMonths) : null,
           operationState,
-          startMonthLabel: startMonthLabel.trim() || null,
         },
         notes: notes.trim(),
         tracking: {
@@ -149,9 +176,22 @@ export default function OfflineOpsFormClient() {
         body: JSON.stringify(payload),
       });
       const json = await response.json();
-      if (!response.ok) throw new Error(json?.error || 'Failed to sync offline onboarding');
+      if (!response.ok) {
+        const details = json?.details?.fieldErrors
+          ? Object.entries(json.details.fieldErrors)
+              .map(([field, messages]) => `${field}: ${(messages as string[]).join(', ')}`)
+              .join(' | ')
+          : '';
+        throw new Error(details ? `${json?.error || 'Invalid payload'} — ${details}` : json?.error || 'Failed to sync offline onboarding');
+      }
 
-      router.push('/admin/offline-ops/users');
+      if (json.offlineOperationId) {
+        router.push(`/admin/offline-ops/${json.offlineOperationId}`);
+      } else if (json.run?.primaryUserId) {
+        router.push(`/admin/offline-ops/users/${json.run.primaryUserId}`);
+      } else {
+        router.push('/admin/offline-ops/users');
+      }
       router.refresh();
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to save');
@@ -166,7 +206,9 @@ export default function OfflineOpsFormClient() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-[#4A6FBF]">Offline operations</p>
           <h1 className="text-2xl font-bold text-[#1B2C4F]">New offline enrollment</h1>
-          <p className="text-sm text-slate-600 mt-1">First-time registration and session scheduling only.</p>
+          <p className="text-sm text-slate-600 mt-1">
+            Enroll a new family or link an existing PrepSkul account to offline tutoring.
+          </p>
         </div>
         <Link
           href="/admin/offline-ops/users"
@@ -180,6 +222,34 @@ export default function OfflineOpsFormClient() {
       <form onSubmit={onSubmit} className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         <section className={`${panel} xl:col-span-7 space-y-5`}>
           <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Identity & contact</h2>
+
+          <div className="rounded-md border border-[#1B2C4F]/15 bg-slate-50 p-4 space-y-3">
+            <Label className="text-slate-700 font-medium">Enrollment type</Label>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="enrollmentKind" checked={enrollmentKind === 'new'} onChange={() => { setEnrollmentKind('new'); setExistingUser(null); }} />
+                New user (not on PrepSkul yet)
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="radio" name="enrollmentKind" checked={enrollmentKind === 'existing'} onChange={() => setEnrollmentKind('existing')} />
+                Existing PrepSkul account
+              </label>
+            </div>
+          </div>
+
+          {enrollmentKind === 'existing' && (
+            <div className="space-y-4 mb-2">
+              <LearnerPicker value={existingUser} onChange={setExistingUser} filterRole="all" />
+              {existingUser?.userType === 'parent' && (
+                <div>
+                  <Label>Learner full name *</Label>
+                  <Input value={childFullName} onChange={(e) => setChildFullName(e.target.value)} placeholder="Child being tutored" className="mt-1 border-[#1B2C4F]/20" />
+                </div>
+              )}
+            </div>
+          )}
+
+          {enrollmentKind === 'new' && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label>Agent</Label>
@@ -235,6 +305,7 @@ export default function OfflineOpsFormClient() {
               </div>
             )}
           </div>
+          )}
         </section>
 
         <section className={`${panel} xl:col-span-5`}>
@@ -250,7 +321,13 @@ export default function OfflineOpsFormClient() {
             onCountChange={setSubjectCount}
             onSubjectsChange={setSubjects}
           />
-          <PerDaySchedulePanel slots={daySlots} onChange={setDaySlots} />
+          <PerDaySchedulePanel
+            slots={daySlots}
+            onChange={(slots) => {
+              setDaySlots(slots);
+              setSessionsPerWeek(String(Math.max(1, slots.filter((d) => d.enabled).length)));
+            }}
+          />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label>Start date</Label>
@@ -261,8 +338,16 @@ export default function OfflineOpsFormClient() {
               <Input type="number" min={1} max={24} value={weeks} onChange={(e) => setWeeks(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
-              <Label>Sessions / week (reference)</Label>
-              <Input type="number" min={1} max={7} value={sessionsPerWeek} onChange={(e) => setSessionsPerWeek(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
+              <Label>Sessions / week</Label>
+              <Input
+                type="number"
+                min={1}
+                max={7}
+                value={String(Math.max(1, daySlots.filter((d) => d.enabled).length || Number(sessionsPerWeek)))}
+                readOnly
+                className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">Auto-filled from selected session days.</p>
             </div>
             <div>
               <Label>Duration (min)</Label>
@@ -275,10 +360,6 @@ export default function OfflineOpsFormClient() {
             <div>
               <Label># Pay-months</Label>
               <Input type="number" min={0.5} step={0.5} value={payMonths} onChange={(e) => setPayMonths(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-            </div>
-            <div>
-              <Label>Start month label</Label>
-              <Input value={startMonthLabel} onChange={(e) => setStartMonthLabel(e.target.value)} placeholder="Jan (12)" className="mt-1 border-[#1B2C4F]/20" />
             </div>
             <div>
               <Label>Operation state</Label>

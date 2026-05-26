@@ -30,7 +30,7 @@ const operationsItems = [
   { name: 'Feedback Inbox', href: '/admin/feedback-inbox' },
   { name: 'Identity Verifications', href: '/admin/identity-verifications' },
   { name: 'Ops Events', href: '/admin/operations-events' },
-  { name: 'Active Users', href: '/admin/users/active' },
+  { name: 'Active Mobile Users', href: '/admin/users/active' },
 ];
 
 const singleItems = [

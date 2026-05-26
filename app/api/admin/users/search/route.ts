@@ -1,59 +1,57 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { getServerSession, isAdmin } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
- * Search users API for admin notifications
- * 
- * Allows searching users by name, email, or phone
- * with optional filtering by user type
+ * Search users API for admin (e.g. offline enrollment picker).
+ * Uses the service-role client so results match server-side onboarding inserts (RLS-safe).
  */
 export async function GET(request: NextRequest) {
   try {
+    const user = await getServerSession();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const ok = await isAdmin(user.id);
+    if (!ok) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
-    const userType = searchParams.get('type') || 'all'; // 'all', 'student', 'tutor'
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const userType = searchParams.get('type') || 'all';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10) || 20, 50);
 
-    const supabase = await createServerSupabaseClient();
+    const admin = getSupabaseAdmin();
 
-    // Build the query - Note: phone is stored in auth.users, not profiles
-    let dbQuery = supabase
+    let dbQuery = admin
       .from('profiles')
       .select('id, full_name, email, user_type, avatar_url, created_at')
       .order('full_name', { ascending: true })
       .limit(limit);
 
-    // Filter by user type if specified
     if (userType !== 'all') {
-      dbQuery = dbQuery.eq('user_type', userType);
+      const normalized =
+        userType === 'student' ? 'learner' : userType === 'parent' ? 'parent' : userType;
+      dbQuery = dbQuery.eq('user_type', normalized);
     }
 
-    // Search by name or email if query provided
     if (query && query.length >= 2) {
-      dbQuery = dbQuery.or(
-        `full_name.ilike.%${query}%,email.ilike.%${query}%`
-      );
+      const safe = query.replace(/,/g, ' ');
+      dbQuery = dbQuery.or(`full_name.ilike.%${safe}%,email.ilike.%${safe}%`);
     }
 
     const { data: users, error } = await dbQuery;
 
     if (error) {
       console.error('Error searching users:', error);
-      return NextResponse.json(
-        { error: 'Failed to search users' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to search users' }, { status: 500 });
     }
 
-    // Format the response
-    const formattedUsers = (users || []).map(user => ({
-      id: user.id,
-      fullName: user.full_name || 'Unknown User',
-      email: user.email,
-      phone: null, // Phone is stored in auth.users, not profiles
-      userType: user.user_type || 'student',
-      avatarUrl: user.avatar_url,
-      createdAt: user.created_at,
+    const formattedUsers = (users || []).map((u) => ({
+      id: u.id,
+      fullName: u.full_name || 'Unknown User',
+      email: u.email,
+      phone: null,
+      userType: u.user_type || 'student',
+      avatarUrl: u.avatar_url,
+      createdAt: u.created_at,
     }));
 
     return NextResponse.json({
@@ -62,10 +60,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error in user search API:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
-

@@ -1,20 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { sendNotificationEmail } from '@/lib/notifications';
-import { sendOfflineReminderEmail, sendSessionStartEmail } from '@/lib/offline-session-emails';
+import {
+  sendOfflineMatchNotificationEmail,
+  sendOfflineReminderEmail,
+  sendSessionStartEmail,
+} from '@/lib/offline-session-emails';
+import { verifyExternalCron, persistCronHeartbeat } from '@/lib/cron-auth';
 
-// Uses firebase-admin for push; ensure Node.js runtime on Vercel.
 export const runtime = 'nodejs';
 
 /**
  * Process Scheduled Notifications Cron Job
  *
- * Uses Supabase admin client so external cron (e.g. cron-job.org) can run
- * without a user session. RLS would block anon client.
- *
- * Vercel free tier: ~10s timeout; we process a small batch per run.
+ * Trigger via external cron (cron-job.org): GET with Authorization: Bearer CRON_SECRET
+ * Recommended: every 1–5 minutes.
  */
-const BATCH_SIZE = 50; // Safe for Vercel free tier timeout
+const BATCH_SIZE = 50;
 const JOB_NAME = 'process-scheduled-notifications';
 
 export async function GET(request: NextRequest) {
@@ -23,24 +25,12 @@ export async function GET(request: NextRequest) {
   let failedCount = 0;
   let runError: string | null = null;
 
-  try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret) {
-      const isVercelCron =
-        request.headers.get('user-agent')?.includes('vercel-cron') ||
-        request.headers.get('x-vercel-cron') === '1';
-      if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
-        runError = 'Unauthorized cron request';
-        return NextResponse.json(
-          { error: 'Unauthorized. Please provide Authorization: Bearer YOUR_CRON_SECRET header.' },
-          { status: 401 }
-        );
-      }
-    }
+  const authError = verifyExternalCron(request);
+  if (authError) return authError;
 
-    const supabase = getSupabaseAdmin();
-    const now = new Date().toISOString();
+  const supabase = getSupabaseAdmin();
+
+  try {    const now = new Date().toISOString();
 
     const { data: scheduledNotifications, error: fetchError } = await supabase
       .from('scheduled_notifications')
@@ -121,16 +111,32 @@ export async function GET(request: NextRequest) {
                 .maybeSingle();
 
               if (userProfile?.email) {
-                if (metadata.offline_email && metadata.session_id) {
+                if (metadata.offline_match_email) {
+                  await sendOfflineMatchNotificationEmail({
+                    to: userProfile.email,
+                    recipientName: userProfile.full_name || 'there',
+                    tutorName: metadata.tutor_name || 'your tutor',
+                    nextDate: metadata.next_date,
+                    nextTime: metadata.next_time,
+                    subject: metadata.subject,
+                    deliveryMode: metadata.delivery_mode,
+                    meetLink: metadata.meet_link,
+                    onsiteLocation: metadata.onsite_location,
+                    portalUrl: metadata.portal_url,
+                    rescheduleUrl: metadata.reschedule_url,
+                    role: metadata.recipient_role === 'tutor' ? 'tutor' : 'learner',
+                  });
+                } else if (metadata.offline_email && metadata.session_id) {
                   const { data: sess } = await supabase
                     .from('individual_sessions')
                     .select('scheduled_date, scheduled_time, subject, delivery_mode, meet_link, onsite_location, tutor_id, learner_id, parent_id')
                     .eq('id', metadata.session_id)
                     .maybeSingle();
-                  const portalUrl =
-                    scheduled.user_id === sess?.tutor_id
-                      ? metadata.tutor_portal_url
-                      : metadata.learner_portal_url;
+                  const isTutor = scheduled.user_id === sess?.tutor_id;
+                  const portalUrl = isTutor ? metadata.tutor_portal_url : metadata.learner_portal_url;
+                  const rescheduleUrl = isTutor
+                    ? metadata.tutor_reschedule_url
+                    : metadata.learner_reschedule_url;
                   if (metadata.reminder_type === 'session_start' && portalUrl) {
                     const { data: tutorP } = await supabase.from('profiles').select('full_name').eq('id', sess?.tutor_id).maybeSingle();
                     const { data: learnerP } = await supabase.from('profiles').select('full_name').eq('id', sess?.learner_id).maybeSingle();
@@ -159,6 +165,11 @@ export async function GET(request: NextRequest) {
                       deliveryMode: sess?.delivery_mode,
                       meetLink: sess?.meet_link,
                       onsiteLocation: sess?.onsite_location,
+                      rescheduleUrl:
+                        metadata.reminder_type === '24_hours' || metadata.reminder_type === '1_hour'
+                          ? rescheduleUrl
+                          : undefined,
+                      feedbackUrl: portalUrl,
                     });
                   }
                 } else {
@@ -261,25 +272,16 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    // Best-effort heartbeat for admin diagnostics.
     try {
       const supabase = getSupabaseAdmin();
-      await supabase.from('cron_job_heartbeats').upsert(
-        {
-          job_name: JOB_NAME,
-          last_status: runStatus,
-          last_run_at: new Date().toISOString(),
-          last_success_at: runStatus === 'success' ? new Date().toISOString() : null,
-          last_error: runStatus === 'failed' ? runError : null,
-          processed_count: processedCount,
-          failed_count: failedCount,
-          metadata: {
-            source: 'external-cron',
-            endpoint: '/api/cron/process-scheduled-notifications',
-          },
-        },
-        { onConflict: 'job_name' }
-      );
+      await persistCronHeartbeat(supabase, {
+        jobName: JOB_NAME,
+        status: runStatus,
+        processedCount,
+        failedCount,
+        error: runError,
+        metadata: { endpoint: '/api/cron/process-scheduled-notifications' },
+      });
     } catch (heartbeatError) {
       console.warn('Could not persist cron heartbeat (process-scheduled-notifications):', heartbeatError);
     }

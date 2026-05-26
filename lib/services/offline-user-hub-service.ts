@@ -54,25 +54,58 @@ export async function getOfflineUserContext(admin: SupabaseClient, primaryUserId
     .select('learner_user_id')
     .eq('parent_user_id', primaryUserId);
 
+  let { data: op } = await admin
+    .from('offline_operations')
+    .select('id, customer_name, onboarding_stage, learner_user_id')
+    .eq('primary_user_id', primaryUserId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   const learnerIds = [
     run?.learner_user_id,
     ...(children || []).map((c) => c.learner_user_id),
   ].filter(Boolean) as string[];
 
   const uniqueLearnerIds = [...new Set(learnerIds)];
-  const { data: learnerProfiles } = uniqueLearnerIds.length
-    ? await admin.from('profiles').select('id, full_name, email').in('id', uniqueLearnerIds)
-    : { data: [] };
 
-  const { data: op } = await admin
-    .from('offline_operations')
-    .select('id, customer_name, onboarding_stage')
-    .eq('primary_user_id', primaryUserId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  if (!op && uniqueLearnerIds.length) {
+    const { data: learnerOp } = await admin
+      .from('offline_operations')
+      .select('id, customer_name, onboarding_stage, learner_user_id')
+      .in('learner_user_id', uniqueLearnerIds)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    op = learnerOp;
+  }
 
-  return { profile, run, learners: learnerProfiles || [], offlineOperationId: op?.id || null };
+  let learnerProfiles: Array<{ id: string; full_name?: string | null; email?: string | null }> = [];
+  if (uniqueLearnerIds.length) {
+    const { data } = await admin.from('profiles').select('id, full_name, email').in('id', uniqueLearnerIds);
+    learnerProfiles = data || [];
+  }
+
+  return {
+    profile,
+    run,
+    learners: learnerProfiles || [],
+    offlineOperationId: op?.id || null,
+    operationLearnerUserId: (op?.learner_user_id as string | null) || null,
+  };
+}
+
+export function resolveLearnerUserIdForOfflineHub(
+  ctx: Awaited<ReturnType<typeof getOfflineUserContext>>,
+  primaryUserId: string,
+  explicitLearnerUserId?: string | null
+): string | undefined {
+  if (explicitLearnerUserId) return explicitLearnerUserId;
+  if (ctx.run?.learner_user_id) return ctx.run.learner_user_id as string;
+  if (ctx.operationLearnerUserId) return ctx.operationLearnerUserId;
+  const userType = (ctx.profile.user_type || '').toLowerCase();
+  if (userType === 'learner' || userType === 'student') return primaryUserId;
+  return ctx.learners[0]?.id as string | undefined;
 }
 
 function toScheduleV2(schedule: ScheduleInput): OfflineScheduleInputV2 {
@@ -96,17 +129,49 @@ export async function schedulePeriodForExistingUser(
   adminUserId: string,
   body: ScheduleBody
 ) {
+  const schedules = body.monthlySchedules?.length
+    ? body.monthlySchedules
+    : body.schedule
+      ? [body.schedule]
+      : [];
+  if (!schedules.length) throw new Error('Schedule payload is required.');
+
+  const results = [];
+  for (const schedule of schedules) {
+    results.push(await scheduleSinglePeriodForExistingUser(admin, primaryUserId, adminUserId, body, schedule));
+  }
+
+  if (results.length === 1) return results[0];
+
+  return {
+    periodIds: results.map((r) => r.periodId).filter(Boolean),
+    sessionIds: results.flatMap((r) => r.sessionIds || []),
+    importedMonths: results.length,
+    tutorUserId: results[0]?.tutorUserId,
+    learnerUserId: results[0]?.learnerUserId,
+  };
+}
+
+async function scheduleSinglePeriodForExistingUser(
+  admin: SupabaseClient,
+  primaryUserId: string,
+  adminUserId: string,
+  body: ScheduleBody,
+  schedule: ScheduleInput
+) {
   const ctx = await getOfflineUserContext(admin, primaryUserId);
-  const learnerUserId =
-    body.learnerUserId ||
-    ctx.run?.learner_user_id ||
-    (ctx.learners[0]?.id as string | undefined);
+  const learnerUserId = resolveLearnerUserIdForOfflineHub(ctx, primaryUserId, body.learnerUserId);
   if (!learnerUserId) {
-    throw new Error('No learner linked to this account. Add a child first or specify learnerUserId.');
+    const isParent = (ctx.profile.user_type || '').toLowerCase() === 'parent';
+    throw new Error(
+      isParent
+        ? 'No learner linked to this parent. Use “Add child learner” first, then import the period again.'
+        : 'No learner linked to this account. Add a child first or specify learnerUserId.'
+    );
   }
 
   const tutorResolved = await resolveTutorUserId(admin, body.tutor);
-  const scheduleV2 = toScheduleV2(body.schedule);
+  const scheduleV2 = toScheduleV2(schedule);
   const isHistorical = body.isHistoricalImport ?? false;
 
   const { data: learnerProfile } = await admin
@@ -124,10 +189,10 @@ export async function schedulePeriodForExistingUser(
     learnerDisplayNames: learnerProfile?.full_name || null,
     schedule: scheduleV2,
     commercial: {
-      payPerMonthXaf: body.schedule.payPerMonthXaf,
-      payMonthsCount: body.schedule.payMonthsCount,
-      operationState: body.schedule.operationState,
-      startMonthLabel: body.schedule.startMonthLabel,
+      payPerMonthXaf: schedule.payPerMonthXaf,
+      payMonthsCount: schedule.payMonthsCount,
+      operationState: schedule.operationState,
+      startMonthLabel: schedule.startMonthLabel,
     },
     isHistoricalImport: isHistorical,
     offlineOperationId: ctx.offlineOperationId,
@@ -243,6 +308,88 @@ export async function softAnonymizeOfflineUser(admin: SupabaseClient, primaryUse
   return { anonymizedUserIds: [...userIds], stamp };
 }
 
+/**
+ * Hard-delete an offline-enrolled user (parent or learner) while preserving the rows
+ * the platform needs for tutor session counts and feedback ratings:
+ * - individual_sessions (kept; learner/parent ids may FK-cascade if schema CASCADEs;
+ *   we null them where we can to keep the row visible to tutor stats).
+ * - session_learner_feedback / session_tutor_completion_reports (kept).
+ * - session_payments / offline_scheduling_periods (kept for revenue).
+ *
+ * What we remove:
+ * - auth.users entry (user can no longer sign in)
+ * - profiles row (PII gone)
+ *
+ * The auth.users CASCADE on individual_sessions.learner_id (and similar) varies by
+ * deployment; we therefore *first* null the learner/parent FKs on related rows so a
+ * later auth.users delete cannot cascade them away.
+ */
+export async function hardDeleteOfflineUserKeepingStats(
+  admin: SupabaseClient,
+  primaryUserId: string
+) {
+  const ctx = await getOfflineUserContext(admin, primaryUserId);
+
+  const userIdsToDelete = new Set<string>([primaryUserId]);
+  for (const l of ctx.learners) userIdsToDelete.add(l.id);
+
+  const stamp = new Date().toISOString();
+  const removed: string[] = [];
+
+  for (const uid of userIdsToDelete) {
+    try {
+      await admin
+        .from('individual_sessions')
+        .update({ parent_id: null, updated_at: stamp })
+        .eq('parent_id', uid);
+    } catch {
+      /* schema may not support nulling parent_id; leave as-is */
+    }
+    try {
+      await admin
+        .from('individual_sessions')
+        .update({ learner_id: null, updated_at: stamp })
+        .eq('learner_id', uid);
+    } catch {
+      /* learner_id may be NOT NULL on some deployments; leave intact for tutor count */
+    }
+    try {
+      await admin.from('parent_learners').delete().eq('parent_user_id', uid);
+      await admin.from('parent_learners').delete().eq('learner_user_id', uid);
+    } catch {
+      /* legacy column names already aligned by phase2 fix */
+    }
+
+    try {
+      await admin
+        .from('offline_operations')
+        .update({
+          customer_name: 'Deleted user',
+          customer_whatsapp: '',
+          notes: `[DELETED ${stamp}]`,
+          onboarding_stage: 'dropped',
+          primary_user_id: null,
+          learner_user_id: null,
+          updated_at: stamp,
+        })
+        .or(`primary_user_id.eq.${uid},learner_user_id.eq.${uid}`);
+    } catch {
+      /* analytics row scrub */
+    }
+
+    await admin.from('profiles').delete().eq('id', uid);
+
+    try {
+      await admin.auth.admin.deleteUser(uid);
+      removed.push(uid);
+    } catch (err) {
+      console.warn('[offline-user-delete] auth delete failed', uid, err);
+    }
+  }
+
+  return { deletedUserIds: removed, stamp };
+}
+
 export function parseHistoricalCsv(text: string): ScheduleInput[] {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   if (lines.length < 2) throw new Error('CSV must include a header row and at least one data row');
@@ -289,7 +436,9 @@ export function parseHistoricalCsv(text: string): ScheduleInput[] {
       onsiteLocation: get('onsitelocation', 'onsite_location') || null,
       payPerMonthXaf: get('paypermonth', 'pay_per_month') ? Number(get('paypermonth', 'pay_per_month')) : null,
       payMonthsCount: get('paymonths', 'pay_months') ? Number(get('paymonths', 'pay_months')) : null,
-      operationState: (get('state', 'operation_state') || 'stopped') as ScheduleInput['operationState'],
+      operationState: get('state', 'operation_state')
+        ? (get('state', 'operation_state') as ScheduleInput['operationState'])
+        : undefined,
       startMonthLabel: get('startmonth', 'start_month_label') || null,
     });
   }

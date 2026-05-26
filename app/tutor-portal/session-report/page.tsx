@@ -1,13 +1,13 @@
 import { Suspense } from 'react';
+import { PortalShell } from '@/components/portals/PortalShell';
 import SessionReportClient from './SessionReportClient';
 
 export default function TutorSessionReportPortalPage() {
   return (
-    <main className="min-h-screen bg-[#F7F8FB] px-4 py-8">
-      <Suspense fallback={<div className="max-w-3xl mx-auto text-sm text-gray-600">Loading report form...</div>}>
+    <PortalShell title="Tutor session report">
+      <Suspense fallback={<p className="text-sm text-slate-600">Loading…</p>}>
         <SessionReportClient />
       </Suspense>
-    </main>
+    </PortalShell>
   );
 }
-

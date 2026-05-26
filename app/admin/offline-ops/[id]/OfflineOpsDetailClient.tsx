@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import OfflineOpsModificationsPanel from '@/components/admin/offline-ops/OfflineOpsModificationsPanel';
+import { buildWhatsAppUrl, composeAdminFeedbackReply } from '@/lib/services/admin-feedback-reply-engine';
 
 type ProfileLite = {
   id: string;
@@ -75,26 +76,13 @@ function statusBadgeClass(status?: string | null) {
   return 'bg-white text-[#1B2C4F] border-[#1B2C4F]/20';
 }
 
-function suggestedLearnerReply(
-  lf: { rating?: number | null; comment?: string | null },
-  learnerName?: string | null
-) {
-  const r = lf.rating ?? 0;
-  const c = (lf.comment || '').trim();
-  const greet = learnerName ? `Hi ${learnerName.split(' ')[0] || learnerName},` : 'Hi,';
-  let thanks = 'Thank you for taking a moment to share feedback after the session.';
-  if (r >= 4) thanks = 'Thank you for the positive feedback — we are glad the session was helpful.';
-  else if (r > 0 && r < 3) thanks = 'Thank you for your honest feedback. We take it seriously and will use it to improve the next lesson.';
-  const excerpt = c ? `\n\nYou mentioned: "${c.length > 320 ? `${c.slice(0, 320)}…` : c}"` : '';
-  return `${greet}\n\n${thanks}${excerpt}\n\nIf you would like anything adjusted for the next class (pace, topics, or format), reply here and we will align with your tutor.\n\n— PrepSkul`;
-}
-
 const btnBase =
   'inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-semibold rounded-md border shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed';
 
 export default function OfflineOpsDetailClient({
   record,
   sessions,
+  venuePhotoUrl = null,
   dailyReminders,
   lastManualReminderAtBySession,
   profiles,
@@ -102,6 +90,7 @@ export default function OfflineOpsDetailClient({
 }: {
   record: any;
   sessions: SessionInsight[];
+  venuePhotoUrl?: string | null;
   dailyReminders: Array<{
     id: string;
     user_id: string;
@@ -133,7 +122,19 @@ export default function OfflineOpsDetailClient({
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [sessionState, setSessionState] = useState(sessions);
-  const [linkBySession, setLinkBySession] = useState<Record<string, { tutor?: string; learner?: string; expiresAt?: string }>>({});
+  const [linkBySession, setLinkBySession] = useState<
+    Record<
+      string,
+      {
+        tutor?: string;
+        learner?: string;
+        tutorReschedule?: string;
+        learnerReschedule?: string;
+        expiresAt?: string;
+      }
+    >
+  >({});
+  const [linksVisibleBySession, setLinksVisibleBySession] = useState<Record<string, boolean>>({});
   const [actionMsg, setActionMsg] = useState('');
   const [busyBySession, setBusyBySession] = useState<Record<string, string>>({});
   const [replyBySession, setReplyBySession] = useState<Record<string, { target: 'tutor' | 'learner'; subject: string; message: string }>>({});
@@ -193,21 +194,8 @@ export default function OfflineOpsDetailClient({
     return next ? [next] : sorted.length ? [sorted[sorted.length - 1]] : [];
   }, [sessionState]);
 
-  useEffect(() => {
-    const sid = displaySessions[0]?.id;
-    if (!sid || linkBySession[sid]) return;
-    fetch(`/api/admin/sessions/${sid}/portal-links`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.tutorReportUrl) {
-          setLinkBySession((prev) => ({
-            ...prev,
-            [sid]: { tutor: json.tutorReportUrl, learner: json.learnerFeedbackUrl, expiresAt: json.expiresAt },
-          }));
-        }
-      })
-      .catch(() => {});
-  }, [displaySessions, linkBySession]);
+  // Links are loaded on demand via the "Show session links" button to avoid
+  // calling the portal-links endpoint on every page render.
 
   const stats = useMemo(() => {
     const total = sessionState.length;
@@ -315,8 +303,12 @@ export default function OfflineOpsDetailClient({
     }
   };
 
-  const createLinks = async (sessionId: string) => {
+  const toggleLinks = async (sessionId: string) => {
     setActionMsg('');
+    if (linkBySession[sessionId]) {
+      setLinksVisibleBySession((prev) => ({ ...prev, [sessionId]: !prev[sessionId] }));
+      return;
+    }
     setBusy(sessionId, 'links');
     try {
       const res = await fetch(`/api/admin/sessions/${sessionId}/portal-links`, {
@@ -331,10 +323,12 @@ export default function OfflineOpsDetailClient({
         [sessionId]: {
           tutor: json.tutorReportUrl,
           learner: json.learnerFeedbackUrl,
+          tutorReschedule: json.tutorRescheduleUrl,
+          learnerReschedule: json.learnerRescheduleUrl,
           expiresAt: json.expiresAt,
         },
       }));
-      setActionMsg('Session links ready. Copy tutor or learner URL below.');
+      setLinksVisibleBySession((prev) => ({ ...prev, [sessionId]: true }));
     } catch (e: any) {
       setActionMsg(e?.message || 'Failed to create links');
     } finally {
@@ -350,6 +344,54 @@ export default function OfflineOpsDetailClient({
       ...prev,
       [sessionId]: { ...getReplyDefaults(sessionId), ...patch },
     }));
+  };
+
+  const draftLearnerReply = (sessionId: string) => {
+    const s = sessionState.find((x) => x.id === sessionId);
+    const lf = s?.learnerFeedback;
+    if (!lf) return;
+    const message = composeAdminFeedbackReply(
+      { rating: Number(lf.rating || 0), comment: lf.comment || '' },
+      s?.tutorReport || null,
+      {
+        recipientName: profiles.primary?.full_name || profiles.learner?.full_name || null,
+        tutorName: profiles.tutor?.full_name || null,
+        sessionSubject: s?.subject,
+        sessionDate: s?.scheduled_date,
+      }
+    );
+    setReplyField(sessionId, {
+      target: 'learner',
+      subject: 'Follow-up from PrepSkul',
+      message,
+    });
+  };
+
+  const openWhatsAppReply = (sessionId: string) => {
+    const rf = getReplyDefaults(sessionId);
+    const s = sessionState.find((x) => x.id === sessionId);
+    let message = rf.message.trim();
+    if (message.length < 10 && s?.learnerFeedback) {
+      draftLearnerReply(sessionId);
+      message = getReplyDefaults(sessionId).message;
+    }
+    if (message.length < 10) {
+      setActionMsg('Write or generate a message first (at least a few sentences).');
+      return;
+    }
+    const phone =
+      rf.target === 'tutor'
+        ? profiles.tutor?.phone_number
+        : profiles.primary?.phone_number ||
+          profiles.learner?.phone_number ||
+          record.customer_whatsapp;
+    const url = buildWhatsAppUrl(phone, message);
+    if (!url) {
+      setActionMsg('No WhatsApp number on file for this recipient. Add it on their profile or operation record.');
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setActionMsg('WhatsApp opened with your message prefilled — review and tap Send in WhatsApp.');
   };
 
   const sendReply = async (sessionId: string) => {
@@ -477,6 +519,26 @@ export default function OfflineOpsDetailClient({
             <p className="text-gray-500">{profiles.tutor?.email || '—'}</p>
           </div>
         </div>
+
+        {venuePhotoUrl && (
+          <div className="mt-5 border-t border-[#1B2C4F]/10 pt-4">
+            <p className="text-sm font-semibold text-gray-800 mb-2">Venue photo (KYC)</p>
+            <a
+              href={venuePhotoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={venuePhotoUrl}
+                alt="Onsite venue (KYC)"
+                className="max-h-72 rounded-md border border-slate-200 object-cover"
+              />
+            </a>
+            <p className="text-xs text-slate-500 mt-2">Click to open the original.</p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white border border-[#1B2C4F]/15 p-5 space-y-3 rounded-lg shadow-sm">
@@ -641,6 +703,7 @@ export default function OfflineOpsDetailClient({
           <div className="space-y-4">
             {displaySessions.map((s) => {
               const links = linkBySession[s.id];
+              const linksVisible = !!linksVisibleBySession[s.id];
               const busy = busyBySession[s.id];
               const tr = s.tutorReport;
               const lf = s.learnerFeedback;
@@ -734,10 +797,14 @@ export default function OfflineOpsDetailClient({
                     <button
                       type="button"
                       disabled={!!busy}
-                      onClick={() => createLinks(s.id)}
+                      onClick={() => toggleLinks(s.id)}
                       className={`${btnBase} border-indigo-300 bg-indigo-600 text-white hover:bg-indigo-700`}
                     >
-                      {busy === 'links' ? 'Loading…' : 'Copy session links'}
+                      {busy === 'links'
+                        ? 'Loading…'
+                        : linksVisible
+                        ? 'Hide session links'
+                        : 'Show session links'}
                     </button>
                     <div className="flex flex-wrap items-center gap-2">
                       <button
@@ -782,20 +849,9 @@ export default function OfflineOpsDetailClient({
                         type="button"
                         className="text-xs font-semibold px-3 py-1.5 rounded-md border border-[#1B2C4F]/30 bg-[#1B2C4F]/5 text-[#1B2C4F] hover:bg-[#1B2C4F]/10 disabled:opacity-40"
                         disabled={!lf}
-                        onClick={() => {
-                          if (!lf) return;
-                          const draft = suggestedLearnerReply(
-                            lf,
-                            profiles.primary?.full_name || profiles.learner?.full_name || null
-                          );
-                          setReplyField(s.id, {
-                            target: 'learner',
-                            subject: 'Follow-up from PrepSkul',
-                            message: draft,
-                          });
-                        }}
+                        onClick={() => draftLearnerReply(s.id)}
                       >
-                        Draft reply from learner feedback
+                        Generate reply (learner + tutor notes)
                       </button>
                       {!lf && (
                         <span className="text-xs text-slate-500">Available once learner feedback is in.</span>
@@ -807,39 +863,89 @@ export default function OfflineOpsDetailClient({
                       value={rf.message}
                       onChange={(e) => setReplyField(s.id, { message: e.target.value })}
                     />
-                    <button
-                      type="button"
-                      disabled={!!busy || rf.message.trim().length < 10}
-                      onClick={() => sendReply(s.id)}
-                      className={`${btnBase} border-[#1B2C4F] bg-[#1B2C4F] text-white hover:bg-[#15243d]`}
-                    >
-                      {busy === 'reply' ? 'Sending…' : 'Send email'}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={!!busy || rf.message.trim().length < 10}
+                        onClick={() => sendReply(s.id)}
+                        className={`${btnBase} border-[#1B2C4F] bg-[#1B2C4F] text-white hover:bg-[#15243d]`}
+                      >
+                        {busy === 'reply' ? 'Sending…' : 'Send email'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!!busy || rf.message.trim().length < 10}
+                        onClick={() => openWhatsAppReply(s.id)}
+                        className={`${btnBase} border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700`}
+                      >
+                        Send via WhatsApp
+                      </button>
+                    </div>
                   </div>
 
-                  {links && (
-                    <div className="mt-1 bg-white border border-gray-200 p-3 text-sm space-y-2 break-all rounded-md">
+                  {links && linksVisible && (
+                    <div className="mt-1 bg-white border border-gray-200 p-3 text-sm space-y-3 break-all rounded-md">
                       <p className="text-xs text-gray-500">Links expire: {formatDate(links.expiresAt)}</p>
-                      <p>
-                        <span className="font-medium">Tutor report URL:</span> {links.tutor}
-                      </p>
-                      <button
-                        type="button"
-                        className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
-                        onClick={() => links.tutor && navigator.clipboard.writeText(links.tutor)}
-                      >
-                        Copy tutor link
-                      </button>
-                      <p>
-                        <span className="font-medium">Learner feedback URL:</span> {links.learner}
-                      </p>
-                      <button
-                        type="button"
-                        className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
-                        onClick={() => links.learner && navigator.clipboard.writeText(links.learner)}
-                      >
-                        Copy learner link
-                      </button>
+
+                      <div className="space-y-1.5 border-l-2 border-[#1B2C4F]/20 pl-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#1B2C4F]">Tutor</p>
+                        <p>
+                          <span className="font-medium">Session link:</span> {links.tutor}
+                        </p>
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
+                          onClick={() => links.tutor && navigator.clipboard.writeText(links.tutor)}
+                        >
+                          Copy tutor session link
+                        </button>
+                        {links.tutorReschedule && (
+                          <>
+                            <p>
+                              <span className="font-medium">Reschedule link:</span> {links.tutorReschedule}
+                            </p>
+                            <button
+                              type="button"
+                              className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
+                              onClick={() =>
+                                links.tutorReschedule && navigator.clipboard.writeText(links.tutorReschedule)
+                              }
+                            >
+                              Copy tutor reschedule link
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 border-l-2 border-[#1B2C4F]/20 pl-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#1B2C4F]">Learner / parent</p>
+                        <p>
+                          <span className="font-medium">Session link:</span> {links.learner}
+                        </p>
+                        <button
+                          type="button"
+                          className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
+                          onClick={() => links.learner && navigator.clipboard.writeText(links.learner)}
+                        >
+                          Copy learner session link
+                        </button>
+                        {links.learnerReschedule && (
+                          <>
+                            <p>
+                              <span className="font-medium">Reschedule link:</span> {links.learnerReschedule}
+                            </p>
+                            <button
+                              type="button"
+                              className="text-xs px-2 py-1 border rounded-md bg-gray-50 hover:bg-gray-100"
+                              onClick={() =>
+                                links.learnerReschedule && navigator.clipboard.writeText(links.learnerReschedule)
+                              }
+                            >
+                              Copy learner reschedule link
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
