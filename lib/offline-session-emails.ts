@@ -127,9 +127,7 @@ export async function sendOfflineMatchNotificationEmail(opts: {
     opts.recipientName,
     'Welcome to PrepSkul session notifications',
     'Welcome to PrepSkul',
-    bodyHtml,
-    isTutor ? opts.portalUrl || undefined : opts.rescheduleUrl || opts.portalUrl || undefined,
-    isTutor ? 'Open your tutor session page' : 'View your sessions'
+    bodyHtml
   );
 }
 

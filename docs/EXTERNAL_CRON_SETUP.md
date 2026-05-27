@@ -20,6 +20,7 @@ Base URL: `https://www.prepskul.com` (or your deployment URL)
 |-----|----------|----------|---------|
 | **Process scheduled notifications** | `GET /api/cron/process-scheduled-notifications` | **Every 1–5 min** | Sends session reminders (24h, 1h, 15m), offline ops emails, match notifications, push |
 | **Ambassador lead follow-ups** | `GET /api/cron/ambassador-lead-followups` | **Daily (morning)** | Emails ops admins when ambassador leads have follow-up due today |
+| **Offline session feedback reminders** | `GET /api/cron/offline-session-feedback-reminders` | **Every 1 hour** | Emails ops when a past offline session is missing tutor report and/or learner feedback |
 | Process pending earnings | `GET /api/cron/process-pending-earnings` | Every 15–30 min | Moves tutor earnings pending → active after QA window |
 
 ### How session reminder emails work

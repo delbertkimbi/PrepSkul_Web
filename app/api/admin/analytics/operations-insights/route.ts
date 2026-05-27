@@ -96,7 +96,29 @@ export async function GET(request: NextRequest) {
     const periodRows = periods || [];
     const parentIds = [...new Set(periodRows.map((p) => p.primary_user_id).filter(Boolean))];
     const offTutorIds = [...new Set(periodRows.map((p) => p.tutor_user_id).filter(Boolean))];
-    const onTutorIds = [...new Set((onSessions || []).map((s) => s.tutor_id).filter(Boolean))];
+    const offlineTutorIdSet = new Set(offTutorIds);
+    const offlineFamilyUserIds = new Set<string>();
+    for (const p of periodRows) {
+      if (p.primary_user_id) offlineFamilyUserIds.add(p.primary_user_id);
+      if (p.learner_user_id) offlineFamilyUserIds.add(p.learner_user_id);
+    }
+
+    /** On-platform = sessions not linked to offline ops (by period id, tutor, or family). */
+    const belongsToOfflineOnPlatform = (s: {
+      offline_scheduling_period_id?: string | null;
+      tutor_id?: string | null;
+      learner_id?: string | null;
+      parent_id?: string | null;
+    }) => {
+      if (s.offline_scheduling_period_id) return true;
+      if (s.tutor_id && offlineTutorIdSet.has(s.tutor_id)) return true;
+      if (s.learner_id && offlineFamilyUserIds.has(s.learner_id)) return true;
+      if (s.parent_id && offlineFamilyUserIds.has(s.parent_id)) return true;
+      return false;
+    };
+
+    const platformOnSessions = (onSessions || []).filter((s) => !belongsToOfflineOnPlatform(s));
+    const onTutorIds = [...new Set(platformOnSessions.map((s) => s.tutor_id).filter(Boolean))];
     const allTutorIds = [...new Set([...offTutorIds, ...onTutorIds])];
 
     const { data: parentProfiles } = await supabaseAdmin
@@ -114,8 +136,8 @@ export async function GET(request: NextRequest) {
       .select('id, full_name')
       .in(
         'id',
-        [...new Set((onSessions || []).map((s) => s.learner_id || s.parent_id).filter(Boolean))].length
-          ? [...new Set((onSessions || []).map((s) => s.learner_id || s.parent_id).filter(Boolean))]
+        [...new Set(platformOnSessions.map((s) => s.learner_id || s.parent_id).filter(Boolean))].length
+          ? [...new Set(platformOnSessions.map((s) => s.learner_id || s.parent_id).filter(Boolean))]
           : ['00000000-0000-0000-0000-000000000000']
       );
 
@@ -144,7 +166,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    const onSessionIds = new Set((onSessions || []).map((s) => s.id));
+    const onSessionIds = new Set(platformOnSessions.map((s) => s.id));
     const onPaymentBySession = new Map<string, number>();
     for (const p of onPayments || []) {
       if (!p.session_id || !onSessionIds.has(p.session_id)) continue;
@@ -173,7 +195,7 @@ export async function GET(request: NextRequest) {
       }
     >();
 
-    for (const s of onSessions || []) {
+    for (const s of platformOnSessions) {
       const revenue = onPaymentBySession.get(s.id) || 0;
       const key = `${s.tutor_id}:${s.learner_id || s.parent_id || 'unknown'}`;
       const studentLabel =
@@ -235,6 +257,7 @@ export async function GET(request: NextRequest) {
     }
 
     const offTutorSummary = [...offTutorSummaryMap.entries()].map(([tid, v]) => ({
+      tutorId: tid,
       tutorName: tutorName.get(tid) || 'Tutor',
       totalSessions: v.sessions,
       totalRevenueXaf: v.revenue,
@@ -247,7 +270,7 @@ export async function GET(request: NextRequest) {
       string,
       { sessions: number; revenue: number; profit: number; earnings: number; state: string }
     >();
-    for (const s of onSessions || []) {
+    for (const s of platformOnSessions) {
       const key = s.tutor_id;
       const rev = onPaymentBySession.get(s.id) || 0;
       const cur = onTutorSummaryMap.get(key) || {
@@ -265,6 +288,7 @@ export async function GET(request: NextRequest) {
     }
 
     const onTutorSummary = [...onTutorSummaryMap.entries()].map(([tid, v]) => ({
+      tutorId: tid,
       tutorName: tutorName.get(tid) || 'Tutor',
       totalSessions: v.sessions,
       totalRevenueXaf: v.revenue,
@@ -297,7 +321,7 @@ export async function GET(request: NextRequest) {
       }));
 
     const onMonthlyMap = new Map<string, { revenue: number; students: Set<string>; tutors: Set<string> }>();
-    for (const s of onSessions || []) {
+    for (const s of platformOnSessions) {
       const m = monthKey(s.scheduled_date || s.created_at);
       if (!m) continue;
       const rev = onPaymentBySession.get(s.id) || 0;
@@ -326,7 +350,7 @@ export async function GET(request: NextRequest) {
       return s + Number(p.amount || 0);
     }, 0);
 
-    const onSessionCount = (onSessions || []).length;
+    const onSessionCount = platformOnSessions.length;
     const offSessionCount = (offSessions || []).length;
 
     const scopeTotals = {
@@ -380,6 +404,34 @@ export async function GET(request: NextRequest) {
         studentCount: v.studentCount,
       }));
 
+    type TutorSummaryRow = {
+      tutorId: string;
+      tutorName: string;
+      totalSessions: number;
+      totalRevenueXaf: number;
+      prepskulProfit: number;
+      tutorEarnings: number;
+      state: string;
+    };
+
+    const mergeTutorSummaries = (rows: TutorSummaryRow[]) => {
+      const map = new Map<string, TutorSummaryRow>();
+      for (const row of rows) {
+        const key = row.tutorId || row.tutorName;
+        const cur = map.get(key);
+        if (!cur) {
+          map.set(key, { ...row });
+          continue;
+        }
+        cur.totalSessions += row.totalSessions;
+        cur.totalRevenueXaf += row.totalRevenueXaf;
+        cur.prepskulProfit += row.prepskulProfit;
+        cur.tutorEarnings += row.tutorEarnings;
+        if (row.state === 'active') cur.state = 'active';
+      }
+      return [...map.values()];
+    };
+
     const pick =
       scope === 'on'
         ? { records: onRecords, tutorSummary: onTutorSummary, monthlySummary: onMonthlySummary, totals: scopeTotals.on }
@@ -387,7 +439,7 @@ export async function GET(request: NextRequest) {
           ? { records: offRecords, tutorSummary: offTutorSummary, monthlySummary: offMonthlySummary, totals: scopeTotals.off }
           : {
               records: [...offRecords, ...onRecords],
-              tutorSummary: [...offTutorSummary, ...onTutorSummary],
+              tutorSummary: mergeTutorSummaries([...offTutorSummary, ...onTutorSummary]),
               monthlySummary: combinedMonthlySummary,
               totals: scopeTotals.combined,
             };

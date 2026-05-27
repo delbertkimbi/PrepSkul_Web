@@ -76,9 +76,32 @@ function statusBadgeClass(status?: string | null) {
   return 'bg-white text-[#1B2C4F] border-[#1B2C4F]/20';
 }
 
-function sessionNeedsAdminReview(s: SessionInsight) {
+function isAdminAttendanceMarked(s: SessionInsight) {
   const st = (s.status || '').toLowerCase();
-  return !['evaluated', 'completed', 'not_attended'].includes(st);
+  return ['evaluated', 'completed', 'not_attended'].includes(st);
+}
+
+function sessionStartMs(s: SessionInsight) {
+  const t = new Date(`${s.scheduled_date || ''}T${s.scheduled_time || '00:00:00'}`).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+/** Next upcoming session plus any past sessions still awaiting admin attendance review. */
+function selectDisplaySessions(sessions: SessionInsight[]) {
+  const sorted = [...sessions].sort((a, b) => sessionStartMs(a) - sessionStartMs(b));
+  const now = Date.now();
+  const overdueUnreviewed = sorted.filter((s) => {
+    const t = sessionStartMs(s);
+    return t > 0 && t < now && !isAdminAttendanceMarked(s);
+  });
+  const nextSession = sorted.find((s) => {
+    const t = sessionStartMs(s);
+    return t >= now && !isAdminAttendanceMarked(s);
+  });
+  const byId = new Map<string, SessionInsight>();
+  for (const s of overdueUnreviewed) byId.set(s.id, s);
+  if (nextSession) byId.set(nextSession.id, nextSession);
+  return [...byId.values()].sort((a, b) => sessionStartMs(a) - sessionStartMs(b));
 }
 
 const btnBase =
@@ -170,14 +193,7 @@ export default function OfflineOpsDetailClient({
     return Math.max(0, total - Number(form.amount_paid || 0));
   }, [form.amount_paid, form.expected_total_amount]);
 
-  const displaySessions = useMemo(() => {
-    const sorted = [...sessionState].sort((a, b) => {
-      const da = `${a.scheduled_date || ''}T${a.scheduled_time || '00:00:00'}`;
-      const db = `${b.scheduled_date || ''}T${b.scheduled_time || '00:00:00'}`;
-      return da.localeCompare(db);
-    });
-    return sorted.filter(sessionNeedsAdminReview);
-  }, [sessionState]);
+  const displaySessions = useMemo(() => selectDisplaySessions(sessionState), [sessionState]);
 
   // Links are loaded on demand via the "Show session links" button to avoid
   // calling the portal-links endpoint on every page render.
@@ -677,14 +693,13 @@ export default function OfflineOpsDetailClient({
       </div>
 
       <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
-        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Sessions pending review</h2>
+        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Next session &amp; pending review</h2>
         <p className="text-sm text-slate-600 mb-4 pl-3 ml-1">
-          Past and upcoming sessions stay here until you mark attendance. Tutor or learner submissions move a session to{' '}
-          <strong>awaiting admin review</strong>. After you confirm attendance, status becomes <strong>evaluated</strong> or{' '}
-          <strong>not attended</strong> and the session is removed from this list.
+          Shows your <strong>next upcoming session</strong> and any <strong>past sessions</strong> whose time has passed but
+          attendance is not yet marked. After you confirm attendance, a session leaves this list.
         </p>
         {displaySessions.length === 0 ? (
-          <p className="text-sm text-gray-600">No sessions waiting for admin review.</p>
+          <p className="text-sm text-gray-600">No upcoming or overdue sessions need admin review right now.</p>
         ) : (
           <div className="space-y-4">
             {displaySessions.map((s) => {
@@ -701,6 +716,15 @@ export default function OfflineOpsDetailClient({
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-semibold text-[#1B2C4F]">Session</p>
+                    {sessionStartMs(s) < Date.now() ? (
+                      <span className="text-[10px] uppercase font-semibold tracking-wide bg-amber-100 text-amber-900 border border-amber-200 px-2 py-0.5 rounded">
+                        Past — mark attendance
+                      </span>
+                    ) : (
+                      <span className="text-[10px] uppercase font-semibold tracking-wide bg-sky-100 text-sky-900 border border-sky-200 px-2 py-0.5 rounded">
+                        Next session
+                      </span>
+                    )}
                     <code className="text-xs bg-white border border-[#1B2C4F]/15 px-1.5 py-0.5 rounded">{s.id.slice(0, 8)}…</code>
                     <span
                       className={`text-xs font-semibold tracking-wide border px-2 py-0.5 rounded-md capitalize ${statusBadgeClass(s.status)}`}
