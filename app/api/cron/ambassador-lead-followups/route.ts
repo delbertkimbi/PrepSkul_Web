@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifyExternalCron, persistCronHeartbeat } from '@/lib/cron-auth';
 import { sendOpsAlertEmail } from '@/lib/ops-email';
-import { escapeHtml } from '@/lib/email_templates/branded-layout';
+import {
+  buildAmbassadorFollowUpReminderBody,
+  type FollowUpActivityGroup,
+  type FollowUpLeadRow,
+} from '@/lib/email_templates/ambassador-followup-reminder';
 
 export const runtime = 'nodejs';
 
@@ -10,6 +14,20 @@ const JOB_NAME = 'ambassador-lead-followups';
 
 function todayDoualaDateString() {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Douala' }).format(new Date());
+}
+
+function formatDisplayDate(dateLike?: string | null) {
+  if (!dateLike) return null;
+  try {
+    return new Date(`${dateLike}T12:00:00`).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return dateLike;
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -23,11 +41,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const today = todayDoualaDateString();
+    const appBase = process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com';
+    const dashboardUrl = `${appBase}/admin/ambassador-outreach`;
 
     const { data: leads, error } = await supabase
       .from('ambassador_leads')
       .select(
-        'id, full_name, phone, email, city, school, course_interest, status, follow_up_date, notes, ambassadors(full_name, email)'
+        `id, full_name, phone, email, city, school, course_interest, status, follow_up_date, notes, outreach_activity_id,
+         ambassadors(full_name, email),
+         outreach_activities(id, activity_name, activity_type, date)`
       )
       .eq('follow_up_date', today)
       .in('status', ['Contacted', 'Interested', 'Follow Up Needed']);
@@ -40,37 +62,61 @@ export async function GET(request: NextRequest) {
     });
 
     if (due.length) {
-      const rows = due
-        .map((lead) => {
-          const ambassador = (lead as { ambassadors?: { full_name?: string | null } | null }).ambassadors;
-          return `<tr>
-            <td style="padding:8px;border-bottom:1px solid #eee;">${escapeHtml(lead.full_name)}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;">${escapeHtml(lead.phone)}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;">${escapeHtml(lead.status)}</td>
-            <td style="padding:8px;border-bottom:1px solid #eee;">${escapeHtml(ambassador?.full_name || '—')}</td>
-          </tr>`;
-        })
-        .join('');
+      const groupMap = new Map<string, FollowUpActivityGroup>();
 
-      const bodyHtml = `
-        <p>You have <strong>${due.length}</strong> ambassador lead${due.length === 1 ? '' : 's'} due for follow-up today (${escapeHtml(today)}).</p>
-        <p>Please reach out and update their status on the ambassador outreach dashboard.</p>
-        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:16px;">
-          <thead>
-            <tr style="background:#f1f5f9;text-align:left;">
-              <th style="padding:8px;">Lead</th>
-              <th style="padding:8px;">Phone</th>
-              <th style="padding:8px;">Status</th>
-              <th style="padding:8px;">Ambassador</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+      for (const lead of due) {
+        const ambassador = (lead as { ambassadors?: { full_name?: string | null } | null }).ambassadors;
+        const activity = (
+          lead as {
+            outreach_activities?: {
+              id: string;
+              activity_name: string;
+              activity_type?: string | null;
+              date?: string | null;
+            } | null;
+          }
+        ).outreach_activities;
 
-      await sendOpsAlertEmail(`Ambassador follow-ups due today (${due.length})`, bodyHtml, {
-        title: 'Ambassador lead follow-ups',
-        actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/ambassador-outreach`,
-        actionText: 'Open outreach dashboard',
+        const activityId = activity?.id || lead.outreach_activity_id || null;
+        const groupKey = activityId || 'no-activity';
+        const activityName = activity?.activity_name || 'Leads without outreach activity';
+
+        const existing = groupMap.get(groupKey) || {
+          activityId,
+          activityName,
+          activityType: activity?.activity_type || null,
+          activityDate: formatDisplayDate(activity?.date),
+          ambassadorName: ambassador?.full_name || null,
+          leads: [],
+        };
+
+        const row: FollowUpLeadRow = {
+          id: lead.id,
+          full_name: lead.full_name,
+          phone: lead.phone,
+          email: lead.email,
+          city: lead.city,
+          school: lead.school,
+          course_interest: lead.course_interest,
+          status: lead.status,
+          notes: lead.notes,
+          ambassadorName: ambassador?.full_name || null,
+        };
+
+        existing.leads.push(row);
+        groupMap.set(groupKey, existing);
+      }
+
+      const groups = [...groupMap.values()].sort((a, b) =>
+        a.activityName.localeCompare(b.activityName)
+      );
+
+      const bodyHtml = buildAmbassadorFollowUpReminderBody(today, groups, dashboardUrl);
+
+      await sendOpsAlertEmail(`Ambassador follow-ups due — ${due.length} lead(s)`, bodyHtml, {
+        title: 'Ambassador lead follow-up reminder',
+        actionUrl: dashboardUrl,
+        actionText: 'Review leads in admin',
       });
 
       const ids = due.map((l) => l.id);
