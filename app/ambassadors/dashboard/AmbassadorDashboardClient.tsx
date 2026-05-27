@@ -26,6 +26,7 @@ import {
   Megaphone,
   Loader2,
   Trophy,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -44,6 +45,8 @@ const LEAD_SOURCES = [
   'Friend referral',
   'Event / Community outreach',
 ] as const;
+
+const EVENT_COMMUNITY_OUTREACH_SOURCE = 'Event / Community outreach';
 
 const LEAD_STATUSES = ['Contacted', 'Interested', 'Follow Up Needed', 'Applied', 'Enrolled'] as const;
 
@@ -519,15 +522,22 @@ function LeadForm({
         school: form.school.trim(),
         course_interest: form.course_interest.trim(),
         lead_source: form.lead_source,
-        outreach_activity_id: form.outreach_activity_id || null,
+        outreach_activity_id:
+          form.lead_source === EVENT_COMMUNITY_OUTREACH_SOURCE
+            ? form.outreach_activity_id || null
+            : null,
         status: form.status,
         notes: form.notes?.trim() || null,
         follow_up_date: form.follow_up_date || null,
       };
       if (editingLead) {
+        const updatePayload: Record<string, unknown> = { ...payload };
+        if ((payload.follow_up_date || null) !== (editingLead.follow_up_date || null)) {
+          updatePayload.follow_up_reminder_sent_at = null;
+        }
         const { error: err } = await supabase
           .from('ambassador_leads')
-          .update(payload)
+          .update(updatePayload)
           .eq('id', editingLead.id);
         if (err) throw err;
       } else {
@@ -565,7 +575,7 @@ function LeadForm({
           />
         </div>
         <div>
-          <Label>Email (optional)</Label>
+          <Label>Email</Label>
           <Input
             type="email"
             value={form.email}
@@ -605,7 +615,14 @@ function LeadForm({
           <Label>Lead Source *</Label>
           <Select
             value={form.lead_source}
-            onValueChange={(v) => setForm((f) => ({ ...f, lead_source: v }))}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                lead_source: v,
+                outreach_activity_id:
+                  v === EVENT_COMMUNITY_OUTREACH_SOURCE ? f.outreach_activity_id : '',
+              }))
+            }
             required
           >
             <SelectTrigger className="mt-1 border-gray-300">
@@ -620,25 +637,27 @@ function LeadForm({
             </SelectContent>
           </Select>
         </div>
-        <div>
-          <Label>Outreach Activity (optional)</Label>
-          <Select
-            value={form.outreach_activity_id || 'none'}
-            onValueChange={(v) => setForm((f) => ({ ...f, outreach_activity_id: v === 'none' ? '' : v }))}
-          >
-            <SelectTrigger className="mt-1 border-gray-300">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              {activities.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.activity_name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {form.lead_source === EVENT_COMMUNITY_OUTREACH_SOURCE && (
+          <div>
+            <Label>Outreach Activity</Label>
+            <Select
+              value={form.outreach_activity_id || 'none'}
+              onValueChange={(v) => setForm((f) => ({ ...f, outreach_activity_id: v === 'none' ? '' : v }))}
+            >
+              <SelectTrigger className="mt-1 border-gray-300">
+                <SelectValue placeholder="Select activity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">None</SelectItem>
+                {activities.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.activity_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div>
           <Label>Status *</Label>
           <Select
@@ -657,17 +676,15 @@ function LeadForm({
             </SelectContent>
           </Select>
         </div>
-        {form.status === 'Follow Up Needed' && (
-          <div>
-            <Label>Follow-up Date</Label>
-            <Input
-              type="date"
-              value={form.follow_up_date}
-              onChange={(e) => setForm((f) => ({ ...f, follow_up_date: e.target.value }))}
-              className="mt-1 border-gray-300"
-            />
-          </div>
-        )}
+        <div>
+          <Label>Follow-up Date</Label>
+          <Input
+            type="date"
+            value={form.follow_up_date}
+            onChange={(e) => setForm((f) => ({ ...f, follow_up_date: e.target.value }))}
+            className="mt-1 border-gray-300"
+          />
+        </div>
       </div>
       <div>
         <Label>Notes</Label>
@@ -710,6 +727,16 @@ function LeadsTable({
   const updateStatus = async (leadId: string, status: string) => {
     await supabase.from('ambassador_leads').update({ status }).eq('id', leadId);
     setQuickStatusLeadId(null);
+    onStatusUpdate();
+  };
+
+  const deleteLead = async (leadId: string, leadName: string) => {
+    if (!window.confirm(`Delete lead "${leadName}"? This cannot be undone.`)) return;
+    const { error } = await supabase.from('ambassador_leads').delete().eq('id', leadId);
+    if (error) {
+      window.alert(error.message || 'Could not delete lead.');
+      return;
+    }
     onStatusUpdate();
   };
 
@@ -799,15 +826,26 @@ function LeadsTable({
               <td className="py-3 px-2">{formatDate(lead.created_at)}</td>
               <td className="py-3 px-2">{formatDate(lead.follow_up_date)}</td>
               <td className="py-3 px-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 gap-1"
-                  onClick={() => onEdit(lead.id)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
+                <div className="flex flex-wrap items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => onEdit(lead.id)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => deleteLead(lead.id, lead.full_name)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}
