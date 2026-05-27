@@ -583,10 +583,15 @@ async function createOfflineOperationForEnrollment(
     tracking?: OfflineOnboardingTrackingInput;
   }
 ) {
+  const payPerMonth = Number(input.schedule.payPerMonthXaf || 0);
+  const payMonths = Number(input.schedule.payMonthsCount || 1);
+  const computedFromSchedule = payPerMonth > 0 && payMonths > 0 ? Math.round(payPerMonth * payMonths) : 0;
   const expectedTotal =
-    input.tracking?.packageTotalAmount !== undefined
+    input.tracking?.packageTotalAmount !== undefined && input.tracking.packageTotalAmount > 0
       ? input.tracking.packageTotalAmount
-      : input.tracking?.amountPaid;
+      : computedFromSchedule > 0
+        ? computedFromSchedule
+        : input.tracking?.amountPaid ?? 0;
 
   const { data: inserted, error } = await insertOfflineOperationCompat(admin, {
       agent_name: input.agentName,

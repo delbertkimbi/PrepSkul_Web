@@ -58,7 +58,11 @@ export default function OfflineUserHubClient(props: HubProps) {
 
   const submitSchedule = async (historical: boolean) => {
     setError(null);
-    const err = validateSchedulePeriodState(scheduleState, { historical, requireTutor: !historical });
+    const err = validateSchedulePeriodState(scheduleState, {
+      historical,
+      requireTutor: !historical,
+      historicalMonthOnly: historical,
+    });
     if (err) {
       setError(err);
       return;
@@ -193,7 +197,7 @@ export default function OfflineUserHubClient(props: HubProps) {
   const cards: { id: Panel; title: string; desc: string; show: boolean }[] = [
     { id: 'schedule', title: 'Schedule new period', desc: 'Add sessions for a new billing period', show: true },
     { id: 'child', title: 'Add child learner', desc: 'Link another learner to this parent', show: props.userType === 'parent' },
-    { id: 'import', title: 'Import past period', desc: 'Backfill Jan–Apr style history (no emails)', show: true },
+    { id: 'import', title: 'Import past period', desc: 'Add one card per past month (tutor, subjects, schedule, pay)', show: true },
     { id: 'csv', title: 'CSV import', desc: 'Bulk import multiple historical periods', show: true },
     { id: 'anonymize', title: 'Soft anonymize', desc: 'Remove PII; keep sessions for analytics', show: true },
     { id: 'delete', title: 'Delete user', desc: 'Erase the account; keep session counts + tutor ratings', show: true },
@@ -234,11 +238,8 @@ export default function OfflineUserHubClient(props: HubProps) {
                 setPanel(c.id);
                 setError(null);
                 if (c.id === 'import' && !scheduleState.historicalMonthRecords.length) {
-                  const enabled = scheduleState.daySlots.filter((d) => d.enabled).length;
                   patchSchedule({
-                    historicalMonthRecords: [
-                      defaultHistoricalMonthRecord(enabled, scheduleState.payPerMonth),
-                    ],
+                    historicalMonthRecords: [defaultHistoricalMonthRecord()],
                   });
                 }
               }}
@@ -272,6 +273,7 @@ export default function OfflineUserHubClient(props: HubProps) {
                 showTutorPicker={panel !== 'import'}
                 showLearnerSelect={props.learners.length >= 1 && props.userType === 'parent'}
                 historicalDefaults={panel === 'import'}
+                historicalMonthOnly={panel === 'import'}
               />
               <Button
                 type="button"

@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { computePackageTotalDue } from '@/lib/offline-ops-constants';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -65,6 +66,22 @@ export default function OfflineOpsFormClient() {
   const [nextFollowupAt, setNextFollowupAt] = useState('');
   const [notes, setNotes] = useState('');
 
+  const computedTotalDue = useMemo(
+    () => computePackageTotalDue(payPerMonth, payMonths),
+    [payPerMonth, payMonths]
+  );
+
+  useEffect(() => {
+    if (computedTotalDue > 0) {
+      setPackageTotalAmount(String(computedTotalDue));
+      if (paymentStatus === 'paid') {
+        setAmountPaid(String(computedTotalDue));
+      }
+    } else {
+      setPackageTotalAmount('');
+    }
+  }, [computedTotalDue, paymentStatus]);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
@@ -113,7 +130,7 @@ export default function OfflineOpsFormClient() {
 
     setIsSubmitting(true);
     try {
-      const normalizedPackageTotal = Number(packageTotalAmount || 0);
+      const normalizedPackageTotal = computedTotalDue || Number(packageTotalAmount || 0);
       const normalizedAmountPaid =
         paymentStatus === 'paid' ? normalizedPackageTotal : paymentStatus === 'unpaid' ? 0 : Number(amountPaid || 0);
 
@@ -394,7 +411,14 @@ export default function OfflineOpsFormClient() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label>Payment status</Label>
-              <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+              <Select
+                value={paymentStatus}
+                onValueChange={(status) => {
+                  setPaymentStatus(status);
+                  if (status === 'paid') setAmountPaid(String(computedTotalDue || 0));
+                  if (status === 'unpaid') setAmountPaid('0');
+                }}
+              >
                 <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="unpaid">Unpaid</SelectItem>
@@ -416,7 +440,14 @@ export default function OfflineOpsFormClient() {
             </div>
             <div>
               <Label>Total due (XAF)</Label>
-              <Input type="number" min={0} value={packageTotalAmount} onChange={(e) => setPackageTotalAmount(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
+              <Input
+                type="number"
+                min={0}
+                readOnly
+                value={packageTotalAmount}
+                className="mt-1 border-[#1B2C4F]/20 bg-slate-50 text-slate-800"
+              />
+              <p className="text-[11px] text-slate-500 mt-1">Auto-calculated: pay / month × # pay-months.</p>
             </div>
             {paymentStatus === 'partial' && (
               <div>

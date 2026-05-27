@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CalendarClock, Loader2, X } from 'lucide-react';
 import Link from 'next/link';
+import { buildRescheduleAdminWhatsAppUrl } from '@/lib/reschedule-whatsapp';
 
 type Ctx = {
   session: {
@@ -82,14 +83,30 @@ export default function SessionRescheduleClient({ mode }: { mode: 'tutor' | 'lea
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || 'Failed');
+
+      const session = ctx?.session;
+      if (session) {
+        const waUrl = buildRescheduleAdminWhatsAppUrl({
+          sessionSubject: session.subject,
+          originalDate: session.scheduled_date,
+          originalTime: session.scheduled_time,
+          proposedDate,
+          proposedTime,
+          reason: rescheduleReason.trim(),
+          requesterRole: ctx?.portalRole || mode,
+        });
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      }
+
       setRescheduleReason('');
       setProposedDate('');
       setProposedTime('');
       setModal({
         title: 'Request sent',
         body:
-          j.message ||
-          'We have notified the other participant by email. They can approve or decline from their own link.',
+          (j.message ||
+            'We have notified the other participant by email. They can approve or decline from their own link.') +
+          ' WhatsApp has been opened so you can message PrepSkul admin with the same details.',
       });
       loadContext();
     } catch (e: unknown) {

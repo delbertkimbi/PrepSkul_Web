@@ -30,14 +30,15 @@ export type HistoricalMonthRecord = {
   tutor: TutorPickerValue | null;
   subjectCount: number;
   subjects: string[];
+  daySlots: DaySlot[];
   sessionsPerWeek: string;
+  durationMinutes: string;
   payPerMonth: string;
 };
 
-export function defaultHistoricalMonthRecord(
-  enabledDayCount: number,
-  payPerMonth: string
-): HistoricalMonthRecord {
+export function defaultHistoricalMonthRecord(payPerMonth = ''): HistoricalMonthRecord {
+  const slots = defaultDaySlots();
+  const enabledCount = slots.filter((d) => d.enabled).length;
   const now = new Date();
   return {
     id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
@@ -45,7 +46,9 @@ export function defaultHistoricalMonthRecord(
     tutor: null,
     subjectCount: 1,
     subjects: [''],
-    sessionsPerWeek: String(enabledDayCount || 1),
+    daySlots: slots,
+    sessionsPerWeek: String(Math.max(1, enabledCount)),
+    durationMinutes: '60',
     payPerMonth,
   };
 }
@@ -104,7 +107,9 @@ export function buildSchedulePayload(state: SchedulePeriodFormState, opts?: { hi
   let startMonthLabel = state.startMonthLabel.trim() || null;
   if (opts?.historical && state.historicalMonthRecords[0]) {
     const first = state.historicalMonthRecords[0];
-    startDate = deriveStartDateFromMonthYear(first.monthYear.year, first.monthYear.month, dayTimeSlots);
+    const firstEnabled = first.daySlots.filter((d) => d.enabled);
+    const firstDayTimeSlots = firstEnabled.map((d) => ({ day: d.day, time: d.time }));
+    startDate = deriveStartDateFromMonthYear(first.monthYear.year, first.monthYear.month, firstDayTimeSlots);
     startMonthLabel = formatStartMonthLabel(first.monthYear.year, first.monthYear.month, startDate);
   }
   return {
@@ -130,12 +135,10 @@ export function buildSchedulePayload(state: SchedulePeriodFormState, opts?: { hi
 }
 
 export function buildHistoricalMonthlyPayloads(state: SchedulePeriodFormState) {
-  const enabled = state.daySlots.filter((d) => d.enabled);
-  const dayTimeSlots = enabled.map((d) => ({ day: d.day, time: d.time }));
-  const fallbackSubjects = state.subjects.map((s) => s.trim()).filter(Boolean);
-
   return state.historicalMonthRecords.map((record) => {
     const cleanedSubjects = record.subjects.map((s) => s.trim()).filter(Boolean);
+    const enabled = record.daySlots.filter((d) => d.enabled);
+    const dayTimeSlots = enabled.map((d) => ({ day: d.day, time: d.time }));
     const startDate = deriveStartDateFromMonthYear(
       record.monthYear.year,
       record.monthYear.month,
@@ -145,10 +148,10 @@ export function buildHistoricalMonthlyPayloads(state: SchedulePeriodFormState) {
       weeks: 4,
       sessionsPerWeek: Number(record.sessionsPerWeek || enabled.length || 1),
       dayTimeSlots,
-      durationMinutes: Number(state.durationMinutes),
+      durationMinutes: Number(record.durationMinutes || state.durationMinutes || 60),
       startDate,
       deliveryMode: state.deliveryMode,
-      subjects: cleanedSubjects.length ? cleanedSubjects : fallbackSubjects,
+      subjects: cleanedSubjects,
       meetLink: state.meetLink.trim() || null,
       onsiteLocation: state.onsiteLocation.trim() || null,
       onsitePhotoUrl: state.onsitePhotoUrl.trim() || null,
@@ -162,13 +165,18 @@ export function buildHistoricalMonthlyPayloads(state: SchedulePeriodFormState) {
 
 export function validateSchedulePeriodState(
   state: SchedulePeriodFormState,
-  opts?: { requireTutor?: boolean; historical?: boolean }
+  opts?: { requireTutor?: boolean; historical?: boolean; historicalMonthOnly?: boolean }
 ): string | null {
-  if (opts?.requireTutor !== false && !state.tutor?.tutorUserId) return 'Select a tutor.';
-  const { cleanedSubjects, enabled } = buildSchedulePayload(state, { historical: opts?.historical });
-  if (!cleanedSubjects.length) return 'Add at least one subject.';
-  if (!enabled.length) return 'Select at least one session day.';
-  if (!opts?.historical && !state.startDate) return 'Start date is required.';
+  const historicalMonthOnly = opts?.historicalMonthOnly ?? false;
+
+  if (!historicalMonthOnly) {
+    if (opts?.requireTutor !== false && !state.tutor?.tutorUserId) return 'Select a tutor.';
+    const { cleanedSubjects, enabled } = buildSchedulePayload(state, { historical: opts?.historical });
+    if (!cleanedSubjects.length) return 'Add at least one subject.';
+    if (!enabled.length) return 'Select at least one session day.';
+    if (!opts?.historical && !state.startDate) return 'Start date is required.';
+  }
+
   if (opts?.historical) {
     if (!state.historicalMonthRecords.length) return 'Add at least one month of past data.';
     for (let i = 0; i < state.historicalMonthRecords.length; i++) {
@@ -176,9 +184,12 @@ export function validateSchedulePeriodState(
       if (!rec.tutor?.tutorUserId) return `Month ${i + 1}: select a tutor.`;
       const subs = rec.subjects.map((s) => s.trim()).filter(Boolean);
       if (!subs.length) return `Month ${i + 1}: add at least one subject.`;
+      const enabled = rec.daySlots.filter((d) => d.enabled);
+      if (!enabled.length) return `Month ${i + 1}: select at least one session day and time.`;
       if (!rec.payPerMonth?.trim()) return `Month ${i + 1}: enter pay per month (XAF).`;
     }
   }
+
   if ((state.deliveryMode === 'online' || state.deliveryMode === 'hybrid') && !state.meetLink.trim()) {
     return 'Google Meet link is required for online/hybrid.';
   }
@@ -195,13 +206,17 @@ export default function OfflineSchedulePeriodFields({
   showTutorPicker = true,
   showLearnerSelect = false,
   historicalDefaults = false,
+  historicalMonthOnly = false,
 }: {
   state: SchedulePeriodFormState;
   onChange: (patch: Partial<SchedulePeriodFormState>) => void;
   learners?: Array<{ id: string; full_name?: string | null }>;
   showTutorPicker?: boolean;
   showLearnerSelect?: boolean;
+  /** Show per-month blocks (import / CSV helper). */
   historicalDefaults?: boolean;
+  /** Import past period: only learner + month cards + shared delivery (no global schedule fields). */
+  historicalMonthOnly?: boolean;
 }) {
   const opState = state.operationState;
   const enabledDayCount = useMemo(
@@ -218,22 +233,25 @@ export default function OfflineSchedulePeriodFields({
 
   const handleDaySlotsChange = (daySlots: DaySlot[]) => {
     const enabledCount = daySlots.filter((d) => d.enabled).length;
-    const next: Partial<SchedulePeriodFormState> = {
+    onChange({
       daySlots,
       sessionsPerWeek: String(Math.max(1, enabledCount)),
-    };
-    if (historicalDefaults && state.historicalMonthRecords.length) {
-      next.historicalMonthRecords = state.historicalMonthRecords.map((r) => ({
-        ...r,
-        sessionsPerWeek: String(enabledCount || 1),
-      }));
-    }
-    onChange(next);
+    });
   };
+
+  const handleHistoricalDaySlotsChange = (recordId: string, daySlots: DaySlot[]) => {
+    const enabledCount = daySlots.filter((d) => d.enabled).length;
+    patchHistoricalRecord(recordId, {
+      daySlots,
+      sessionsPerWeek: String(Math.max(1, enabledCount)),
+    });
+  };
+
+  const showStandardScheduleFields = !historicalMonthOnly;
 
   return (
     <div className="space-y-5">
-      {showTutorPicker && (
+      {showStandardScheduleFields && showTutorPicker && (
         <div>
           <Label className="text-slate-700 font-medium">Tutor *</Label>
           <div className="mt-2">
@@ -260,68 +278,74 @@ export default function OfflineSchedulePeriodFields({
         </div>
       )}
 
-      <SubjectListInput
-        count={state.subjectCount}
-        subjects={state.subjects}
-        onCountChange={(n) => onChange({ subjectCount: n })}
-        onSubjectsChange={(s) => onChange({ subjects: s })}
-      />
-
-      <PerDaySchedulePanel slots={state.daySlots} onChange={handleDaySlotsChange} />
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {!historicalDefaults && (
-          <div>
-            <Label>Weeks</Label>
-            <Input
-              type="number"
-              min={1}
-              value={state.weeks}
-              onChange={(e) => onChange({ weeks: e.target.value })}
-              className="mt-1 border-[#1B2C4F]/20"
-            />
-          </div>
-        )}
-        {!historicalDefaults && (
-          <div>
-            <Label>Sessions / week</Label>
-            <Input
-              type="number"
-              min={1}
-              value={String(enabledDayCount || state.sessionsPerWeek)}
-              readOnly
-              className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
-            />
-            <p className="text-[11px] text-slate-500 mt-1">Auto-filled from selected session days.</p>
-          </div>
-        )}
-        <div>
-          <Label>Duration (min)</Label>
-          <Input
-            type="number"
-            value={state.durationMinutes}
-            onChange={(e) => onChange({ durationMinutes: e.target.value })}
-            className="mt-1 border-[#1B2C4F]/20"
+      {showStandardScheduleFields && (
+        <>
+          <SubjectListInput
+            count={state.subjectCount}
+            subjects={state.subjects}
+            onCountChange={(n) => onChange({ subjectCount: n })}
+            onSubjectsChange={(s) => onChange({ subjects: s })}
           />
-        </div>
-        {!historicalDefaults && (
-          <div>
-            <Label>Start date *</Label>
-            <Input
-              type="date"
-              value={state.startDate}
-              onChange={(e) => onChange({ startDate: e.target.value })}
-              className="mt-1 border-[#1B2C4F]/20"
-            />
+
+          <PerDaySchedulePanel slots={state.daySlots} onChange={handleDaySlotsChange} />
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {!historicalDefaults && (
+              <div>
+                <Label>Weeks</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={state.weeks}
+                  onChange={(e) => onChange({ weeks: e.target.value })}
+                  className="mt-1 border-[#1B2C4F]/20"
+                />
+              </div>
+            )}
+            {!historicalDefaults && (
+              <div>
+                <Label>Sessions / week</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={String(enabledDayCount || state.sessionsPerWeek)}
+                  readOnly
+                  className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">Auto-filled from selected session days.</p>
+              </div>
+            )}
+            <div>
+              <Label>Duration (min)</Label>
+              <Input
+                type="number"
+                value={state.durationMinutes}
+                onChange={(e) => onChange({ durationMinutes: e.target.value })}
+                className="mt-1 border-[#1B2C4F]/20"
+              />
+            </div>
+            {!historicalDefaults && (
+              <div>
+                <Label>Start date *</Label>
+                <Input
+                  type="date"
+                  value={state.startDate}
+                  onChange={(e) => onChange({ startDate: e.target.value })}
+                  className="mt-1 border-[#1B2C4F]/20"
+                />
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {historicalDefaults && (
         <div className="rounded-md border border-[#1B2C4F]/15 bg-slate-50 p-4 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-slate-600 max-w-xl">
-              Add each past month separately — tutor, subjects, and pay for that month. Each month is stored as its own billing period (4 weeks, evaluated sessions) so analytics match the correct month.
+              {historicalMonthOnly
+                ? 'Add each past month on its own — billing month, tutor, subjects, weekly schedule, and pay. Nothing outside these month cards is required.'
+                : 'Add each past month separately — tutor, subjects, and pay for that month. Each month is stored as its own billing period (4 weeks, evaluated sessions).'}
             </p>
             <button
               type="button"
@@ -330,7 +354,7 @@ export default function OfflineSchedulePeriodFields({
                 onChange({
                   historicalMonthRecords: [
                     ...state.historicalMonthRecords,
-                    defaultHistoricalMonthRecord(enabledDayCount, state.payPerMonth),
+                    defaultHistoricalMonthRecord(),
                   ],
                 })
               }
@@ -383,7 +407,16 @@ export default function OfflineSchedulePeriodFields({
                     onCountChange={(n) => patchHistoricalRecord(record.id, { subjectCount: n })}
                     onSubjectsChange={(s) => patchHistoricalRecord(record.id, { subjects: s })}
                   />
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label className="text-slate-700 font-medium">Session days & times *</Label>
+                    <div className="mt-2">
+                      <PerDaySchedulePanel
+                        slots={record.daySlots}
+                        onChange={(slots) => handleHistoricalDaySlotsChange(record.id, slots)}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-3">
                     <div>
                       <Label>Sessions / week</Label>
                       <Input
@@ -393,6 +426,18 @@ export default function OfflineSchedulePeriodFields({
                         value={record.sessionsPerWeek}
                         onChange={(e) =>
                           patchHistoricalRecord(record.id, { sessionsPerWeek: e.target.value })
+                        }
+                        className="mt-1 border-[#1B2C4F]/20"
+                      />
+                    </div>
+                    <div>
+                      <Label>Duration (min)</Label>
+                      <Input
+                        type="number"
+                        min={15}
+                        value={record.durationMinutes}
+                        onChange={(e) =>
+                          patchHistoricalRecord(record.id, { durationMinutes: e.target.value })
                         }
                         className="mt-1 border-[#1B2C4F]/20"
                       />
@@ -425,60 +470,62 @@ export default function OfflineSchedulePeriodFields({
         onPhotoUrlChange={(onsitePhotoUrl) => onChange({ onsitePhotoUrl })}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {!historicalDefaults && (
-          <div>
-            <Label>Pay / month (XAF)</Label>
-            <Input
-              type="number"
-              value={state.payPerMonth}
-              onChange={(e) => onChange({ payPerMonth: e.target.value })}
-              className="mt-1 border-[#1B2C4F]/20"
-            />
-          </div>
-        )}
-        {!historicalDefaults && (
-          <div>
-            <Label>Pay months</Label>
-            <Input
-              type="number"
-              min={1}
-              value={state.payMonths}
-              onChange={(e) => onChange({ payMonths: e.target.value })}
-              className="mt-1 border-[#1B2C4F]/20"
-            />
-          </div>
-        )}
-        {!historicalDefaults && (
-          <div>
-            <Label>Start month label</Label>
-            <Input
-              value={state.startMonthLabel}
-              onChange={(e) => onChange({ startMonthLabel: e.target.value })}
-              placeholder="e.g. Jan (12)"
-              className="mt-1 border-[#1B2C4F]/20"
-            />
-          </div>
-        )}
-        {!historicalDefaults && (
-          <div>
-            <Label>Operation state</Label>
-            <Select
-              value={opState}
-              onValueChange={(v) => onChange({ operationState: v as SchedulePeriodFormState['operationState'] })}
-            >
-              <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="paused">Paused</SelectItem>
-                <SelectItem value="stopped">Stopped</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-      </div>
+      {showStandardScheduleFields && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {!historicalDefaults && (
+            <div>
+              <Label>Pay / month (XAF)</Label>
+              <Input
+                type="number"
+                value={state.payPerMonth}
+                onChange={(e) => onChange({ payPerMonth: e.target.value })}
+                className="mt-1 border-[#1B2C4F]/20"
+              />
+            </div>
+          )}
+          {!historicalDefaults && (
+            <div>
+              <Label>Pay months</Label>
+              <Input
+                type="number"
+                min={1}
+                value={state.payMonths}
+                onChange={(e) => onChange({ payMonths: e.target.value })}
+                className="mt-1 border-[#1B2C4F]/20"
+              />
+            </div>
+          )}
+          {!historicalDefaults && (
+            <div>
+              <Label>Start month label</Label>
+              <Input
+                value={state.startMonthLabel}
+                onChange={(e) => onChange({ startMonthLabel: e.target.value })}
+                placeholder="e.g. Jan (12)"
+                className="mt-1 border-[#1B2C4F]/20"
+              />
+            </div>
+          )}
+          {!historicalDefaults && (
+            <div>
+              <Label>Operation state</Label>
+              <Select
+                value={opState}
+                onValueChange={(v) => onChange({ operationState: v as SchedulePeriodFormState['operationState'] })}
+              >
+                <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="paused">Paused</SelectItem>
+                  <SelectItem value="stopped">Stopped</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
