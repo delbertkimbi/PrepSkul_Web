@@ -200,7 +200,7 @@ async function scheduleSinglePeriodForExistingUser(
     isHistoricalImport: isHistorical,
     offlineOperationId: ctx.offlineOperationId,
     offlineRunId: ctx.run?.id || null,
-    sendWelcomeEmail: body.sendWelcomeEmail ?? !isHistorical,
+    sendWelcomeEmail: body.sendWelcomeEmail ?? false,
     skipReminders: isHistorical,
   });
 

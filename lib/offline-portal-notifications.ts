@@ -3,14 +3,6 @@ import { sendOpsAlertEmail } from '@/lib/ops-email';
 import { sendCustomEmail } from '@/lib/notifications';
 import { buildBrandedEmailHtml, escapeHtml } from '@/lib/email_templates/branded-layout';
 
-function escapeHtml(s: string) {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
 function waLink(phoneDigits: string, text: string) {
   const d = phoneDigits.replace(/\D/g, '');
   if (!d) return null;
@@ -30,19 +22,26 @@ function familyNotifyProfile(
   return null;
 }
 
+function formatWhen(scheduledDate?: string | null, scheduledTime?: string | null) {
+  return [scheduledDate, scheduledTime ? String(scheduledTime).slice(0, 5) : null].filter(Boolean).join(' ') || 'your session';
+}
+
 export async function notifyOpsLearnerFeedbackSubmitted(opts: {
   sessionId: string;
   rating: number;
   comment: string;
+  learnerName?: string | null;
+  tutorName?: string | null;
 }) {
   const html = `
-    <p>A learner left feedback on an offline session. Please review when you can.</p>
+    <p>A learner left feedback on an offline session.</p>
     <div class="detail-box">
-      <p><strong>Session ID:</strong> ${escapeHtml(opts.sessionId)}</p>
+      <p><strong>Learner:</strong> ${escapeHtml(opts.learnerName || 'Learner')}</p>
+      <p><strong>Tutor:</strong> ${escapeHtml(opts.tutorName || 'Tutor')}</p>
       <p><strong>Rating:</strong> ${opts.rating} / 5</p>
       <p><strong>Comment:</strong> ${escapeHtml(opts.comment || '—')}</p>
     </div>`;
-  return sendOpsAlertEmail(`Learner feedback: session ${opts.sessionId.slice(0, 8)}`, html, {
+  return sendOpsAlertEmail('New learner feedback', html, {
     title: 'New learner feedback',
     actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops`,
     actionText: 'Review in admin',
@@ -56,18 +55,21 @@ export async function notifyOpsTutorSessionReportSubmitted(opts: {
   topicsCovered?: string | null;
   learnerEngagement?: string | null;
   issues?: string | null;
+  tutorName?: string | null;
+  learnerName?: string | null;
 }) {
   const html = `
-    <p>A tutor submitted a session report through the portal.</p>
+    <p>A tutor submitted a session report.</p>
     <div class="detail-box">
-      <p><strong>Session ID:</strong> ${escapeHtml(opts.sessionId)}</p>
+      <p><strong>Tutor:</strong> ${escapeHtml(opts.tutorName || 'Tutor')}</p>
+      <p><strong>Learner:</strong> ${escapeHtml(opts.learnerName || 'Learner')}</p>
       <p><strong>Reported attended:</strong> ${opts.attended ? 'Yes' : 'No'}</p>
       <p><strong>Topics covered:</strong> ${escapeHtml(opts.topicsCovered || '—')}</p>
       <p><strong>Learner engagement:</strong> ${escapeHtml(opts.learnerEngagement || '—')}</p>
       <p><strong>Issues noted:</strong> ${escapeHtml(opts.issues || '—')}</p>
     </div>
-    <p style="font-size:13px;color:#64748b;">Family/tutor confirmation emails go out after you mark attendance in admin.</p>`;
-  return sendOpsAlertEmail(`Tutor report submitted: session ${opts.sessionId.slice(0, 8)}`, html, {
+    <p style="font-size:13px;color:#64748b;">Family and tutor confirmation emails go out after you mark attendance in admin.</p>`;
+  return sendOpsAlertEmail('Tutor session report submitted', html, {
     title: 'Tutor session report',
     actionUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops`,
     actionText: 'Open offline ops',
@@ -82,44 +84,62 @@ export async function notifyPartiesAfterAdminMarkedAttendance(opts: {
   scheduledTime?: string | null;
   subject?: string | null;
 }) {
-  if (!opts.attended) {
-    const html = `<p>Session <code>${escapeHtml(opts.sessionId)}</code> was marked <strong>not attended</strong> by an admin.</p>`;
-    const ops = await sendOpsAlertEmail(`Session not attended (admin): ${opts.sessionId.slice(0, 8)}`, html);
-    return { recipientEmails: [] as string[], opsEmails: ops.ok && ops.to ? [...ops.to] : [] };
-  }
-
   const supabase = getSupabaseAdmin();
   const { data: session } = await supabase
     .from('individual_sessions')
     .select('id, tutor_id, learner_id, parent_id, scheduled_date, scheduled_time, subject')
     .eq('id', opts.sessionId)
     .maybeSingle();
+
+  const ids = session
+    ? ([session.tutor_id, session.learner_id, session.parent_id].filter(Boolean) as string[])
+    : [];
+  const { data: profiles } = ids.length
+    ? await supabase.from('profiles').select('id, full_name, email, phone_number').in('id', ids)
+    : { data: [] as Array<{ id: string; full_name?: string | null; email?: string | null; phone_number?: string | null }> };
+  const byId = new Map((profiles || []).map((p) => [p.id, p]));
+
+  const tutor = session ? byId.get(session.tutor_id) : null;
+  const familyRecipient = session ? familyNotifyProfile(session, byId) : null;
+  const learner = session?.learner_id ? byId.get(session.learner_id) : null;
+  const when = formatWhen(opts.scheduledDate ?? session?.scheduled_date, opts.scheduledTime ?? session?.scheduled_time);
+  const subjLine = opts.subject || session?.subject || 'PrepSkul session';
+
+  if (!opts.attended) {
+    const html = `
+      <p>A session was marked <strong>not attended</strong> in admin.</p>
+      <ul>
+        <li><strong>Learner:</strong> ${escapeHtml(learner?.full_name || familyRecipient?.full_name || '—')}</li>
+        <li><strong>Tutor:</strong> ${escapeHtml(tutor?.full_name || '—')}</li>
+        <li><strong>When:</strong> ${escapeHtml(when)}</li>
+        <li><strong>Subject:</strong> ${escapeHtml(subjLine)}</li>
+      </ul>`;
+    const ops = await sendOpsAlertEmail('Session marked not attended', html);
+    return { recipientEmails: [] as string[], opsEmails: ops.ok && ops.to ? [...ops.to] : [] };
+  }
+
   if (!session) return { recipientEmails: [] as string[], opsEmails: [] as string[] };
-
-  const ids = [session.tutor_id, session.learner_id, session.parent_id].filter(Boolean) as string[];
-  const { data: profiles } = await supabase.from('profiles').select('id, full_name, email, phone_number').in('id', ids);
-  const byId = new Map((profiles || []).map((p: any) => [p.id, p]));
-
-  const tutor = byId.get(session.tutor_id);
-  const familyRecipient = familyNotifyProfile(session, byId);
-
-  const when = [session.scheduled_date, session.scheduled_time].filter(Boolean).join(' ') || 'your session';
-  const subjLine = session.subject || 'PrepSkul session';
 
   const emailsSent: string[] = [];
 
   if (tutor?.email) {
-    const body = `<p>Hi ${escapeHtml(tutor.full_name || 'Tutor')},</p>
-      <p>An admin has confirmed attendance for your <strong>${escapeHtml(subjLine)}</strong> session scheduled for <strong>${escapeHtml(when)}</strong>.</p>
-      <p>Thank you for teaching with PrepSkul.</p>`;
+    const body = buildBrandedEmailHtml({
+      recipientName: tutor.full_name || 'Tutor',
+      title: 'Session confirmed',
+      bodyHtml: `<p>Thank you — we've confirmed attendance for your <strong>${escapeHtml(subjLine)}</strong> session on <strong>${escapeHtml(when)}</strong>.</p>
+        <p>We appreciate you teaching with PrepSkul.</p>`,
+    });
     const r = await sendCustomEmail(tutor.email, tutor.full_name || 'Tutor', 'Session attendance confirmed – PrepSkul', body);
     if (r.success) emailsSent.push(tutor.email);
   }
 
   if (familyRecipient?.email) {
-    const body = `<p>Hi ${escapeHtml(familyRecipient.full_name || 'there')},</p>
-      <p>An admin has confirmed that your <strong>${escapeHtml(subjLine)}</strong> session (${escapeHtml(when)}) took place as scheduled.</p>
-      <p>If you have any questions, reply to this email or contact PrepSkul support.</p>`;
+    const body = buildBrandedEmailHtml({
+      recipientName: familyRecipient.full_name || 'there',
+      title: 'Session confirmed',
+      bodyHtml: `<p>We've confirmed that your <strong>${escapeHtml(subjLine)}</strong> session on <strong>${escapeHtml(when)}</strong> took place as scheduled.</p>
+        <p>If you have any questions, just reply to this email — we're here to help.</p>`,
+    });
     const r = await sendCustomEmail(
       familyRecipient.email,
       familyRecipient.full_name || 'Learner',
@@ -130,16 +150,14 @@ export async function notifyPartiesAfterAdminMarkedAttendance(opts: {
   }
 
   const opsHtml = `
-    <p>An admin marked session <strong>${escapeHtml(opts.sessionId)}</strong> as <strong>attended / completed</strong>.</p>
+    <p>An admin confirmed session attendance.</p>
     <ul>
-      <li>Subject: ${escapeHtml(subjLine)}</li>
-      <li>When: ${escapeHtml(when)}</li>
-      <li>Tutor email: ${escapeHtml(tutor?.email || '—')}</li>
-      <li>Family email: ${escapeHtml(familyRecipient?.email || '—')}</li>
-    </ul>
-    <p>Emails attempted to recipients: ${emailsSent.length ? emailsSent.map(escapeHtml).join(', ') : 'none (missing profile emails or send failed)'}</p>
-  `;
-  const ops = await sendOpsAlertEmail(`Admin confirmed attendance: ${opts.sessionId.slice(0, 8)}`, opsHtml);
+      <li><strong>Learner:</strong> ${escapeHtml(learner?.full_name || familyRecipient?.full_name || '—')}</li>
+      <li><strong>Tutor:</strong> ${escapeHtml(tutor?.full_name || '—')}</li>
+      <li><strong>When:</strong> ${escapeHtml(when)}</li>
+      <li><strong>Subject:</strong> ${escapeHtml(subjLine)}</li>
+    </ul>`;
+  const ops = await sendOpsAlertEmail('Session attendance confirmed', opsHtml);
 
   const opsEmails = ops.ok && ops.to ? [...ops.to] : [];
   return { recipientEmails: emailsSent, opsEmails };
@@ -169,10 +187,12 @@ export async function sendAdminFollowUpToParty(opts: {
   const { data: profile } = await supabase.from('profiles').select('id, full_name, email, phone_number').eq('id', targetId).maybeSingle();
   if (!profile?.email) return { ok: false as const, error: 'Recipient has no email on file' };
 
-  const html = `<p>Hi ${escapeHtml(profile.full_name || '')},</p>
-    <p>${escapeHtml(opts.message).replace(/\n/g, '<br/>')}</p>
-    <hr/><p style="font-size:12px;color:#666">Session ID: ${escapeHtml(opts.sessionId)}<br/>
-    Sent by PrepSkul admin${opts.adminName ? `: ${escapeHtml(opts.adminName)}` : ''}.</p>`;
+  const html = buildBrandedEmailHtml({
+    recipientName: profile.full_name || '',
+    title: 'Message from PrepSkul',
+    bodyHtml: `<p>${escapeHtml(opts.message).replace(/\n/g, '<br/>')}</p>
+      <p style="font-size:12px;color:#666;margin-top:20px;">Sent by PrepSkul${opts.adminName ? ` (${escapeHtml(opts.adminName)})` : ''}.</p>`,
+  });
 
   const send = await sendCustomEmail(profile.email, profile.full_name || 'PrepSkul member', opts.subject, html);
   if (!send.success) return { ok: false as const, error: send.error || 'Email failed' };
@@ -199,12 +219,12 @@ export async function sendAdminTriggeredSessionReminder(opts: {
     .from('profiles')
     .select('id, full_name, email')
     .in('id', ids);
-  const byId = new Map((profiles || []).map((p: any) => [p.id, p]));
+  const byId = new Map((profiles || []).map((p) => [p.id, p]));
 
   const tutor = byId.get(session.tutor_id);
   const family = familyNotifyProfile(session, byId);
 
-  const when = [session.scheduled_date, session.scheduled_time].filter(Boolean).join(' ') || 'scheduled time';
+  const when = formatWhen(session.scheduled_date, session.scheduled_time);
   const subjectName = session.subject || 'PrepSkul session';
 
   const sentTo: string[] = [];
@@ -213,9 +233,9 @@ export async function sendAdminTriggeredSessionReminder(opts: {
     buildBrandedEmailHtml({
       recipientName: name,
       title: 'Session reminder',
-      bodyHtml: `<p>Our team wanted to remind you about your upcoming <strong>${escapeHtml(subjectName)}</strong> session.</p>
+      bodyHtml: `<p>Just a friendly reminder about your upcoming <strong>${escapeHtml(subjectName)}</strong> session.</p>
         <div class="detail-box"><p><strong>When:</strong> ${escapeHtml(when)}</p></div>
-        <p>Please be ready to join on time. If you have any trouble, reply to us on WhatsApp and we'll help.</p>`,
+        <p>Please be ready to join on time. If you need help, reply to us on WhatsApp and we'll assist you.</p>`,
     });
 
   if (tutor?.email) {

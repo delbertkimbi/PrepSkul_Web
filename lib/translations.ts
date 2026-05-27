@@ -71,12 +71,33 @@ export const translations = {
         title: "Ready to Excel in Your Studies?",
         subtitle: "Join hundreds of students across Cameroon who are achieving their academic dreams with personalized tutoring from PrepSkul. Start your journey to success today.",
         button: "Start Learning"
-      }
+      },
+      examAccelerator: {
+        badge: "National Impact Initiative",
+        title: "PrepSkul Exam Accelerator Program",
+        subtitle:
+          "A free two-week nationwide revision program designed to help O-Level and A-Level candidates master difficult concepts, build confidence, and prepare strategically for the 2025/2026 GCE examinations.",
+        stats: {
+          learners: { value: "500+", label: "Learners Empowered" },
+          reach: { value: "Nationwide", label: "Across Cameroon" },
+          duration: { value: "2 Weeks", label: "Intensive Program" },
+          cost: { value: "100% Free", label: "No Cost to Students" },
+        },
+        storyTitle: "Turning Exam Anxiety into Academic Confidence",
+        storyP1:
+          "Launched in March 2026, this program was a strategic initiative to support examination candidates across Cameroon. It simplified complex topics, provided structured revision guidance, and expanded PrepSkul’s national visibility.",
+        storyP2:
+          "Beyond exam preparation, it demonstrated the real impact of technology-enabled education and helped thousands discover PrepSkul’s mission of connecting learners with trusted tutors.",
+        getStarted: "Get Started",
+        imageAlt1: "Students participating in the Exam Accelerator Program",
+        imageAlt2: "Learners engaged during the Exam Accelerator Program",
+        logoAlt: "PrepSkul Exam Accelerator Program logo",
+      },
     },
     
     // Testimonials
     testimonials: {
-      title: "What PEAP Participants Say",
+      title: "What Exam Accelerator Participants Say",
       subtitle: "Success stories from students and parents who joined the PrepSkul Exam Accelerator Program.",
       items: [
         {
@@ -103,7 +124,7 @@ export const translations = {
         {
           name: "Grace Mbah",
           role: "Coding Student",
-          content: "I never thought I could learn to code, but my PEAP tutor made it fun and easy to understand. Now I'm building my own websites!",
+          content: "I never thought I could learn to code, but my tutor made it fun and easy to understand. Now I'm building my own websites!",
           rating: 5,
           image: "/young-african-female-tech-student.jpg"
         }
@@ -660,39 +681,64 @@ export const translations = {
         title: "Prêt à Exceller dans Vos Études ?",
         subtitle: "Rejoignez des centaines d'étudiants à travers le Cameroun qui réalisent leurs rêves académiques avec le tutorat personnalisé de PrepSkul. Commencez votre parcours vers le succès dès aujourd'hui.",
         button: "Commencer à Apprendre"
-      }
+      },
+      examAccelerator: {
+        badge: "Initiative d'impact national",
+        title: "Programme d'accélération des examens PrepSkul",
+        subtitle:
+          "Un programme national gratuit de révision sur deux semaines, conçu pour aider les candidats au O-Level et A-Level à maîtriser les concepts difficiles, gagner en confiance et se préparer stratégiquement aux examens du GCE 2025/2026.",
+        stats: {
+          learners: { value: "500+", label: "Apprenants accompagnés" },
+          reach: { value: "National", label: "À travers le Cameroun" },
+          duration: { value: "2 semaines", label: "Programme intensif" },
+          cost: { value: "100 % gratuit", label: "Sans frais pour les élèves" },
+        },
+        storyTitle: "Transformer l'anxiété des examens en confiance académique",
+        storyP1:
+          "Lancé en mars 2026, ce programme était une initiative stratégique pour accompagner les candidats aux examens à travers le Cameroun. Il a simplifié les sujets complexes, offert un guide de révision structuré et renforcé la visibilité nationale de PrepSkul.",
+        storyP2:
+          "Au-delà de la préparation aux examens, il a démontré l'impact réel de l'éducation assistée par la technologie et a permis à des milliers de personnes de découvrir la mission de PrepSkul : connecter les apprenants à des tuteurs de confiance.",
+        getStarted: "Commencer",
+        imageAlt1: "Élèves participant au programme d'accélération des examens",
+        imageAlt2: "Apprenants engagés pendant le programme d'accélération des examens",
+        logoAlt: "Logo du programme d'accélération des examens PrepSkul",
+      },
     },
     
     // Testimonials
     testimonials: {
-      title: "Ce que Disent Nos Apprenants",
-      subtitle: "Des histoires de réussite de nos étudiants et parents.",
+      title: "Ce que disent les participants au programme",
+      subtitle: "Témoignages d'élèves et de parents ayant rejoint le programme d'accélération des examens PrepSkul.",
       items: [
         {
-          name: "Amina Njoya",
-          role: "Étudiante, Forme 5",
-          content: "PrepSkul a changé ma vie ! Mon tuteur de mathématiques m'a aidée à passer de l'échec à un A. Plus que cela, ils ont cru en moi quand je ne croyais pas en moi-même.",
+          name: "Fongoh Raissa",
+          role: "Élève, Upper Sixth",
+          content:
+            "J'apprécie sincèrement le cours d'aujourd'hui. J'avais du mal à comprendre ce sujet depuis des mois, mais votre explication l'a rendu incroyablement clair et facile à saisir. Votre patience, la façon dont vous avez simplifié les concepts et vos encouragements comptent beaucoup pour moi. Merci beaucoup.",
           rating: 5,
           image: "/young-african-female-student-smiling.jpg"
         },
         {
           name: "Marie Fotso",
           role: "Parent",
-          content: "En tant que parent, je suis si reconnaissante pour PrepSkul. La confiance de mon fils a énormément grandi, et ses notes se sont améliorées dans toutes ses matières de classe 5. Les tuteurs se soucient vraiment.",
+          content:
+            "En tant que parent, je suis très reconnaissante envers PrepSkul. La confiance de mon fils a énormément grandi et ses notes se sont améliorées dans toutes ses matières de classe 5. Les tuteurs se soucient vraiment des élèves.",
           rating: 5,
           image: "/african-mother-professional.jpg"
         },
         {
           name: "Emmanuel Tabi",
-          role: "Étudiant, Upper Sixth",
-          content: "La préparation aux examens était incroyable. Mon tuteur m'a donné des stratégies qui ont fonctionné, et j'ai réussi mes A-levels avec brio. Maintenant je vais à l'université !",
+          role: "Élève, Upper Sixth",
+          content:
+            "Le programme d'accélération des examens était formidable. Mon tuteur m'a donné des stratégies qui ont fonctionné, et j'ai réussi mes A-levels avec succès. Maintenant je pars à l'université !",
           rating: 5,
           image: "/young-african-male-student-confident.jpg"
         },
         {
           name: "Grace Mbah",
-          role: "Étudiante en Programmation",
-          content: "Je n'aurais jamais pensé pouvoir apprendre à programmer, mais mon tuteur PrepSkul a rendu cela amusant et facile à comprendre. Maintenant je construis mes propres sites web !",
+          role: "Élève en programmation",
+          content:
+            "Je n'aurais jamais pensé pouvoir apprendre à programmer, mais mon tuteur a rendu cela amusant et facile à comprendre. Maintenant je crée mes propres sites web !",
           rating: 5,
           image: "/young-african-female-tech-student.jpg"
         }

@@ -76,6 +76,11 @@ function statusBadgeClass(status?: string | null) {
   return 'bg-white text-[#1B2C4F] border-[#1B2C4F]/20';
 }
 
+function sessionNeedsAdminReview(s: SessionInsight) {
+  const st = (s.status || '').toLowerCase();
+  return !['evaluated', 'completed', 'not_attended'].includes(st);
+}
+
 const btnBase =
   'inline-flex items-center justify-center min-h-[40px] px-4 py-2 text-sm font-semibold rounded-md border shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -165,33 +170,13 @@ export default function OfflineOpsDetailClient({
     return Math.max(0, total - Number(form.amount_paid || 0));
   }, [form.amount_paid, form.expected_total_amount]);
 
-  const nextSessionForAdmin = useMemo(() => {
-    const sorted = [...sessionState].sort((a, b) => {
-      const da = new Date(`${a.scheduled_date || ''}T${a.scheduled_time || '00:00:00'}`).getTime();
-      const db = new Date(`${b.scheduled_date || ''}T${b.scheduled_time || '00:00:00'}`).getTime();
-      return da - db;
-    });
-    const pending = sorted.filter((s) => {
-      const st = (s.status || '').toLowerCase();
-      return !['evaluated', 'completed'].includes(st);
-    });
-    return pending.length ? [pending[0]] : [];
-  }, [sessionState]);
-
   const displaySessions = useMemo(() => {
     const sorted = [...sessionState].sort((a, b) => {
       const da = `${a.scheduled_date || ''}T${a.scheduled_time || '00:00:00'}`;
       const db = `${b.scheduled_date || ''}T${b.scheduled_time || '00:00:00'}`;
       return da.localeCompare(db);
     });
-    const now = Date.now();
-    const next = sorted.find((s) => {
-      const st = (s.status || '').toLowerCase();
-      if (['evaluated', 'completed', 'not_attended'].includes(st)) return false;
-      const t = new Date(`${s.scheduled_date || ''}T${s.scheduled_time || '00:00:00'}`).getTime();
-      return !Number.isNaN(t) && t >= now - 60 * 60 * 1000;
-    });
-    return next ? [next] : sorted.length ? [sorted[sorted.length - 1]] : [];
+    return sorted.filter(sessionNeedsAdminReview);
   }, [sessionState]);
 
   // Links are loaded on demand via the "Show session links" button to avoid
@@ -692,13 +677,14 @@ export default function OfflineOpsDetailClient({
       </div>
 
       <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
-        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Next session</h2>
+        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Sessions pending review</h2>
         <p className="text-sm text-slate-600 mb-4 pl-3 ml-1">
-          Tutor or learner submissions move the session to <strong>awaiting admin review</strong>. When you confirm attendance here, status becomes{' '}
-          <strong>evaluated</strong> (admin-reviewed).
+          Past and upcoming sessions stay here until you mark attendance. Tutor or learner submissions move a session to{' '}
+          <strong>awaiting admin review</strong>. After you confirm attendance, status becomes <strong>evaluated</strong> or{' '}
+          <strong>not attended</strong> and the session is removed from this list.
         </p>
         {displaySessions.length === 0 ? (
-          <p className="text-sm text-gray-600">No sessions found for this offline operation yet.</p>
+          <p className="text-sm text-gray-600">No sessions waiting for admin review.</p>
         ) : (
           <div className="space-y-4">
             {displaySessions.map((s) => {

@@ -8,6 +8,7 @@ import { Menu, X } from "lucide-react"
 import { useState } from "react"
 import { useLocale } from "@/lib/locale-context"
 import { getTranslations } from "@/lib/translations"
+import { getStartedUrl } from "@/lib/get-started-url"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -60,7 +61,7 @@ export function Header() {
           <div className="hidden md:flex items-center gap-3">
             <LanguageSwitcher currentLocale={locale} />
             <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link href={`/${locale}/contact`}>{t.nav.getStarted}</Link>
+              <Link href={getStartedUrl()}>{t.nav.getStarted}</Link>
             </Button>
           </div>
 
@@ -98,7 +99,7 @@ export function Header() {
               <div className="flex items-center gap-2 pt-2">
                 <LanguageSwitcher currentLocale={locale} />
                 <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Link href={`/${locale}/contact`}>{t.nav.getStarted}</Link>
+                  <Link href={getStartedUrl()}>{t.nav.getStarted}</Link>
                 </Button>
               </div>
             </nav>

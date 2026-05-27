@@ -1,74 +1,51 @@
 "use client"
+
 import { getStartedUrl } from "@/lib/get-started-url"
 import Image from "next/image"
 import Link from "next/link"
 import { Users, Globe, Calendar, Gift } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { getTranslations } from "@/lib/translations"
+import { type Locale } from "@/lib/i18n"
 
 interface PEAPShowcaseProps {
-  locale: string
+  locale: Locale
 }
 
 export function PEAPShowcase({ locale }: PEAPShowcaseProps) {
+  const t = getTranslations(locale)
+  const ea = t.home.examAccelerator
+
   const stats = [
-    {
-      icon: Users,
-      value: "500+",
-      label: "Learners Empowered",
-    },
-    {
-      icon: Globe,
-      value: "Nationwide",
-      label: "Across Cameroon",
-    },
-    {
-      icon: Calendar,
-      value: "2 Weeks",
-      label: "Intensive Program",
-    },
-    {
-      icon: Gift,
-      value: "100% Free",
-      label: "No Cost to Students",
-    },
+    { icon: Users, value: ea.stats.learners.value, label: ea.stats.learners.label },
+    { icon: Globe, value: ea.stats.reach.value, label: ea.stats.reach.label },
+    { icon: Calendar, value: ea.stats.duration.value, label: ea.stats.duration.label },
+    { icon: Gift, value: ea.stats.cost.value, label: ea.stats.cost.label },
   ]
 
   return (
-    <section className="py-20 bg-gradient-to-br from-primary/5 via-white to-primary/10 border-y">
+    <section className="py-12 sm:py-16 bg-muted/30 border-y">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-4xl mx-auto mb-14">
-          {/* Logo Placeholder */}
-          <div className="flex justify-center mb-6">
-            <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden shadow-lg border bg-white">
-              <Image
-                src="/peaplogo.jpg"
-                alt="PrepSkul Exam Accelerator Program Logo"
-                fill
-                className="object-cover"
-              />
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <div className="flex justify-center mb-5">
+            <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-md border bg-white">
+              <Image src="/peaplogo.jpg" alt={ea.logoAlt} fill className="object-cover" />
             </div>
           </div>
 
-          {/* Badge */}
-          <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
-            National Impact Initiative
+          <div className="inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-3">
+            {ea.badge}
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-            PrepSkul Exam Accelerator Program (PEAP)
-          </h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 tracking-tight">{ea.title}</h2>
 
-          <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-            A free two-week nationwide revision program designed to help O-Level
-            and A-Level candidates master difficult concepts, build confidence,
-            and prepare strategically for the 2025/2026 GCE examinations.
+          <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            {ea.subtitle}
           </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-14">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-5xl mx-auto mb-12">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (
@@ -76,66 +53,48 @@ export function PEAPShowcase({ locale }: PEAPShowcaseProps) {
                 key={index}
                 className="border-2 hover:border-primary transition-all hover:shadow-lg"
               >
-                <CardContent className="p-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mx-auto">
-                    <Icon className="w-6 h-6 text-primary" />
+                <CardContent className="p-4 sm:p-5 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mx-auto">
+                    <Icon className="w-5 h-5 text-primary" />
                   </div>
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 leading-tight break-words">
-                    {stat.value}
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.label}
-                  </p>
+                  <div className="text-xl sm:text-2xl font-bold leading-tight">{stat.value}</div>
+                  <p className="text-xs sm:text-sm font-medium text-muted-foreground">{stat.label}</p>
                 </CardContent>
               </Card>
             )
           })}
         </div>
 
-        {/* Description + Images */}
-        <div className="grid lg:grid-cols-2 gap-10 items-center max-w-6xl mx-auto mb-14">
-          {/* Text */}
-          <div className="space-y-5">
-            <h3 className="text-2xl sm:text-3xl font-bold">
-              Turning Exam Anxiety into Academic Confidence
-            </h3>
-
-            <p className="text-muted-foreground leading-relaxed">
-              PEAP was launched in March 2026 as a strategic initiative to
-              support examination candidates across Cameroon. The program
-              simplified complex topics, provided structured revision guidance,
-              and expanded PrepSkul’s national visibility.
-            </p>
-
-            <p className="text-muted-foreground leading-relaxed">
-              Beyond exam preparation, PEAP demonstrated the real impact of
-              technology-enabled education and helped thousands discover
-              PrepSkul’s mission of connecting learners with trusted tutors.
-            </p>
-
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-10 items-center max-w-6xl mx-auto">
+          <div className="space-y-4 order-2 lg:order-1">
+            <h3 className="text-2xl sm:text-3xl font-bold">{ea.storyTitle}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{ea.storyP1}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{ea.storyP2}</p>
+            <Button size="lg" asChild className="mt-2 text-base font-semibold h-11 px-8">
+              <Link href={getStartedUrl()}>{ea.getStarted}</Link>
+            </Button>
           </div>
 
-          {/* Photos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-            <div className="relative h-[340px] rounded-3xl overflow-hidden ">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 order-1 lg:order-2">
+            <div className="relative aspect-[4/5] min-h-[220px] sm:min-h-[280px] rounded-2xl overflow-hidden border-2 bg-white shadow-sm">
               <Image
                 src="/program2.jpg"
-                alt="Students participating in PEAP session"
+                alt={ea.imageAlt1}
                 fill
-                className="object-contain  group-hover:scale-105 transition-transform duration-500"
+                className="object-contain p-2"
+                sizes="(max-width: 640px) 100vw, 280px"
               />
             </div>
-
-            <div className="relative bg-white rounded-3xl overflow-hidden  mt-10">
+            <div className="relative aspect-[4/5] min-h-[220px] sm:min-h-[280px] rounded-2xl overflow-hidden border-2 bg-white shadow-sm sm:mt-6">
               <Image
                 src="/program1.jpg"
-                alt="Learners engaged during PEAP program"
+                alt={ea.imageAlt2}
                 fill
-                className=" group-hover:scale-105 transition-transform duration-500"
+                className="object-cover"
+                sizes="(max-width: 640px) 100vw, 280px"
               />
             </div>
           </div>
-          
         </div>
       </div>
     </section>

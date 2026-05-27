@@ -116,6 +116,7 @@ export async function GET(request: NextRequest) {
                     to: userProfile.email,
                     recipientName: userProfile.full_name || 'there',
                     tutorName: metadata.tutor_name || 'your tutor',
+                    learnerName: metadata.learner_name || undefined,
                     nextDate: metadata.next_date,
                     nextTime: metadata.next_time,
                     subject: metadata.subject,

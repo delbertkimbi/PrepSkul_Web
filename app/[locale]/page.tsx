@@ -286,7 +286,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <PEAPShowcase locale={locale} />
+      <PEAPShowcase locale={locale as Locale} />
 
       <TestimonialsSection />
 

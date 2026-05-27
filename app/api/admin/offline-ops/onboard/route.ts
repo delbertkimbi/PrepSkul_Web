@@ -7,7 +7,7 @@ import {
   runOfflineOnboarding,
   runOfflineOnboardingForExistingUser,
 } from '@/lib/services/offline-onboarding-service';
-import { sendOpsAlertEmail } from '@/lib/ops-email';
+import { sendOfflineMatchOpsAlert } from '@/lib/offline-session-emails';
 
 export const runtime = 'nodejs';
 
@@ -132,18 +132,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    await sendOpsAlertEmail(
-      'Offline onboarding synced',
-      `<p>An offline onboarding run was completed.</p>
-      <ul>
-        <li><strong>Run ID:</strong> ${completedResult.runId ?? 'n/a'}</li>
-        <li><strong>Idempotency key:</strong> ${idempotencyKey.slice(0, 12)}...</li>
-        <li><strong>Agent:</strong> ${data.agentName}</li>
-        <li><strong>Primary user:</strong> ${data.primary.fullName} (${data.primary.email})</li>
-        <li><strong>Tutor:</strong> ${completedResult.tutorName}</li>
-        <li><strong>Scheduled sessions:</strong> ${completedResult.individualSessionIds.length}</li>
-      </ul>`
-    );
+    const learnerDisplayName =
+      data.primary.role === 'parent'
+        ? data.child?.fullName?.trim() || data.primary.fullName
+        : data.primary.fullName;
+
+    await sendOfflineMatchOpsAlert({
+      learnerName: learnerDisplayName,
+      learnerRole: data.primary.role,
+      parentName: data.primary.role === 'parent' ? data.primary.fullName : null,
+      tutorName: completedResult.tutorName,
+      agentName: data.agentName,
+      operationUrl: completedResult.offlineOperationId
+        ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops/${completedResult.offlineOperationId}`
+        : undefined,
+    });
 
     return NextResponse.json({
       success: true,
