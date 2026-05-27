@@ -1,41 +1,81 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { buildSessionPortalUrls } from '@/lib/services/session-portal-access';
+import { sendOfflineMatchNotificationEmail } from '@/lib/offline-session-emails';
 
-const MATCH_DELAY_MS = 3 * 60 * 1000;
+type MatchEmailOpts = {
+  primaryUserId: string;
+  learnerUserId: string;
+  tutorUserId: string;
+  tutorName: string;
+  learnerName?: string | null;
+  firstSessionId: string;
+  subject: string;
+  nextDate?: string | null;
+  nextTime?: string | null;
+  deliveryMode?: string | null;
+  meetLink?: string | null;
+  onsiteLocation?: string | null;
+};
 
-/** Schedule friendly match emails ~3 minutes after offline enrollment (cron delivers them). */
-export async function scheduleOfflineMatchEmails(
-  admin: SupabaseClient,
-  opts: {
-    primaryUserId: string;
-    learnerUserId: string;
-    tutorUserId: string;
-    tutorName: string;
-    firstSessionId: string;
-    subject: string;
-    nextDate?: string | null;
-    nextTime?: string | null;
-    deliveryMode?: string | null;
-    meetLink?: string | null;
-    onsiteLocation?: string | null;
+/** Send one-time welcome emails right after a new offline match (not on schedule extensions). */
+export async function deliverOfflineMatchWelcomeEmails(admin: SupabaseClient, opts: MatchEmailOpts) {
+  const urls = buildSessionPortalUrls(opts.firstSessionId);
+  const familyUserId =
+    opts.primaryUserId !== opts.learnerUserId ? opts.primaryUserId : opts.learnerUserId;
+
+  const [{ data: tutorProfile }, { data: familyProfile }] = await Promise.all([
+    admin.from('profiles').select('email, full_name').eq('id', opts.tutorUserId).maybeSingle(),
+    admin.from('profiles').select('email, full_name').eq('id', familyUserId).maybeSingle(),
+  ]);
+
+  const emailOpts = {
+    tutorName: opts.tutorName,
+    learnerName: opts.learnerName || undefined,
+    nextDate: opts.nextDate,
+    nextTime: opts.nextTime,
+    subject: opts.subject,
+    deliveryMode: opts.deliveryMode,
+    meetLink: opts.meetLink,
+    onsiteLocation: opts.onsiteLocation,
+  };
+
+  if (familyProfile?.email) {
+    await sendOfflineMatchNotificationEmail({
+      to: familyProfile.email,
+      recipientName: familyProfile.full_name || 'there',
+      ...emailOpts,
+      portalUrl: urls.learnerFeedbackUrl,
+      rescheduleUrl: urls.learnerRescheduleUrl,
+      role: 'learner',
+    });
   }
-) {
-  const when = new Date(Date.now() + MATCH_DELAY_MS).toISOString();
+
+  if (tutorProfile?.email) {
+    await sendOfflineMatchNotificationEmail({
+      to: tutorProfile.email,
+      recipientName: tutorProfile.full_name || 'Tutor',
+      ...emailOpts,
+      portalUrl: urls.tutorReportUrl,
+      rescheduleUrl: urls.tutorRescheduleUrl,
+      role: 'tutor',
+    });
+  }
+}
+
+/** In-app notifications for the same one-time match event (no duplicate email). */
+export async function scheduleOfflineMatchInAppNotifications(admin: SupabaseClient, opts: MatchEmailOpts) {
+  const when = new Date().toISOString();
   const urls = buildSessionPortalUrls(opts.firstSessionId);
   const familyUserId =
     opts.primaryUserId !== opts.learnerUserId ? opts.primaryUserId : opts.learnerUserId;
 
   const baseMeta = {
-    offline_match_email: true,
-    sendEmail: true,
+    offline_match_email: false,
+    sendEmail: false,
     sendPush: false,
     tutor_name: opts.tutorName,
+    learner_name: opts.learnerName || null,
     subject: opts.subject,
-    next_date: opts.nextDate,
-    next_time: opts.nextTime,
-    delivery_mode: opts.deliveryMode,
-    meet_link: opts.meetLink,
-    onsite_location: opts.onsiteLocation,
     session_id: opts.firstSessionId,
   };
 
@@ -43,9 +83,9 @@ export async function scheduleOfflineMatchEmails(
     {
       user_id: familyUserId,
       notification_type: 'offline_match',
-      title: 'You are matched on PrepSkul',
+      title: 'Welcome to PrepSkul session notifications',
       message:
-        'Great news — you have been matched with your tutor on PrepSkul. We will send session reminders ahead of each class.',
+        'You have been matched on PrepSkul. You will receive session reminders and updates by email.',
       scheduled_for: when,
       status: 'pending',
       related_id: opts.firstSessionId,
@@ -59,9 +99,9 @@ export async function scheduleOfflineMatchEmails(
     {
       user_id: opts.tutorUserId,
       notification_type: 'offline_match',
-      title: 'New PrepSkul offline match',
+      title: 'Welcome to PrepSkul session notifications',
       message:
-        'You have been matched with a new learner for offline sessions on PrepSkul. Session reminders will follow before each class.',
+        'You have a new learner match on PrepSkul. Session reminders and updates will follow by email.',
       scheduled_for: when,
       status: 'pending',
       related_id: opts.firstSessionId,
@@ -75,4 +115,10 @@ export async function scheduleOfflineMatchEmails(
   ];
 
   await admin.from('scheduled_notifications').insert(rows);
+}
+
+/** @deprecated Use deliverOfflineMatchWelcomeEmails + scheduleOfflineMatchInAppNotifications */
+export async function scheduleOfflineMatchEmails(admin: SupabaseClient, opts: MatchEmailOpts) {
+  await deliverOfflineMatchWelcomeEmails(admin, opts);
+  await scheduleOfflineMatchInAppNotifications(admin, opts);
 }

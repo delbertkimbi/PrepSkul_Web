@@ -119,25 +119,28 @@ export async function GET() {
 
     const rows = [...onPlatformRows, ...offPlatformRows];
 
-    const completed = rows.filter((p) => normalizePaymentStatus(p.payment_status) === 'paid');
-    const failed = rows.filter((p) => normalizePaymentStatus(p.payment_status) === 'failed');
-    const pending = rows.filter((p) => normalizePaymentStatus(p.payment_status) === 'pending');
-
-    const dailyRows = inRangeRows(rows, ranges.daily);
-    const weeklyRows = inRangeRows(rows, ranges.weekly);
-    const monthlyRows = inRangeRows(rows, ranges.monthly);
-
     const envRows = {
       real: rows.filter((p) => classifyPaymentEnvironment(p) === 'real'),
       sandbox: rows.filter((p) => classifyPaymentEnvironment(p) === 'sandbox'),
     };
 
+    /** Dashboard totals exclude sandbox / test payments. */
+    const realRows = envRows.real;
+
+    const completed = realRows.filter((p) => normalizePaymentStatus(p.payment_status) === 'paid');
+    const failed = realRows.filter((p) => normalizePaymentStatus(p.payment_status) === 'failed');
+    const pending = realRows.filter((p) => normalizePaymentStatus(p.payment_status) === 'pending');
+
+    const dailyRows = inRangeRows(realRows, ranges.daily);
+    const weeklyRows = inRangeRows(realRows, ranges.weekly);
+    const monthlyRows = inRangeRows(realRows, ranges.monthly);
+
     const envByStatus = (env: PaymentEnv, status: 'paid' | 'failed' | 'pending') =>
       envRows[env].filter((p) => normalizePaymentStatus(p.payment_status) === status);
 
     const sourceRows = {
-      on: rows.filter((r) => r.source === 'on_platform'),
-      off: rows.filter((r) => r.source === 'off_platform'),
+      on: realRows.filter((r) => r.source === 'on_platform'),
+      off: realRows.filter((r) => r.source === 'off_platform'),
     };
 
     const sourceCount = (source: 'on' | 'off', status: 'paid' | 'failed' | 'pending') =>
@@ -153,10 +156,10 @@ export async function GET() {
         daily: sumAmount(dailyRows),
         weekly: sumAmount(weeklyRows),
         monthly: sumAmount(monthlyRows),
-        yearly: sumAmount(rows),
+        yearly: sumAmount(realRows),
       },
       charts: {
-        dailyVolumeLast30Days: groupByDay(rows, 30),
+        dailyVolumeLast30Days: groupByDay(realRows, 30),
         statusBreakdown: [
           { name: 'Completed', value: completed.length },
           { name: 'Failed', value: failed.length },

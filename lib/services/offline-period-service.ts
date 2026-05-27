@@ -7,7 +7,7 @@ import {
 import { buildSessionPortalUrls } from '@/lib/services/session-portal-access';
 import { scheduleSessionNotifications } from '@/lib/services/session-notification-scheduler';
 import { sendSessionStartEmail, sendOfflineReminderEmail } from '@/lib/offline-session-emails';
-import { scheduleOfflineMatchEmails } from '@/lib/services/offline-match-notify';
+import { deliverOfflineMatchWelcomeEmails, scheduleOfflineMatchInAppNotifications } from '@/lib/services/offline-match-notify';
 
 export type PeriodCommercial = {
   payPerMonthXaf?: number | null;
@@ -176,11 +176,17 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
 
   if (params.sendWelcomeEmail && sessionIds.length && !params.isHistoricalImport) {
     const firstOcc = occurrences[0];
-    await scheduleOfflineMatchEmails(admin, {
+    const learnerDisplayName =
+      params.learnerDisplayNames?.split(',')[0]?.trim() ||
+      learnerProfile?.full_name ||
+      parentProfile?.full_name ||
+      null;
+    const matchOpts = {
       primaryUserId: params.primaryUserId,
       learnerUserId: params.learnerUserId,
       tutorUserId: params.tutorUserId,
       tutorName: params.tutorName,
+      learnerName: learnerDisplayName,
       firstSessionId: sessionIds[0],
       subject: primarySubject,
       nextDate: firstOcc?.date,
@@ -188,7 +194,9 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
       deliveryMode: params.schedule.deliveryMode,
       meetLink: params.schedule.meetLink,
       onsiteLocation: params.schedule.onsiteLocation,
-    });
+    };
+    await deliverOfflineMatchWelcomeEmails(admin, matchOpts);
+    await scheduleOfflineMatchInAppNotifications(admin, matchOpts);
   }
 
   return { periodId, sessionIds, occurrences };

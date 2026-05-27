@@ -38,7 +38,7 @@ export default function GrowthAnalyticsDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <MetricCard title="Total users" value={users.data?.totals?.totalUsers ?? 0} />
           <MetricCard title="Total sessions booked" value={sessions.data?.totals?.totalBooked ?? 0} />
-          <MetricCard title="Completed payments" value={payments.data?.totals?.completedPayments ?? 0} />
+          <MetricCard title="Completed payments (real)" value={payments.data?.totals?.completedPayments ?? 0} />
           <MetricCard
             title="Weekly user growth"
             value={`${users.data?.growth?.weeklyGrowthRate ?? 0}%`}
