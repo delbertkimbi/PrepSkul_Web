@@ -115,6 +115,8 @@ export type OfflineScheduleInput = {
   startMonthLabel?: string | null;
 };
 
+export type OfflineOnboardingSessionIntent = 'live' | 'historical_backfill';
+
 type OfflineOnboardingTrackingInput = {
   paymentStatus: 'unpaid' | 'partial' | 'paid' | 'refunded';
   paymentEnvironment: 'real' | 'sandbox';
@@ -581,6 +583,7 @@ async function createOfflineOperationForEnrollment(
     schedule: OfflineScheduleInput;
     notes: string;
     tracking?: OfflineOnboardingTrackingInput;
+    onboardingStage?: 'matched' | 'paused' | 'active_sessions';
   }
 ) {
   const payPerMonth = Number(input.schedule.payPerMonthXaf || 0);
@@ -605,7 +608,7 @@ async function createOfflineOperationForEnrollment(
       subjects_of_interest: (input.schedule.subjects || [input.schedule.subject]).join(', '),
       tutor_match_type: 'platform_tutor',
       delivery_mode: input.schedule.deliveryMode,
-      onboarding_stage: 'matched',
+      onboarding_stage: input.onboardingStage || 'matched',
       sessions_completed: 0,
       payment_status: input.tracking?.paymentStatus || 'unpaid',
       payment_environment: input.tracking?.paymentEnvironment || 'real',
@@ -649,6 +652,111 @@ async function findLatestOfflineOperationId(admin: SupabaseClient, primaryUserId
   return data?.id || null;
 }
 
+/** Create a paused offline operation shell when importing history before any live enrollment. */
+export async function ensureOfflineOperationForPrimaryUser(
+  admin: SupabaseClient,
+  input: {
+    agentName?: string;
+    sourceChannel?: string;
+    primaryUserId: string;
+    learnerUserId: string;
+    tutorUserId: string;
+    deliveryMode: 'online' | 'onsite' | 'hybrid';
+    subjects: string[];
+    notes?: string;
+    tracking?: OfflineOnboardingTrackingInput;
+  }
+): Promise<string> {
+  const existing = await findLatestOfflineOperationId(admin, input.primaryUserId);
+  if (existing) return existing;
+
+  const { data: primary } = await admin
+    .from('profiles')
+    .select('full_name, phone_number, user_type')
+    .eq('id', input.primaryUserId)
+    .maybeSingle();
+  if (!primary) throw new Error('Primary user profile not found');
+
+  const userType = (primary.user_type || '').toLowerCase();
+  const primaryRole: 'parent' | 'student' = userType === 'parent' ? 'parent' : 'student';
+  const startDate = new Date().toISOString().slice(0, 10);
+  const subjects = input.subjects.length ? input.subjects : ['PrepSkul session'];
+
+  return createOfflineOperationForEnrollment(admin, {
+    agentName: input.agentName || 'Brian',
+    sourceChannel: input.sourceChannel || 'whatsapp_direct',
+    enrollmentKind: 'existing',
+    primaryUserId: input.primaryUserId,
+    primaryRole,
+    primaryFullName: primary.full_name || 'Offline user',
+    primaryPhone: primary.phone_number || null,
+    learnerUserId: input.learnerUserId,
+    tutorUserId: input.tutorUserId,
+    schedule: {
+      weeks: 4,
+      sessionsPerWeek: 1,
+      dayTimeSlots: [{ day: 'mon', time: '09:00' }],
+      durationMinutes: 60,
+      startDate,
+      deliveryMode: input.deliveryMode,
+      subject: subjects[0],
+      subjects,
+    },
+    notes: input.notes || 'Historical backfill — operation created without live sessions.',
+    tracking: input.tracking,
+    onboardingStage: 'paused',
+  });
+}
+
+async function importHistoricalMonthsForOnboarding(
+  admin: SupabaseClient,
+  input: {
+    adminUserId: string;
+    primaryUserId: string;
+    learnerUserId: string;
+    tutorUserId: string;
+    tutorName: string;
+    learnerDisplayNames?: string | null;
+    offlineOperationId: string;
+    monthlySchedules: OfflineScheduleInput[];
+  }
+) {
+  const sessionIds: string[] = [];
+  for (const monthSchedule of input.monthlySchedules) {
+    const scheduleV2 = toScheduleV2(monthSchedule);
+    const result = await scheduleOfflinePeriod(admin, {
+      adminUserId: input.adminUserId,
+      primaryUserId: input.primaryUserId,
+      learnerUserId: input.learnerUserId,
+      tutorUserId: input.tutorUserId,
+      tutorName: input.tutorName,
+      learnerDisplayNames: input.learnerDisplayNames,
+      schedule: scheduleV2,
+      offlineOperationId: input.offlineOperationId,
+      isHistoricalImport: true,
+      sendWelcomeEmail: false,
+      skipReminders: true,
+      commercial: {
+        payPerMonthXaf: monthSchedule.payPerMonthXaf,
+        payMonthsCount: monthSchedule.payMonthsCount ?? 1,
+        operationState: monthSchedule.operationState || 'paused',
+        startMonthLabel: monthSchedule.startMonthLabel,
+      },
+    });
+    sessionIds.push(...(result.sessionIds || []));
+  }
+  await admin
+    .from('offline_operations')
+    .update({
+      onboarding_stage: 'paused',
+      tutor_user_id: input.tutorUserId,
+      learner_user_id: input.learnerUserId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', input.offlineOperationId);
+  return sessionIds;
+}
+
 /**
  * Onboard a learner who already has a PrepSkul account. We skip auth.user creation
  * and email-uniqueness checks; we just link the existing primary user (and optional
@@ -667,7 +775,11 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
   schedule: OfflineScheduleInput;
   notes: string;
   tracking?: OfflineOnboardingTrackingInput;
+  sessionIntent?: OfflineOnboardingSessionIntent;
+  monthlySchedules?: OfflineScheduleInput[];
 }) {
+  const historicalOnly = params.sessionIntent === 'historical_backfill';
+
   if (params.idempotencyKey) {
     const existing = await findOfflineRunByIdempotencyKeyCompat(admin, params.idempotencyKey);
     if (existing) {
@@ -749,31 +861,56 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
     schedule: params.schedule,
     notes: params.notes,
     tracking: params.tracking,
+    onboardingStage: historicalOnly ? 'paused' : 'matched',
   });
 
-  const periodResult = await scheduleOfflinePeriod(admin, {
-    adminUserId: params.adminUserId,
-    primaryUserId: params.primaryUserId,
-    learnerUserId,
-    tutorUserId: tutorResolved.tutorUserId,
-    tutorName: tutorResolved.tutorName,
-    learnerDisplayNames:
-      params.primaryRole === 'parent'
-        ? params.childFullName?.trim() || null
-        : primaryProfile.full_name,
-    schedule: scheduleV2,
-    offlineOperationId,
-    commercial: {
-      payPerMonthXaf: params.schedule.payPerMonthXaf,
-      payMonthsCount: params.schedule.payMonthsCount,
-      operationState: params.schedule.operationState,
-      startMonthLabel: params.schedule.startMonthLabel,
-    },
-    sendWelcomeEmail: true,
-  });
+  let sessionIds: string[] = [];
+  let dates: string[] = [];
 
-  const sessionIds = periodResult.sessionIds;
-  const dates = periodResult.occurrences.map((o) => o.date);
+  if (!historicalOnly) {
+    const periodResult = await scheduleOfflinePeriod(admin, {
+      adminUserId: params.adminUserId,
+      primaryUserId: params.primaryUserId,
+      learnerUserId,
+      tutorUserId: tutorResolved.tutorUserId,
+      tutorName: tutorResolved.tutorName,
+      learnerDisplayNames:
+        params.primaryRole === 'parent'
+          ? params.childFullName?.trim() || null
+          : primaryProfile.full_name,
+      schedule: scheduleV2,
+      offlineOperationId,
+      commercial: {
+        payPerMonthXaf: params.schedule.payPerMonthXaf,
+        payMonthsCount: params.schedule.payMonthsCount,
+        operationState: params.schedule.operationState,
+        startMonthLabel: params.schedule.startMonthLabel,
+      },
+      sendWelcomeEmail: true,
+    });
+    sessionIds = periodResult.sessionIds;
+    dates = periodResult.occurrences.map((o) => o.date);
+  } else if (params.monthlySchedules?.length) {
+    sessionIds = await importHistoricalMonthsForOnboarding(admin, {
+      adminUserId: params.adminUserId,
+      primaryUserId: params.primaryUserId,
+      learnerUserId,
+      tutorUserId: tutorResolved.tutorUserId,
+      tutorName: tutorResolved.tutorName,
+      learnerDisplayNames:
+        params.primaryRole === 'parent'
+          ? params.childFullName?.trim() || null
+          : primaryProfile.full_name,
+      offlineOperationId,
+      monthlySchedules: params.monthlySchedules,
+    });
+  } else {
+    await updateOfflineOperationCompat(admin, offlineOperationId, {
+      onboarding_stage: 'paused',
+      tutor_user_id: tutorResolved.tutorUserId,
+      learner_user_id: learnerUserId,
+    });
+  }
 
   const { id: runId, error: runErr } = await insertOfflineOnboardingRunCompat(admin, {
     idempotency_key: params.idempotencyKey || null,
@@ -785,12 +922,13 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
     learner_user_id: learnerUserId,
     tutor_user_id: tutorResolved.tutorUserId,
     recurring_session_id: recurringId,
-    scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
+    scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes, sessionIntent: params.sessionIntent },
     status: 'completed',
     metadata: {
       session_ids: sessionIds,
       tutor_name: tutorResolved.tutorName,
       existing_user: true,
+      historical_backfill: historicalOnly,
     },
   });
   if (runErr) {
@@ -830,7 +968,11 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
   schedule: OfflineScheduleInput;
   notes: string;
   tracking?: OfflineOnboardingTrackingInput;
+  sessionIntent?: OfflineOnboardingSessionIntent;
+  monthlySchedules?: OfflineScheduleInput[];
 }) {
+  const historicalOnly = params.sessionIntent === 'historical_backfill';
+
   if (params.idempotencyKey) {
     const existing = await findOfflineRunByIdempotencyKeyCompat(admin, params.idempotencyKey);
     if (existing) {
@@ -1021,29 +1163,52 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     schedule: params.schedule,
     notes: params.notes,
     tracking: params.tracking,
+    onboardingStage: historicalOnly ? 'paused' : 'matched',
   });
 
-  const periodResult = await scheduleOfflinePeriod(admin, {
-    adminUserId: params.adminUserId,
-    primaryUserId,
-    learnerUserId,
-    tutorUserId: tutorResolved.tutorUserId,
-    tutorName: tutorResolved.tutorName,
-    learnerDisplayNames:
-      params.primary.role === 'parent' ? params.child?.fullName?.trim() || null : params.primary.fullName,
-    schedule: scheduleV2,
-    offlineOperationId,
-    commercial: {
-      payPerMonthXaf: params.schedule.payPerMonthXaf,
-      payMonthsCount: params.schedule.payMonthsCount,
-      operationState: params.schedule.operationState,
-      startMonthLabel: params.schedule.startMonthLabel,
-    },
-    sendWelcomeEmail: true,
-  });
+  let sessionIds: string[] = [];
+  let dates: string[] = [];
 
-  const sessionIds = periodResult.sessionIds;
-  const dates = periodResult.occurrences.map((o) => o.date);
+  if (!historicalOnly) {
+    const periodResult = await scheduleOfflinePeriod(admin, {
+      adminUserId: params.adminUserId,
+      primaryUserId,
+      learnerUserId,
+      tutorUserId: tutorResolved.tutorUserId,
+      tutorName: tutorResolved.tutorName,
+      learnerDisplayNames:
+        params.primary.role === 'parent' ? params.child?.fullName?.trim() || null : params.primary.fullName,
+      schedule: scheduleV2,
+      offlineOperationId,
+      commercial: {
+        payPerMonthXaf: params.schedule.payPerMonthXaf,
+        payMonthsCount: params.schedule.payMonthsCount,
+        operationState: params.schedule.operationState,
+        startMonthLabel: params.schedule.startMonthLabel,
+      },
+      sendWelcomeEmail: true,
+    });
+    sessionIds = periodResult.sessionIds;
+    dates = periodResult.occurrences.map((o) => o.date);
+  } else if (params.monthlySchedules?.length) {
+    sessionIds = await importHistoricalMonthsForOnboarding(admin, {
+      adminUserId: params.adminUserId,
+      primaryUserId,
+      learnerUserId,
+      tutorUserId: tutorResolved.tutorUserId,
+      tutorName: tutorResolved.tutorName,
+      learnerDisplayNames:
+        params.primary.role === 'parent' ? params.child?.fullName?.trim() || null : params.primary.fullName,
+      offlineOperationId,
+      monthlySchedules: params.monthlySchedules,
+    });
+  } else {
+    await updateOfflineOperationCompat(admin, offlineOperationId, {
+      onboarding_stage: 'paused',
+      tutor_user_id: tutorResolved.tutorUserId,
+      learner_user_id: learnerUserId,
+    });
+  }
 
   const { id: runId, error: runErr } = await insertOfflineOnboardingRunCompat(admin, {
     idempotency_key: params.idempotencyKey || null,
@@ -1055,9 +1220,9 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     learner_user_id: learnerUserId,
     tutor_user_id: tutorResolved.tutorUserId,
     recurring_session_id: recurringId,
-    scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes },
+    scheduling: { ...params.schedule, sessionDates: dates, notes: params.notes, sessionIntent: params.sessionIntent },
     status: 'completed',
-    metadata: { session_ids: sessionIds, tutor_name: tutorResolved.tutorName },
+    metadata: { session_ids: sessionIds, tutor_name: tutorResolved.tutorName, historical_backfill: historicalOnly },
   });
 
   if (runErr) {

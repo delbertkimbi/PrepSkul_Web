@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   enumerateSessionOccurrences,
+  enumerateSessionOccurrencesForBillingMonth,
   type OfflineScheduleInputV2,
   type SessionOccurrence,
 } from '@/lib/services/offline-schedule';
@@ -55,7 +56,16 @@ function monthLabelFromDate(dateLike?: string | null) {
 }
 
 export async function scheduleOfflinePeriod(admin: SupabaseClient, params: SchedulePeriodParams) {
-  const occurrences = enumerateSessionOccurrences(params.schedule);
+  const billingMonthKey = params.schedule.startDate.slice(0, 7);
+  const occurrences = params.isHistoricalImport
+    ? enumerateSessionOccurrencesForBillingMonth(params.schedule, billingMonthKey)
+    : enumerateSessionOccurrences(params.schedule);
+
+  if (params.isHistoricalImport && !occurrences.length) {
+    throw new Error(
+      `No session dates fall in billing month ${billingMonthKey}. Check weekdays and month selection.`
+    );
+  }
   const primarySubject = params.schedule.subjects[0] || 'PrepSkul session';
   const payPerMonth = params.commercial?.payPerMonthXaf ?? null;
   const payMonths = params.commercial?.payMonthsCount ?? null;
@@ -88,7 +98,9 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
     pay_per_month_xaf: payPerMonth,
     pay_months_count: payMonths,
     expected_period_revenue_xaf: expectedRevenue,
-    operation_state: params.commercial?.operationState || 'active',
+    operation_state:
+      params.commercial?.operationState ||
+      (params.isHistoricalImport ? 'paused' : 'active'),
     period_start: periodStart,
     period_end: periodEnd,
     start_month_label: params.commercial?.startMonthLabel || monthLabelFromDate(periodStart),

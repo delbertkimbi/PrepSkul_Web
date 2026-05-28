@@ -48,13 +48,34 @@ export function deriveStartDateFromMonthYear(
   return `${y}-${mo}-01`;
 }
 
-export function formatStartMonthLabel(year: number, month: number, startDate?: string | null) {
+/** Billing month label for storage and UI, e.g. "Apr 2025" (no day in brackets). */
+export function formatStartMonthLabel(year: number, month: number, _startDate?: string | null) {
   const short = MONTH_SHORT[month - 1] || 'Month';
-  if (startDate) {
-    const day = parseInt(startDate.split('-')[2] || '1', 10);
-    return `${short} (${day})`;
-  }
   return `${short} ${year}`;
+}
+
+/** Display label; strips legacy "Apr (2)" day suffix and adds year from period_start when missing. */
+export function displayBillingMonthLabel(
+  startMonthLabel?: string | null,
+  periodStart?: string | null
+): string {
+  const yearFromPeriod = periodStart && periodStart.length >= 7 ? parseInt(periodStart.slice(0, 4), 10) : 0;
+  const monthFromPeriod =
+    periodStart && periodStart.length >= 7 ? parseInt(periodStart.slice(5, 7), 10) : 0;
+
+  if (startMonthLabel?.trim()) {
+    const cleaned = startMonthLabel.trim().replace(/\s*\(\d{1,2}\)\s*$/, '');
+    if (yearFromPeriod && monthFromPeriod && !/\d{4}/.test(cleaned)) {
+      return formatStartMonthLabel(yearFromPeriod, monthFromPeriod);
+    }
+    return cleaned;
+  }
+
+  if (yearFromPeriod && monthFromPeriod) {
+    return formatStartMonthLabel(yearFromPeriod, monthFromPeriod);
+  }
+
+  return periodStart?.slice(0, 7) || '—';
 }
 
 export function monthKeyFromYearMonth(year: number, month: number) {

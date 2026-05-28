@@ -15,6 +15,7 @@ const payloadSchema = z.object({
   agentName: z.enum(['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon']),
   sourceChannel: z.enum(['whatsapp_ads', 'whatsapp_direct', 'phone_call', 'walk_in', 'referral']),
   enrollmentKind: z.enum(['new', 'existing']).default('new'),
+  sessionIntent: z.enum(['live', 'historical_backfill']).default('live'),
   existingPrimaryUserId: z.string().uuid().optional(),
   existingChildUserId: z.string().uuid().optional(),
   primary: z.object({
@@ -43,7 +44,7 @@ const payloadSchema = z.object({
     dayTimeSlots: z.array(z.object({ day: z.string(), time: z.string() })).optional(),
     sessionTime: z.string().min(4).optional(),
     durationMinutes: z.number().min(30).max(240),
-    startDate: z.string().min(8),
+    startDate: z.string().min(8).optional(),
     deliveryMode: z.enum(['online', 'onsite', 'hybrid']),
     subject: z.string().min(2),
     subjects: z.array(z.string()).optional(),
@@ -54,7 +55,30 @@ const payloadSchema = z.object({
     payMonthsCount: z.number().nullable().optional(),
     operationState: z.enum(['active', 'paused', 'stopped']).optional(),
     startMonthLabel: z.string().nullable().optional(),
+    tutorUserId: z.string().uuid().optional(),
   }),
+  monthlySchedules: z
+    .array(
+      z.object({
+        weeks: z.number().min(1).max(52),
+        sessionsPerWeek: z.number().min(1).max(7),
+        dayTimeSlots: z.array(z.object({ day: z.string(), time: z.string() })).min(1),
+        durationMinutes: z.number().min(30).max(240),
+        startDate: z.string().min(8),
+        deliveryMode: z.enum(['online', 'onsite', 'hybrid']),
+        subject: z.string().min(2).optional(),
+        subjects: z.array(z.string()).optional(),
+        meetLink: z.string().nullable().optional(),
+        onsiteLocation: z.string().nullable().optional(),
+        onsitePhotoUrl: z.string().nullable().optional(),
+        payPerMonthXaf: z.number().nullable().optional(),
+        payMonthsCount: z.number().nullable().optional(),
+        operationState: z.enum(['active', 'paused', 'stopped']).optional(),
+        startMonthLabel: z.string().nullable().optional(),
+        tutorUserId: z.string().uuid().optional(),
+      })
+    )
+    .optional(),
   notes: z.string().min(3),
   tracking: z.object({
     paymentStatus: z.enum(['unpaid', 'partial', 'paid', 'refunded']).default('unpaid'),
@@ -64,7 +88,32 @@ const payloadSchema = z.object({
     nextFollowupAt: z.string().optional(),
   }),
   idempotencyKey: z.string().optional(),
-});
+})
+  .superRefine((data, ctx) => {
+    if (data.sessionIntent === 'live' && !data.schedule.startDate) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Start date is required for live matching',
+        path: ['schedule', 'startDate'],
+      });
+    }
+  });
+
+function normalizeOnboardSchedule(
+  schedule: z.infer<typeof payloadSchema>['schedule'],
+  sessionIntent: 'live' | 'historical_backfill'
+) {
+  const subjects = schedule.subjects?.map((s) => s.trim()).filter(Boolean) || [];
+  const subject = schedule.subject?.trim() || subjects[0] || 'PrepSkul session';
+  const startDate =
+    schedule.startDate || (sessionIntent === 'historical_backfill' ? new Date().toISOString().slice(0, 10) : '');
+  return {
+    ...schedule,
+    subject,
+    subjects: subjects.length ? subjects : [subject],
+    startDate,
+  };
+}
 
 function stableIdempotencyKey(payload: unknown) {
   return crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
@@ -85,6 +134,12 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = getSupabaseAdmin();
     const data = parsed.data;
+    const schedule = normalizeOnboardSchedule(data.schedule, data.sessionIntent);
+    const monthlySchedules = (data.monthlySchedules || []).map((m) => {
+      const subs = m.subjects?.map((s) => s.trim()).filter(Boolean) || [];
+      const subject = m.subject?.trim() || subs[0] || schedule.subject;
+      return { ...m, subject, subjects: subs.length ? subs : [subject] };
+    });
 
     const idempotencyKey = data.idempotencyKey || stableIdempotencyKey({
       primaryEmail: data.primary.email,
@@ -110,9 +165,11 @@ export async function POST(request: NextRequest) {
         childUserId: data.existingChildUserId || null,
         childFullName: data.child?.fullName || null,
         tutor: data.tutor,
-        schedule: data.schedule,
+        schedule,
         notes: data.notes,
         tracking: data.tracking,
+        sessionIntent: data.sessionIntent,
+        monthlySchedules: monthlySchedules.length ? monthlySchedules : undefined,
       });
     } else {
       if (!data.primary.email) {
@@ -126,9 +183,11 @@ export async function POST(request: NextRequest) {
         primary: { ...data.primary, email: data.primary.email },
         child: data.child ?? null,
         tutor: data.tutor,
-        schedule: data.schedule,
+        schedule,
         notes: data.notes,
         tracking: data.tracking,
+        sessionIntent: data.sessionIntent,
+        monthlySchedules: monthlySchedules.length ? monthlySchedules : undefined,
       });
     }
 
@@ -137,16 +196,18 @@ export async function POST(request: NextRequest) {
         ? data.child?.fullName?.trim() || data.primary.fullName
         : data.primary.fullName;
 
-    await sendOfflineMatchOpsAlert({
-      learnerName: learnerDisplayName,
-      learnerRole: data.primary.role,
-      parentName: data.primary.role === 'parent' ? data.primary.fullName : null,
-      tutorName: completedResult.tutorName,
-      agentName: data.agentName,
-      operationUrl: completedResult.offlineOperationId
-        ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops/${completedResult.offlineOperationId}`
-        : undefined,
-    });
+    if (data.sessionIntent !== 'historical_backfill') {
+      await sendOfflineMatchOpsAlert({
+        learnerName: learnerDisplayName,
+        learnerRole: data.primary.role,
+        parentName: data.primary.role === 'parent' ? data.primary.fullName : null,
+        tutorName: completedResult.tutorName,
+        agentName: data.agentName,
+        operationUrl: completedResult.offlineOperationId
+          ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.prepskul.com'}/admin/offline-ops/${completedResult.offlineOperationId}`
+          : undefined,
+      });
+    }
 
     return NextResponse.json({
       success: true,

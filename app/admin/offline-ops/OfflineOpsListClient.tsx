@@ -25,7 +25,14 @@ export type OfflineOpsRecord = {
   subjects_of_interest: string;
   tutor_match_type: 'platform_tutor' | 'off_platform_tutor';
   delivery_mode: 'online' | 'onsite' | 'hybrid';
-  onboarding_stage: 'new_lead' | 'qualified' | 'matched' | 'active_sessions' | 'completed' | 'dropped';
+  onboarding_stage:
+    | 'new_lead'
+    | 'qualified'
+    | 'matched'
+    | 'paused'
+    | 'active_sessions'
+    | 'completed'
+    | 'dropped';
   sessions_completed: number;
   payment_status: 'unpaid' | 'partial' | 'paid' | 'refunded';
   payment_environment: 'real' | 'sandbox';
@@ -55,6 +62,8 @@ function stageBadge(stage: OfflineOpsRecord['onboarding_stage']) {
       return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'matched':
       return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+    case 'paused':
+      return 'bg-violet-50 text-violet-800 border-violet-200';
     case 'qualified':
       return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'dropped':
@@ -157,6 +166,7 @@ export default function OfflineOpsListClient({ records }: Props) {
               <SelectItem value="new_lead">New lead</SelectItem>
               <SelectItem value="qualified">Qualified</SelectItem>
               <SelectItem value="matched">Matched</SelectItem>
+              <SelectItem value="paused">Paused</SelectItem>
               <SelectItem value="active_sessions">Active sessions</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="dropped">Dropped</SelectItem>

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { classifyPaymentEnvironment, isRealPayment } from '@/lib/analytics-payment-env';
+import { sessionBelongsToOfflineOps } from '@/lib/analytics-offline-scope';
 import { getTimeRanges, groupByDay, requireAdminOrDeny } from '../_lib';
 
 export const runtime = 'nodejs';
@@ -9,8 +11,9 @@ type PaymentRow = {
   fapshi_trans_id?: string | null;
   amount: number | string | null;
   created_at: string;
-  source?: 'on_platform' | 'off_platform';
-  payment_environment?: 'real' | 'sandbox' | null;
+  source?: 'on_platform' | 'off_platform' | 'booking_request';
+  payment_environment?: string | null;
+  session_id?: string | null;
 };
 
 function sumAmount(rows: PaymentRow[]) {
@@ -22,24 +25,31 @@ function inRangeRows(rows: PaymentRow[], sinceIso: string) {
   return rows.filter((r) => new Date(r.created_at) >= since);
 }
 
-type PaymentEnv = 'real' | 'sandbox';
-
-function classifyPaymentEnvironment(row: PaymentRow): PaymentEnv {
-  if (row.payment_environment) {
-    return row.payment_environment === 'sandbox' ? 'sandbox' : 'real';
-  }
-  const method = (row.payment_method || '').toLowerCase();
-  const txRef = (row.fapshi_trans_id || '').toLowerCase();
-  const fingerprint = `${method} ${txRef}`;
-  const looksSandbox = /sandbox|test|demo/.test(fingerprint);
-  return looksSandbox ? 'sandbox' : 'real';
-}
-
 function normalizePaymentStatus(status: string | null): 'paid' | 'failed' | 'pending' {
   const s = (status || '').toLowerCase();
   if (['paid', 'successful', 'success'].includes(s)) return 'paid';
   if (['failed', 'refunded', 'expired'].includes(s)) return 'failed';
   return 'pending';
+}
+
+function isConfirmedFapshiPayment(row: PaymentRow) {
+  if (normalizePaymentStatus(row.payment_status) !== 'paid') return false;
+  return Boolean(row.fapshi_trans_id?.trim());
+}
+
+function isRealConfirmedFapshi(row: PaymentRow) {
+  return isConfirmedFapshiPayment(row) && isRealPayment(row);
+}
+
+function dedupeByFapshiTransId(rows: PaymentRow[]) {
+  const byTx = new Map<string, PaymentRow>();
+  for (const row of rows) {
+    const tx = row.fapshi_trans_id?.trim();
+    if (!tx) continue;
+    const key = tx.toLowerCase();
+    if (!byTx.has(key)) byTx.set(key, row);
+  }
+  return [...byTx.values()];
 }
 
 export async function GET() {
@@ -49,52 +59,131 @@ export async function GET() {
     const { supabaseAdmin } = guard;
 
     const ranges = getTimeRanges();
+
+    let safeSessionRows: PaymentRow[] = [];
     const { data: sessionPayments, error: sessionPaymentsError } = await supabaseAdmin
       .from('session_payments')
-      .select('payment_status, payment_method, fapshi_trans_id, amount, created_at')
+      .select(
+        'payment_status, payment_method, fapshi_trans_id, amount, created_at, session_id, payment_environment'
+      )
+      .eq('payment_status', 'paid')
+      .not('fapshi_trans_id', 'is', null)
       .gte('created_at', ranges.yearly)
       .order('created_at', { ascending: true });
 
-    // Some deployments may not have all optional columns yet; retry with minimal fields.
-    let safeSessionRows = (sessionPayments || []) as PaymentRow[];
-    if (sessionPaymentsError) {
+    if (!sessionPaymentsError) {
+      safeSessionRows = (sessionPayments || []) as PaymentRow[];
+    } else {
       const { data: fallbackSessionPayments } = await supabaseAdmin
         .from('session_payments')
-        .select('payment_status, amount, created_at')
+        .select('payment_status, amount, created_at, session_id, fapshi_trans_id, payment_method')
+        .eq('payment_status', 'paid')
         .gte('created_at', ranges.yearly)
         .order('created_at', { ascending: true });
-      safeSessionRows = ((fallbackSessionPayments || []) as Array<{
-        payment_status: string | null;
-        amount: number | string | null;
-        created_at: string;
-      }>).map((row) => ({ ...row, payment_method: null, fapshi_trans_id: null }));
+      safeSessionRows = ((fallbackSessionPayments || []) as PaymentRow[]).map((row) => ({
+        ...row,
+        payment_environment: null,
+      }));
     }
 
-    // Include payment_requests to avoid zero totals when payments are tracked there.
-    const { data: paymentRequests } = await supabaseAdmin
+    const sessionIds = [
+      ...new Set(safeSessionRows.map((r) => r.session_id).filter(Boolean)),
+    ] as string[];
+
+    const { data: paymentSessions } = sessionIds.length
+      ? await supabaseAdmin
+          .from('individual_sessions')
+          .select('id, offline_scheduling_period_id, tutor_id, learner_id, parent_id')
+          .in('id', sessionIds)
+      : { data: [] };
+
+    const sessionById = new Map((paymentSessions || []).map((s) => [s.id, s]));
+
+    const onPlatformSessionPayments = safeSessionRows
+      .filter((row) => {
+        if (!row.session_id) return false;
+        const session = sessionById.get(row.session_id);
+        if (!session) return false;
+        return !sessionBelongsToOfflineOps(session);
+      })
+      .map((row) => ({ ...row, source: 'on_platform' as const }));
+
+    const offlineSessionPayments = safeSessionRows
+      .filter((row) => {
+        if (!row.session_id) return false;
+        const session = sessionById.get(row.session_id);
+        return session ? sessionBelongsToOfflineOps(session) : false;
+      })
+      .map((row) => ({ ...row, source: 'off_platform' as const }));
+
+    let mappedRequestRows: PaymentRow[] = [];
+    const { data: paymentRequests, error: paymentRequestsError } = await supabaseAdmin
       .from('payment_requests')
-      .select('status, amount, fapshi_trans_id, created_at')
+      .select('status, amount, fapshi_trans_id, created_at, payment_environment')
+      .eq('status', 'paid')
+      .not('fapshi_trans_id', 'is', null)
       .gte('created_at', ranges.yearly)
       .order('created_at', { ascending: true });
 
-    const mappedRequestRows: PaymentRow[] = ((paymentRequests || []) as Array<{
-      status: string | null;
-      amount: number | string | null;
-      fapshi_trans_id?: string | null;
-      created_at: string;
-    }>).map((row) => ({
-      payment_status: row.status,
-      payment_method: null,
-      fapshi_trans_id: row.fapshi_trans_id ?? null,
-      amount: row.amount,
-      created_at: row.created_at,
-      source: 'on_platform',
-    }));
+    if (!paymentRequestsError) {
+      mappedRequestRows = (
+        (paymentRequests || []) as Array<{
+          status: string | null;
+          amount: number | string | null;
+          fapshi_trans_id?: string | null;
+          created_at: string;
+          payment_environment?: string | null;
+        }>
+      ).map((row) => ({
+        payment_status: row.status,
+        payment_method: null,
+        fapshi_trans_id: row.fapshi_trans_id ?? null,
+        amount: row.amount,
+        created_at: row.created_at,
+        payment_environment: row.payment_environment ?? null,
+        source: 'booking_request' as const,
+      }));
+    } else {
+      const { data: fallbackRequests } = await supabaseAdmin
+        .from('payment_requests')
+        .select('status, amount, fapshi_trans_id, created_at')
+        .eq('status', 'paid')
+        .not('fapshi_trans_id', 'is', null)
+        .gte('created_at', ranges.yearly)
+        .order('created_at', { ascending: true });
+      mappedRequestRows = ((fallbackRequests || []) as Array<{
+        status: string | null;
+        amount: number | string | null;
+        fapshi_trans_id?: string | null;
+        created_at: string;
+      }>).map((row) => ({
+        payment_status: row.status,
+        payment_method: null,
+        fapshi_trans_id: row.fapshi_trans_id ?? null,
+        amount: row.amount,
+        created_at: row.created_at,
+        payment_environment: null,
+        source: 'booking_request' as const,
+      }));
+    }
 
-    const onPlatformRows: PaymentRow[] = [
-      ...safeSessionRows.map((row) => ({ ...row, source: 'on_platform' as const })),
-      ...mappedRequestRows,
-    ];
+    const realOnPlatformSessionRows = dedupeByFapshiTransId(
+      onPlatformSessionPayments.filter(isRealConfirmedFapshi)
+    );
+    const sessionTxIds = new Set(
+      realOnPlatformSessionRows.map((r) => r.fapshi_trans_id?.trim().toLowerCase()).filter(Boolean)
+    );
+    const realBookingOnlyRows = dedupeByFapshiTransId(
+      mappedRequestRows.filter(
+        (row) =>
+          isRealConfirmedFapshi(row) &&
+          !sessionTxIds.has((row.fapshi_trans_id || '').trim().toLowerCase())
+      )
+    );
+
+    const realOfflineSessionRows = dedupeByFapshiTransId(
+      offlineSessionPayments.filter(isRealConfirmedFapshi)
+    );
 
     const { data: offlinePayments, error: offlinePaymentsError } = await supabaseAdmin
       .from('offline_operations')
@@ -102,11 +191,11 @@ export async function GET() {
       .gte('created_at', ranges.yearly)
       .order('created_at', { ascending: true });
 
-    const offPlatformRows: PaymentRow[] = offlinePaymentsError
+    const offlineOpsRows: PaymentRow[] = offlinePaymentsError
       ? []
       : ((offlinePayments || []) as Array<{
           payment_status: string | null;
-          payment_environment: 'real' | 'sandbox' | null;
+          payment_environment: string | null;
           amount_paid: number | string | null;
           created_at: string;
         }>).map((row) => ({
@@ -117,85 +206,86 @@ export async function GET() {
           source: 'off_platform',
         }));
 
-    const rows = [...onPlatformRows, ...offPlatformRows];
+    const realOfflineOpsRows = offlineOpsRows.filter(isRealPayment);
+    const sandboxOfflineOpsRows = offlineOpsRows.filter(
+      (row) => classifyPaymentEnvironment(row) === 'sandbox'
+    );
 
-    const envRows = {
-      real: rows.filter((p) => classifyPaymentEnvironment(p) === 'real'),
-      sandbox: rows.filter((p) => classifyPaymentEnvironment(p) === 'sandbox'),
-    };
+    const headlineRows = realOnPlatformSessionRows;
+    const paid = (rows: PaymentRow[]) =>
+      rows.filter((p) => normalizePaymentStatus(p.payment_status) === 'paid');
 
-    /** Dashboard totals exclude sandbox / test payments. */
-    const realRows = envRows.real;
+    const completed = paid(headlineRows);
+    const offlineOpsPaid = paid(realOfflineOpsRows);
+    const offlineSessionPaid = paid(realOfflineSessionRows);
+    const offlinePaidTotal = offlineOpsPaid.length + offlineSessionPaid.length;
+    const offlineVolumeXaf =
+      sumAmount(offlineOpsPaid) + sumAmount(offlineSessionPaid);
+    const bookingPaid = paid(realBookingOnlyRows);
 
-    const completed = realRows.filter((p) => normalizePaymentStatus(p.payment_status) === 'paid');
-    const failed = realRows.filter((p) => normalizePaymentStatus(p.payment_status) === 'failed');
-    const pending = realRows.filter((p) => normalizePaymentStatus(p.payment_status) === 'pending');
+    const sandboxFapshiRows = [
+      ...onPlatformSessionPayments,
+      ...offlineSessionPayments,
+      ...mappedRequestRows,
+    ].filter(isConfirmedFapshiPayment).filter((row) => classifyPaymentEnvironment(row) === 'sandbox');
+    const sandboxFapshiPaid = dedupeByFapshiTransId(sandboxFapshiRows).filter(
+      (p) => normalizePaymentStatus(p.payment_status) === 'paid'
+    );
 
-    const dailyRows = inRangeRows(realRows, ranges.daily);
-    const weeklyRows = inRangeRows(realRows, ranges.weekly);
-    const monthlyRows = inRangeRows(realRows, ranges.monthly);
-
-    const envByStatus = (env: PaymentEnv, status: 'paid' | 'failed' | 'pending') =>
-      envRows[env].filter((p) => normalizePaymentStatus(p.payment_status) === status);
-
-    const sourceRows = {
-      on: realRows.filter((r) => r.source === 'on_platform'),
-      off: realRows.filter((r) => r.source === 'off_platform'),
-    };
-
-    const sourceCount = (source: 'on' | 'off', status: 'paid' | 'failed' | 'pending') =>
-      sourceRows[source].filter((r) => normalizePaymentStatus(r.payment_status) === status).length;
+    const headlineRealRows = headlineRows;
+    const dailyRows = inRangeRows(headlineRealRows, ranges.daily);
+    const weeklyRows = inRangeRows(headlineRealRows, ranges.weekly);
+    const monthlyRows = inRangeRows(headlineRealRows, ranges.monthly);
 
     return NextResponse.json({
       totals: {
         completedPayments: completed.length,
-        failedPayments: failed.length,
-        pendingPayments: pending.length,
+        failedPayments: 0,
+        pendingPayments: 0,
+        offlineCompletedPayments: offlinePaidTotal,
+        offlineEnrollmentPayments: offlineOpsPaid.length,
+        offlineSessionPayments: offlineSessionPaid.length,
+        offlineVolumeXaf,
+        bookingPaymentsPaid: bookingPaid.length,
+        sandboxFapshiPayments: sandboxFapshiPaid.length,
+        sandboxOfflinePayments: paid(sandboxOfflineOpsRows).length,
       },
       volume: {
         daily: sumAmount(dailyRows),
         weekly: sumAmount(weeklyRows),
         monthly: sumAmount(monthlyRows),
-        yearly: sumAmount(realRows),
+        yearly: sumAmount(headlineRealRows),
+        offlineYearly: offlineVolumeXaf,
       },
       charts: {
-        dailyVolumeLast30Days: groupByDay(realRows, 30),
+        dailyVolumeLast30Days: groupByDay(headlineRealRows, 30),
         statusBreakdown: [
           { name: 'Completed', value: completed.length },
-          { name: 'Failed', value: failed.length },
-          { name: 'Pending', value: pending.length },
+          { name: 'Failed', value: 0 },
+          { name: 'Pending', value: 0 },
         ],
-      },
-      environmentBreakdown: {
-        real: {
-          transactions: envRows.real.length,
-          volume: sumAmount(envRows.real),
-          completedPayments: envByStatus('real', 'paid').length,
-          failedPayments: envByStatus('real', 'failed').length,
-          pendingPayments: envByStatus('real', 'pending').length,
-        },
-        sandbox: {
-          transactions: envRows.sandbox.length,
-          volume: sumAmount(envRows.sandbox),
-          completedPayments: envByStatus('sandbox', 'paid').length,
-          failedPayments: envByStatus('sandbox', 'failed').length,
-          pendingPayments: envByStatus('sandbox', 'pending').length,
-        },
       },
       platformBreakdown: {
         onPlatform: {
-          transactions: sourceRows.on.length,
-          volume: sumAmount(sourceRows.on),
-          completedPayments: sourceCount('on', 'paid'),
-          failedPayments: sourceCount('on', 'failed'),
-          pendingPayments: sourceCount('on', 'pending'),
+          transactions: headlineRealRows.length,
+          volume: sumAmount(headlineRealRows),
+          completedPayments: completed.length,
+          failedPayments: 0,
+          pendingPayments: 0,
+        },
+        bookingRequests: {
+          transactions: realBookingOnlyRows.length,
+          volume: sumAmount(realBookingOnlyRows),
+          completedPayments: bookingPaid.length,
+          failedPayments: 0,
+          pendingPayments: 0,
         },
         offPlatform: {
-          transactions: sourceRows.off.length,
-          volume: sumAmount(sourceRows.off),
-          completedPayments: sourceCount('off', 'paid'),
-          failedPayments: sourceCount('off', 'failed'),
-          pendingPayments: sourceCount('off', 'pending'),
+          transactions: realOfflineOpsRows.length + realOfflineSessionRows.length,
+          volume: offlineVolumeXaf,
+          completedPayments: offlinePaidTotal,
+          failedPayments: 0,
+          pendingPayments: 0,
         },
       },
     });

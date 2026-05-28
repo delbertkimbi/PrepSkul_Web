@@ -61,12 +61,31 @@ export default async function OfflineOperationDetailPage({
 
   const profileById = new Map((profiles || []).map((p: any) => [p.id, p]));
 
+  const { data: schedulingPeriods } = await supabase
+    .from('offline_scheduling_periods')
+    .select(
+      'id, period_start, period_end, start_month_label, operation_state, is_historical_import, subjects, pay_per_month_xaf, pay_months_count, expected_period_revenue_xaf, delivery_mode, created_at'
+    )
+    .eq('offline_operation_id', id)
+    .order('period_start', { ascending: true });
+
+  const periodIds = (schedulingPeriods || []).map((p: { id: string }) => p.id);
+
   let sessions: any[] | null = null;
 
   const sessionCols =
-    'id, tutor_id, learner_id, parent_id, recurring_session_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, delivery_mode, meet_link, onsite_location, onsite_photo_url, created_at, updated_at';
+    'id, tutor_id, learner_id, parent_id, recurring_session_id, offline_scheduling_period_id, scheduled_date, scheduled_time, duration_minutes, subject, location, status, delivery_mode, meet_link, onsite_location, onsite_photo_url, created_at, updated_at';
 
-  if (sessionIdsFromRun.length) {
+  if (periodIds.length) {
+    const { data } = await supabase
+      .from('individual_sessions')
+      .select(sessionCols)
+      .in('offline_scheduling_period_id', periodIds)
+      .order('scheduled_date', { ascending: true })
+      .order('scheduled_time', { ascending: true })
+      .limit(500);
+    sessions = data;
+  } else if (sessionIdsFromRun.length) {
     const { data } = await supabase
       .from('individual_sessions')
       .select(sessionCols)
@@ -188,6 +207,7 @@ export default async function OfflineOperationDetailPage({
         <OfflineOpsDetailClient
           record={recordAny}
           sessions={sessionsWithInsights}
+          schedulingPeriods={schedulingPeriods || []}
           venuePhotoUrl={venuePhoto}
           dailyReminders={dailyReminders || []}
           lastManualReminderAtBySession={lastManualReminderAtBySession}

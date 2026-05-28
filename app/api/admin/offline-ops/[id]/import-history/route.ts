@@ -6,6 +6,7 @@ import { schedulePeriodForExistingUser } from '@/lib/services/offline-user-hub-s
 
 export const runtime = 'nodejs';
 
+/** Import past billing months for this operation (evaluated sessions, no welcome/reminders). */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -27,19 +28,26 @@ export async function POST(
       return NextResponse.json({ error: 'Operation has no linked primary user' }, { status: 400 });
     }
 
-    const parsed = schedulePeriodBodySchema.safeParse(await request.json());
+    const body = await request.json();
+    const parsed = schedulePeriodBodySchema.safeParse({
+      ...body,
+      isHistoricalImport: true,
+      sendWelcomeEmail: false,
+      offlineOperationId: id,
+    });
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 });
     }
 
     const result = await schedulePeriodForExistingUser(supabase, op.primary_user_id, user.id, {
       ...parsed.data,
-      offlineOperationId: id,
+      isHistoricalImport: true,
       sendWelcomeEmail: false,
+      offlineOperationId: id,
     });
     return NextResponse.json({ success: true, ...result });
   } catch (e: unknown) {
-    console.error('[op schedule-period]', e);
+    console.error('[op import-history]', e);
     return NextResponse.json({ error: e instanceof Error ? e.message : 'Failed' }, { status: 500 });
   }
 }

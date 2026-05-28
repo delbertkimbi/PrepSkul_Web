@@ -117,3 +117,20 @@ export function enumerateSessionOccurrences(input: OfflineScheduleInputV2): Sess
 export function enumerateSessionDatesFromV2(input: OfflineScheduleInputV2): string[] {
   return [...new Set(enumerateSessionOccurrences(input).map((o) => o.date))].sort();
 }
+
+/** Keep only occurrences whose calendar month matches YYYY-MM (historical billing month). */
+export function filterOccurrencesWithinBillingMonth(
+  occurrences: SessionOccurrence[],
+  billingMonthKey: string
+): SessionOccurrence[] {
+  return occurrences.filter((o) => o.date.slice(0, 7) === billingMonthKey);
+}
+
+/** Four-week grid from month start, then restrict to the billing calendar month only. */
+export function enumerateSessionOccurrencesForBillingMonth(
+  input: OfflineScheduleInputV2,
+  billingMonthKey: string
+): SessionOccurrence[] {
+  const all = enumerateSessionOccurrences(input);
+  return filterOccurrencesWithinBillingMonth(all, billingMonthKey);
+}

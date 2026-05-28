@@ -89,7 +89,11 @@ export default function OfflineUserHubClient(props: HubProps) {
           : `Scheduled ${json.sessionIds?.length || 0} sessions.`
       );
       setPanel(null);
-      router.refresh();
+      if (historical && json.offlineOperationId) {
+        router.push(`/admin/offline-ops/${json.offlineOperationId}`);
+      } else {
+        router.refresh();
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed');
     } finally {
@@ -197,7 +201,12 @@ export default function OfflineUserHubClient(props: HubProps) {
   const cards: { id: Panel; title: string; desc: string; show: boolean }[] = [
     { id: 'schedule', title: 'Schedule new period', desc: 'Add sessions for a new billing period', show: true },
     { id: 'child', title: 'Add child learner', desc: 'Link another learner to this parent', show: props.userType === 'parent' },
-    { id: 'import', title: 'Import past period', desc: 'Add one card per past month (tutor, subjects, schedule, pay)', show: true },
+    {
+      id: 'import',
+      title: 'Import past period',
+      desc: 'Historical months only — evaluated sessions, no live schedule or welcome email',
+      show: true,
+    },
     { id: 'csv', title: 'CSV import', desc: 'Bulk import multiple historical periods', show: true },
     { id: 'anonymize', title: 'Soft anonymize', desc: 'Remove PII; keep sessions for analytics', show: true },
     { id: 'delete', title: 'Delete user', desc: 'Erase the account; keep session counts + tutor ratings', show: true },
@@ -223,8 +232,8 @@ export default function OfflineUserHubClient(props: HubProps) {
           <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg shadow-sm">
             <p className="font-semibold text-amber-900">No operation detail yet</p>
             <p className="text-xs text-amber-800 mt-1">
-              This account exists, but no offline operation record is linked to it yet. Schedule a new period or complete a
-              new enrollment to create the detail page.
+              Use <strong>Import past period</strong> below — it creates the matching record automatically and does not
+              schedule live sessions. You can open the detail page right after import.
             </p>
           </div>
         )}
