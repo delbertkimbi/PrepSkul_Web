@@ -15,6 +15,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import OfflineOpsModificationsPanel from '@/components/admin/offline-ops/OfflineOpsModificationsPanel';
+import OfflineSessionHistoryPanel, {
+  type OfflineSchedulingPeriodLite,
+} from '@/components/admin/offline-ops/OfflineSessionHistoryPanel';
 import { buildWhatsAppUrl, composeAdminFeedbackReply } from '@/lib/services/admin-feedback-reply-engine';
 
 type ProfileLite = {
@@ -27,6 +30,7 @@ type ProfileLite = {
 
 type SessionInsight = {
   id: string;
+  offline_scheduling_period_id?: string | null;
   scheduled_date: string | null;
   scheduled_time: string | null;
   duration_minutes: number | null;
@@ -110,6 +114,7 @@ const btnBase =
 export default function OfflineOpsDetailClient({
   record,
   sessions,
+  schedulingPeriods = [],
   venuePhotoUrl = null,
   dailyReminders,
   lastManualReminderAtBySession,
@@ -118,6 +123,7 @@ export default function OfflineOpsDetailClient({
 }: {
   record: any;
   sessions: SessionInsight[];
+  schedulingPeriods?: OfflineSchedulingPeriodLite[];
   venuePhotoUrl?: string | null;
   dailyReminders: Array<{
     id: string;
@@ -171,6 +177,17 @@ export default function OfflineOpsDetailClient({
   const [reminderSentLocal, setReminderSentLocal] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    setForm((f) => ({
+      ...f,
+      onboarding_stage: record.onboarding_stage || f.onboarding_stage,
+    }));
+  }, [record.onboarding_stage]);
+
+  useEffect(() => {
+    setSessionState(sessions);
+  }, [sessions]);
+
+  useEffect(() => {
     setForm((f) => {
       if (f.payment_status === 'paid') {
         const next = Number(f.expected_total_amount || 0);
@@ -192,6 +209,25 @@ export default function OfflineOpsDetailClient({
     const total = Number(form.expected_total_amount || 0);
     return Math.max(0, total - Number(form.amount_paid || 0));
   }, [form.amount_paid, form.expected_total_amount]);
+
+  const isPausedMatching = useMemo(() => {
+    const stage = (record.onboarding_stage || form.onboarding_stage || '').toLowerCase();
+    if (['active_sessions', 'completed'].includes(stage)) return false;
+    const hasActiveLivePeriod = (schedulingPeriods || []).some(
+      (p) =>
+        !p.is_historical_import &&
+        String(p.operation_state || 'active').toLowerCase() === 'active'
+    );
+    if (hasActiveLivePeriod) return false;
+    if (stage === 'paused') return true;
+    const periods = schedulingPeriods || [];
+    if (!periods.length) return false;
+    return periods.every(
+      (p) =>
+        p.is_historical_import ||
+        String(p.operation_state || 'paused').toLowerCase() === 'paused'
+    );
+  }, [form.onboarding_stage, record.onboarding_stage, schedulingPeriods]);
 
   const displaySessions = useMemo(() => selectDisplaySessions(sessionState), [sessionState]);
 
@@ -449,7 +485,8 @@ export default function OfflineOpsDetailClient({
             {record.customer_name} • {record.customer_role}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <OfflineSessionHistoryPanel sessions={sessionState} periods={schedulingPeriods} />
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
@@ -491,6 +528,8 @@ export default function OfflineOpsDetailClient({
           primaryUserId={record.primary_user_id}
           learnerUserId={record.learner_user_id}
           tutorUserId={record.tutor_user_id}
+          onboardingStage={record.onboarding_stage}
+          schedulingPeriods={schedulingPeriods}
           learners={
             learners.length
               ? learners
@@ -542,6 +581,19 @@ export default function OfflineOpsDetailClient({
         )}
       </div>
 
+      {isPausedMatching ? (
+        <div className="bg-violet-50 border border-violet-200 p-5 rounded-lg shadow-sm space-y-2">
+          <h2 className="font-semibold text-violet-950 text-lg border-l-4 border-violet-500 pl-3">Paused matching</h2>
+          <p className="text-sm text-violet-900 pl-4">
+            This matching is in <strong>paused</strong> state (typically historical backfill). Payment tracking, live-session
+            counters, and follow-ups apply after you <strong>Resume matching</strong> and schedule an active period in
+            Modifications below.
+          </p>
+          <p className="text-xs text-violet-800 pl-4">
+            Past months and evaluated sessions are in <strong>Full session history</strong>.
+          </p>
+        </div>
+      ) : (
       <div className="bg-white border border-[#1B2C4F]/15 p-5 space-y-3 rounded-lg shadow-sm">
         <h2 className="font-semibold text-[#1B2C4F] text-lg border-l-4 border-[#1B2C4F] pl-3">Tracking, payments & balances</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
@@ -552,7 +604,7 @@ export default function OfflineOpsDetailClient({
               value={form.onboarding_stage}
               onChange={(e) => setForm((f) => ({ ...f, onboarding_stage: e.target.value }))}
             >
-              {['new_lead', 'qualified', 'matched', 'active_sessions', 'completed', 'dropped'].map((s) => (
+              {['new_lead', 'qualified', 'matched', 'paused', 'active_sessions', 'completed', 'dropped'].map((s) => (
                 <option key={s} value={s}>
                   {s.replace('_', ' ')}
                 </option>
@@ -673,7 +725,9 @@ export default function OfflineOpsDetailClient({
           {saveMessage && <p className="text-sm text-gray-700">{saveMessage}</p>}
         </div>
       </div>
+      )}
 
+      {!isPausedMatching && (
       <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
         <h2 className="font-semibold text-[#1B2C4F] mb-3 text-lg border-l-4 border-[#1B2C4F] pl-3">Today&apos;s reminder schedule</h2>
         {dailyReminders.length === 0 ? (
@@ -691,12 +745,24 @@ export default function OfflineOpsDetailClient({
           </div>
         )}
       </div>
+      )}
 
       <div className="bg-white border border-[#1B2C4F]/15 p-5 rounded-lg shadow-sm">
-        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">Next session &amp; pending review</h2>
+        <h2 className="font-semibold text-[#1B2C4F] mb-1 text-lg border-l-4 border-[#1B2C4F] pl-3">
+          {isPausedMatching ? 'Historical sessions (admin review)' : 'Next session & pending review'}
+        </h2>
         <p className="text-sm text-slate-600 mb-4 pl-3 ml-1">
-          Shows your <strong>next upcoming session</strong> and any <strong>past sessions</strong> whose time has passed but
-          attendance is not yet marked. After you confirm attendance, a session leaves this list.
+          {isPausedMatching ? (
+            <>
+              Evaluated historical sessions can still be reviewed here. Use <strong>Full session history</strong> for the
+              full list by billing month.
+            </>
+          ) : (
+            <>
+              Shows your <strong>next upcoming session</strong> and any <strong>past sessions</strong> whose time has passed
+              but attendance is not yet marked. After you confirm attendance, a session leaves this list.
+            </>
+          )}
         </p>
         {displaySessions.length === 0 ? (
           <p className="text-sm text-gray-600">No upcoming or overdue sessions need admin review right now.</p>

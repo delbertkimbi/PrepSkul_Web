@@ -30,6 +30,8 @@ export const schedulePeriodBodySchema = z
     monthlySchedules: z.array(offlineScheduleSchema).min(1).optional(),
     sendWelcomeEmail: z.boolean().optional(),
     isHistoricalImport: z.boolean().optional(),
+    /** When scheduling from a specific offline operation detail page */
+    offlineOperationId: z.string().uuid().optional(),
   })
   .refine((data) => Boolean(data.schedule || data.monthlySchedules?.length), {
     message: 'Either schedule or monthlySchedules is required',

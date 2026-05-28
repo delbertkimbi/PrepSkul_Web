@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { requireAdminOrDeny, getTimeRanges } from '../_lib';
+import { sessionBelongsToOfflineOps } from '@/lib/analytics-offline-scope';
 import { COMMISSION_RATE, TUTOR_EARNINGS_RATE } from '@/lib/offline-ops-constants';
+import { displayBillingMonthLabel } from '@/lib/offline-month-utils';
 
 export const runtime = 'nodejs';
 
@@ -96,28 +98,8 @@ export async function GET(request: NextRequest) {
     const periodRows = periods || [];
     const parentIds = [...new Set(periodRows.map((p) => p.primary_user_id).filter(Boolean))];
     const offTutorIds = [...new Set(periodRows.map((p) => p.tutor_user_id).filter(Boolean))];
-    const offlineTutorIdSet = new Set(offTutorIds);
-    const offlineFamilyUserIds = new Set<string>();
-    for (const p of periodRows) {
-      if (p.primary_user_id) offlineFamilyUserIds.add(p.primary_user_id);
-      if (p.learner_user_id) offlineFamilyUserIds.add(p.learner_user_id);
-    }
 
-    /** On-platform = sessions not linked to offline ops (by period id, tutor, or family). */
-    const belongsToOfflineOnPlatform = (s: {
-      offline_scheduling_period_id?: string | null;
-      tutor_id?: string | null;
-      learner_id?: string | null;
-      parent_id?: string | null;
-    }) => {
-      if (s.offline_scheduling_period_id) return true;
-      if (s.tutor_id && offlineTutorIdSet.has(s.tutor_id)) return true;
-      if (s.learner_id && offlineFamilyUserIds.has(s.learner_id)) return true;
-      if (s.parent_id && offlineFamilyUserIds.has(s.parent_id)) return true;
-      return false;
-    };
-
-    const platformOnSessions = (onSessions || []).filter((s) => !belongsToOfflineOnPlatform(s));
+    const platformOnSessions = (onSessions || []).filter((s) => !sessionBelongsToOfflineOps(s));
     const onTutorIds = [...new Set(platformOnSessions.map((s) => s.tutor_id).filter(Boolean))];
     const allTutorIds = [...new Set([...offTutorIds, ...onTutorIds])];
 
@@ -156,7 +138,7 @@ export async function GET(request: NextRequest) {
         location: p.onsite_location || p.meet_link || p.delivery_mode,
         payPerMonth: Number(p.pay_per_month_xaf || 0),
         payMonths: Number(p.pay_months_count || 0),
-        startMonth: p.start_month_label || p.period_start,
+        startMonth: displayBillingMonthLabel(p.start_month_label, p.period_start),
         state: p.operation_state || 'active',
         revenue,
         prepskulProfit: Math.round(counted * COMMISSION_RATE),

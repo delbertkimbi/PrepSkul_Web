@@ -4,7 +4,9 @@ import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const schema = z.object({
-  onboarding_stage: z.enum(['new_lead', 'qualified', 'matched', 'active_sessions', 'completed', 'dropped']).optional(),
+  onboarding_stage: z
+    .enum(['new_lead', 'qualified', 'matched', 'paused', 'active_sessions', 'completed', 'dropped'])
+    .optional(),
   payment_status: z.enum(['unpaid', 'partial', 'paid', 'refunded']).optional(),
   payment_environment: z.enum(['real', 'sandbox']).optional(),
   amount_paid: z.number().min(0).optional(),

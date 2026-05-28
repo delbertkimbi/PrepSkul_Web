@@ -157,6 +157,7 @@ export function buildHistoricalMonthlyPayloads(state: SchedulePeriodFormState) {
       onsitePhotoUrl: state.onsitePhotoUrl.trim() || null,
       payPerMonthXaf: record.payPerMonth ? Number(record.payPerMonth) : null,
       payMonthsCount: 1,
+      operationState: 'paused' as const,
       startMonthLabel: formatStartMonthLabel(record.monthYear.year, record.monthYear.month, startDate),
       tutorUserId: record.tutor?.tutorUserId,
     };
@@ -423,12 +424,13 @@ export default function OfflineSchedulePeriodFields({
                         type="number"
                         min={1}
                         max={7}
-                        value={record.sessionsPerWeek}
-                        onChange={(e) =>
-                          patchHistoricalRecord(record.id, { sessionsPerWeek: e.target.value })
-                        }
-                        className="mt-1 border-[#1B2C4F]/20"
+                        readOnly
+                        value={String(
+                          Math.max(1, record.daySlots.filter((d) => d.enabled).length || Number(record.sessionsPerWeek) || 1)
+                        )}
+                        className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
                       />
+                      <p className="text-[11px] text-slate-500 mt-1">From selected session days.</p>
                     </div>
                     <div>
                       <Label>Duration (min)</Label>

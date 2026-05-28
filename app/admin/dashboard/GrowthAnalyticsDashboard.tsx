@@ -9,6 +9,10 @@ const fetcher = async (url: string) => {
   return res.json();
 };
 
+function money(n: number) {
+  return Number(n || 0).toLocaleString();
+}
+
 export default function GrowthAnalyticsDashboard() {
   const users = useSWR('/api/admin/analytics/users', fetcher, { refreshInterval: 30000 });
   const sessions = useSWR('/api/admin/analytics/sessions', fetcher, { refreshInterval: 30000 });
@@ -17,12 +21,17 @@ export default function GrowthAnalyticsDashboard() {
   const loading = users.isLoading || sessions.isLoading || payments.isLoading;
   const hasError = users.error || sessions.error || payments.error;
 
+  const offlinePaid = payments.data?.totals?.offlineCompletedPayments ?? 0;
+  const offlineVolume = payments.data?.volume?.offlineYearly ?? 0;
+  const sandboxFapshi = payments.data?.totals?.sandboxFapshiPayments ?? 0;
+
   return (
     <div className="space-y-5 sm:space-y-6">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Analytics overview</h1>
         <p className="text-sm text-gray-600 mt-1">
-          Key platform totals. Offline operations detail is in the tables below.
+          Fapshi totals are production only. Offline includes enrollments and offline-linked session
+          checkouts. Sandbox/test Fapshi is excluded from headline counts.
         </p>
       </div>
 
@@ -35,10 +44,30 @@ export default function GrowthAnalyticsDashboard() {
       )}
 
       {!loading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           <MetricCard title="Total users" value={users.data?.totals?.totalUsers ?? 0} />
           <MetricCard title="Total sessions booked" value={sessions.data?.totals?.totalBooked ?? 0} />
-          <MetricCard title="Completed payments (real)" value={payments.data?.totals?.completedPayments ?? 0} />
+          <MetricCard
+            title="On-platform Fapshi (production)"
+            value={payments.data?.totals?.completedPayments ?? 0}
+          />
+          <MetricCard title="Offline payments (production)" value={offlinePaid} />
+          <MetricCard
+            title="Offline revenue (production XAF)"
+            value={money(offlineVolume)}
+          />
+          {(payments.data?.totals?.bookingPaymentsPaid ?? 0) > 0 && (
+            <MetricCard
+              title="Booking Fapshi (production)"
+              value={payments.data?.totals?.bookingPaymentsPaid ?? 0}
+            />
+          )}
+          {sandboxFapshi > 0 && (
+            <MetricCard
+              title="Fapshi sandbox (excluded)"
+              value={sandboxFapshi}
+            />
+          )}
           <MetricCard
             title="Weekly user growth"
             value={`${users.data?.growth?.weeklyGrowthRate ?? 0}%`}

@@ -19,6 +19,13 @@ import {
 import TutorPicker, { type TutorPickerValue } from '@/components/admin/offline-ops/TutorPicker';
 import LearnerPicker, { type LearnerPickerValue } from '@/components/admin/offline-ops/LearnerPicker';
 import DeliveryModeFields, { type DeliveryMode } from '@/components/admin/offline-ops/DeliveryModeFields';
+import OfflineSchedulePeriodFields, {
+  buildHistoricalMonthlyPayloads,
+  defaultHistoricalMonthRecord,
+  defaultSchedulePeriodState,
+  validateSchedulePeriodState,
+  type SchedulePeriodFormState,
+} from '@/components/admin/offline-ops/OfflineSchedulePeriodFields';
 import {
   SubjectListInput,
   PerDaySchedulePanel,
@@ -34,6 +41,7 @@ export default function OfflineOpsFormClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [enrollmentKind, setEnrollmentKind] = useState<'new' | 'existing'>('new');
+  const [sessionIntent, setSessionIntent] = useState<'live' | 'historical_backfill'>('live');
   const [existingUser, setExistingUser] = useState<LearnerPickerValue>(null);
   const [agentName, setAgentName] = useState('Brian');
   const [sourceChannel, setSourceChannel] = useState('whatsapp_direct');
@@ -43,6 +51,10 @@ export default function OfflineOpsFormClient() {
   const [primaryPhone, setPrimaryPhone] = useState('');
   const [childFullName, setChildFullName] = useState('');
   const [tutor, setTutor] = useState<TutorPickerValue>(null);
+
+  const [scheduleState, setScheduleState] = useState<SchedulePeriodFormState>(() =>
+    defaultSchedulePeriodState()
+  );
 
   const [subjectCount, setSubjectCount] = useState(1);
   const [subjects, setSubjects] = useState(['']);
@@ -66,10 +78,22 @@ export default function OfflineOpsFormClient() {
   const [nextFollowupAt, setNextFollowupAt] = useState('');
   const [notes, setNotes] = useState('');
 
+  const isHistorical = sessionIntent === 'historical_backfill';
+
   const computedTotalDue = useMemo(
     () => computePackageTotalDue(payPerMonth, payMonths),
     [payPerMonth, payMonths]
   );
+
+  useEffect(() => {
+    if (!isHistorical) return;
+    if (!scheduleState.historicalMonthRecords.length) {
+      setScheduleState((s) => ({
+        ...s,
+        historicalMonthRecords: [defaultHistoricalMonthRecord()],
+      }));
+    }
+  }, [isHistorical, scheduleState.historicalMonthRecords.length]);
 
   useEffect(() => {
     if (computedTotalDue > 0) {
@@ -82,13 +106,13 @@ export default function OfflineOpsFormClient() {
     }
   }, [computedTotalDue, paymentStatus]);
 
+  const patchSchedule = (p: Partial<SchedulePeriodFormState>) =>
+    setScheduleState((s) => ({ ...s, ...p }));
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError(null);
-    if (!tutor?.tutorUserId) {
-      setSubmitError('Select a tutor from the list.');
-      return;
-    }
+
     if (enrollmentKind === 'existing' && !existingUser?.userId) {
       setSubmitError('Search and select the existing PrepSkul account.');
       return;
@@ -105,27 +129,94 @@ export default function OfflineOpsFormClient() {
       setSubmitError('Enter the learner full name for this parent account.');
       return;
     }
-    const cleanedSubjects = subjects.map((s) => s.trim()).filter(Boolean);
-    if (!cleanedSubjects.length) {
-      setSubmitError('Add at least one subject.');
-      return;
-    }
-    const enabled = daySlots.filter((d) => d.enabled);
-    if (!enabled.length) {
-      setSubmitError('Select at least one session day.');
-      return;
-    }
-    if ((deliveryMode === 'online' || deliveryMode === 'hybrid') && !meetLink.trim()) {
-      setSubmitError('Google Meet link is required for online/hybrid delivery.');
-      return;
-    }
-    if ((deliveryMode === 'onsite' || deliveryMode === 'hybrid') && !onsiteLocation.trim()) {
-      setSubmitError('Onsite location is required for onsite/hybrid delivery.');
-      return;
-    }
     if (!notes.trim() || notes.trim().length < 8) {
       setSubmitError('Operational notes must be at least 8 characters.');
       return;
+    }
+
+    let schedulePayload: Record<string, unknown>;
+    let monthlySchedules: ReturnType<typeof buildHistoricalMonthlyPayloads> | undefined;
+    let tutorUserId: string | undefined;
+
+    if (isHistorical) {
+      const err = validateSchedulePeriodState(scheduleState, {
+        historical: true,
+        historicalMonthOnly: true,
+        requireTutor: false,
+      });
+      if (err) {
+        setSubmitError(err);
+        return;
+      }
+      monthlySchedules = buildHistoricalMonthlyPayloads(scheduleState);
+      const first = monthlySchedules[0];
+      tutorUserId = first?.tutorUserId;
+      if (!tutorUserId) {
+        setSubmitError('Select a tutor on at least one past month.');
+        return;
+      }
+      schedulePayload = {
+        weeks: first.weeks,
+        sessionsPerWeek: first.sessionsPerWeek,
+        dayTimeSlots: first.dayTimeSlots,
+        durationMinutes: first.durationMinutes,
+        startDate: first.startDate,
+        deliveryMode: scheduleState.deliveryMode,
+        subject: first.subjects[0],
+        subjects: first.subjects,
+        meetLink: scheduleState.meetLink.trim() || null,
+        onsiteLocation: scheduleState.onsiteLocation.trim() || null,
+        onsitePhotoUrl: scheduleState.onsitePhotoUrl.trim() || null,
+        payPerMonthXaf: null,
+        payMonthsCount: null,
+        operationState: 'paused',
+      };
+    } else {
+      if (!tutor?.tutorUserId) {
+        setSubmitError('Select a tutor from the list.');
+        return;
+      }
+      tutorUserId = tutor.tutorUserId;
+      const cleanedSubjects = subjects.map((s) => s.trim()).filter(Boolean);
+      if (!cleanedSubjects.length) {
+        setSubmitError('Add at least one subject.');
+        return;
+      }
+      const enabled = daySlots.filter((d) => d.enabled);
+      if (!enabled.length) {
+        setSubmitError('Select at least one session day.');
+        return;
+      }
+      if (!startDate) {
+        setSubmitError('Start date is required for live matching.');
+        return;
+      }
+      if ((deliveryMode === 'online' || deliveryMode === 'hybrid') && !meetLink.trim()) {
+        setSubmitError('Google Meet link is required for online/hybrid delivery.');
+        return;
+      }
+      if ((deliveryMode === 'onsite' || deliveryMode === 'hybrid') && !onsiteLocation.trim()) {
+        setSubmitError('Onsite location is required for onsite/hybrid delivery.');
+        return;
+      }
+      schedulePayload = {
+        weeks: Number(weeks),
+        sessionsPerWeek: Math.max(1, enabled.length),
+        dayTimeSlots: enabled.map((d) => ({ day: d.day, time: d.time })),
+        weekDays: enabled.map((d) => d.day),
+        sessionTime: enabled[0].time,
+        durationMinutes: Number(durationMinutes),
+        startDate,
+        deliveryMode,
+        subject: cleanedSubjects[0],
+        subjects: cleanedSubjects,
+        meetLink: meetLink.trim() || null,
+        onsiteLocation: onsiteLocation.trim() || null,
+        onsitePhotoUrl: onsitePhotoUrl.trim() || null,
+        payPerMonthXaf: payPerMonth ? Number(payPerMonth) : null,
+        payMonthsCount: payMonths ? Number(payMonths) : null,
+        operationState,
+      };
     }
 
     setIsSubmitting(true);
@@ -138,45 +229,24 @@ export default function OfflineOpsFormClient() {
         agentName,
         sourceChannel,
         enrollmentKind,
+        sessionIntent,
         existingPrimaryUserId: enrollmentKind === 'existing' ? existingUser?.userId : undefined,
         primary: {
           role:
-            enrollmentKind === 'existing' && existingUser
-              ? existingUser.userType
-              : primaryRole,
+            enrollmentKind === 'existing' && existingUser ? existingUser.userType : primaryRole,
           fullName:
-            enrollmentKind === 'existing' && existingUser
-              ? existingUser.fullName
-              : primaryFullName.trim(),
+            enrollmentKind === 'existing' && existingUser ? existingUser.fullName : primaryFullName.trim(),
           email:
-            enrollmentKind === 'existing' && existingUser
-              ? existingUser.email
-              : primaryEmail.trim(),
+            enrollmentKind === 'existing' && existingUser ? existingUser.email : primaryEmail.trim(),
           phone: primaryPhone.trim(),
         },
         child:
           primaryRole === 'parent' || existingUser?.userType === 'parent'
             ? { fullName: childFullName.trim() }
             : undefined,
-        tutor: { tutorUserId: tutor.tutorUserId },
-        schedule: {
-          weeks: Number(weeks),
-          sessionsPerWeek: Math.max(1, enabled.length),
-          dayTimeSlots: enabled.map((d) => ({ day: d.day, time: d.time })),
-          weekDays: enabled.map((d) => d.day),
-          sessionTime: enabled[0].time,
-          durationMinutes: Number(durationMinutes),
-          startDate,
-          deliveryMode,
-          subject: cleanedSubjects[0],
-          subjects: cleanedSubjects,
-          meetLink: meetLink.trim() || null,
-          onsiteLocation: onsiteLocation.trim() || null,
-          onsitePhotoUrl: onsitePhotoUrl.trim() || null,
-          payPerMonthXaf: payPerMonth ? Number(payPerMonth) : null,
-          payMonthsCount: payMonths ? Number(payMonths) : null,
-          operationState,
-        },
+        tutor: { tutorUserId },
+        schedule: schedulePayload,
+        monthlySchedules: isHistorical ? monthlySchedules : undefined,
         notes: notes.trim(),
         tracking: {
           paymentStatus,
@@ -199,7 +269,11 @@ export default function OfflineOpsFormClient() {
               .map(([field, messages]) => `${field}: ${(messages as string[]).join(', ')}`)
               .join(' | ')
           : '';
-        throw new Error(details ? `${json?.error || 'Invalid payload'} — ${details}` : json?.error || 'Failed to sync offline onboarding');
+        throw new Error(
+          details
+            ? `${json?.error || 'Invalid payload'} — ${details}`
+            : json?.error || 'Failed to sync offline onboarding'
+        );
       }
 
       if (json.offlineOperationId) {
@@ -244,12 +318,56 @@ export default function OfflineOpsFormClient() {
             <Label className="text-slate-700 font-medium">Enrollment type</Label>
             <div className="flex flex-wrap gap-4 text-sm">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="enrollmentKind" checked={enrollmentKind === 'new'} onChange={() => { setEnrollmentKind('new'); setExistingUser(null); }} />
+                <input
+                  type="radio"
+                  name="enrollmentKind"
+                  checked={enrollmentKind === 'new'}
+                  onChange={() => {
+                    setEnrollmentKind('new');
+                    setExistingUser(null);
+                  }}
+                />
                 New user (not on PrepSkul yet)
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="enrollmentKind" checked={enrollmentKind === 'existing'} onChange={() => setEnrollmentKind('existing')} />
+                <input
+                  type="radio"
+                  name="enrollmentKind"
+                  checked={enrollmentKind === 'existing'}
+                  onChange={() => setEnrollmentKind('existing')}
+                />
                 Existing PrepSkul account
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-md border border-violet-200 bg-violet-50/80 p-4 space-y-3">
+            <Label className="text-violet-950 font-medium">What are you setting up?</Label>
+            <div className="flex flex-col gap-2 text-sm">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="sessionIntent"
+                  checked={sessionIntent === 'live'}
+                  onChange={() => setSessionIntent('live')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong>Live matching</strong> — create upcoming sessions now (welcome email to tutor &amp; family).
+                </span>
+              </label>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="sessionIntent"
+                  checked={isHistorical}
+                  onChange={() => setSessionIntent('historical_backfill')}
+                  className="mt-1"
+                />
+                <span>
+                  <strong>Historical backfill only</strong> — account + evaluated past sessions per billing month. No
+                  live schedule or welcome email.
+                </span>
               </label>
             </div>
           </div>
@@ -260,202 +378,311 @@ export default function OfflineOpsFormClient() {
               {existingUser?.userType === 'parent' && (
                 <div>
                   <Label>Learner full name *</Label>
-                  <Input value={childFullName} onChange={(e) => setChildFullName(e.target.value)} placeholder="Child being tutored" className="mt-1 border-[#1B2C4F]/20" />
+                  <Input
+                    value={childFullName}
+                    onChange={(e) => setChildFullName(e.target.value)}
+                    placeholder="Child being tutored"
+                    className="mt-1 border-[#1B2C4F]/20"
+                  />
                 </div>
               )}
             </div>
           )}
 
           {enrollmentKind === 'new' && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Agent</Label>
-              <Select value={agentName} onValueChange={setAgentName}>
-                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon'].map((a) => (
-                    <SelectItem key={a} value={a}>{a}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Source</Label>
-              <Select value={sourceChannel} onValueChange={setSourceChannel}>
-                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="whatsapp_ads">WhatsApp ads</SelectItem>
-                  <SelectItem value="whatsapp_direct">WhatsApp direct</SelectItem>
-                  <SelectItem value="phone_call">Phone call</SelectItem>
-                  <SelectItem value="walk_in">Walk-in</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Primary role</Label>
-              <Select value={primaryRole} onValueChange={(v) => setPrimaryRole(v as 'parent' | 'student')}>
-                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="parent">Parent</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Primary full name</Label>
-              <Input value={primaryFullName} onChange={(e) => setPrimaryFullName(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
-            </div>
-            <div>
-              <Label>Primary email (unique account)</Label>
-              <Input type="email" value={primaryEmail} onChange={(e) => setPrimaryEmail(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
-            </div>
-            <div>
-              <Label>Phone / WhatsApp</Label>
-              <Input value={primaryPhone} onChange={(e) => setPrimaryPhone(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-              <p className="text-xs text-slate-500 mt-1">Not required to be unique across accounts.</p>
-            </div>
-            {primaryRole === 'parent' && (
-              <div className="sm:col-span-2">
-                <Label>Learner full name</Label>
-                <Input value={childFullName} onChange={(e) => setChildFullName(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Agent</Label>
+                <Select value={agentName} onValueChange={setAgentName}>
+                  <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['Brian', 'Delbert', 'Calvin', 'Brinzel', 'Brandon'].map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-          </div>
+              <div>
+                <Label>Source</Label>
+                <Select value={sourceChannel} onValueChange={setSourceChannel}>
+                  <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whatsapp_ads">WhatsApp ads</SelectItem>
+                    <SelectItem value="whatsapp_direct">WhatsApp direct</SelectItem>
+                    <SelectItem value="phone_call">Phone call</SelectItem>
+                    <SelectItem value="walk_in">Walk-in</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Primary role</Label>
+                <Select value={primaryRole} onValueChange={(v) => setPrimaryRole(v as 'parent' | 'student')}>
+                  <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="parent">Parent</SelectItem>
+                    <SelectItem value="student">Student</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Primary full name</Label>
+                <Input
+                  value={primaryFullName}
+                  onChange={(e) => setPrimaryFullName(e.target.value)}
+                  className="mt-1 border-[#1B2C4F]/20"
+                  required
+                />
+              </div>
+              <div>
+                <Label>Primary email (unique account)</Label>
+                <Input
+                  type="email"
+                  value={primaryEmail}
+                  onChange={(e) => setPrimaryEmail(e.target.value)}
+                  className="mt-1 border-[#1B2C4F]/20"
+                  required
+                />
+              </div>
+              <div>
+                <Label>Phone / WhatsApp</Label>
+                <Input
+                  value={primaryPhone}
+                  onChange={(e) => setPrimaryPhone(e.target.value)}
+                  className="mt-1 border-[#1B2C4F]/20"
+                />
+                <p className="text-xs text-slate-500 mt-1">Not required to be unique across accounts.</p>
+              </div>
+              {primaryRole === 'parent' && (
+                <div className="sm:col-span-2">
+                  <Label>Learner full name</Label>
+                  <Input
+                    value={childFullName}
+                    onChange={(e) => setChildFullName(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                    required
+                  />
+                </div>
+              )}
+            </div>
           )}
         </section>
 
-        <section className={`${panel} xl:col-span-5`}>
-          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3 mb-4">Tutor match</h2>
-          <TutorPicker value={tutor} onChange={setTutor} />
-        </section>
+        {isHistorical ? (
+          <section className={`${panel} xl:col-span-12 space-y-4`}>
+            <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#4A6FBF] pl-3">
+              Past billing months
+            </h2>
+            <p className="text-sm text-slate-600">
+              One card per month that already happened. Each month gets its own tutor, subjects, weekly times, and pay.
+              Shared delivery settings apply to all months below.
+            </p>
+            <OfflineSchedulePeriodFields
+              state={scheduleState}
+              onChange={patchSchedule}
+              showTutorPicker={false}
+              historicalDefaults
+              historicalMonthOnly
+            />
+          </section>
+        ) : (
+          <>
+            <section className={`${panel} xl:col-span-5`}>
+              <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3 mb-4">Tutor match</h2>
+              <TutorPicker value={tutor} onChange={setTutor} />
+            </section>
 
-        <section className={`${panel} xl:col-span-12 space-y-5`}>
-          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Scheduling period</h2>
-          <SubjectListInput
-            count={subjectCount}
-            subjects={subjects}
-            onCountChange={setSubjectCount}
-            onSubjectsChange={setSubjects}
-          />
-          <PerDaySchedulePanel
-            slots={daySlots}
-            onChange={(slots) => {
-              setDaySlots(slots);
-              setSessionsPerWeek(String(Math.max(1, slots.filter((d) => d.enabled).length)));
-            }}
-          />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <Label>Start date</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 border-[#1B2C4F]/20" required />
-            </div>
-            <div>
-              <Label>Weeks</Label>
-              <Input type="number" min={1} max={24} value={weeks} onChange={(e) => setWeeks(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-            </div>
-            <div>
-              <Label>Sessions / week</Label>
-              <Input
-                type="number"
-                min={1}
-                max={7}
-                value={String(Math.max(1, daySlots.filter((d) => d.enabled).length || Number(sessionsPerWeek)))}
-                readOnly
-                className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
+            <section className={`${panel} xl:col-span-12 space-y-5`}>
+              <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">
+                Scheduling period
+              </h2>
+              <SubjectListInput
+                count={subjectCount}
+                subjects={subjects}
+                onCountChange={setSubjectCount}
+                onSubjectsChange={setSubjects}
               />
-              <p className="text-[11px] text-slate-500 mt-1">Auto-filled from selected session days.</p>
-            </div>
-            <div>
-              <Label>Duration (min)</Label>
-              <Input type="number" min={30} step={15} value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-            </div>
-            <div>
-              <Label>Pay / month (XAF)</Label>
-              <Input type="number" min={0} value={payPerMonth} onChange={(e) => setPayPerMonth(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-            </div>
-            <div>
-              <Label># Pay-months</Label>
-              <Input type="number" min={0.5} step={0.5} value={payMonths} onChange={(e) => setPayMonths(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
-            </div>
-            <div>
-              <Label>Operation state</Label>
-              <Select value={operationState} onValueChange={(v) => setOperationState(v as typeof operationState)}>
-                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="paused">Paused</SelectItem>
-                  <SelectItem value="stopped">Stopped</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </section>
-
-        <section className={`${panel} xl:col-span-6`}>
-          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3 mb-4">Delivery</h2>
-          <DeliveryModeFields
-            mode={deliveryMode}
-            meetLink={meetLink}
-            onsiteLocation={onsiteLocation}
-            onsitePhotoUrl={onsitePhotoUrl}
-            onModeChange={setDeliveryMode}
-            onMeetLinkChange={setMeetLink}
-            onLocationChange={setOnsiteLocation}
-            onPhotoUrlChange={setOnsitePhotoUrl}
-          />
-        </section>
-
-        <section className={`${panel} xl:col-span-6 space-y-4`}>
-          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Payments & notes</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label>Payment status</Label>
-              <Select
-                value={paymentStatus}
-                onValueChange={(status) => {
-                  setPaymentStatus(status);
-                  if (status === 'paid') setAmountPaid(String(computedTotalDue || 0));
-                  if (status === 'unpaid') setAmountPaid('0');
+              <PerDaySchedulePanel
+                slots={daySlots}
+                onChange={(slots) => {
+                  setDaySlots(slots);
+                  setSessionsPerWeek(String(Math.max(1, slots.filter((d) => d.enabled).length)));
                 }}
-              >
-                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unpaid">Unpaid</SelectItem>
-                  <SelectItem value="partial">Partial</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                  <SelectItem value="refunded">Refunded</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Environment</Label>
-              <Select value={paymentEnvironment} onValueChange={setPaymentEnvironment}>
-                <SelectTrigger className="mt-1 border-[#1B2C4F]/20"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="real">Real</SelectItem>
-                  <SelectItem value="sandbox">Sandbox</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Total due (XAF)</Label>
-              <Input
-                type="number"
-                min={0}
-                readOnly
-                value={packageTotalAmount}
-                className="mt-1 border-[#1B2C4F]/20 bg-slate-50 text-slate-800"
               />
-              <p className="text-[11px] text-slate-500 mt-1">Auto-calculated: pay / month × # pay-months.</p>
-            </div>
-            {paymentStatus === 'partial' && (
-              <div>
-                <Label>Amount paid</Label>
-                <Input type="number" min={0} value={amountPaid} onChange={(e) => setAmountPaid(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <Label>Start date</Label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>Weeks</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={24}
+                    value={weeks}
+                    onChange={(e) => setWeeks(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                  />
+                </div>
+                <div>
+                  <Label>Sessions / week</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={7}
+                    value={String(Math.max(1, daySlots.filter((d) => d.enabled).length || Number(sessionsPerWeek)))}
+                    readOnly
+                    className="mt-1 border-[#1B2C4F]/20 bg-slate-50"
+                  />
+                  <p className="text-[11px] text-slate-500 mt-1">Auto-filled from selected session days.</p>
+                </div>
+                <div>
+                  <Label>Duration (min)</Label>
+                  <Input
+                    type="number"
+                    min={30}
+                    step={15}
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                  />
+                </div>
+                <div>
+                  <Label>Pay / month (XAF)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={payPerMonth}
+                    onChange={(e) => setPayPerMonth(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                  />
+                </div>
+                <div>
+                  <Label># Pay-months</Label>
+                  <Input
+                    type="number"
+                    min={0.5}
+                    step={0.5}
+                    value={payMonths}
+                    onChange={(e) => setPayMonths(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                  />
+                </div>
+                <div>
+                  <Label>Operation state</Label>
+                  <Select value={operationState} onValueChange={(v) => setOperationState(v as typeof operationState)}>
+                    <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="paused">Paused</SelectItem>
+                      <SelectItem value="stopped">Stopped</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            )}
-          </div>
+            </section>
+
+            <section className={`${panel} xl:col-span-6`}>
+              <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3 mb-4">Delivery</h2>
+              <DeliveryModeFields
+                mode={deliveryMode}
+                meetLink={meetLink}
+                onsiteLocation={onsiteLocation}
+                onsitePhotoUrl={onsitePhotoUrl}
+                onModeChange={setDeliveryMode}
+                onMeetLinkChange={setMeetLink}
+                onLocationChange={setOnsiteLocation}
+                onPhotoUrlChange={setOnsitePhotoUrl}
+              />
+            </section>
+          </>
+        )}
+
+        <section className={`${panel} ${isHistorical ? 'xl:col-span-12' : 'xl:col-span-6'} space-y-4`}>
+          <h2 className="text-base font-semibold text-[#1B2C4F] border-l-4 border-[#1B2C4F] pl-3">Payments & notes</h2>
+          {!isHistorical && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label>Payment status</Label>
+                <Select
+                  value={paymentStatus}
+                  onValueChange={(status) => {
+                    setPaymentStatus(status);
+                    if (status === 'paid') setAmountPaid(String(computedTotalDue || 0));
+                    if (status === 'unpaid') setAmountPaid('0');
+                  }}
+                >
+                  <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                    <SelectItem value="refunded">Refunded</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Environment</Label>
+                <Select value={paymentEnvironment} onValueChange={setPaymentEnvironment}>
+                  <SelectTrigger className="mt-1 border-[#1B2C4F]/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="real">Real</SelectItem>
+                    <SelectItem value="sandbox">Sandbox</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Total due (XAF)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  readOnly
+                  value={packageTotalAmount}
+                  className="mt-1 border-[#1B2C4F]/20 bg-slate-50 text-slate-800"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">Auto-calculated: pay / month × # pay-months.</p>
+              </div>
+              {paymentStatus === 'partial' && (
+                <div>
+                  <Label>Amount paid</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                    className="mt-1 border-[#1B2C4F]/20"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+          {isHistorical && (
+            <p className="text-sm text-slate-600">
+              Package payment for historical matchings is tracked per month above. Use notes for any overall payment
+              context.
+            </p>
+          )}
           <div>
             <Label>Operational notes</Label>
             <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} className="mt-1 border-[#1B2C4F]/20" />
@@ -463,12 +690,22 @@ export default function OfflineOpsFormClient() {
         </section>
 
         {submitError && (
-          <div className="xl:col-span-12 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{submitError}</div>
+          <div className="xl:col-span-12 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            {submitError}
+          </div>
         )}
 
         <div className="xl:col-span-12 flex flex-wrap gap-3">
           <Button type="submit" disabled={isSubmitting} className="bg-[#1B2C4F] hover:bg-[#15243d] text-white">
-            {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Enrolling…</> : 'Complete enrollment'}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" /> Saving…
+              </>
+            ) : isHistorical ? (
+              'Create account & import past months'
+            ) : (
+              'Complete enrollment'
+            )}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.push('/admin/offline-ops/users')}>
             Cancel
@@ -478,4 +715,3 @@ export default function OfflineOpsFormClient() {
     </div>
   );
 }
-

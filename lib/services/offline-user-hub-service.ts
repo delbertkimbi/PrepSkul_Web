@@ -1,7 +1,10 @@
 import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { scheduleOfflinePeriod } from '@/lib/services/offline-period-service';
-import { resolveTutorUserId } from '@/lib/services/offline-onboarding-service';
+import {
+  ensureOfflineOperationForPrimaryUser,
+  resolveTutorUserId,
+} from '@/lib/services/offline-onboarding-service';
 import type { OfflineScheduleInputV2 } from '@/lib/services/offline-schedule';
 import type { z } from 'zod';
 import type { offlineScheduleSchema, schedulePeriodBodySchema } from '@/lib/validators/offline-period-schema';
@@ -149,6 +152,7 @@ export async function schedulePeriodForExistingUser(
     importedMonths: results.length,
     tutorUserId: results[0]?.tutorUserId,
     learnerUserId: results[0]?.learnerUserId,
+    offlineOperationId: results[0]?.offlineOperationId ?? null,
   };
 }
 
@@ -176,6 +180,20 @@ async function scheduleSinglePeriodForExistingUser(
   );
   const scheduleV2 = toScheduleV2(schedule);
   const isHistorical = body.isHistoricalImport ?? false;
+  let offlineOperationId = body.offlineOperationId ?? ctx.offlineOperationId;
+
+  if (!offlineOperationId && isHistorical) {
+    offlineOperationId = await ensureOfflineOperationForPrimaryUser(admin, {
+      primaryUserId,
+      learnerUserId,
+      tutorUserId: tutorResolved.tutorUserId,
+      deliveryMode: schedule.deliveryMode,
+      subjects: schedule.subjects?.length
+        ? schedule.subjects
+        : [(schedule as { subject?: string }).subject || 'PrepSkul session'],
+      notes: 'Created automatically for historical import (no live sessions).',
+    });
+  }
 
   const { data: learnerProfile } = await admin
     .from('profiles')
@@ -194,17 +212,37 @@ async function scheduleSinglePeriodForExistingUser(
     commercial: {
       payPerMonthXaf: schedule.payPerMonthXaf,
       payMonthsCount: schedule.payMonthsCount,
-      operationState: schedule.operationState,
+      operationState: isHistorical
+        ? schedule.operationState || 'paused'
+        : schedule.operationState,
       startMonthLabel: schedule.startMonthLabel,
     },
     isHistoricalImport: isHistorical,
-    offlineOperationId: ctx.offlineOperationId,
+    offlineOperationId,
     offlineRunId: ctx.run?.id || null,
     sendWelcomeEmail: body.sendWelcomeEmail ?? false,
     skipReminders: isHistorical,
   });
 
-  if (ctx.offlineOperationId && !isHistorical) {
+  if (offlineOperationId && isHistorical) {
+    const { data: opRow } = await admin
+      .from('offline_operations')
+      .select('onboarding_stage')
+      .eq('id', offlineOperationId)
+      .maybeSingle();
+    const stage = (opRow?.onboarding_stage || '').toLowerCase();
+    if (!stage || ['new_lead', 'qualified', 'matched', 'paused'].includes(stage)) {
+      await admin
+        .from('offline_operations')
+        .update({
+          onboarding_stage: 'paused',
+          tutor_user_id: tutorResolved.tutorUserId,
+          learner_user_id: learnerUserId,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', offlineOperationId);
+    }
+  } else if (offlineOperationId && !isHistorical) {
     await admin
       .from('offline_operations')
       .update({
@@ -213,10 +251,45 @@ async function scheduleSinglePeriodForExistingUser(
         learner_user_id: learnerUserId,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', ctx.offlineOperationId);
+      .eq('id', offlineOperationId);
   }
 
-  return { ...result, tutorUserId: tutorResolved.tutorUserId, learnerUserId };
+  return {
+    ...result,
+    tutorUserId: tutorResolved.tutorUserId,
+    learnerUserId,
+    offlineOperationId: offlineOperationId || null,
+  };
+}
+
+export async function resumePausedOfflineMatching(admin: SupabaseClient, offlineOperationId: string) {
+  const { data: op, error } = await admin
+    .from('offline_operations')
+    .select('id, onboarding_stage')
+    .eq('id', offlineOperationId)
+    .maybeSingle();
+  if (error || !op) throw new Error('Offline operation not found');
+
+  const stage = (op.onboarding_stage || '').toLowerCase();
+  if (stage === 'active_sessions') {
+    return { alreadyActive: true };
+  }
+  if (!['paused', 'matched'].includes(stage)) {
+    throw new Error(
+      `Cannot resume matching from stage "${op.onboarding_stage}". Set stage to paused or matched first, or import history.`
+    );
+  }
+
+  const { error: upErr } = await admin
+    .from('offline_operations')
+    .update({
+      onboarding_stage: 'active_sessions',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', offlineOperationId);
+  if (upErr) throw new Error(upErr.message || 'Failed to resume matching');
+
+  return { alreadyActive: false };
 }
 
 export async function addChildToParent(
@@ -378,6 +451,32 @@ export async function hardDeleteOfflineUserKeepingStats(
         .or(`primary_user_id.eq.${uid},learner_user_id.eq.${uid}`);
     } catch {
       /* analytics row scrub */
+    }
+
+    // Periods FK to auth.users CASCADE on delete — reassign to tutor so revenue/session links survive.
+    try {
+      const { data: periods } = await admin
+        .from('offline_scheduling_periods')
+        .select('id, tutor_user_id, learner_display_names')
+        .or(`primary_user_id.eq.${uid},learner_user_id.eq.${uid}`);
+      for (const period of periods || []) {
+        const tutorId = period.tutor_user_id;
+        if (!tutorId) continue;
+        const label = period.learner_display_names?.trim();
+        await admin
+          .from('offline_scheduling_periods')
+          .update({
+            primary_user_id: tutorId,
+            learner_user_id: tutorId,
+            learner_display_names: label
+              ? `${label} (offline family deleted)`
+              : 'Deleted offline family (analytics retention)',
+            updated_at: stamp,
+          })
+          .eq('id', period.id);
+      }
+    } catch (err) {
+      console.warn('[offline-user-delete] period retention reassignment failed', uid, err);
     }
 
     await admin.from('profiles').delete().eq('id', uid);
