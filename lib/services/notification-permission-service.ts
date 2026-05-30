@@ -34,7 +34,7 @@ export async function shouldReceiveNotification({
     // 1. Get user profile to check role
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('id, user_type')
+      .select('id, user_type, is_admin')
       .eq('id', userId)
       .maybeSingle();
 
@@ -43,6 +43,16 @@ export async function shouldReceiveNotification({
     }
 
     const userRole = profile.user_type as string | null;
+
+    // Admin/system alerts (KYC queue, safety, ops) — no booking/session relationship gate
+    const adminBypassTypes = [
+      'identity_verification_submitted',
+      'recurring_quit_admin_review',
+      'session_safety_alert',
+    ];
+    if (adminBypassTypes.includes(type) && profile.is_admin === true) {
+      return { allowed: true };
+    }
 
     // 2. Role-based filtering
     const roleFilterResult = checkRoleBasedPermissions(type, userRole);
