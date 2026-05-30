@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import AdminNav from '../../components/AdminNav';
-import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
+import { getServerSession, isAdmin } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import {
   documentTypeLabel,
   loadKycReviewDetail,
@@ -23,20 +24,7 @@ export default async function IdentityVerificationDetailPage({
   const adminStatus = await isAdmin(user.id);
   if (!adminStatus) redirect('/admin/login');
 
-  const supabase = await createServerSupabaseClient();
-  if (!supabase) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <AdminNav />
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            Failed to connect to database.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  const supabase = getSupabaseAdmin();
   const detail = await loadKycReviewDetail(supabase, id);
   if (!detail) {
     return (
