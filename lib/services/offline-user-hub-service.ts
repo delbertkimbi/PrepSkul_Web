@@ -53,7 +53,7 @@ export async function getOfflineUserContext(admin: SupabaseClient, primaryUserId
     .maybeSingle();
 
   const { data: children } = await admin
-    .from('parent_learners')
+    .from('parent_learner_account_links')
     .select('learner_user_id')
     .eq('parent_user_id', primaryUserId);
 
@@ -324,7 +324,7 @@ export async function addChildToParent(
     });
   }
 
-  await admin.from('parent_learners').upsert(
+  await admin.from('parent_learner_account_links').upsert(
     { parent_user_id: parentUserId, learner_user_id: learnerUserId },
     { onConflict: 'parent_user_id,learner_user_id' }
   );
@@ -430,10 +430,10 @@ export async function hardDeleteOfflineUserKeepingStats(
       /* learner_id may be NOT NULL on some deployments; leave intact for tutor count */
     }
     try {
-      await admin.from('parent_learners').delete().eq('parent_user_id', uid);
-      await admin.from('parent_learners').delete().eq('learner_user_id', uid);
+      await admin.from('parent_learner_account_links').delete().eq('parent_user_id', uid);
+      await admin.from('parent_learner_account_links').delete().eq('learner_user_id', uid);
     } catch {
-      /* legacy column names already aligned by phase2 fix */
+      /* account link table may not exist on older deployments */
     }
 
     try {

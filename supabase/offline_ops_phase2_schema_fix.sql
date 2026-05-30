@@ -1,48 +1,21 @@
--- Fix for phase 2 migration when parent_learners already exists with different column names.
--- Run this if you saw: ERROR 42703: column "parent_user_id" does not exist
--- Safe to run multiple times.
+-- Fix for phase 2 migration. Safe to run multiple times.
+-- NOTE: Do NOT rename columns on `parent_learners` — that table is owned by the
+-- mobile app (child profiles). Offline ops uses `parent_learner_account_links`.
+-- If mobile child saves fail with PGRST204 parent_id, run PrepSkul_App migration
+-- 086_split_parent_learner_account_links.sql (or parent_learner_account_links_split.sql).
 
 -- ---------------------------------------------------------------------------
 -- 1) Diagnose (optional — run alone to inspect)
 -- ---------------------------------------------------------------------------
 -- SELECT column_name, data_type
 -- FROM information_schema.columns
--- WHERE table_schema = 'public' AND table_name = 'parent_learners'
+-- WHERE table_schema = 'public' AND table_name = 'parent_learner_account_links'
 -- ORDER BY ordinal_position;
 
 -- ---------------------------------------------------------------------------
--- 2) Align parent_learners columns (parent_id → parent_user_id, etc.)
+-- 2) Offline parent ↔ learner auth account links
 -- ---------------------------------------------------------------------------
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'parent_learners'
-  ) THEN
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'parent_id'
-    ) AND NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'parent_user_id'
-    ) THEN
-      ALTER TABLE public.parent_learners RENAME COLUMN parent_id TO parent_user_id;
-    END IF;
-
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'learner_id'
-    ) AND NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'learner_user_id'
-    ) THEN
-      ALTER TABLE public.parent_learners RENAME COLUMN learner_id TO learner_user_id;
-    END IF;
-  END IF;
-END $$;
-
--- If parent_learners still does not exist, create it (same as phase 2)
-CREATE TABLE IF NOT EXISTS public.parent_learners (
+CREATE TABLE IF NOT EXISTS public.parent_learner_account_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   parent_user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   learner_user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
@@ -50,12 +23,16 @@ CREATE TABLE IF NOT EXISTS public.parent_learners (
   UNIQUE (parent_user_id, learner_user_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_parent_learners_parent ON public.parent_learners (parent_user_id);
+CREATE INDEX IF NOT EXISTS idx_parent_learner_account_links_parent
+  ON public.parent_learner_account_links (parent_user_id);
+CREATE INDEX IF NOT EXISTS idx_parent_learner_account_links_learner
+  ON public.parent_learner_account_links (learner_user_id);
 
-ALTER TABLE public.parent_learners ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Service role full access parent_learners" ON public.parent_learners;
-CREATE POLICY "Service role full access parent_learners"
-  ON public.parent_learners FOR ALL TO service_role USING (true) WITH CHECK (true);
+ALTER TABLE public.parent_learner_account_links ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role full access parent_learner_account_links"
+  ON public.parent_learner_account_links;
+CREATE POLICY "Service role full access parent_learner_account_links"
+  ON public.parent_learner_account_links FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ---------------------------------------------------------------------------
 -- 3) Ensure offline_scheduling_periods exists (if phase 2 stopped early)

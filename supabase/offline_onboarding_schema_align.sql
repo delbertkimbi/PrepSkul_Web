@@ -123,37 +123,10 @@ CREATE POLICY "Service role full access offline_operations"
   ON public.offline_operations FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ---------------------------------------------------------------------------
--- Parent -> learner links (legacy column names, then ensure *_user_id exist)
+-- Parent → learner auth account links (offline ops only; do not touch
+-- parent_learners — mobile app child profiles live there)
 -- ---------------------------------------------------------------------------
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'parent_learners'
-  ) THEN
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'parent_id'
-    ) AND NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'parent_user_id'
-    ) THEN
-      ALTER TABLE public.parent_learners RENAME COLUMN parent_id TO parent_user_id;
-    END IF;
-
-    IF EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'learner_id'
-    ) AND NOT EXISTS (
-      SELECT 1 FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'learner_user_id'
-    ) THEN
-      ALTER TABLE public.parent_learners RENAME COLUMN learner_id TO learner_user_id;
-    END IF;
-  END IF;
-END $$;
-
-CREATE TABLE IF NOT EXISTS public.parent_learners (
+CREATE TABLE IF NOT EXISTS public.parent_learner_account_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   parent_user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
   learner_user_id UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
@@ -161,26 +134,16 @@ CREATE TABLE IF NOT EXISTS public.parent_learners (
   UNIQUE (parent_user_id, learner_user_id)
 );
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'parent_user_id'
-  ) THEN
-    CREATE INDEX IF NOT EXISTS idx_parent_learners_parent ON public.parent_learners (parent_user_id);
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'parent_learners' AND column_name = 'learner_user_id'
-  ) THEN
-    CREATE INDEX IF NOT EXISTS idx_parent_learners_learner ON public.parent_learners (learner_user_id);
-  END IF;
-END $$;
+CREATE INDEX IF NOT EXISTS idx_parent_learner_account_links_parent
+  ON public.parent_learner_account_links (parent_user_id);
+CREATE INDEX IF NOT EXISTS idx_parent_learner_account_links_learner
+  ON public.parent_learner_account_links (learner_user_id);
 
-ALTER TABLE public.parent_learners ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Service role full access parent_learners" ON public.parent_learners;
-CREATE POLICY "Service role full access parent_learners"
-  ON public.parent_learners FOR ALL TO service_role USING (true) WITH CHECK (true);
+ALTER TABLE public.parent_learner_account_links ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Service role full access parent_learner_account_links"
+  ON public.parent_learner_account_links;
+CREATE POLICY "Service role full access parent_learner_account_links"
+  ON public.parent_learner_account_links FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 -- ---------------------------------------------------------------------------
 -- Scheduling periods used by enrollment, renewals, and past imports
