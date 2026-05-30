@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase-server'
+import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 /**
  * Schedule payment reminders for a pending payment.
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = await createServerSupabaseClient()
+    const supabase = getSupabaseAdmin()
     const deadline = new Date(paymentDeadline)
     const now = new Date()
 

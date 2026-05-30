@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { persistCronHeartbeat, verifyCronAuth } from '@/lib/cron/persist-cron-heartbeat';
 
 /**
  * Onboarding Reminders Cron Job
@@ -8,6 +9,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * incomplete or skipped onboarding. Runs once per day. Anti-spam: at most
  * one reminder per tutor per 24h (we skip if they had one in the last 24h).
  */
+const JOB_NAME = 'onboarding-reminders';
 const REMINDER_COOLDOWN_HOURS = 24;
 const MAX_TUTORS_PER_RUN = 100;
 
@@ -20,19 +22,16 @@ function getNextMissingStage(completedSteps: number[]): string | null {
 }
 
 export async function GET(request: NextRequest) {
+  let runStatus: 'success' | 'failed' = 'failed';
+  let processedCount = 0;
+  let failedCount = 0;
+  let runError: string | null = null;
+
   try {
-    const authHeader = request.headers.get('authorization');
-    const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret) {
-      const isVercelCron =
-        request.headers.get('user-agent')?.includes('vercel-cron') ||
-        request.headers.get('x-vercel-cron') === '1';
-      if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json(
-          { error: 'Unauthorized. Provide Authorization: Bearer YOUR_CRON_SECRET.' },
-          { status: 401 }
-        );
-      }
+    const auth = verifyCronAuth(request);
+    if (!auth.ok) {
+      runError = auth.error ?? 'Unauthorized';
+      return NextResponse.json({ error: runError }, { status: 401 });
     }
 
     const supabaseAdmin = getSupabaseAdmin();
@@ -134,6 +133,10 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    processedCount = processed;
+    failedCount = failed;
+    runStatus = 'success';
+
     return NextResponse.json({
       success: true,
       processed,
@@ -142,10 +145,20 @@ export async function GET(request: NextRequest) {
       message: `Processed ${processed} onboarding reminders`,
     });
   } catch (error: any) {
+    runError = error?.message || String(error);
     console.error('Onboarding reminders cron error:', error);
     return NextResponse.json(
-      { error: 'Cron failed', details: error?.message || String(error) },
+      { error: 'Cron failed', details: runError },
       { status: 500 }
     );
+  } finally {
+    await persistCronHeartbeat({
+      jobName: JOB_NAME,
+      status: runStatus,
+      processedCount,
+      failedCount,
+      error: runError,
+      metadata: { endpoint: '/api/cron/onboarding-reminders' },
+    });
   }
 }

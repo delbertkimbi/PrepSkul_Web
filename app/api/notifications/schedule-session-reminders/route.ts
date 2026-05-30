@@ -147,8 +147,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (scheduledNotifications.length > 0) {
-      const { error } = await supabase.from('scheduled_notifications').insert(scheduledNotifications);
-      if (error) throw error;
+      const { error: insertError } = await supabase
+        .from('scheduled_notifications')
+        .insert(scheduledNotifications);
+      if (insertError) {
+        return NextResponse.json(
+          { error: 'Failed to schedule session reminders', details: insertError.message },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
