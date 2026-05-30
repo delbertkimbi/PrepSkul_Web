@@ -182,6 +182,30 @@ export async function POST(request: NextRequest) {
     let alreadyEmailed = false;
     
     if (sendEmail && actionUrl) {
+      const metadataObj = (metadata || {}) as Record<string, unknown>;
+      const messageId = metadataObj.message_id as string | undefined;
+
+      if (messageId) {
+        const { data: dupByMessage } = await supabaseAdmin
+          .from('notifications')
+          .select('id, metadata')
+          .eq('user_id', userId)
+          .eq('type', type || 'message')
+          .gte('created_at', oneHourAgo)
+          .contains('metadata', { message_id: messageId })
+          .limit(1)
+          .maybeSingle();
+
+        if (dupByMessage?.metadata) {
+          const meta = dupByMessage.metadata as Record<string, unknown>;
+          if (meta.sent_email_at) {
+            alreadyEmailed = true;
+            console.log(`ℹ️ Duplicate message email prevented for message_id ${messageId}`);
+          }
+        }
+      }
+
+      if (!alreadyEmailed) {
       // Check for recent notification with same type and actionUrl that already had email sent
       const { data: recentNotification } = await supabaseAdmin
         .from('notifications')
@@ -204,6 +228,7 @@ export async function POST(request: NextRequest) {
             console.log(`ℹ️ Duplicate email prevented for user ${userId}, type ${type}, actionUrl ${actionUrl}`);
           }
         }
+      }
       }
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { allocateOfflineEarningsForOperation } from '@/lib/services/tutor-earnings-allocation';
 
 const schema = z.object({
   onboarding_stage: z
@@ -32,12 +33,20 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.flatten() }, { status: 400 });
     }
 
-    const updatePayload: Record<string, any> = { ...parsed.data, updated_at: new Date().toISOString() };
+    const updatePayload: Record<string, unknown> = { ...parsed.data, updated_at: new Date().toISOString() };
     if ('next_followup_at' in updatePayload) {
-      updatePayload.next_followup_at = updatePayload.next_followup_at ? new Date(updatePayload.next_followup_at).toISOString() : null;
+      updatePayload.next_followup_at = updatePayload.next_followup_at
+        ? new Date(updatePayload.next_followup_at as string).toISOString()
+        : null;
     }
 
     const supabase = getSupabaseAdmin();
+
+    const prevPaymentStatus = parsed.data.payment_status
+      ? (await supabase.from('offline_operations').select('payment_status').eq('id', id).maybeSingle())?.data
+          ?.payment_status
+      : null;
+
     const { data, error } = await supabase
       .from('offline_operations')
       .update(updatePayload)
@@ -46,10 +55,20 @@ export async function PATCH(
       .maybeSingle();
 
     if (error) throw error;
+
+    if (parsed.data.payment_status === 'paid' && prevPaymentStatus !== 'paid') {
+      try {
+        await allocateOfflineEarningsForOperation(supabase, id);
+      } catch (e) {
+        console.warn('[offline-ops] earnings allocation failed', e);
+      }
+    }
+
     return NextResponse.json({ success: true, record: data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('offline-op patch error', error);
-    return NextResponse.json({ error: error?.message || 'Failed to update offline operation' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Failed to update offline operation';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -68,8 +87,9 @@ export async function DELETE(
     const { error } = await supabase.from('offline_operations').delete().eq('id', id);
     if (error) throw error;
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('offline-op delete error', error);
-    return NextResponse.json({ error: error?.message || 'Failed to delete offline operation' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Failed to delete offline operation';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

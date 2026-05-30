@@ -1,3 +1,4 @@
+import { allocateTutorEarningsForPaymentRequest } from '@/lib/services/tutor-earnings-allocation';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { generateTrialMeetLink } from '@/lib/services/meet-service';
@@ -314,6 +315,19 @@ async function handlePaymentRequestPayment({
           tutorId: paymentRequest.tutor_id,
           amount: paymentRequest.amount,
         });
+
+        // Pre-allocate tutor pending earnings for paid-period sessions
+        try {
+          const result = await allocateTutorEarningsForPaymentRequest(
+            supabase,
+            paymentRequestId
+          );
+          console.log(
+            `💰 Tutor earnings allocation for ${paymentRequestId}: allocated=${result.allocated} skipped=${result.skipped}`
+          );
+        } catch (allocErr) {
+          console.error('⚠️ Tutor earnings allocation failed:', allocErr);
+        }
       }
 
       console.log(`✅ Payment request payment confirmed: ${paymentRequestId}`);

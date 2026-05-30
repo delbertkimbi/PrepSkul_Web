@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { releaseSessionEarningsToActive } from '@/lib/services/release-session-earnings';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { notifyPartiesAfterAdminMarkedAttendance } from '@/lib/offline-portal-notifications';
@@ -45,6 +46,12 @@ export async function PATCH(
 
     if (attended && session.tutor_id) {
       try {
+        await releaseSessionEarningsToActive(supabase, sessionId, user.id);
+      } catch (releaseErr) {
+        console.warn('[attendance] releaseSessionEarningsToActive skipped', releaseErr);
+      }
+
+      try {
         await refreshTutorPublicStats(supabase, session.tutor_id);
       } catch (e) {
         console.warn('[attendance] refresh_tutor_public_stats skipped, using fallback', e);
@@ -54,6 +61,7 @@ export async function PATCH(
             .from('tutor_profiles')
             .update({
               total_sessions_completed: computed.totalSessions,
+              scheduled_sessions_count: computed.scheduledSessions,
               total_students: computed.totalStudents,
               offline_tutor_earnings_xaf: computed.offlineEarningsXaf,
             })

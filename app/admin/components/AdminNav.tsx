@@ -29,6 +29,8 @@ const operationsItems = [
   { name: 'Offline Users', href: '/admin/offline-ops/users' },
   { name: 'Offline Ops', href: '/admin/offline-ops' },
   { name: 'Feedback Inbox', href: '/admin/feedback-inbox' },
+  { name: 'Session Attendance', href: '/admin/session-attendance' },
+  { name: 'Payout Queue', href: '/admin/payouts' },
   { name: 'Ops Events', href: '/admin/operations-events' },
   { name: 'Active Mobile Users', href: '/admin/users/active' },
 ];

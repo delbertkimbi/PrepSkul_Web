@@ -5,6 +5,7 @@ const COMPLETED_STATUSES = ['completed', 'evaluated'];
 export type TutorPublicStats = {
   tutorUserId: string;
   totalSessions: number;
+  scheduledSessions: number;
   totalStudents: number;
   offlineEarningsXaf: number;
 };
@@ -50,6 +51,10 @@ export async function computeTutorPublicStats(
     COMPLETED_STATUSES.includes(String(s.status || '').toLowerCase())
   );
 
+  const scheduled = (sessions || []).filter((s) =>
+    String(s.status || '').toLowerCase() === 'scheduled'
+  );
+
   const learnerKeys = new Set<string>();
   for (const s of completed) {
     const key = (s.learner_id || s.parent_id) as string | null;
@@ -79,6 +84,7 @@ export async function computeTutorPublicStats(
   return {
     tutorUserId,
     totalSessions: completed.length,
+    scheduledSessions: scheduled.length,
     totalStudents: learnerKeys.size,
     offlineEarningsXaf: offlineEarnings,
   };

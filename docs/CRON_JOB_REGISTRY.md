@@ -17,6 +17,7 @@ Heartbeats: `cron_job_heartbeats` (migration `073_cron_job_heartbeats.sql`).
 | process-abandoned-booking-reminders | `/api/cron/process-abandoned-booking-reminders` | Daily | partial |
 | onboarding-reminders | `/api/cron/onboarding-reminders` | Daily | yes |
 | process-pending-earnings | `/api/cron/process-pending-earnings` | Daily | partial |
+| tutor-onsite-attendance-reminders | `/api/cron/tutor-onsite-attendance-reminders` | Every 30–60 min | yes |
 | daily-matched-tutors | `/api/cron/daily-matched-tutors` | Daily (if enabled) | partial |
 | session-approval-reminders | `/api/cron/session-approval-reminders` | Daily | partial |
 

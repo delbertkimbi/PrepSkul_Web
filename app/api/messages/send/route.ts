@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { conversationId, content } = body;
+    const { conversationId, content, clientMessageId, replyToMessageId } = body;
     
     // Validate input
     if (!conversationId || !content || typeof content !== 'string' || content.trim().length === 0) {
@@ -223,10 +223,25 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    // Idempotency: return existing message if clientMessageId already sent
+    if (clientMessageId && typeof clientMessageId === 'string') {
+      const { data: existingMsg } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('conversation_id', conversationId)
+        .eq('client_message_id', clientMessageId)
+        .maybeSingle();
+
+      if (existingMsg) {
+        return NextResponse.json(
+          { message: existingMsg, deduplicated: true },
+          { status: 200, headers: corsHeaders }
+        );
+      }
+    }
+    
     // Filter message content
     const filterResult = filterMessage(content, user.id, conversationId);
-    
-    // If blocked, store flag and return error
     if (!filterResult.allowed) {
       // Store flagged message attempt
       const { error: flagError } = await supabase
@@ -306,6 +321,7 @@ export async function POST(request: NextRequest) {
         conversation_id: conversationId,
         sender_id: user.id,
         content: content.trim(),
+        client_message_id: clientMessageId || null,
         is_filtered: filterResult.flags.length > 0,
         filter_reason: filterResult.flags.length > 0 
           ? filterResult.flags.map(f => f.type).join(',')
@@ -387,6 +403,7 @@ export async function POST(request: NextRequest) {
               sender_name: senderName,
               sender_avatar_url: senderAvatarUrl,
               conversation_id: conversationId,
+              message_id: message.id,
               message_preview: messagePreview,
             },
             sendEmail: true, // Enable email for messages
