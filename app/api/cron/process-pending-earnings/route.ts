@@ -238,6 +238,60 @@ export async function GET(request: NextRequest) {
       movedCount++;
     }
 
+    // Pre-allocated earnings (payment_request): release online sessions when eligible.
+    // Onsite/hybrid require admin attendance approval — skipped here.
+    const { data: preAllocated } = await supabase
+      .from('tutor_earnings')
+      .select('id, tutor_id, session_id, tutor_earnings, payment_request_id')
+      .eq('earnings_status', 'pending')
+      .not('payment_request_id', 'is', null)
+      .limit(BATCH_SIZE);
+
+    for (const earning of preAllocated || []) {
+      const sessionId = earning.session_id as string;
+      if (!sessionId) {
+        skippedCount++;
+        continue;
+      }
+
+      const { data: sessionRow } = await supabase
+        .from('individual_sessions')
+        .select('location, status')
+        .eq('id', sessionId)
+        .maybeSingle();
+
+      const loc = String(sessionRow?.location || 'online').toLowerCase();
+      if (loc === 'onsite' || loc === 'hybrid') {
+        skippedCount++;
+        continue;
+      }
+
+      if (sessionRow?.status !== 'completed' && sessionRow?.status !== 'evaluated') {
+        skippedCount++;
+        continue;
+      }
+
+      const { data: eligible } = await supabase.rpc('is_session_eligible_for_payment', {
+        p_session_id: sessionId,
+      });
+      if (eligible !== true) {
+        skippedCount++;
+        continue;
+      }
+
+      await supabase
+        .from('tutor_earnings')
+        .update({
+          earnings_status: 'active',
+          added_to_active_balance: true,
+          active_balance_added_at: now.toISOString(),
+          updated_at: now.toISOString(),
+        })
+        .eq('id', earning.id);
+
+      movedCount++;
+    }
+
     return NextResponse.json({
       success: true,
       processed: movedCount,
