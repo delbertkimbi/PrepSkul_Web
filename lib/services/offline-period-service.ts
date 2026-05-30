@@ -136,7 +136,7 @@ export async function scheduleOfflinePeriod(admin: SupabaseClient, params: Sched
   let parentId: string | null = null;
   if (parentProfile?.id && parentProfile.id !== params.learnerUserId) {
     parentId = parentProfile.id;
-    await admin.from('parent_learners').upsert(
+    await admin.from('parent_learner_account_links').upsert(
       { parent_user_id: parentId, learner_user_id: params.learnerUserId },
       { onConflict: 'parent_user_id,learner_user_id' }
     );

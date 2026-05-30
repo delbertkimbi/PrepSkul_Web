@@ -812,7 +812,7 @@ export async function runOfflineOnboardingForExistingUser(admin: SupabaseClient,
       learnerUserId = params.childUserId;
     } else if (params.childFullName?.trim()) {
       const { data: existingLink } = await admin
-        .from('parent_learners')
+        .from('parent_learner_account_links')
         .select('learner_user_id')
         .eq('parent_user_id', params.primaryUserId)
         .limit(1)
@@ -1050,7 +1050,7 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
     }
 
     const { data: existingLink } = await admin
-      .from('parent_learners')
+      .from('parent_learner_account_links')
       .select('learner_user_id')
       .eq('parent_user_id', primaryUserId)
       .limit(1)
@@ -1126,7 +1126,7 @@ export async function runOfflineOnboarding(admin: SupabaseClient, params: {
         learnerUserId = child.userId;
       }
 
-      await admin.from('parent_learners').upsert(
+      await admin.from('parent_learner_account_links').upsert(
         { parent_user_id: primaryUserId, learner_user_id: learnerUserId },
         { onConflict: 'parent_user_id,learner_user_id' }
       );

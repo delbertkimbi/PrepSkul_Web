@@ -219,7 +219,7 @@ export default async function OfflineOperationDetailPage({
           learners={await (async () => {
             if (!primaryUserId) return [];
             const { data: links } = await supabase
-              .from('parent_learners')
+              .from('parent_learner_account_links')
               .select('learner_user_id')
               .eq('parent_user_id', primaryUserId);
             const ids = [
