@@ -1,7 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createServerSupabaseClient, getServerSession, isAdmin } from '@/lib/supabase-server';
+import { getServerSession, isAdmin } from '@/lib/supabase-server';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import {
   notifyIdentityVerificationApproved,
   notifyIdentityVerificationRejected,
@@ -13,8 +14,7 @@ export async function approveIdentityVerification(formData: FormData) {
   const adminOk = await isAdmin(sessionUser.id);
   if (!adminOk) return { ok: false as const, error: 'Forbidden' };
 
-  const supa = await createServerSupabaseClient();
-  if (!supa) return { ok: false as const, error: 'Database unavailable' };
+  const supa = getSupabaseAdmin();
 
   const id = formData.get('id') as string;
   const accountId = formData.get('account_id') as string;
@@ -67,8 +67,7 @@ export async function rejectIdentityVerification(formData: FormData) {
   const adminOk = await isAdmin(sessionUser.id);
   if (!adminOk) return { ok: false as const, error: 'Forbidden' };
 
-  const supa = await createServerSupabaseClient();
-  if (!supa) return { ok: false as const, error: 'Database unavailable' };
+  const supa = getSupabaseAdmin();
 
   const id = formData.get('id') as string;
   const accountId = formData.get('account_id') as string;

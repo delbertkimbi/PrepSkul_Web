@@ -125,6 +125,55 @@ function parseLearnerSubjects(raw: unknown): Record<string, string[]> | null {
   return Object.keys(out).length ? out : null;
 }
 
+/** Coerce DB json/text/array values to string[] for safe spreading. */
+function asStringArray(value: unknown): string[] {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+      } catch {
+        /* fall through */
+      }
+    }
+    return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  return [String(value)];
+}
+
+async function loadParentLearners(
+  supabase: SupabaseClient,
+  accountId: string
+): Promise<Array<Record<string, unknown>>> {
+  const childFields =
+    'learning_path, subjects, skills, exam_subjects, learning_goals, challenges, preferred_location';
+
+  const { data: byParentId, error: parentIdError } = await supabase
+    .from('parent_learners')
+    .select(childFields)
+    .eq('parent_id', accountId);
+
+  if (!parentIdError && byParentId) {
+    return byParentId as Array<Record<string, unknown>>;
+  }
+
+  const { data: byParentUserId, error: parentUserIdError } = await supabase
+    .from('parent_learners')
+    .select(childFields)
+    .eq('parent_user_id', accountId);
+
+  if (!parentUserIdError && byParentUserId) {
+    return byParentUserId as Array<Record<string, unknown>>;
+  }
+
+  console.warn('[kyc-review] parent_learners lookup failed:', parentIdError || parentUserIdError);
+  return [];
+}
+
 function subjectsFromBooking(booking: Record<string, unknown> | null): string {
   if (!booking) return '—';
   const learnerSubjects = parseLearnerSubjects(booking.learner_subjects);
@@ -176,21 +225,16 @@ async function loadAccountContext(
     preferredLocation = (parentProfile?.preferred_location as string) ?? null;
     city = (parentProfile?.city as string) ?? null;
 
-    const { data: children } = await supabase
-      .from('parent_learners')
-      .select(
-        'learning_path, subjects, skills, exam_subjects, learning_goals, challenges, preferred_location'
-      )
-      .eq('parent_id', accountId);
+    const children = await loadParentLearners(supabase, accountId);
 
-    for (const c of children || []) {
+    for (const c of children) {
       const row = c as Record<string, unknown>;
       if (!learningPath && row.learning_path) learningPath = String(row.learning_path);
-      subjects.push(...((row.subjects as string[]) || []));
-      subjects.push(...((row.skills as string[]) || []));
-      subjects.push(...((row.exam_subjects as string[]) || []));
-      goals.push(...((row.learning_goals as string[]) || []));
-      challenges.push(...((row.challenges as string[]) || []));
+      subjects.push(...asStringArray(row.subjects));
+      subjects.push(...asStringArray(row.skills));
+      subjects.push(...asStringArray(row.exam_subjects));
+      goals.push(...asStringArray(row.learning_goals));
+      challenges.push(...asStringArray(row.challenges));
       if (!preferredLocation && row.preferred_location) {
         preferredLocation = String(row.preferred_location);
       }
@@ -207,9 +251,9 @@ async function loadAccountContext(
     if (learner) {
       city = (learner.city as string) ?? null;
       learningPath = (learner.learning_path as string) ?? null;
-      subjects = (learner.subjects as string[]) || [];
-      goals = (learner.learning_goals as string[]) || [];
-      challenges = (learner.challenges as string[]) || [];
+      subjects = asStringArray(learner.subjects);
+      goals = asStringArray(learner.learning_goals);
+      challenges = asStringArray(learner.challenges);
       preferredLocation = (learner.preferred_location as string) ?? null;
     }
   }
@@ -301,37 +345,59 @@ export async function enrichVerificationList(
   const out: KycReviewListItem[] = [];
 
   for (const v of rows) {
-    const account = await loadAccountContext(supabase, v.account_id);
-    const booking = await loadBooking(supabase, v.booking_request_id, v.account_id);
-    const tutorUserId = booking ? (booking.tutor_id as string) : null;
-    const tutorProfile = tutorUserId
-      ? await supabase
-          .from('profiles')
-          .select('full_name')
-          .eq('id', tutorUserId)
-          .maybeSingle()
-      : null;
+    try {
+      const account = await loadAccountContext(supabase, v.account_id);
+      const booking = await loadBooking(supabase, v.booking_request_id, v.account_id);
+      const tutorUserId = booking ? (booking.tutor_id as string) : null;
+      const { data: tutorProfile } = tutorUserId
+        ? await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', tutorUserId)
+            .maybeSingle()
+        : { data: null };
 
-    out.push({
-      ...v,
-      account: {
-        name: account.name,
-        email: account.email,
-        avatarUrl: account.avatarUrl,
-        userType: account.userType,
-        phone: account.phone,
-        city: account.city,
-      },
-      bookingSummary: {
-        id: booking ? (booking.id as string) : null,
-        location: booking ? (booking.location as string) : null,
-        tutorName: (tutorProfile?.data?.full_name as string) ?? (booking?.tutor_name as string) ?? null,
-        scheduleLabel: booking
-          ? formatSchedule(booking.days, booking.times)
-          : null,
-        subjectsLabel: subjectsFromBooking(booking),
-      },
-    });
+      out.push({
+        ...v,
+        account: {
+          name: account.name,
+          email: account.email,
+          avatarUrl: account.avatarUrl,
+          userType: account.userType,
+          phone: account.phone,
+          city: account.city,
+        },
+        bookingSummary: {
+          id: booking ? (booking.id as string) : null,
+          location: booking ? (booking.location as string) : null,
+          tutorName: (tutorProfile?.full_name as string) ?? (booking?.tutor_name as string) ?? null,
+          scheduleLabel: booking
+            ? formatSchedule(booking.days, booking.times)
+            : null,
+          subjectsLabel: subjectsFromBooking(booking),
+        },
+      });
+    } catch (err) {
+      console.error('[kyc-review] enrich row failed:', v.id, err);
+      out.push({
+        ...v,
+        account: {
+          name: '—',
+          email: '—',
+          avatarUrl: null,
+          userType: null,
+          phone: null,
+          city: null,
+        },
+        bookingSummary: {
+          id: v.booking_request_id,
+          location: null,
+          tutorName: null,
+          scheduleLabel: null,
+          subjectsLabel: '—',
+        },
+      });
+    }
   }
 
   return out;
