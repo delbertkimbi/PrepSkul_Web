@@ -21,6 +21,8 @@ export async function GET() {
         scheduled_time,
         location,
         status,
+        address,
+        onsite_address,
         attendance_admin_status,
         tutor_id,
         learner_id,
@@ -35,31 +37,50 @@ export async function GET() {
 
     const sessionIds = (sessions || []).map((s) => s.id);
     const tutorIds = [...new Set((sessions || []).map((s) => s.tutor_id).filter(Boolean))];
+    const learnerIds = [...new Set((sessions || []).map((s) => s.learner_id).filter(Boolean))];
+    const parentIds = [...new Set((sessions || []).map((s) => s.parent_id).filter(Boolean))];
+    const profileIds = [...new Set([...tutorIds, ...learnerIds, ...parentIds])];
 
-    const [{ data: attendance }, { data: tutors }] = await Promise.all([
-      sessionIds.length
-        ? supabase
-            .from('session_attendance')
-            .select('session_id, check_in_time, check_in_photo_url, check_in_verified, user_type')
-            .in('session_id', sessionIds)
-            .eq('user_type', 'tutor')
-        : Promise.resolve({ data: [] }),
-      tutorIds.length
-        ? supabase.from('profiles').select('id, full_name').in('id', tutorIds)
-        : Promise.resolve({ data: [] }),
-    ]);
+    const [{ data: attendance }, { data: profiles }, { data: feedbackRows }] =
+      await Promise.all([
+        sessionIds.length
+          ? supabase
+              .from('session_attendance')
+              .select(
+                'session_id, check_in_time, check_out_time, check_in_photo_url, check_out_photo_url, check_in_verified, duration_minutes, punctuality_status, arrival_time_minutes, user_type'
+              )
+              .in('session_id', sessionIds)
+              .eq('user_type', 'tutor')
+          : Promise.resolve({ data: [] }),
+        profileIds.length
+          ? supabase.from('profiles').select('id, full_name').in('id', profileIds)
+          : Promise.resolve({ data: [] }),
+        sessionIds.length
+          ? supabase
+              .from('session_feedback')
+              .select(
+                'session_id, student_rating, student_review, tutor_notes, session_took_place, session_took_place_notes, student_feedback_submitted_at, tutor_feedback_submitted_at'
+              )
+              .in('session_id', sessionIds)
+          : Promise.resolve({ data: [] }),
+      ]);
 
     const attendanceBySession = new Map(
       (attendance || []).map((a) => [a.session_id, a])
     );
-    const tutorNameById = new Map(
-      (tutors || []).map((t) => [t.id, t.full_name])
+    const nameById = new Map((profiles || []).map((p) => [p.id, p.full_name]));
+    const feedbackBySession = new Map(
+      (feedbackRows || []).map((f) => [f.session_id, f])
     );
 
     const queue = (sessions || []).map((s) => ({
       ...s,
-      tutor_name: tutorNameById.get(s.tutor_id) || 'Tutor',
+      tutor_name: nameById.get(s.tutor_id) || 'Tutor',
+      learner_name: s.learner_id ? nameById.get(s.learner_id) : null,
+      parent_name: s.parent_id ? nameById.get(s.parent_id) : null,
+      venue_address: s.address || s.onsite_address || null,
       attendance: attendanceBySession.get(s.id) || null,
+      feedback: feedbackBySession.get(s.id) || null,
     }));
 
     return NextResponse.json({ queue });
