@@ -52,6 +52,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Reserve active tutor_earnings (FIFO) before Fapshi — balance drops only on admin approval.
+    const { data: reserveData, error: reserveError } = await supabase.rpc(
+      'reserve_tutor_payout_earnings',
+      { p_payout_request_id: payoutRequestId }
+    );
+
+    if (reserveError) {
+      console.error('❌ reserve_tutor_payout_earnings failed:', reserveError);
+      return NextResponse.json(
+        {
+          error: reserveError.message || 'Could not reserve earnings for payout',
+          code: reserveError.code,
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log(`✅ Earnings reserved for payout ${payoutRequestId}:`, reserveData);
+
     const amount = payoutRequest.amount as number;
     const phoneNumber = payoutRequest.phone_number as string;
     const tutorId = payoutRequest.tutor_id as string;
