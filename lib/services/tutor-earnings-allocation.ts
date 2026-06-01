@@ -60,7 +60,7 @@ export async function allocateTutorEarningsForPaymentRequest(
 
   const { data: rs, error: rsErr } = await supabase
     .from('recurring_sessions')
-    .select('id, tutor_id, monthly_total, frequency, location, payment_plan, transportation_cost')
+    .select('id, tutor_id, monthly_total, frequency, location, payment_plan, transportation_cost_per_session')
     .eq('id', recurringSessionId)
     .maybeSingle();
 
@@ -79,7 +79,7 @@ export async function allocateTutorEarningsForPaymentRequest(
 
   const location = String(rs.location || 'online').toLowerCase();
   const isOnsite = location === 'onsite' || location === 'hybrid';
-  const transportPerSession = isOnsite ? Number(rs.transportation_cost || 0) : 0;
+  const transportPerSession = isOnsite ? Number(rs.transportation_cost_per_session || 0) : 0;
 
   const { data: sessions, error: sessErr } = await supabase
     .from('individual_sessions')
@@ -232,4 +232,117 @@ export async function allocateOfflineEarningsForOperation(
   if (insertErr) throw insertErr;
 
   return { allocated: rows.length, skipped: false };
+}
+
+/** Cancel scheduled sessions beyond the paid installment window (oldest kept). */
+export async function cancelExcessFutureSessions(
+  supabase: SupabaseClient,
+  recurringSessionId: string,
+  maxSessions: number
+): Promise<number> {
+  const { data: sessions, error } = await supabase
+    .from('individual_sessions')
+    .select('id, scheduled_date')
+    .eq('recurring_session_id', recurringSessionId)
+    .eq('status', 'scheduled')
+    .order('scheduled_date', { ascending: true });
+
+  if (error) throw error;
+  const list = sessions || [];
+  if (list.length <= maxSessions) return 0;
+
+  const excess = list.slice(maxSessions);
+  let cancelled = 0;
+  for (const s of excess) {
+    const { error: upErr } = await supabase
+      .from('individual_sessions')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', s.id);
+    if (!upErr) cancelled++;
+  }
+  return cancelled;
+}
+
+export type BackfillResult = {
+  paymentRequestId: string;
+  cancelledExcess: number;
+  allocation: AllocateEarningsResult;
+};
+
+/**
+ * Repair a paid payment_request: trim over-generated sessions, then allocate pending earnings.
+ * Safe to re-run (idempotent allocation).
+ */
+export async function backfillTutorEarningsForPaymentRequest(
+  supabase: SupabaseClient,
+  paymentRequestId: string,
+  options?: { cancelExcess?: boolean }
+): Promise<BackfillResult> {
+  const cancelExcess = options?.cancelExcess !== false;
+  let cancelledExcess = 0;
+
+  const { data: pr } = await supabase
+    .from('payment_requests')
+    .select('id, status, recurring_session_id')
+    .eq('id', paymentRequestId)
+    .maybeSingle();
+
+  if (pr?.recurring_session_id && cancelExcess) {
+    const { data: rs } = await supabase
+      .from('recurring_sessions')
+      .select('frequency, payment_plan')
+      .eq('id', pr.recurring_session_id)
+      .maybeSingle();
+
+    if (rs) {
+      const frequency = Number(rs.frequency || 1);
+      const weeks = weeksAheadForPaymentPlan(rs.payment_plan as string);
+      cancelledExcess = await cancelExcessFutureSessions(
+        supabase,
+        pr.recurring_session_id as string,
+        frequency * weeks
+      );
+    }
+  }
+
+  const allocation = await allocateTutorEarningsForPaymentRequest(supabase, paymentRequestId);
+
+  return { paymentRequestId, cancelledExcess, allocation };
+}
+
+/** Paid payment_requests with no tutor_earnings rows yet. */
+export async function listPaymentRequestsNeedingEarningsBackfill(
+  supabase: SupabaseClient,
+  limit = 50
+): Promise<
+  Array<{
+    id: string;
+    tutor_id: string;
+    amount: number;
+    paid_at: string | null;
+    recurring_session_id: string | null;
+  }>
+> {
+  const { data: paid, error } = await supabase
+    .from('payment_requests')
+    .select('id, tutor_id, amount, paid_at, recurring_session_id')
+    .eq('status', 'paid')
+    .not('recurring_session_id', 'is', null)
+    .order('paid_at', { ascending: false })
+    .limit(limit * 3);
+
+  if (error) throw error;
+  if (!paid?.length) return [];
+
+  const ids = paid.map((p) => p.id);
+  const { data: allocated } = await supabase
+    .from('tutor_earnings')
+    .select('payment_request_id')
+    .in('payment_request_id', ids);
+
+  const allocatedSet = new Set(
+    (allocated || []).map((r) => r.payment_request_id).filter(Boolean)
+  );
+
+  return paid.filter((p) => !allocatedSet.has(p.id)).slice(0, limit);
 }
