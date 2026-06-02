@@ -10,6 +10,7 @@ type PayoutRow = {
   phone_number: string;
   status: string;
   created_at: string;
+  admin_notes?: string | null;
   tutor?: { full_name?: string; email?: string } | null;
 };
 
@@ -80,8 +81,22 @@ export default function AdminPayoutsPage() {
               </p>
               <p className="text-sm text-gray-600">{p.phone_number}</p>
               <p className="text-xs text-gray-500">
-                {new Date(p.created_at).toLocaleString()} · {p.status}
+                {new Date(p.created_at).toLocaleString()} ·{' '}
+                <span
+                  className={
+                    p.status === 'failed'
+                      ? 'text-red-600 font-medium'
+                      : p.status === 'processing'
+                        ? 'text-amber-700 font-medium'
+                        : ''
+                  }
+                >
+                  {p.status}
+                </span>
               </p>
+              {p.admin_notes && (
+                <p className="text-xs text-red-600 mt-1 max-w-md">{p.admin_notes}</p>
+              )}
             </div>
             {p.status === 'pending' && (
               <button
@@ -92,6 +107,9 @@ export default function AdminPayoutsPage() {
               >
                 {busyId === p.id ? 'Processing…' : 'Process via Fapshi'}
               </button>
+            )}
+            {p.status === 'processing' && (
+              <span className="text-sm text-amber-700 self-center">Fapshi in progress</span>
             )}
           </div>
         ))}

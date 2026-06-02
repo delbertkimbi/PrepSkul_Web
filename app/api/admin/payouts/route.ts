@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession, isAdmin } from '@/lib/supabase-server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { processTutorPayout } from '@/lib/services/process-tutor-payout';
 
 export async function GET() {
   try {
@@ -19,9 +20,12 @@ export async function GET() {
         phone_number,
         status,
         created_at,
+        requested_at,
         processed_at,
-        fapshi_trans_id
+        fapshi_trans_id,
+        admin_notes
       `)
+      .in('status', ['pending', 'processing', 'failed'])
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -36,6 +40,7 @@ export async function GET() {
 
     const queue = (data || []).map((p) => ({
       ...p,
+      created_at: p.created_at ?? p.requested_at,
       tutor: nameById.get(p.tutor_id) || null,
     }));
 
@@ -58,19 +63,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'payoutRequestId required' }, { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin;
-    const res = await fetch(`${baseUrl}/api/payouts/process`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ payoutRequestId, adminId: user.id }),
-    });
+    // Process in-process with service role (no internal HTTP — avoids RLS + wrong host).
+    const result = await processTutorPayout(payoutRequestId, user.id);
 
-    const body = await res.json();
-    if (!res.ok) {
-      return NextResponse.json({ error: body.error || 'Payout failed' }, { status: res.status });
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: result.error, details: result.details },
+        { status: result.status }
+      );
     }
 
-    return NextResponse.json(body);
+    return NextResponse.json({
+      success: true,
+      message: 'Payout processing initiated',
+      data: {
+        payoutRequestId: result.payoutRequestId,
+        transId: result.transId,
+        dateInitiated: result.dateInitiated,
+        status: result.status,
+      },
+    });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Payout processing failed';
     return NextResponse.json({ error: msg }, { status: 500 });
