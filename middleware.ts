@@ -18,6 +18,7 @@ export function middleware(request: NextRequest) {
   const isAmbassadorsSubdomain = hostname.startsWith('ambassadors.') || hostname.startsWith('ambassadors.localhost')
   const isTutorSubdomain = hostname.startsWith('tutor.') || hostname.startsWith('tutor.localhost')
   const isLearnerSubdomain = hostname.startsWith('learner.') || hostname.startsWith('learner.localhost')
+  const isSbcSubdomain = hostname.startsWith('sbc.') || hostname.startsWith('sbc.localhost')
   
   // PRIORITY 1: Handle admin subdomain requests
   if (isAdminSubdomain) {
@@ -84,6 +85,15 @@ export function middleware(request: NextRequest) {
     }
     return NextResponse.rewrite(new URL(`/learner-portal${pathname}`, request.url))
   }
+
+  // PRIORITY 1g: Summer Build Camp subdomain
+  if (isSbcSubdomain) {
+    if (pathname.startsWith('/sbc')) return NextResponse.next()
+    if (pathname === '/' || pathname === '') {
+      return NextResponse.rewrite(new URL('/sbc', request.url))
+    }
+    return NextResponse.rewrite(new URL(`/sbc${pathname}`, request.url))
+  }
   
   // PRIORITY 2: Handle /admin routes on main domain (non-admin subdomain)
   if (pathname.startsWith('/admin')) {
@@ -112,6 +122,11 @@ export function middleware(request: NextRequest) {
   
   // PRIORITY 2d: Handle /ambassadors route (skip locale redirection)
   if (pathname.startsWith('/ambassadors')) {
+    return NextResponse.next()
+  }
+
+  // PRIORITY 2d2: Handle /sbc route (skip locale redirection)
+  if (pathname.startsWith('/sbc')) {
     return NextResponse.next()
   }
   
