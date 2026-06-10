@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { persistCronHeartbeat, verifyCronAuth } from '@/lib/cron/persist-cron-heartbeat';
 import { sendEngagementToUser } from '@/lib/notifications/send-engagement';
+import { hadSkulMatePlayToday } from '@/lib/notifications/meaningful-activity';
 
 const JOB_NAME = 'daily-challenge-reminder';
 const MAX_USERS_PER_RUN = 500;
@@ -63,10 +64,14 @@ export async function GET(request: NextRequest) {
       .slice(0, MAX_USERS_PER_RUN);
 
     for (const profile of learners) {
+      if (await hadSkulMatePlayToday(profile.id)) {
+        continue;
+      }
       const result = await sendEngagementToUser({
         userId: profile.id,
         profile,
         mode: 'skulmate_daily',
+        skipMeaningfulActivityCheck: true,
       });
       if (result.sent) processedCount++;
       else if (result.skipped?.startsWith('send_failed')) failedCount++;

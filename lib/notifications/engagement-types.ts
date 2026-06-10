@@ -54,7 +54,7 @@ export const ENGAGEMENT_CAMPAIGNS: Record<CampaignId, EngagementCampaign> = {
   daily_skulmate_streak: {
     id: 'daily_skulmate_streak',
     notificationType: 'daily_challenge_reminder',
-    allowedRoles: ['student', 'learner'],
+    allowedRoles: ['student', 'learner', 'parent'],
     priority: 50,
   },
   tutor_pending_verification: {

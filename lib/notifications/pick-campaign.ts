@@ -67,7 +67,10 @@ export function pickCampaign(
       const notes = tryPick('notes_to_games');
       if (notes) return notes;
     }
-    if (ctx.hasSkulMateStats && (ctx.role === 'student' || ctx.role === 'learner')) {
+    if (
+      ctx.hasSkulMateStats &&
+      (ctx.role === 'student' || ctx.role === 'learner' || ctx.role === 'parent')
+    ) {
       return tryPick('daily_skulmate_streak');
     }
     return null;

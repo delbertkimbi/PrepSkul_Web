@@ -94,3 +94,31 @@ export async function hadMeaningfulActivityToday(userId: string): Promise<boolea
 
   return false;
 }
+
+/** SkulMate streak nudge: only skip if user played a game today (WAT), not merely opened the app. */
+export async function hadSkulMatePlayToday(userId: string): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const startIso = getStartOfDayWatIso();
+
+  const { data: skulPlay } = await supabase
+    .from('skulmate_usage_events')
+    .select('id')
+    .eq('user_id', userId)
+    .gte('created_at', startIso)
+    .limit(1);
+  if (skulPlay?.length) return true;
+
+  const { data: gameStats } = await supabase
+    .from('user_game_stats')
+    .select('last_played_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (
+    gameStats?.last_played_at &&
+    (gameStats.last_played_at as string) >= startIso
+  ) {
+    return true;
+  }
+
+  return false;
+}
