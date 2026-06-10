@@ -1,3 +1,6 @@
+packages:
+  - '.'
+
 ignoredBuiltDependencies:
   - '@firebase/util'
   - '@tailwindcss/oxide'
