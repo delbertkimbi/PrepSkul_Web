@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/accordion"
 import { SBC_FAQ, SBC_CONTACT } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { SbcBackButton } from "@/components/sbc/sbc-back-button"
 import { sbcBtnPrimary } from "@/lib/sbc/styles"
-import { ArrowLeft, ArrowRight, MessageCircle } from "lucide-react"
+import { ArrowRight, MessageCircle } from "lucide-react"
 
 export default function SbcFaqPage() {
   const sbcPath = useSbcPath()
@@ -25,16 +26,9 @@ export default function SbcFaqPage() {
     <SbcPageShell>
       <SbcHeader />
 
-      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <Link
-            href={sbcPath()}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-
+      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0 relative">
+        <SbcBackButton className="absolute top-6 left-4 sm:left-6 lg:left-8 z-10" />
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-2">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}

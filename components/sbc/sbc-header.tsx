@@ -34,9 +34,7 @@ export default function SbcHeader() {
               className="h-14 w-auto sm:h-16 lg:h-[4.5rem] object-contain shrink-0 drop-shadow-md"
               priority
             />
-            <span className="text-sm sm:text-base font-bold tracking-wide text-[#1B2C4F] truncate leading-tight">
-              Summer Build Camp
-            </span>
+          
           </Link>
 
           <nav className="hidden md:flex items-center gap-5 lg:gap-6 shrink-0">

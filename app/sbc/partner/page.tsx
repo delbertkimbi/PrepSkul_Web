@@ -25,9 +25,9 @@ import {
 import { buildPartnershipWhatsAppMessage } from "@/lib/sbc/build-partnership-whatsapp"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
 import { sbcBtnPrimary } from "@/lib/sbc/styles"
+import { SbcBackButton } from "@/components/sbc/sbc-back-button"
 import {
   AlertCircle,
-  ArrowLeft,
   Building2,
   CheckCircle2,
   Handshake,
@@ -157,10 +157,8 @@ export default function SbcPartnerPage() {
                 Click here to send manually
               </a>
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-              <Button asChild variant="outline" className="border-slate-300 text-[#1B2C4F] hover:bg-slate-50 bg-white">
-                <Link href={sbcPath()}>Back to Home</Link>
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-2">
+              <SbcBackButton />
               <Button asChild className={sbcBtnPrimary}>
                 <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" />
@@ -179,16 +177,9 @@ export default function SbcPartnerPage() {
     <SbcPageShell>
       <SbcHeader />
 
-      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <Link
-            href={sbcPath()}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to SBC Home
-          </Link>
-
+      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0 relative">
+        <SbcBackButton className="absolute top-6 left-4 sm:left-6 lg:left-8 z-10" />
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-2">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-start gap-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-[#eef3ff] flex items-center justify-center shrink-0">

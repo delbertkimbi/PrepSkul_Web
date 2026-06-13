@@ -59,7 +59,7 @@ export function WeekendFlipCard({
     <FlipCard
       delay={delay}
       heightClass="min-h-[150px] sm:min-h-[160px]"
-      initialSide={index % 2 === 1 ? "back" : "front"}
+      initialSide="back"
       front={<WeekendCardFace week={week} focus={focus} detail={detail} back={back} theme="light" />}
       back={<WeekendCardFace week={week} focus={focus} detail={detail} back={back} theme="dark" />}
     />

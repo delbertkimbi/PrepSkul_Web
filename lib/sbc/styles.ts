@@ -8,3 +8,10 @@ export const sbcBtnOutline =
 export const sbcLinkHover = "hover:text-[#4A6FBF] transition-colors"
 
 export const sbcAccentYellow = "#FFD93D"
+
+/** Premium blue card surface — default card appearance */
+export const sbcPremiumBlueCard =
+  "bg-gradient-to-br from-[#1a3260] via-[#2559a8] to-[#0f2444] border border-[#4a8fe8]/30 shadow-lg shadow-[#0f2444]/25 text-white"
+
+export const sbcPremiumBlueCardLight =
+  "bg-gradient-to-br from-[#2d5a9e] via-[#3d7dd4] to-[#1e4080] border border-[#6ba3f0]/35 shadow-md text-white"

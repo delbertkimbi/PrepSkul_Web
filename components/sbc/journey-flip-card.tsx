@@ -63,7 +63,7 @@ export function JourneyFlipCard({
     <FlipCard
       delay={delay}
       heightClass="min-h-[200px] sm:min-h-[220px]"
-      initialSide={step % 2 === 1 ? "back" : "front"}
+      initialSide="back"
       front={
         <JourneyCardFace
           step={step}
