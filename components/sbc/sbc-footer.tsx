@@ -1,7 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Phone, Globe, Facebook, Linkedin } from "lucide-react"
-import { SBC_CONTACT } from "@/lib/sbc/content"
+import { SBC_CONTACT, SBC_LOGO } from "@/lib/sbc/content"
 
 export default function SbcFooter() {
   return (
@@ -10,9 +10,7 @@ export default function SbcFooter() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Image src="/logo.jpg" alt="PrepSkul" width={32} height={32} className="rounded" />
-              <span className="text-slate-300 text-xs font-bold">×</span>
-              <Image src="/deltech.jpg" alt="DelTech Hub" width={32} height={32} className="rounded" />
+              <Image src={SBC_LOGO} alt="Summer Build Camp" width={44} height={44} className="h-10 w-auto sm:h-11 object-contain" />
             </div>
             <p className="text-sm leading-relaxed">
               Summer Build Camp bridges the technology and entrepreneurial gap for young innovators across Africa.
@@ -26,12 +24,13 @@ export default function SbcFooter() {
               <li><Link href="/sbc/program" className="hover:text-[#FF8A00] transition-colors">Curriculum</Link></li>
               <li><Link href="/sbc#pricing" className="hover:text-[#FF8A00] transition-colors">Pricing</Link></li>
               <li><Link href="/sbc/register" className="hover:text-[#FF8A00] transition-colors">Register</Link></li>
+              <li><Link href="/sbc/partner" className="hover:text-[#FF8A00] transition-colors">Partner with SBC</Link></li>
               <li><Link href="/sbc/faq" className="hover:text-[#FF8A00] transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-[#1B2C4F] font-semibold mb-3">Partners</h3>
+            <h3 className="text-[#1B2C4F] font-semibold mb-3">Organizers</h3>
             <ul className="space-y-2 text-sm">
               <li>
                 <a href="https://prepskul.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF8A00] transition-colors">

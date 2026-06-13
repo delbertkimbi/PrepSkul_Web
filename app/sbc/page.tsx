@@ -8,13 +8,20 @@ import SbcFooter from "@/components/sbc/sbc-footer"
 import { SbcPageShell } from "@/components/sbc/sbc-page-shell"
 import { ActionBubble } from "@/components/sbc/action-bubble"
 import { PricingBadge } from "@/components/sbc/pricing-badge"
+import { JourneyFlipCard } from "@/components/sbc/journey-flip-card"
+import { LearnFlipCard } from "@/components/sbc/learn-flip-card"
+import { StatFlipCard } from "@/components/sbc/stat-flip-card"
+import { ScrollReveal } from "@/components/sbc/scroll-reveal"
 import { Button } from "@/components/ui/button"
 import {
   SBC_LEARN,
   SBC_OUTCOMES,
+  SBC_LEARN_DETAILS,
+  SBC_OUTCOME_DETAILS,
+  SBC_HERO_STATS,
   SBC_PRICING,
-  SBC_SCHEDULE,
   SBC_JOURNEY,
+  SBC_LOGO,
 } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
 import {
@@ -24,12 +31,12 @@ import {
   Users,
   Laptop,
   Sparkles,
-  Rocket,
   Lightbulb,
   Search,
   Palette,
   Code,
   Megaphone,
+  Handshake,
 } from "lucide-react"
 
 const journeyIcons = {
@@ -39,6 +46,8 @@ const journeyIcons = {
   code: Code,
   megaphone: Megaphone,
 }
+
+const heroIcons = [Calendar, Users, MapPin]
 
 export default function SbcLandingPage() {
   const sbcPath = useSbcPath()
@@ -51,17 +60,24 @@ export default function SbcLandingPage() {
       <section className="relative py-10 sm:py-16 lg:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-3 sm:gap-4 mb-8 sm:mb-10"
+            initial={{ opacity: 0, y: -12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            className="flex items-center justify-center mb-8 sm:mb-10"
           >
-            <a href="https://prepskul.com" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
-              <Image src="/logo.jpg" alt="PrepSkul" width={44} height={44} className="rounded-lg w-10 h-10 sm:w-11 sm:h-11" />
-            </a>
-            <span className="text-slate-300 text-lg font-light">×</span>
-            <a href="https://deltech-hub.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:opacity-80 transition-opacity">
-              <Image src="/deltech.jpg" alt="DelTech Hub" width={44} height={44} className="rounded-lg w-10 h-10 sm:w-11 sm:h-11" />
-            </a>
+            <motion.div
+              animate={{ y: [0, -5, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Image
+                src={SBC_LOGO}
+                alt="Summer Build Camp"
+                width={160}
+                height={160}
+                className="h-[5.5rem] sm:h-28 lg:h-[8.5rem] w-auto object-contain drop-shadow-md"
+                priority
+              />
+            </motion.div>
           </motion.div>
 
           <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 px-1">
@@ -109,20 +125,20 @@ export default function SbcLandingPage() {
             transition={{ delay: 0.5 }}
             className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto"
           >
-            {[
-              { icon: Calendar, label: SBC_SCHEDULE.duration, sub: SBC_SCHEDULE.dateRange },
-              { icon: Users, label: `Ages ${SBC_SCHEDULE.ages}`, sub: SBC_SCHEDULE.days },
-              { icon: MapPin, label: "Buea", sub: SBC_SCHEDULE.location },
-            ].map((stat, i) => (
-              <div
-                key={i}
-                className="rounded-2xl bg-white border border-slate-200/80 p-4 sm:p-5 text-center shadow-sm hover:shadow-md transition-shadow"
-              >
-                <stat.icon className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF8A00] mx-auto mb-2" />
-                <p className="font-bold text-[#1B2C4F] text-sm sm:text-base">{stat.label}</p>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-snug">{stat.sub}</p>
-              </div>
-            ))}
+            {SBC_HERO_STATS.map((stat, i) => {
+              const Icon = heroIcons[i]
+              return (
+                <StatFlipCard
+                  key={stat.label}
+                  icon={Icon}
+                  label={stat.label}
+                  sub={stat.sub}
+                  back={stat.back}
+                  delay={i * 0.1}
+                  index={i}
+                />
+              )
+            })}
           </motion.div>
 
           <motion.div
@@ -157,12 +173,7 @@ export default function SbcLandingPage() {
       <section id="about" className="relative py-14 sm:py-20 lg:py-24 bg-white/60">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-5 sm:space-y-6"
-            >
+            <ScrollReveal className="space-y-5 sm:space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF8A00]/10 border border-[#FF8A00]/25 text-[#FF8A00] text-sm font-semibold">
                 <Sparkles className="h-4 w-4" />
                 Why SBC Exists
@@ -183,15 +194,14 @@ export default function SbcLandingPage() {
                   Bring a laptop or phone if you have one. It helps students keep building at home. No device? We provide laptops at the center during program hours.
                 </p>
               </div>
-            </motion.div>
+            </ScrollReveal>
 
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
+            <ScrollReveal delay={0.12} className="relative">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.35 }}
+                className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg"
+              >
                 <Image
                   src="/young-african-female-tech-student.jpg"
                   alt="Young student learning with technology"
@@ -199,11 +209,11 @@ export default function SbcLandingPage() {
                   height={500}
                   className="w-full h-auto object-cover"
                 />
-              </div>
+              </motion.div>
               <div className="mt-4 sm:mt-0 sm:absolute sm:-bottom-5 sm:-left-4 lg:-left-6">
                 <PricingBadge />
               </div>
-            </motion.div>
+            </ScrollReveal>
           </div>
         </div>
       </section>
@@ -211,45 +221,48 @@ export default function SbcLandingPage() {
       {/* Learn & Outcomes */}
       <section className="relative py-14 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12"
-          >
+          <ScrollReveal className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B2C4F] px-2">
               What they&apos;ll learn & what they&apos;ll achieve
             </h2>
-          </motion.div>
+            <p className="text-slate-500 text-sm sm:text-base mt-3 max-w-xl mx-auto">
+              Skills and outcomes that stick long after camp ends
+            </p>
+          </ScrollReveal>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="rounded-2xl sm:rounded-3xl bg-[#f8f6f0] text-[#1a1a2e] p-6 sm:p-10 lg:p-12 shadow-lg relative overflow-hidden">
-              <div className="absolute top-0 left-0 right-0 h-2 sm:h-3 bg-gradient-to-r from-[#FF8A00] via-[#4A6FBF] to-[#FFD93D]" />
-              <div className="grid sm:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 pt-2">
-                <div>
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-[#1B2C4F] mb-3 sm:mb-4">
-                    What They&apos;ll Learn
-                  </h3>
-                  <ul className="space-y-2.5 sm:space-y-3">
-                    {SBC_LEARN.map((item) => (
-                      <li key={item} className="flex items-center gap-2 text-[#333] font-medium text-sm sm:text-base">
-                        <span className="w-2 h-2 rounded-full bg-[#FF8A00] shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-[#FF8A00] mb-3 sm:mb-4">Outcomes</h3>
-                  <ul className="space-y-2.5 sm:space-y-3">
-                    {SBC_OUTCOMES.map((item) => (
-                      <li key={item} className="flex items-center gap-2 text-[#333] font-medium text-sm sm:text-base">
-                        <Rocket className="h-4 w-4 text-[#FF8A00] shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          <div className="max-w-5xl mx-auto space-y-8 sm:space-y-10">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wider text-[#1B2C4F] mb-4 text-center sm:text-left">
+                What They&apos;ll Learn
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+                {SBC_LEARN.map((item, i) => (
+                  <LearnFlipCard
+                    key={item}
+                    title={item}
+                    detail={SBC_LEARN_DETAILS[item]}
+                    variant="learn"
+                    delay={i * 0.06}
+                    index={i}
+                  />
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-wider text-[#FF8A00] mb-4 text-center sm:text-left">
+                Outcomes
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {SBC_OUTCOMES.map((item, i) => (
+                  <LearnFlipCard
+                    key={item}
+                    title={item}
+                    detail={SBC_OUTCOME_DETAILS[item]}
+                    variant="outcome"
+                    delay={i * 0.06}
+                    index={i}
+                  />
+                ))}
               </div>
             </div>
           </div>
@@ -259,37 +272,26 @@ export default function SbcLandingPage() {
       {/* Journey */}
       <section className="relative py-14 sm:py-20 lg:py-24 bg-white/50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-8 sm:mb-12"
-          >
+          <ScrollReveal className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-3 text-[#1B2C4F]">The Builder&apos;s Journey</h2>
             <p className="text-slate-500 max-w-2xl mx-auto text-sm sm:text-base px-2">
               From ideation to Demo Day. Every weekend is a step closer to launching something real.
             </p>
-          </motion.div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {SBC_JOURNEY.map((step, i) => {
               const Icon = journeyIcons[step.icon]
               return (
-                <motion.div
+                <JourneyFlipCard
                   key={step.step}
-                  initial={{ opacity: 0, y: 15 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
-                  className="rounded-2xl bg-white border border-slate-200/80 p-4 sm:p-5 shadow-sm hover:border-[#FF8A00]/40 hover:shadow-md transition-all"
-                >
-                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#FF8A00]/15 flex items-center justify-center mb-3">
-                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-[#FF8A00]" />
-                  </div>
-                  <p className="text-xs text-[#4A6FBF] font-bold mb-1">Step {step.step}</p>
-                  <h3 className="font-bold text-[#1B2C4F] mb-1.5 text-sm sm:text-base">{step.title}</h3>
-                  <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">{step.description}</p>
-                </motion.div>
+                  step={step.step}
+                  title={step.title}
+                  description={step.description}
+                  flipDetail={step.flipDetail}
+                  icon={Icon}
+                  delay={i * 0.08}
+                />
               )
             })}
           </div>
@@ -308,7 +310,7 @@ export default function SbcLandingPage() {
       <section id="pricing" className="relative py-14 sm:py-20 lg:py-24 bg-gradient-to-b from-[#FF8A00]/5 to-transparent">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <motion.div initial={{ opacity: 0, x: -15 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+            <ScrollReveal delay={0.1}>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-3 sm:mb-4 text-[#1B2C4F]">Invest in their future</h2>
               <p className="text-slate-500 text-base sm:text-lg mb-6 sm:mb-8 leading-relaxed">
                 Secure your spot with a registration fee, then pay the program fee in manageable installments across the 6 weeks.
@@ -333,14 +335,9 @@ export default function SbcLandingPage() {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </ScrollReveal>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.97 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="flex flex-col items-center gap-5 sm:gap-6"
-            >
+            <ScrollReveal delay={0.2} className="flex flex-col items-center gap-5 sm:gap-6">
               <PricingBadge />
               <Button
                 asChild
@@ -352,8 +349,40 @@ export default function SbcLandingPage() {
               <p className="text-xs sm:text-sm text-slate-400 text-center px-4">
                 Limited spots. Registration closes {SBC_PRICING.registrationDeadline}.
               </p>
-            </motion.div>
+            </ScrollReveal>
           </div>
+        </div>
+      </section>
+
+      {/* Partner CTA */}
+      <section className="relative py-14 sm:py-20 lg:py-24 bg-white/60">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
+          <ScrollReveal className="max-w-3xl mx-auto text-center">
+            <motion.div
+              className="w-14 h-14 rounded-2xl bg-[#4A6FBF]/10 flex items-center justify-center mx-auto mb-5"
+              whileHover={{ rotate: [0, -8, 8, 0], scale: 1.05 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Handshake className="h-7 w-7 text-[#4A6FBF]" />
+            </motion.div>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B2C4F] mb-3">
+              Partner with us
+            </h2>
+            <p className="text-slate-500 text-sm sm:text-base leading-relaxed mb-6 sm:mb-8 px-2">
+              Investors, startups, NGOs, brands, and schools can join PrepSkul and DelTech Hub in shaping the next generation of young builders across Africa.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="w-full sm:w-auto border-[#4A6FBF]/40 text-[#1B2C4F] hover:bg-[#eef3ff] bg-white font-semibold"
+            >
+              <Link href={sbcPath("/partner")}>
+                Explore Partnership
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </ScrollReveal>
         </div>
       </section>
 

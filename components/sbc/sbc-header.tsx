@@ -5,6 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
+import { SBC_LOGO } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
 
 export default function SbcHeader() {
@@ -14,6 +15,7 @@ export default function SbcHeader() {
   const navLinks = [
     { href: sbcPath("#about"), label: "About" },
     { href: sbcPath("/program"), label: "Program" },
+    { href: sbcPath("/partner"), label: "Partner" },
     { href: sbcPath("#pricing"), label: "Pricing" },
     { href: sbcPath("/faq"), label: "FAQ" },
   ]
@@ -23,11 +25,14 @@ export default function SbcHeader() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
         <div className="flex items-center justify-between gap-3 py-3">
           <Link href={sbcPath()} className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="flex items-center gap-1.5 shrink-0">
-              <Image src="/logo.jpg" alt="PrepSkul" width={32} height={32} className="rounded-md sm:w-9 sm:h-9" />
-              <span className="text-slate-300 text-xs font-bold">×</span>
-              <Image src="/deltech.jpg" alt="DelTech Hub" width={32} height={32} className="rounded-md sm:w-9 sm:h-9" />
-            </div>
+            <Image
+              src={SBC_LOGO}
+              alt="Summer Build Camp"
+              width={48}
+              height={48}
+              className="h-10 w-auto sm:h-11 object-contain shrink-0"
+              priority
+            />
             <span className="hidden sm:block text-xs sm:text-sm font-bold tracking-wide text-[#1B2C4F] truncate">
               Summer Build Camp
             </span>
