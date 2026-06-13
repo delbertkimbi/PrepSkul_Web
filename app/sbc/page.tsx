@@ -21,9 +21,9 @@ import {
   SBC_HERO_STATS,
   SBC_PRICING,
   SBC_JOURNEY,
-  SBC_LOGO,
 } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { sbcBtnPrimary, sbcBtnOutline } from "@/lib/sbc/styles"
 import {
   ArrowRight,
   Calendar,
@@ -57,115 +57,108 @@ export default function SbcLandingPage() {
       <SbcHeader />
 
       {/* Hero */}
-      <section className="relative py-10 sm:py-16 lg:py-24">
+      <section className="relative py-10 sm:py-14 lg:py-20 overflow-hidden">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
-          <motion.div
-            initial={{ opacity: 0, y: -12, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-center justify-center mb-8 sm:mb-10"
-          >
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="order-2 lg:order-1 text-center lg:text-left">
+              <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3 mb-5 sm:mb-6">
+                {(["Create", "Build", "Pitch", "Launch"] as const).map((label, i) => (
+                  <ActionBubble key={label} label={label} delay={0.15 + i * 0.12} />
+                ))}
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <h1 className="leading-none">
+                  <span
+                    className="block text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-[#1B2C4F]"
+                    style={{ WebkitTextStroke: "1.5px #7eb8ff" }}
+                  >
+                    summer
+                  </span>
+                  <span className="block text-3xl sm:text-5xl lg:text-6xl font-black text-[#4A6FBF] my-0.5 sm:my-1 tracking-wide">
+                    build
+                  </span>
+                  <span
+                    className="block text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-[#1B2C4F]"
+                    style={{ WebkitTextStroke: "1.5px #7eb8ff" }}
+                  >
+                    camp
+                  </span>
+                </h1>
+                <p className="mt-4 sm:mt-5 text-base sm:text-lg lg:text-xl text-[#4A6FBF] font-medium max-w-md mx-auto lg:mx-0">
+                  AI + Entrepreneurship for young innovators
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35 }}
+                className="mt-6 sm:mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-md mx-auto lg:mx-0"
+              >
+                {SBC_HERO_STATS.map((stat, i) => {
+                  const Icon = heroIcons[i]
+                  return (
+                    <StatFlipCard
+                      key={stat.label}
+                      icon={Icon}
+                      label={stat.label}
+                      sub={stat.sub}
+                      back={stat.back}
+                      delay={i * 0.15}
+                      index={i}
+                    />
+                  )
+                })}
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start items-stretch sm:items-center"
+              >
+                <Button asChild size="lg" className={`w-full sm:w-auto text-base sm:text-lg font-bold px-8 sm:px-10 h-12 sm:h-14 ${sbcBtnPrimary}`}>
+                  <Link href={sbcPath("/register")}>
+                    Register Today
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg" className={`w-full sm:w-auto text-base sm:text-lg font-semibold px-6 sm:px-8 h-12 sm:h-14 ${sbcBtnOutline}`}>
+                  <a href="#about">Learn More</a>
+                </Button>
+              </motion.div>
+            </div>
+
             <motion.div
-              animate={{ y: [0, -5, 0] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="order-1 lg:order-2 relative flex justify-center lg:justify-end"
             >
-              <Image
-                src={SBC_LOGO}
-                alt="Summer Build Camp"
-                width={160}
-                height={160}
-                className="h-[5.5rem] sm:h-28 lg:h-[8.5rem] w-auto object-contain drop-shadow-md"
-                priority
-              />
+              <div className="relative w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[440px]">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#7eb8ff]/30 via-[#4A6FBF]/20 to-[#1B2C4F]/10 blur-2xl scale-110" aria-hidden />
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                  className="relative"
+                >
+                  <Image
+                    src="/child.png"
+                    alt="Young Summer Build Camp participant exploring VR and technology"
+                    width={440}
+                    height={440}
+                    className="w-full h-auto object-contain drop-shadow-2xl"
+                    priority
+                  />
+                </motion.div>
+              </div>
             </motion.div>
-          </motion.div>
-
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-6 sm:mb-8 px-1">
-            {(["Create", "Build", "Pitch", "Launch"] as const).map((label, i) => (
-              <ActionBubble key={label} label={label} delay={0.2 + i * 0.15} />
-            ))}
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, type: "spring" }}
-            className="text-center"
-          >
-            <h1 className="leading-none">
-              <span
-                className="block text-4xl sm:text-7xl lg:text-8xl font-black tracking-tight text-[#1B2C4F]"
-                style={{ WebkitTextStroke: "1.5px #7eb8ff" }}
-              >
-                summer
-              </span>
-              <span className="block text-3xl sm:text-5xl lg:text-6xl font-black text-[#FF8A00] my-0.5 sm:my-1 tracking-wide">
-                build
-              </span>
-              <span
-                className="block text-4xl sm:text-7xl lg:text-8xl font-black tracking-tight text-[#1B2C4F]"
-                style={{ WebkitTextStroke: "1.5px #7eb8ff" }}
-              >
-                camp
-              </span>
-            </h1>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mt-4 sm:mt-6 text-base sm:text-lg lg:text-xl text-[#4A6FBF] font-medium"
-            >
-              AI + Entrepreneurship for young innovators
-            </motion.p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8 sm:mt-12 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 max-w-3xl mx-auto"
-          >
-            {SBC_HERO_STATS.map((stat, i) => {
-              const Icon = heroIcons[i]
-              return (
-                <StatFlipCard
-                  key={stat.label}
-                  icon={Icon}
-                  label={stat.label}
-                  sub={stat.sub}
-                  back={stat.back}
-                  delay={i * 0.1}
-                  index={i}
-                />
-              )
-            })}
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.65 }}
-            className="mt-8 sm:mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-stretch sm:items-center px-2"
-          >
-            <Button
-              asChild
-              size="lg"
-              className="w-full sm:w-auto text-base sm:text-lg font-bold px-8 sm:px-10 h-12 sm:h-14 bg-[#FF8A00] hover:bg-[#e67a00] text-white shadow-lg shadow-orange-500/20"
-            >
-              <Link href={sbcPath("/register")}>
-                Register Today
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="w-full sm:w-auto text-base sm:text-lg font-semibold px-6 sm:px-8 h-12 sm:h-14 border-slate-300 text-[#1B2C4F] hover:bg-slate-50 bg-white"
-            >
-              <a href="#about">Learn More</a>
-            </Button>
-          </motion.div>
         </div>
       </section>
 
@@ -174,13 +167,13 @@ export default function SbcLandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <ScrollReveal className="space-y-5 sm:space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF8A00]/10 border border-[#FF8A00]/25 text-[#FF8A00] text-sm font-semibold">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#eef3ff] border border-[#4A6FBF]/25 text-[#4A6FBF] text-sm font-semibold">
                 <Sparkles className="h-4 w-4" />
                 Why SBC Exists
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black leading-tight text-[#1B2C4F]">
                 From consumers to{" "}
-                <span className="text-[#FF8A00]">creators</span> of technology
+                <span className="text-[#4A6FBF]">creators</span> of technology
               </h2>
               <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
                 Across Cameroon and Africa, young people use emerging technologies and AI every day. Most never learn how these tools work, or that they can build their own products with them.
@@ -249,7 +242,7 @@ export default function SbcLandingPage() {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-black uppercase tracking-wider text-[#FF8A00] mb-4 text-center sm:text-left">
+              <h3 className="text-sm font-black uppercase tracking-wider text-[#4A6FBF] mb-4 text-center sm:text-left">
                 Outcomes
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -297,7 +290,7 @@ export default function SbcLandingPage() {
           </div>
 
           <div className="text-center mt-8 sm:mt-10">
-            <Button asChild variant="outline" className="border-slate-300 text-[#1B2C4F] hover:bg-slate-50 bg-white">
+            <Button asChild variant="outline" className={`${sbcBtnOutline}`}>
               <Link href={sbcPath("/program")}>
                 Explore Full Program <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -307,7 +300,7 @@ export default function SbcLandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="relative py-14 sm:py-20 lg:py-24 bg-gradient-to-b from-[#FF8A00]/5 to-transparent">
+      <section id="pricing" className="relative py-14 sm:py-20 lg:py-24 bg-gradient-to-b from-[#eef3ff]/80 to-transparent">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <ScrollReveal delay={0.1}>
@@ -322,11 +315,11 @@ export default function SbcLandingPage() {
                   </span>
                   <div>
                     <p className="font-semibold text-[#1B2C4F]">{SBC_PRICING.currency} Registration</p>
-                    <p className="text-sm text-[#FF8A00]">Deadline: {SBC_PRICING.registrationDeadline}</p>
+                    <p className="text-sm text-[#4A6FBF]">Deadline: {SBC_PRICING.registrationDeadline}</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 p-4 sm:p-5 rounded-2xl bg-white border border-[#FF8A00]/25 shadow-sm">
-                  <span className="text-3xl sm:text-4xl font-black text-[#FF8A00]">
+                <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 p-4 sm:p-5 rounded-2xl bg-white border border-[#4A6FBF]/25 shadow-sm">
+                  <span className="text-3xl sm:text-4xl font-black text-[#4A6FBF]">
                     {SBC_PRICING.programFee.toLocaleString()}
                   </span>
                   <div>
@@ -339,11 +332,7 @@ export default function SbcLandingPage() {
 
             <ScrollReveal delay={0.2} className="flex flex-col items-center gap-5 sm:gap-6">
               <PricingBadge />
-              <Button
-                asChild
-                size="lg"
-                className="w-full sm:w-auto text-base sm:text-lg font-bold px-8 sm:px-12 h-12 sm:h-14 bg-[#FF8A00] hover:bg-[#e67a00] text-white shadow-lg shadow-orange-500/20"
-              >
+              <Button asChild size="lg" className={`w-full sm:w-auto text-base sm:text-lg font-bold px-8 sm:px-12 h-12 sm:h-14 ${sbcBtnPrimary}`}>
                 <Link href={sbcPath("/register")}>Register Today</Link>
               </Button>
               <p className="text-xs sm:text-sm text-slate-400 text-center px-4">

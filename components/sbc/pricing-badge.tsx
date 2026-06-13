@@ -13,7 +13,7 @@ export function PricingBadge({ className = "" }: { className?: string }) {
         </p>
         <div className="w-8 h-px bg-slate-200 mx-auto" />
         <p className="text-[10px] sm:text-xs uppercase tracking-widest text-[#4A6FBF] font-semibold">Program Fee</p>
-        <p className="text-lg sm:text-xl font-bold text-[#FF8A00]">
+        <p className="text-lg sm:text-xl font-bold text-[#4A6FBF]">
           {SBC_PRICING.programFee.toLocaleString()}{" "}
           <span className="text-xs sm:text-sm font-medium text-slate-500">{SBC_PRICING.currency}</span>
         </p>

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/accordion"
 import { SBC_FAQ, SBC_CONTACT } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { sbcBtnPrimary } from "@/lib/sbc/styles"
 import { ArrowLeft, ArrowRight, MessageCircle } from "lucide-react"
 
 export default function SbcFaqPage() {
@@ -28,7 +29,7 @@ export default function SbcFaqPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <Link
             href={sbcPath()}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#FF8A00] transition-colors mb-6 sm:mb-8"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Home
@@ -51,9 +52,9 @@ export default function SbcFaqPage() {
                 <AccordionItem
                   key={i}
                   value={`faq-${i}`}
-                  className="rounded-xl bg-white border border-slate-200 px-4 sm:px-5 shadow-sm data-[state=open]:border-[#FF8A00]/40"
+                  className="rounded-xl bg-white border border-slate-200 px-4 sm:px-5 shadow-sm data-[state=open]:border-[#4A6FBF]/40"
                 >
-                  <AccordionTrigger className="text-left font-semibold text-[#1B2C4F] hover:text-[#FF8A00] hover:no-underline py-4 sm:py-5 text-sm sm:text-base pr-2">
+                  <AccordionTrigger className="text-left font-semibold text-[#1B2C4F] hover:text-[#4A6FBF] hover:no-underline py-4 sm:py-5 text-sm sm:text-base pr-2">
                     {item.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-slate-600 leading-relaxed pb-4 sm:pb-5 text-sm sm:text-base">
@@ -71,7 +72,7 @@ export default function SbcFaqPage() {
                 Reach out to our team on WhatsApp or visit the program page for full details.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button asChild className="bg-[#FF8A00] hover:bg-[#e67a00] text-white w-full sm:w-auto">
+                <Button asChild className={`${sbcBtnPrimary} w-full sm:w-auto`}>
                   <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Chat on WhatsApp
