@@ -2,6 +2,13 @@
 
 import type { LucideIcon } from "lucide-react"
 import { FlipCard } from "@/components/sbc/flip-card"
+import {
+  invertedBody,
+  invertedCardShell,
+  invertedIconColor,
+  invertedTitle,
+} from "@/components/sbc/inverted-card-face"
+import { cn } from "@/lib/utils"
 
 interface StatFlipCardProps {
   icon: LucideIcon
@@ -12,28 +19,39 @@ interface StatFlipCardProps {
   index?: number
 }
 
-export function StatFlipCard({ icon: Icon, label, sub, back, delay = 0, index = 0 }: StatFlipCardProps) {
+function StatCardFace({
+  icon: Icon,
+  label,
+  sub,
+  back,
+  theme,
+}: {
+  icon: LucideIcon
+  label: string
+  sub: string
+  back: string
+  theme: "light" | "dark"
+}) {
+  return (
+    <div className={cn(invertedCardShell(theme, "items-center justify-center text-center rounded-2xl"))}>
+      <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6 mb-2", invertedIconColor(theme))} />
+      <p className={invertedTitle(theme)}>{label}</p>
+      <p className={invertedBody(theme)}>{sub}</p>
+      {back.trim() !== sub.trim() && (
+        <p className={cn(invertedBody(theme), "mt-1.5")}>{back}</p>
+      )}
+    </div>
+  )
+}
+
+export function StatFlipCard({ icon, label, sub, back, delay = 0, index = 0 }: StatFlipCardProps) {
   return (
     <FlipCard
       delay={delay}
       heightClass="min-h-[140px] sm:min-h-[152px]"
-      initialSide={index === 1 ? "back" : "front"}
-      viewFlipDelay={900 + delay * 200}
-      idleFlipDelay={2200 + delay * 200}
-      front={
-        <div className="h-full flex flex-col items-center justify-center rounded-2xl bg-white border border-slate-200/80 p-4 sm:p-5 text-center shadow-sm">
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF8A00] mb-2" />
-          <p className="font-bold text-[#1B2C4F] text-sm sm:text-base">{label}</p>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-snug">{sub}</p>
-        </div>
-      }
-      back={
-        <div className="h-full flex flex-col items-center justify-center rounded-2xl bg-[#FF8A00] p-4 sm:p-5 text-center text-white shadow-md">
-          <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-white/90 mb-2" />
-          <p className="font-bold text-sm sm:text-base mb-1">{label}</p>
-          <p className="text-xs sm:text-sm text-white/90 leading-snug">{back}</p>
-        </div>
-      }
+      initialSide={index % 2 === 1 ? "back" : "front"}
+      front={<StatCardFace icon={icon} label={label} sub={sub} back={back} theme="light" />}
+      back={<StatCardFace icon={icon} label={label} sub={sub} back={back} theme="dark" />}
     />
   )
 }

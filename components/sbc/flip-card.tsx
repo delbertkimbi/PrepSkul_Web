@@ -12,14 +12,9 @@ interface FlipCardProps {
   innerClassName?: string
   delay?: number
   heightClass?: string
-  /** Which side is visible before any interaction or auto-flip */
   initialSide?: "front" | "back"
-  /** Flip automatically when the card scrolls into view */
   autoFlipOnView?: boolean
-  /** Ms after entering view before auto-flip (stagger via delay prop) */
   viewFlipDelay?: number
-  /** Ms after entering view if still on initial side — catches hero cards on load */
-  idleFlipDelay?: number
 }
 
 export function FlipCard({
@@ -32,25 +27,35 @@ export function FlipCard({
   initialSide = "front",
   autoFlipOnView = true,
   viewFlipDelay,
-  idleFlipDelay,
 }: FlipCardProps) {
   const prefersReducedMotion = useReducedMotion()
   const initialFlipped = initialSide === "back"
   const [flipped, setFlipped] = useState(initialFlipped)
   const rootRef = useRef<HTMLDivElement>(null)
   const userInteractedRef = useRef(false)
-  const touchHandledRef = useRef(false)
-  const scrollFlippedRef = useRef(false)
-  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([])
-
-  const clearTimers = useCallback(() => {
-    timersRef.current.forEach(clearTimeout)
-    timersRef.current = []
-  }, [])
+  const autoFlippedRef = useRef(false)
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const touchStartRef = useRef<{ x: number; y: number; t: number } | null>(null)
+  const skipClickRef = useRef(false)
 
   const toggle = useCallback(() => {
     userInteractedRef.current = true
     setFlipped((f) => !f)
+  }, [])
+
+  const clearHoverTimer = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+  }, [])
+
+  const clearAutoTimer = useCallback(() => {
+    if (autoTimerRef.current) {
+      clearTimeout(autoTimerRef.current)
+      autoTimerRef.current = null
+    }
   }, [])
 
   useEffect(() => {
@@ -63,120 +68,79 @@ export function FlipCard({
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        clearTimers()
+        clearAutoTimer()
 
-        if (entry?.isIntersecting) {
-          const onViewMs = viewFlipDelay ?? 650 + delay * 140
-          const idleMs = idleFlipDelay ?? 2800 + delay * 140
+        if (entry?.isIntersecting && entry.intersectionRatio >= 0.35) {
+          if (autoFlippedRef.current || userInteractedRef.current) return
 
-          timersRef.current.push(
-            setTimeout(() => {
-              if (!userInteractedRef.current) setFlipped(targetFlipped)
-            }, onViewMs)
-          )
-
-          timersRef.current.push(
-            setTimeout(() => {
-              if (!userInteractedRef.current) setFlipped((current) => (current === initialFlipped ? targetFlipped : current))
-            }, idleMs)
-          )
-        } else if (!userInteractedRef.current) {
-          setFlipped(initialFlipped)
+          const onViewMs = viewFlipDelay ?? 3800 + delay * 500
+          autoTimerRef.current = setTimeout(() => {
+            if (!userInteractedRef.current && !autoFlippedRef.current) {
+              setFlipped(targetFlipped)
+              autoFlippedRef.current = true
+            }
+          }, onViewMs)
         }
       },
-      { threshold: [0.08, 0.22], rootMargin: "40px 0px 40px 0px" }
+      { threshold: [0.35, 0.55], rootMargin: "0px 0px -8% 0px" }
     )
 
     observer.observe(el)
     return () => {
       observer.disconnect()
-      clearTimers()
+      clearAutoTimer()
     }
-  }, [
-    prefersReducedMotion,
-    autoFlipOnView,
-    delay,
-    initialFlipped,
-    viewFlipDelay,
-    idleFlipDelay,
-    clearTimers,
-  ])
-
-  useEffect(() => {
-    if (prefersReducedMotion || !autoFlipOnView) return
-    const el = rootRef.current
-    if (!el) return
-    if (typeof window === "undefined" || !window.matchMedia("(pointer: coarse)").matches) return
-
-    const targetFlipped = !initialFlipped
-    let ticking = false
-
-    const checkScrollFlip = () => {
-      ticking = false
-      if (userInteractedRef.current) return
-
-      const rect = el.getBoundingClientRect()
-      const vh = window.innerHeight
-      const visible = rect.bottom > 0 && rect.top < vh
-      const cardCenter = rect.top + rect.height / 2
-      const inHotZone = cardCenter > vh * 0.2 && cardCenter < vh * 0.8
-
-      if (visible && inHotZone) {
-        if (!scrollFlippedRef.current) {
-          setFlipped(targetFlipped)
-          scrollFlippedRef.current = true
-        }
-      } else {
-        scrollFlippedRef.current = false
-        if (!visible) setFlipped(initialFlipped)
-      }
-    }
-
-    const onScroll = () => {
-      if (!ticking) {
-        ticking = true
-        requestAnimationFrame(checkScrollFlip)
-      }
-    }
-
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("touchmove", onScroll, { passive: true })
-    checkScrollFlip()
-
-    return () => {
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("touchmove", onScroll)
-    }
-  }, [prefersReducedMotion, autoFlipOnView, initialFlipped])
+  }, [prefersReducedMotion, autoFlipOnView, delay, initialFlipped, viewFlipDelay, clearAutoTimer])
 
   const handlePointerEnter = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse") return
-    if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches) {
-      setFlipped(true)
-    }
+    if (typeof window === "undefined" || !window.matchMedia("(hover: hover)").matches) return
+
+    clearHoverTimer()
+    hoverTimerRef.current = setTimeout(() => {
+      if (!userInteractedRef.current) setFlipped(true)
+    }, 500)
   }
 
   const handlePointerLeave = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse") return
-    if (typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches && !userInteractedRef.current) {
-      setFlipped(initialFlipped)
-    }
+    clearHoverTimer()
+    if (!userInteractedRef.current) setFlipped(initialFlipped)
   }
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (e.pointerType === "touch") {
-      touchHandledRef.current = true
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    if (!touch) return
+    touchStartRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStartRef.current
+    touchStartRef.current = null
+    if (!start) return
+
+    const touch = e.changedTouches[0]
+    if (!touch) return
+
+    const dx = Math.abs(touch.clientX - start.x)
+    const dy = Math.abs(touch.clientY - start.y)
+    const dt = Date.now() - start.t
+
+    if (dx < 12 && dy < 12 && dt < 350) {
+      skipClickRef.current = true
       toggle()
     }
   }
 
   const handleClick = () => {
-    if (touchHandledRef.current) {
-      touchHandledRef.current = false
+    if (skipClickRef.current) {
+      skipClickRef.current = false
       return
     }
     toggle()
   }
+
+  useEffect(() => () => clearHoverTimer(), [clearHoverTimer])
 
   return (
     <motion.div
@@ -192,7 +156,8 @@ export function FlipCard({
         className
       )}
       onClick={handleClick}
-      onPointerDown={handlePointerDown}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       role="button"
@@ -206,16 +171,13 @@ export function FlipCard({
       aria-pressed={flipped}
     >
       <motion.div
-        className={cn(
-          "relative w-full h-full",
-          innerClassName
-        )}
+        className={cn("relative w-full h-full", innerClassName)}
         style={{ transformStyle: "preserve-3d" }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={
           prefersReducedMotion
             ? { duration: 0 }
-            : { duration: 0.42, ease: [0.34, 1.15, 0.64, 1] }
+            : { duration: 0.55, ease: [0.4, 0, 0.2, 1] }
         }
       >
         <div

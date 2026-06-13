@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 import { SBC_LOGO } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { sbcBtnPrimary } from "@/lib/sbc/styles"
 
 export default function SbcHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -23,17 +24,17 @@ export default function SbcHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md shadow-sm">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
-        <div className="flex items-center justify-between gap-3 py-3">
-          <Link href={sbcPath()} className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <div className="flex items-center justify-between gap-3 py-3.5 sm:py-4">
+          <Link href={sbcPath()} className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Image
               src={SBC_LOGO}
               alt="Summer Build Camp"
-              width={48}
-              height={48}
-              className="h-10 w-auto sm:h-11 object-contain shrink-0"
+              width={88}
+              height={88}
+              className="h-14 w-auto sm:h-16 lg:h-[4.5rem] object-contain shrink-0 drop-shadow-md"
               priority
             />
-            <span className="hidden sm:block text-xs sm:text-sm font-bold tracking-wide text-[#1B2C4F] truncate">
+            <span className="text-sm sm:text-base font-bold tracking-wide text-[#1B2C4F] truncate leading-tight">
               Summer Build Camp
             </span>
           </Link>
@@ -43,7 +44,7 @@ export default function SbcHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-slate-600 hover:text-[#FF8A00] transition-colors"
+                className="text-sm font-medium text-slate-600 hover:text-[#4A6FBF] transition-colors"
               >
                 {link.label}
               </Link>
@@ -51,7 +52,7 @@ export default function SbcHeader() {
             <Button
               asChild
               size="sm"
-              className="bg-[#FF8A00] hover:bg-[#e67a00] text-white font-semibold shadow-md shadow-orange-500/15"
+              className={`${sbcBtnPrimary} font-semibold shadow-md shadow-blue-900/15`}
             >
               <Link href={sbcPath("/register")}>Register Now</Link>
             </Button>
@@ -83,7 +84,7 @@ export default function SbcHeader() {
               <Button
                 asChild
                 size="sm"
-                className="mt-2 w-full bg-[#FF8A00] hover:bg-[#e67a00] text-white font-semibold"
+                className={`mt-2 w-full ${sbcBtnPrimary} font-semibold`}
               >
                 <Link href={sbcPath("/register")} onClick={() => setMenuOpen(false)}>
                   Register Now

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select"
 import { SBC_CONTACT, SBC_PRICING, SBC_SCHEDULE } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { sbcBtnPrimary } from "@/lib/sbc/styles"
 import { CheckCircle2, MessageCircle, ArrowLeft, AlertCircle } from "lucide-react"
 
 interface FormData {
@@ -116,7 +117,7 @@ export default function SbcRegisterPage() {
                 href={`${SBC_CONTACT.whatsapp}?text=${encodeURIComponent(buildWhatsAppMessage())}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#FF8A00] hover:underline"
+                className="text-[#4A6FBF] hover:underline"
               >
                 Click here to send manually
               </a>
@@ -125,7 +126,7 @@ export default function SbcRegisterPage() {
               <Button asChild variant="outline" className="border-slate-300 text-[#1B2C4F] hover:bg-slate-50 bg-white">
                 <Link href={sbcPath()}>Back to Home</Link>
               </Button>
-              <Button asChild className="bg-[#FF8A00] hover:bg-[#e67a00] text-white">
+              <Button asChild className={sbcBtnPrimary}>
                 <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Chat on WhatsApp
@@ -147,7 +148,7 @@ export default function SbcRegisterPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <Link
             href={sbcPath()}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#FF8A00] transition-colors mb-6 sm:mb-8"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to SBC Home
@@ -169,8 +170,8 @@ export default function SbcRegisterPage() {
                   </ul>
                 </div>
 
-                <div className="rounded-2xl bg-[#FF8A00]/8 border border-[#FF8A00]/25 p-4 sm:p-5">
-                  <p className="text-sm text-[#FF8A00] font-semibold mb-1">Registration Deadline</p>
+                <div className="rounded-2xl bg-[#eef3ff] border border-[#4A6FBF]/25 p-4 sm:p-5">
+                  <p className="text-sm text-[#4A6FBF] font-semibold mb-1">Registration Deadline</p>
                   <p className="text-xl sm:text-2xl font-black text-[#1B2C4F]">{SBC_PRICING.registrationDeadline}</p>
                   <p className="text-xs text-slate-500 mt-2">Spots are limited. Register early to secure your place.</p>
                 </div>
@@ -315,7 +316,7 @@ export default function SbcRegisterPage() {
                   <Button
                     type="submit"
                     size="lg"
-                    className="w-full text-sm sm:text-base font-bold h-12 sm:h-14 px-4 bg-[#FF8A00] hover:bg-[#e67a00] text-white shadow-md shadow-orange-500/15 whitespace-normal leading-snug"
+                    className={`w-full text-sm sm:text-base font-bold h-12 sm:h-14 px-4 ${sbcBtnPrimary} shadow-md shadow-blue-900/15 whitespace-normal leading-snug`}
                   >
                     <MessageCircle className="mr-2 h-5 w-5 shrink-0" />
                     Complete Registration via WhatsApp

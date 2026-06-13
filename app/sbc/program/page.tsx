@@ -6,11 +6,12 @@ import { motion } from "framer-motion"
 import SbcHeader from "@/components/sbc/sbc-header"
 import SbcFooter from "@/components/sbc/sbc-footer"
 import { SbcPageShell } from "@/components/sbc/sbc-page-shell"
-import { FlipCard } from "@/components/sbc/flip-card"
 import { JourneyFlipCard } from "@/components/sbc/journey-flip-card"
+import { WeekendFlipCard } from "@/components/sbc/weekend-flip-card"
 import { ScrollReveal } from "@/components/sbc/scroll-reveal"
 import { Button } from "@/components/ui/button"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { sbcBtnPrimary } from "@/lib/sbc/styles"
 import {
   SBC_JOURNEY,
   SBC_LEARN,
@@ -52,14 +53,14 @@ export default function SbcProgramPage() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <Link
               href={sbcPath()}
-              className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#FF8A00] transition-colors mb-6 sm:mb-8"
+              className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to Home
             </Link>
             <ScrollReveal className="max-w-3xl">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3 sm:mb-4 text-[#1B2C4F]">
-                The <span className="text-[#FF8A00]">6-Week</span> Builder Journey
+                The <span className="text-[#4A6FBF]">6-Week</span> Builder Journey
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
                 Every Saturday and Sunday from {SBC_SCHEDULE.startDate} to {SBC_SCHEDULE.endDate}, students grow from raw curiosity to confident creators. They train in ideation, problem thinking, solution design, building, marketing, and pitching.
@@ -100,29 +101,14 @@ export default function SbcProgramPage() {
             </ScrollReveal>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 max-w-5xl mx-auto">
               {SBC_WEEKEND_WEEKS.map((w, i) => (
-                <FlipCard
+                <WeekendFlipCard
                   key={w.week}
+                  week={w.week}
+                  focus={w.focus}
+                  detail={w.detail}
+                  back={w.back}
                   delay={i * 0.06}
-                  heightClass="min-h-[150px] sm:min-h-[160px]"
-                  initialSide={i % 2 === 1 ? "back" : "front"}
-                  front={
-                    <div className="h-full flex flex-col rounded-xl bg-white border border-slate-200 p-4 sm:p-5 shadow-sm">
-                      <div className="flex items-start gap-3 mb-2">
-                        <span className="w-8 h-8 rounded-full bg-[#eef3ff] border border-[#4A6FBF]/30 flex items-center justify-center text-sm font-bold text-[#4A6FBF] shrink-0">
-                          {w.week}
-                        </span>
-                        <h3 className="font-bold text-[#1B2C4F] text-sm sm:text-base leading-snug">{w.focus}</h3>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-500 pl-11 flex-1">{w.detail}</p>
-                    </div>
-                  }
-                  back={
-                    <div className="h-full flex flex-col rounded-xl bg-gradient-to-br from-[#4A6FBF] to-[#1B2C4F] p-4 sm:p-5 text-white shadow-md">
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-[#FFD93D] mb-1">Week {w.week}</p>
-                      <h3 className="font-bold text-sm sm:text-base mb-2">{w.focus}</h3>
-                      <p className="text-xs sm:text-sm text-white/90 leading-relaxed flex-1">{w.back}</p>
-                    </div>
-                  }
+                  index={i}
                 />
               ))}
             </div>
@@ -146,13 +132,13 @@ export default function SbcProgramPage() {
               <ScrollReveal delay={0.15} className="space-y-6 sm:space-y-8 order-1 lg:order-2">
                 <div>
                   <h3 className="text-lg sm:text-xl font-black mb-3 sm:mb-4 flex items-center gap-2 text-[#1B2C4F]">
-                    <Calendar className="h-5 w-5 text-[#FF8A00] shrink-0" />
+                    <Calendar className="h-5 w-5 text-[#4A6FBF] shrink-0" />
                     Skills They&apos;ll Master
                   </h3>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {SBC_LEARN.map((skill) => (
                       <li key={skill} className="flex items-center gap-2 text-slate-600 text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#FF8A00] shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#4A6FBF] shrink-0" />
                         {skill}
                       </li>
                     ))}
@@ -160,7 +146,7 @@ export default function SbcProgramPage() {
                 </div>
                 <div>
                   <h3 className="text-lg sm:text-xl font-black mb-3 sm:mb-4 flex items-center gap-2 text-[#1B2C4F]">
-                    <Trophy className="h-5 w-5 text-[#FF8A00] shrink-0" />
+                    <Trophy className="h-5 w-5 text-[#4A6FBF] shrink-0" />
                     What They Walk Away With
                   </h3>
                   <ul className="space-y-2">
@@ -180,7 +166,7 @@ export default function SbcProgramPage() {
         <section className="py-12 sm:py-16 bg-gradient-to-br from-[#eef3ff] to-[#fff9f3]">
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
             <ScrollReveal className="space-y-4 sm:space-y-6">
-              <Users className="h-10 w-10 sm:h-12 sm:w-12 text-[#FF8A00] mx-auto" />
+              <Users className="h-10 w-10 sm:h-12 sm:w-12 text-[#4A6FBF] mx-auto" />
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B2C4F]">Demo Day</h2>
               <p className="text-slate-600 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
                 The grand finale. Students pitch their products to parents, mentors, and stakeholders. They showcase everything they&apos;ve built, branded, and learned over 6 incredible weeks.
@@ -211,7 +197,7 @@ export default function SbcProgramPage() {
             <Button
               asChild
               size="lg"
-              className="w-full sm:w-auto text-base sm:text-lg font-bold px-8 sm:px-10 h-12 sm:h-14 bg-[#FF8A00] hover:bg-[#e67a00] text-white"
+              className={`w-full sm:w-auto text-base sm:text-lg font-bold px-8 sm:px-10 h-12 sm:h-14 ${sbcBtnPrimary}`}
             >
               <Link href={sbcPath("/register")}>
                 Register Now <ArrowRight className="ml-2 h-5 w-5" />

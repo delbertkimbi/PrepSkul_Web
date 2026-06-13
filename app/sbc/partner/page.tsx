@@ -24,6 +24,7 @@ import {
 } from "@/lib/sbc/content"
 import { buildPartnershipWhatsAppMessage } from "@/lib/sbc/build-partnership-whatsapp"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { sbcBtnPrimary } from "@/lib/sbc/styles"
 import {
   AlertCircle,
   ArrowLeft,
@@ -151,7 +152,7 @@ export default function SbcPartnerPage() {
                 href={`${SBC_CONTACT.whatsapp}?text=${encodeURIComponent(buildWhatsAppMessage())}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#FF8A00] hover:underline"
+                className="text-[#4A6FBF] hover:underline"
               >
                 Click here to send manually
               </a>
@@ -160,7 +161,7 @@ export default function SbcPartnerPage() {
               <Button asChild variant="outline" className="border-slate-300 text-[#1B2C4F] hover:bg-slate-50 bg-white">
                 <Link href={sbcPath()}>Back to Home</Link>
               </Button>
-              <Button asChild className="bg-[#FF8A00] hover:bg-[#e67a00] text-white">
+              <Button asChild className={sbcBtnPrimary}>
                 <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Chat on WhatsApp
@@ -182,7 +183,7 @@ export default function SbcPartnerPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Link
             href={sbcPath()}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#FF8A00] transition-colors mb-6 sm:mb-8"
+            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to SBC Home
@@ -190,8 +191,8 @@ export default function SbcPartnerPage() {
 
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-start gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-[#FF8A00]/15 flex items-center justify-center shrink-0">
-                <Handshake className="h-6 w-6 text-[#FF8A00]" />
+              <div className="w-12 h-12 rounded-xl bg-[#eef3ff] flex items-center justify-center shrink-0">
+                <Handshake className="h-6 w-6 text-[#4A6FBF]" />
               </div>
               <div>
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B2C4F] mb-2">
@@ -388,7 +389,7 @@ export default function SbcPartnerPage() {
                       key={interest.value}
                       className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
                         formData.partnership_interests.includes(interest.value)
-                          ? "border-[#FF8A00]/50 bg-[#FF8A00]/5"
+                          ? "border-[#4A6FBF]/50 bg-[#eef3ff]"
                           : "border-slate-200 hover:border-slate-300"
                       }`}
                     >
@@ -396,7 +397,7 @@ export default function SbcPartnerPage() {
                         type="checkbox"
                         checked={formData.partnership_interests.includes(interest.value)}
                         onChange={() => toggleInterest(interest.value)}
-                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#FF8A00] focus:ring-[#FF8A00] shrink-0"
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#4A6FBF] focus:ring-[#4A6FBF] shrink-0"
                       />
                       <span className="text-sm text-[#1B2C4F] leading-snug">{interest.label}</span>
                     </label>
@@ -461,7 +462,7 @@ export default function SbcPartnerPage() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full text-sm sm:text-base font-bold h-12 sm:h-14 px-4 bg-[#FF8A00] hover:bg-[#e67a00] text-white shadow-md shadow-orange-500/15 whitespace-normal leading-snug"
+                className={`w-full text-sm sm:text-base font-bold h-12 sm:h-14 px-4 ${sbcBtnPrimary} shadow-md shadow-blue-900/15 whitespace-normal leading-snug`}
               >
                 <MessageCircle className="mr-2 h-5 w-5 shrink-0" />
                 Send Partnership Inquiry via WhatsApp

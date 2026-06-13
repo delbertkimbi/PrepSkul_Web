@@ -20,12 +20,12 @@ export default function SbcFooter() {
           <div>
             <h3 className="text-[#1B2C4F] font-semibold mb-3">Program</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/sbc#about" className="hover:text-[#FF8A00] transition-colors">About SBC</Link></li>
-              <li><Link href="/sbc/program" className="hover:text-[#FF8A00] transition-colors">Curriculum</Link></li>
-              <li><Link href="/sbc#pricing" className="hover:text-[#FF8A00] transition-colors">Pricing</Link></li>
-              <li><Link href="/sbc/register" className="hover:text-[#FF8A00] transition-colors">Register</Link></li>
-              <li><Link href="/sbc/partner" className="hover:text-[#FF8A00] transition-colors">Partner with SBC</Link></li>
-              <li><Link href="/sbc/faq" className="hover:text-[#FF8A00] transition-colors">FAQ</Link></li>
+              <li><Link href="/sbc#about" className="hover:text-[#4A6FBF] transition-colors">About SBC</Link></li>
+              <li><Link href="/sbc/program" className="hover:text-[#4A6FBF] transition-colors">Curriculum</Link></li>
+              <li><Link href="/sbc#pricing" className="hover:text-[#4A6FBF] transition-colors">Pricing</Link></li>
+              <li><Link href="/sbc/register" className="hover:text-[#4A6FBF] transition-colors">Register</Link></li>
+              <li><Link href="/sbc/partner" className="hover:text-[#4A6FBF] transition-colors">Partner with SBC</Link></li>
+              <li><Link href="/sbc/faq" className="hover:text-[#4A6FBF] transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
@@ -33,12 +33,12 @@ export default function SbcFooter() {
             <h3 className="text-[#1B2C4F] font-semibold mb-3">Organizers</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="https://prepskul.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF8A00] transition-colors">
+                <a href="https://prepskul.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors">
                   PrepSkul
                 </a>
               </li>
               <li>
-                <a href="https://deltech-hub.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF8A00] transition-colors">
+                <a href="https://deltech-hub.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors">
                   DelTech Hub
                 </a>
               </li>
@@ -49,22 +49,22 @@ export default function SbcFooter() {
             <h3 className="text-[#1B2C4F] font-semibold mb-3">Contact</h3>
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-[#FF8A00] shrink-0" />
-                <a href={`tel:+237${SBC_CONTACT.phone}`} className="hover:text-[#FF8A00] transition-colors">
+                <Phone className="h-4 w-4 text-[#4A6FBF] shrink-0" />
+                <a href={`tel:+237${SBC_CONTACT.phone}`} className="hover:text-[#4A6FBF] transition-colors">
                   +237 {SBC_CONTACT.phoneDisplay}
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-[#FF8A00] shrink-0" />
-                <a href={SBC_CONTACT.website} className="hover:text-[#FF8A00] transition-colors break-all">
+                <Globe className="h-4 w-4 text-[#4A6FBF] shrink-0" />
+                <a href={SBC_CONTACT.website} className="hover:text-[#4A6FBF] transition-colors break-all">
                   sbc.prepskul.com
                 </a>
               </li>
               <li className="flex items-center gap-3 pt-1">
-                <a href="https://facebook.com/prepskul" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF8A00] transition-colors" aria-label="PrepSkul on Facebook">
+                <a href="https://facebook.com/prepskul" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors" aria-label="PrepSkul on Facebook">
                   <Facebook className="h-5 w-5" />
                 </a>
-                <a href="https://linkedin.com/company/prepskul" target="_blank" rel="noopener noreferrer" className="hover:text-[#FF8A00] transition-colors" aria-label="PrepSkul on LinkedIn">
+                <a href="https://linkedin.com/company/prepskul" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors" aria-label="PrepSkul on LinkedIn">
                   <Linkedin className="h-5 w-5" />
                 </a>
               </li>
