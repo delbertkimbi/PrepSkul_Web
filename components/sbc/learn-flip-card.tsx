@@ -59,8 +59,8 @@ export function LearnFlipCard({
   return (
     <FlipCard
       delay={delay}
-      heightClass="min-h-[130px] sm:min-h-[140px]"
-      initialSide={index % 2 === 1 ? "back" : "front"}
+      heightClass="min-h-[150px] sm:min-h-[165px]"
+      initialSide="back"
       front={<LearnCardFace title={title} detail={detail} variant={variant} theme="light" />}
       back={<LearnCardFace title={title} detail={detail} variant={variant} theme="dark" />}
     />

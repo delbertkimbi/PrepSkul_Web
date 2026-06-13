@@ -49,7 +49,7 @@ export function StatFlipCard({ icon, label, sub, back, delay = 0, index = 0 }: S
     <FlipCard
       delay={delay}
       heightClass="min-h-[140px] sm:min-h-[152px]"
-      initialSide={index % 2 === 1 ? "back" : "front"}
+      initialSide="back"
       front={<StatCardFace icon={icon} label={label} sub={sub} back={back} theme="light" />}
       back={<StatCardFace icon={icon} label={label} sub={sub} back={back} theme="dark" />}
     />

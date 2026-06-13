@@ -21,7 +21,8 @@ import {
 import { SBC_CONTACT, SBC_PRICING, SBC_SCHEDULE } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
 import { sbcBtnPrimary } from "@/lib/sbc/styles"
-import { CheckCircle2, MessageCircle, ArrowLeft, AlertCircle } from "lucide-react"
+import { SbcBackButton } from "@/components/sbc/sbc-back-button"
+import { CheckCircle2, MessageCircle, AlertCircle } from "lucide-react"
 
 interface FormData {
   student_name: string
@@ -122,10 +123,8 @@ export default function SbcRegisterPage() {
                 Click here to send manually
               </a>
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-              <Button asChild variant="outline" className="border-slate-300 text-[#1B2C4F] hover:bg-slate-50 bg-white">
-                <Link href={sbcPath()}>Back to Home</Link>
-              </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-2">
+              <SbcBackButton />
               <Button asChild className={sbcBtnPrimary}>
                 <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" />
@@ -144,16 +143,9 @@ export default function SbcRegisterPage() {
     <SbcPageShell>
       <SbcHeader />
 
-      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <Link
-            href={sbcPath()}
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-[#4A6FBF] transition-colors mb-6 sm:mb-8"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to SBC Home
-          </Link>
-
+      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0 relative">
+        <SbcBackButton className="absolute top-6 left-4 sm:left-6 lg:left-8 z-10" />
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-2">
           <div className="grid lg:grid-cols-5 gap-8 lg:gap-10">
             {/* Mobile pricing summary first */}
             <div className="lg:col-span-2 lg:order-2 space-y-4 sm:space-y-6">
