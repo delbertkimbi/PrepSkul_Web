@@ -50,6 +50,8 @@ If reminders are not sending, verify:
 |----------|-------------------|
 | `/api/cron/daily-challenge-reminder` | Daily morning |
 | `/api/cron/skulmate-weekly-digest` | Weekly |
+| `/api/cron/parent-weekly-digest` | Weekly (Monday 7am) — parent SkulMate + session digest email; requires migration `102_parent_skulmate_digests.sql` |
+| `/api/cron/skulmate-due-review-push` | Weekly (e.g. Tuesday 6pm) — due spaced-rep cards; max 1 push/user/week; requires migration `103_skulmate_review_schedule.sql` |
 | `/api/cron/daily-inactivity` | Daily |
 | `/api/cron/daily-matched-tutors` | Daily |
 | `/api/cron/onboarding-reminders` | Daily |
