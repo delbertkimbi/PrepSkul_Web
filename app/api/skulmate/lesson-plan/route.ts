@@ -59,18 +59,23 @@ async function loadGameContext(gameId: string): Promise<{
   if (!admin) return null
   const { data } = await admin
     .from('skulmate_games')
-    .select('title, items, source_text')
+    .select('title, source_text_snapshot, skulmate_game_data (game_content)')
     .eq('id', gameId)
     .maybeSingle()
   if (!data) return null
 
   const title = String(data.title || 'Lesson').trim()
-  const sourceText = data.source_text as string | null
-  if (sourceText?.trim()) {
-    return { topic: title, text: sourceText.trim() }
+  const snapshot = data.source_text_snapshot as string | null
+  if (snapshot?.trim()) {
+    return { topic: title, text: snapshot.trim() }
   }
 
-  const items = (data.items as Array<Record<string, unknown>>) || []
+  const relation = data.skulmate_game_data as
+    | Array<{ game_content?: unknown }>
+    | { game_content?: unknown }
+    | null
+  const firstRow = Array.isArray(relation) ? relation[0] : relation
+  const items = (firstRow?.game_content as Array<Record<string, unknown>>) || []
   const lines = items
     .slice(0, 20)
     .map((item) => {
