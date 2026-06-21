@@ -26,6 +26,11 @@ import { extractEntities } from '../extract-entities/route'
 import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
 import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
 import { fetchYoutubeTranscript } from '@/lib/skulmate/youtube-transcript'
+import {
+  assessExtractionQuality,
+  buildExtractionQualityPromptSection,
+} from '@/lib/skulmate/extraction-quality'
+import { validateGenerateIntake } from '@/lib/skulmate/generate-intake-validation'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
@@ -333,6 +338,7 @@ function resolveActualSourceType(params: {
   if (extractionMethod === 'mammoth') return 'docx'
   if (extractionMethod.startsWith('openrouter-')) return 'image'
   if (extractionMethod === 'plain-text') return 'text'
+  if (extractionMethod === 'topic-only') return 'text'
   return requestedSourceType
 }
 
@@ -487,6 +493,7 @@ async function generateGameContent(
   curriculumPromptSection?: string,
   extractionQualityPromptSection?: string,
   explanationStylePromptSection?: string,
+  sourceMode: 'topic' | 'source' = 'source',
 ): Promise<{ gameData: GameData; usageSummary: GenerationUsageSummary }> {
   // Build world context from extracted entities
   let worldContext = ''
@@ -509,6 +516,21 @@ Use these entities, relationships, and conflicts to build an immersive game worl
 Wrong understanding should lead to consequences, not just "incorrect" feedback.`
   }
 
+  const sourceRules =
+    sourceMode === 'topic'
+      ? `CRITICAL RULES - TOPIC-ONLY MODE (no uploaded notes):
+1. The learner named a topic/subject to revise — build accurate, curriculum-appropriate revision content for that topic
+2. Use well-established facts and concepts for the topic; do NOT invent citations, quotes, or page references
+3. Keep difficulty appropriate for secondary school / early university revision
+4. All items must clearly relate to the stated topic`
+      : `CRITICAL RULES - READ CAREFULLY:
+1. You MUST use ONLY the content provided by the user - do NOT generate generic or made-up content
+2. All questions, terms, definitions, and answers MUST be based on the ACTUAL text provided
+3. If the content is about a specific topic, your game MUST reflect that exact topic
+4. Do NOT create generic questions like "What is X?" if X is not mentioned in the content
+5. Extract key concepts, facts, and information directly from the provided text
+6. If the content mentions specific examples, use those examples - do NOT make up new ones`
+
   const systemPrompt = `You are a creative educational game designer. Transform learning content into FUN, engaging, and interactive games that make learning addictive and enjoyable.
 
 MENTAL MODEL: Notes → World → Gameplay
@@ -517,13 +539,7 @@ MENTAL MODEL: Notes → World → Gameplay
 - Make decisions matter - wrong understanding leads to consequences, not just "wrong"
 - Create immersive experiences, not tests${worldContext}
 
-CRITICAL RULES - READ CAREFULLY:
-1. You MUST use ONLY the content provided by the user - do NOT generate generic or made-up content
-2. All questions, terms, definitions, and answers MUST be based on the ACTUAL text provided
-3. If the content is about a specific topic, your game MUST reflect that exact topic
-4. Do NOT create generic questions like "What is X?" if X is not mentioned in the content
-5. Extract key concepts, facts, and information directly from the provided text
-6. If the content mentions specific examples, use those examples - do NOT make up new ones
+${sourceRules}
 7. 🚨🚨🚨 CRITICAL: When the system recommends a game type, you MUST generate that exact type. DO NOT default to quiz. DO NOT generate quiz unless the recommended type is explicitly "quiz". If told to generate 'wordSearch', generate wordSearch with a word search grid. If told 'match3', generate match3 with a match-3 grid. If told 'bubblePop', generate bubble pop with bubbles. DO NOT ignore the recommendation and generate quiz questions instead.
 8. QUIZ IS THE LAST RESORT: Only generate quiz if the recommended game type is "quiz". For all other recommendations (wordSearch, match3, bubblePop, crossword, etc.), generate that specific interactive game type.
 9. INTERACTIVE GAMES ARE THE GOAL: Students want FUN, engaging games like Candy Crush, not boring quizzes. Make learning addictive and entertaining!
@@ -590,8 +606,10 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   // Determine recommended game type for auto mode - prioritize interactive game types
   let recommendedGameType: string = 'quiz'; // Default fallback
   if (gameType === 'auto') {
-    // Smart game type selection based on content - only pick currently playable types.
-    if (contentType === 'diagram') {
+    if (sourceMode === 'topic') {
+      const topicOptions = ['flashcards', 'matching', 'fill_blank', 'quiz', 'word_search', 'bubble_pop'];
+      recommendedGameType = topicOptions[Math.floor(Math.random() * topicOptions.length)];
+    } else if (contentType === 'diagram') {
       // Diagram-heavy inputs still work well with matching/fill-blank in current app.
       const diagramOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'quiz'];
       recommendedGameType = diagramOptions[Math.floor(Math.random() * diagramOptions.length)];
@@ -664,9 +682,15 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   }
   
   userPrompt += 'Convert the following ' + contentType + ' content into a ' + gameTypeName + ' game.\n\n';
-  userPrompt += 'CRITICAL RULES - MUST FOLLOW:\n';
-  userPrompt += '1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.\n';
-  userPrompt += '2. All questions, answers, and terms must be based on what the user actually provided.\n';
+  if (sourceMode === 'topic' && topic) {
+    userPrompt += 'TOPIC-ONLY REQUEST:\n';
+    userPrompt += 'The learner wants to revise: ' + topic + '\n';
+    userPrompt += 'Create accurate revision items covering core concepts for this topic.\n\n';
+  } else {
+    userPrompt += 'CRITICAL RULES - MUST FOLLOW:\n';
+    userPrompt += '1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.\n';
+    userPrompt += '2. All questions, answers, and terms must be based on what the user actually provided.\n';
+  }
   
   if (gameType === 'auto') {
     userPrompt += '3. 🚨🚨🚨 ABSOLUTE REQUIREMENT: The gameType in your JSON response MUST be "' + recommendedGameType + '".\n';
@@ -685,7 +709,11 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   userPrompt += '7. The correct answer must be clearly identifiable from the content provided.\n';
   userPrompt += '8. All options should be plausible but only one should be correct based on the content.\n\n';
   
-  userPrompt += 'User\'s Actual Content:\n' + text + '\n\n';
+  if (sourceMode === 'topic' && topic) {
+    userPrompt += 'Revision topic: ' + topic + '\n\n';
+  } else {
+    userPrompt += 'User\'s Actual Content:\n' + text + '\n\n';
+  }
   userPrompt += 'CONTENT TYPE DETECTED: ' + contentType.toUpperCase() + '\n';
   
   if (gameType === 'auto') {
@@ -1355,19 +1383,20 @@ export async function POST(request: NextRequest) {
       learnerContext,
     } = body
 
-    if (!fileUrl && !text && !youtubeUrl) {
+    const intakeValidation = validateGenerateIntake({
+      fileUrl,
+      text,
+      youtubeUrl,
+      topic,
+    })
+    if (!intakeValidation.ok) {
       return NextResponse.json(
-        { error: 'Either fileUrl, text, or youtubeUrl is required' },
-        { status: 400, headers: corsHeaders }
+        { error: intakeValidation.error },
+        { status: intakeValidation.status, headers: corsHeaders }
       )
     }
 
-    if (text && text.trim().length < 50) {
-      return NextResponse.json(
-        { error: 'Text must be at least 50 characters long' },
-        { status: 400, headers: corsHeaders }
-      )
-    }
+    const { isTopicOnlyMode, trimmedTopic, trimmedText } = intakeValidation
 
     // Get user session from main Supabase (not Ticha)
     let sessionUserId: string | undefined
@@ -1380,10 +1409,10 @@ export async function POST(request: NextRequest) {
     }
 
     const finalUserId = userId || sessionUserId
-    const requestedSourceType = detectRequestedSourceType(fileUrl, text)
+    const requestedSourceType = detectRequestedSourceType(fileUrl, trimmedText || text)
 
-    let extractedText = text || ''
-    let extractionMethod = text ? 'manual-text' : 'unknown'
+    let extractedText = trimmedText || text || ''
+    let extractionMethod = trimmedText ? 'manual-text' : isTopicOnlyMode ? 'topic-only' : 'unknown'
     let extractionMeta: Record<string, any> = {}
     let billingMode: BillingMode = 'free'
     let billedCredits = 0
@@ -1391,7 +1420,14 @@ export async function POST(request: NextRequest) {
     let userCreditsBalance = 0
     let freeLimitForSource = 0
 
-    if (youtubeUrl && !text) {
+    if (isTopicOnlyMode) {
+      extractedText = ''
+      extractionMethod = 'topic-only'
+      extractionMeta = { topic: trimmedTopic }
+      console.log(`[skulMate] Topic-only mode: ${trimmedTopic}`)
+    }
+
+    if (youtubeUrl && !trimmedText) {
       console.log('[skulMate] Step 0: Fetching YouTube transcript...')
       try {
         extractedText = await fetchYoutubeTranscript(youtubeUrl)
@@ -1665,13 +1701,16 @@ export async function POST(request: NextRequest) {
     console.log('[skulMate] Step 3a: Extracting entities and relationships...')
     let extractedEntities
     let entityExtractionFailed = false
-    try {
-      extractedEntities = await extractEntities(extractedText)
-      console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
-    } catch (error) {
-      entityExtractionFailed = true
-      console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
-      // Continue without entities - not critical for game generation
+    if (extractionMethod !== 'topic-only' && extractedText.trim().length > 0) {
+      try {
+        extractedEntities = await extractEntities(extractedText)
+        console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
+      } catch (error) {
+        entityExtractionFailed = true
+        console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
+        extractedEntities = undefined
+      }
+    } else {
       extractedEntities = undefined
     }
 
@@ -1726,13 +1765,14 @@ export async function POST(request: NextRequest) {
       extractedText, 
       gameType,
       difficulty,
-      topic,
+      isTopicOnlyMode ? trimmedTopic : topic,
       numQuestions,
       extractedEntities,
       learnerContext ?? null,
       curriculumPromptSection,
       extractionQualityPromptSection,
       explanationStylePromptSection,
+      isTopicOnlyMode ? 'topic' : 'source',
     )
     const gameData = generationResult.gameData
 
