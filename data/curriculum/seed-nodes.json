@@ -1,0 +1,236 @@
+{
+  "version": 1,
+  "source": "PrepSkul curriculum seed — Cameroon GCE/WAEC/STEAM starter set. Expand via MINESEC PDF ingest.",
+  "nodes": [
+    {
+      "topic_id": "gce_ol_math_number",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "mathematics",
+      "title_en": "Number and calculation",
+      "title_fr": "Nombres et calcul",
+      "grade_levels": ["form_3", "form_4", "form_5"],
+      "keywords": ["fraction", "decimal", "percentage", "ratio", "standard form", "indices", "surds"],
+      "objectives": ["Perform operations with fractions and decimals", "Apply ratios and percentages in problems"]
+    },
+    {
+      "topic_id": "gce_ol_math_algebra",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "mathematics",
+      "title_en": "Algebra and equations",
+      "title_fr": "Algèbre et équations",
+      "grade_levels": ["form_3", "form_4", "form_5"],
+      "keywords": ["algebra", "equation", "factoris", "quadratic", "simultaneous", "inequalit", "polynomial"],
+      "objectives": ["Solve linear and quadratic equations", "Factorise algebraic expressions"]
+    },
+    {
+      "topic_id": "gce_ol_math_geometry",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "mathematics",
+      "title_en": "Geometry and mensuration",
+      "title_fr": "Géométrie et mesure",
+      "grade_levels": ["form_3", "form_4", "form_5"],
+      "keywords": ["angle", "triangle", "circle", "area", "volume", "perimeter", "theorem", "pythagoras"],
+      "objectives": ["Calculate areas and volumes", "Apply angle properties and Pythagoras theorem"]
+    },
+    {
+      "topic_id": "gce_ol_math_trig",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "mathematics",
+      "title_en": "Trigonometry",
+      "title_fr": "Trigonométrie",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["trigonometr", "sine", "cosine", "tangent", "sohcahtoa", "bearing"],
+      "objectives": ["Use sine, cosine and tangent ratios", "Solve problems involving bearings"]
+    },
+    {
+      "topic_id": "gce_ol_math_stats",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "mathematics",
+      "title_en": "Statistics and probability",
+      "title_fr": "Statistiques et probabilités",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["mean", "median", "mode", "histogram", "probability", "frequency", "scatter"],
+      "objectives": ["Calculate measures of central tendency", "Interpret graphs and basic probability"]
+    },
+    {
+      "topic_id": "gce_ol_chem_atomic",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "chemistry",
+      "title_en": "Atomic structure and periodic table",
+      "title_fr": "Structure atomique et tableau périodique",
+      "grade_levels": ["form_3", "form_4", "form_5"],
+      "keywords": ["atom", "proton", "neutron", "electron", "periodic", "isotope", "shell"],
+      "objectives": ["Describe atomic structure", "Relate position in periodic table to properties"]
+    },
+    {
+      "topic_id": "gce_ol_chem_bonding",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "chemistry",
+      "title_en": "Chemical bonding",
+      "title_fr": "Liaisons chimiques",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["ionic", "covalent", "metallic", "bond", "molecule", "lattice", "intermolecular"],
+      "objectives": ["Compare ionic and covalent bonding", "Predict bond type from properties"]
+    },
+    {
+      "topic_id": "gce_ol_chem_stoich",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "chemistry",
+      "title_en": "Stoichiometry and equations",
+      "title_fr": "Stœchiométrie et équations",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["mole", "stoichiometr", "balanced equation", "avogadro", "concentration", "molar"],
+      "objectives": ["Balance chemical equations", "Calculate moles and reacting masses"]
+    },
+    {
+      "topic_id": "gce_ol_chem_acids",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "chemistry",
+      "title_en": "Acids, bases and salts",
+      "title_fr": "Acides, bases et sels",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["acid", "base", "alkali", "ph", "neutralis", "salt", "indicator"],
+      "objectives": ["Explain neutralisation", "Prepare and identify salts"]
+    },
+    {
+      "topic_id": "gce_ol_chem_electrolysis",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "chemistry",
+      "title_en": "Electrolysis",
+      "title_fr": "Électrolyse",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["electrolys", "electrode", "anode", "cathode", "electrolyte", "discharge"],
+      "objectives": ["Explain electrolysis of molten and aqueous compounds", "Predict products at electrodes"]
+    },
+    {
+      "topic_id": "gce_ol_chem_organic",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "chemistry",
+      "title_en": "Organic chemistry basics",
+      "title_fr": "Chimie organique de base",
+      "grade_levels": ["form_5"],
+      "keywords": ["alkane", "alkene", "alcohol", "carboxylic", "hydrocarbon", "polymer", "cracking"],
+      "objectives": ["Name simple organic compounds", "Describe reactions of alkanes and alkenes"]
+    },
+    {
+      "topic_id": "gce_ol_bio_cells",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "biology",
+      "title_en": "Cells and microscopy",
+      "title_fr": "Cellules et microscopie",
+      "grade_levels": ["form_3", "form_4", "form_5"],
+      "keywords": ["cell", "organelle", "mitochondr", "chloroplast", "nucleus", "microscope", "membrane"],
+      "objectives": ["Identify cell structures", "Compare plant and animal cells"]
+    },
+    {
+      "topic_id": "gce_ol_bio_nutrition",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "biology",
+      "title_en": "Nutrition and digestion",
+      "title_fr": "Nutrition et digestion",
+      "grade_levels": ["form_3", "form_4", "form_5"],
+      "keywords": ["digest", "enzyme", "nutrition", "absorption", "amylase", "protease", "lipase"],
+      "objectives": ["Describe digestion of major food groups", "Explain role of enzymes"]
+    },
+    {
+      "topic_id": "gce_ol_bio_transport",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "biology",
+      "title_en": "Transport in organisms",
+      "title_fr": "Transport dans les organismes",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["circulat", "heart", "blood", "xylem", "phloem", "transpiration", "capillar"],
+      "objectives": ["Explain blood circulation in humans", "Describe transport in plants"]
+    },
+    {
+      "topic_id": "gce_ol_bio_respiration",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "biology",
+      "title_en": "Respiration and gas exchange",
+      "title_fr": "Respiration et échanges gazeux",
+      "grade_levels": ["form_4", "form_5"],
+      "keywords": ["respiration", "aerobic", "anaerobic", "lung", "alveol", "oxygen", "carbon dioxide"],
+      "objectives": ["Compare aerobic and anaerobic respiration", "Describe gas exchange in lungs"]
+    },
+    {
+      "topic_id": "gce_ol_bio_genetics",
+      "framework_id": "cm_gce_ol",
+      "subject_code": "biology",
+      "title_en": "Genetics and inheritance",
+      "title_fr": "Génétique et hérédité",
+      "grade_levels": ["form_5"],
+      "keywords": ["dna", "gene", "chromosome", "allele", "dominant", "recessive", "inherit", "punnett"],
+      "objectives": ["Explain inheritance patterns", "Use Punnett squares for monohybrid crosses"]
+    },
+    {
+      "topic_id": "gce_al_math_calculus",
+      "framework_id": "cm_gce_al",
+      "subject_code": "mathematics",
+      "title_en": "Differentiation and integration",
+      "title_fr": "Dérivation et intégration",
+      "grade_levels": ["lower_sixth", "upper_sixth"],
+      "keywords": ["differentiat", "integrat", "derivative", "gradient", "area under curve", "limit"],
+      "objectives": ["Differentiate standard functions", "Apply integration to find areas"]
+    },
+    {
+      "topic_id": "gce_al_math_mechanics",
+      "framework_id": "cm_gce_al",
+      "subject_code": "mathematics",
+      "title_en": "Mechanics",
+      "title_fr": "Mécanique",
+      "grade_levels": ["lower_sixth", "upper_sixth"],
+      "keywords": ["velocity", "acceleration", "force", "momentum", "projectile", "newton"],
+      "objectives": ["Solve motion problems using calculus", "Apply Newton's laws"]
+    },
+    {
+      "topic_id": "gce_al_chem_thermo",
+      "framework_id": "cm_gce_al",
+      "subject_code": "chemistry",
+      "title_en": "Energetics and thermochemistry",
+      "title_fr": "Énergétique et thermochimie",
+      "grade_levels": ["lower_sixth", "upper_sixth"],
+      "keywords": ["enthalpy", "exothermic", "endothermic", "hess", "born-haber", "lattice energy"],
+      "objectives": ["Calculate enthalpy changes", "Use Hess's law"]
+    },
+    {
+      "topic_id": "gce_al_chem_equilib",
+      "framework_id": "cm_gce_al",
+      "subject_code": "chemistry",
+      "title_en": "Chemical equilibrium",
+      "title_fr": "Équilibre chimique",
+      "grade_levels": ["lower_sixth", "upper_sixth"],
+      "keywords": ["equilibrium", "le chatelier", "kp", "kc", "reversible"],
+      "objectives": ["Apply Le Chatelier's principle", "Calculate equilibrium constants"]
+    },
+    {
+      "topic_id": "gce_al_bio_biochem",
+      "framework_id": "cm_gce_al",
+      "subject_code": "biology",
+      "title_en": "Biochemistry",
+      "title_fr": "Biochimie",
+      "grade_levels": ["lower_sixth", "upper_sixth"],
+      "keywords": ["protein", "amino acid", "lipid", "carbohydrate", "enzyme kinetics", "atp"],
+      "objectives": ["Describe structure of biological macromolecules", "Explain enzyme action"]
+    },
+    {
+      "topic_id": "steam_cs_basics",
+      "framework_id": "steam",
+      "subject_code": "computer_science",
+      "title_en": "Computing and programming basics",
+      "title_fr": "Informatique et programmation",
+      "grade_levels": ["open"],
+      "keywords": ["algorithm", "programming", "python", "variable", "loop", "function", "code"],
+      "objectives": ["Write simple algorithms", "Use variables and control structures"]
+    },
+    {
+      "topic_id": "steam_ml_intro",
+      "framework_id": "steam",
+      "subject_code": "computer_science",
+      "title_en": "Machine learning introduction",
+      "title_fr": "Introduction au machine learning",
+      "grade_levels": ["open"],
+      "keywords": ["machine learning", "neural network", "deep learning", "training", "model", "dataset", "supervised"],
+      "objectives": ["Explain basic ML concepts", "Describe training and inference at a high level"]
+    }
+  ]
+}

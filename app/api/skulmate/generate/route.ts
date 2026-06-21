@@ -8,9 +8,24 @@ import { extractFile } from '@/lib/skulmate/extract'
 import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import {
+  buildBackgroundLearnerPromptSection,
+  type LearnerContextInput,
+} from '@/lib/skulmate/learner-context'
+import {
+  buildCurriculumBackgroundPromptSection,
+  matchCurriculumNodes,
+  resolveBackgroundCurriculumAlignment,
+} from '@/lib/skulmate/curriculum-matcher'
+import {
+  buildExplanationStylePromptSection,
+  resolveExplanationStyle,
+  type ExplanationStyle,
+} from '@/lib/skulmate/explanation-style'
 import { extractEntities } from '../extract-entities/route'
 import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
 import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
+import { fetchYoutubeTranscript } from '@/lib/skulmate/youtube-transcript'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
@@ -187,6 +202,7 @@ function getSkulMateApiKeys(): string[] {
 interface GenerateRequest {
   fileUrl?: string
   text?: string
+  youtubeUrl?: string
   sourceFileName?: string
   userId?: string
   childId?: string // For parents creating games for children
@@ -194,6 +210,7 @@ interface GenerateRequest {
   difficulty?: 'easy' | 'medium' | 'hard'
   topic?: string
   numQuestions?: number
+  learnerContext?: LearnerContextInput
 }
 
 interface GameItem {
@@ -465,7 +482,11 @@ async function generateGameContent(
   difficulty: 'easy' | 'medium' | 'hard' = 'medium',
   topic?: string,
   numQuestions?: number,
-  extractedEntities?: { entities: any[], relationships: any[], conflicts: any[], progression: any[] }
+  extractedEntities?: { entities: any[], relationships: any[], conflicts: any[], progression: any[] },
+  learnerContext?: LearnerContextInput | null,
+  curriculumPromptSection?: string,
+  extractionQualityPromptSection?: string,
+  explanationStylePromptSection?: string,
 ): Promise<{ gameData: GameData; usageSummary: GenerationUsageSummary }> {
   // Build world context from extracted entities
   let worldContext = ''
@@ -693,6 +714,17 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '\nNUMBER OF ITEMS REQUIRED: ' + numQuestions + '\n';
     userPrompt += '- Generate exactly ' + numQuestions + ' questions/items (or as close as possible given the content)\n';
     userPrompt += '- Do not generate fewer than ' + Math.max(5, numQuestions - 2) + ' or more than ' + (numQuestions + 2) + ' items\n';
+  }
+
+  userPrompt += buildBackgroundLearnerPromptSection(learnerContext);
+  if (curriculumPromptSection) {
+    userPrompt += curriculumPromptSection;
+  }
+  if (extractionQualityPromptSection) {
+    userPrompt += extractionQualityPromptSection;
+  }
+  if (explanationStylePromptSection) {
+    userPrompt += explanationStylePromptSection;
   }
   
   userPrompt += '\n';
@@ -1312,18 +1344,20 @@ export async function POST(request: NextRequest) {
     const { 
       fileUrl, 
       text, 
+      youtubeUrl,
       sourceFileName,
       userId, 
       childId, 
       gameType = 'auto',
       difficulty = 'medium',
       topic,
-      numQuestions
+      numQuestions,
+      learnerContext,
     } = body
 
-    if (!fileUrl && !text) {
+    if (!fileUrl && !text && !youtubeUrl) {
       return NextResponse.json(
-        { error: 'Either fileUrl or text is required' },
+        { error: 'Either fileUrl, text, or youtubeUrl is required' },
         { status: 400, headers: corsHeaders }
       )
     }
@@ -1356,6 +1390,38 @@ export async function POST(request: NextRequest) {
     let freeGamesUsedToday = 0
     let userCreditsBalance = 0
     let freeLimitForSource = 0
+
+    if (youtubeUrl && !text) {
+      console.log('[skulMate] Step 0: Fetching YouTube transcript...')
+      try {
+        extractedText = await fetchYoutubeTranscript(youtubeUrl)
+        extractionMethod = 'youtube-transcript'
+        extractionMeta = { youtubeUrl }
+        console.log(`[skulMate] YouTube transcript length: ${extractedText.length}`)
+      } catch (error: any) {
+        const message =
+          error?.message ||
+          'No transcript available for this video. Try Paste or Upload instead.'
+        return NextResponse.json(
+          {
+            error: message,
+            errorCode: 'YOUTUBE_TRANSCRIPT_UNAVAILABLE',
+          },
+          { status: 422, headers: corsHeaders }
+        )
+      }
+
+      if (extractedText.trim().length < 50) {
+        return NextResponse.json(
+          {
+            error:
+              'Transcript was too short to generate a game. Try Paste or Upload instead.',
+            errorCode: 'YOUTUBE_TRANSCRIPT_TOO_SHORT',
+          },
+          { status: 422, headers: corsHeaders }
+        )
+      }
+    }
 
     // If fileUrl provided, download and extract text
     if (fileUrl) {
@@ -1598,17 +1664,63 @@ export async function POST(request: NextRequest) {
     // Step 1: Extract entities & relationships (cheaper model)
     console.log('[skulMate] Step 3a: Extracting entities and relationships...')
     let extractedEntities
+    let entityExtractionFailed = false
     try {
       extractedEntities = await extractEntities(extractedText)
       console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
     } catch (error) {
+      entityExtractionFailed = true
       console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
       // Continue without entities - not critical for game generation
       extractedEntities = undefined
     }
 
+    const extractionQualitySourceType =
+      extractionMethod === 'youtube-transcript' ? 'youtube' : actualSourceType
+    const extractionQuality = assessExtractionQuality({
+      extractedText,
+      extractionMethod,
+      extractionMeta,
+      sourceType: extractionQualitySourceType,
+      entitiesExtracted: extractedEntities?.entities?.length ?? null,
+      entityExtractionFailed,
+    })
+    const extractionQualityPromptSection =
+      buildExtractionQualityPromptSection(extractionQuality)
+    if (extractionQuality.level !== 'high') {
+      console.log(
+        `[skulMate] Extraction QA: ${extractionQuality.level} (${extractionQuality.confidence}) flags=${extractionQuality.flags.join(',') || 'none'}`
+      )
+    }
+
     // Step 2: Analyze content type & determine game type (already done in generateGameContent)
     // Step 3: Generate game world/structure (creative model for simulations/mysteries/escape rooms)
+    const curriculumAlignment = resolveBackgroundCurriculumAlignment({
+      extractedText,
+      learnerContext: learnerContext ?? null,
+    })
+    const curriculumMatches = matchCurriculumNodes({
+      extractedText,
+      learnerContext: learnerContext ?? null,
+    })
+    const curriculumPromptSection = buildCurriculumBackgroundPromptSection(
+      curriculumAlignment,
+      curriculumMatches,
+    )
+
+    const explanationStyle = resolveExplanationStyle({
+      learnerContext: learnerContext ?? null,
+      userId: finalUserId,
+      weakTopicReroute: Boolean(
+        (learnerContext as { weakTopicReroute?: boolean } | null)?.weakTopicReroute
+      ),
+      lastStyle:
+        ((learnerContext as { lastExplanationStyle?: ExplanationStyle } | null)
+          ?.lastExplanationStyle as ExplanationStyle | undefined) ?? null,
+    })
+    const explanationStylePromptSection =
+      buildExplanationStylePromptSection(explanationStyle)
+
     console.log('[skulMate] Step 3b: Generating game content...')
     const generationResult = await generateGameContent(
       extractedText, 
@@ -1616,7 +1728,11 @@ export async function POST(request: NextRequest) {
       difficulty,
       topic,
       numQuestions,
-      extractedEntities // Pass extracted entities for world-building
+      extractedEntities,
+      learnerContext ?? null,
+      curriculumPromptSection,
+      extractionQualityPromptSection,
+      explanationStylePromptSection,
     )
     const gameData = generationResult.gameData
 
@@ -1669,6 +1785,16 @@ export async function POST(request: NextRequest) {
               actualSourceType === 'text' && text && text.trim().length >= 50
                 ? text
                 : null,
+            generation_context: {
+              enrichmentMode: learnerContext?.enrichmentMode ?? 'background',
+              learnerContext: learnerContext ?? null,
+              curriculumAlignment,
+              extractionQuality,
+              extractionMethod,
+              explanationStyle,
+              topic: topic ?? null,
+              difficulty,
+            },
           })
           .select()
           .maybeSingle()
@@ -1734,6 +1860,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         extractionMethod,
         extractionMeta,
+        extractionQuality,
         textLengthChars: extractedText.length,
         itemsCount: itemsCountForCost,
         billing_mode: billingMode,
