@@ -27,16 +27,16 @@ const FULL_SELECT = `
 `;
 
 const BASE_SELECT = `
-  id,
-  account_id,
-  document_type,
-  whose_id,
-  relationship,
-  front_url,
-  back_url,
-  status,
-  rejection_reason,
-  created_at,
+        id,
+        account_id,
+        document_type,
+        whose_id,
+        relationship,
+        front_url,
+        back_url,
+        status,
+        rejection_reason,
+        created_at,
   verified_at
 `;
 
@@ -114,18 +114,18 @@ export default async function IdentityVerificationsPage() {
   if (handledAccountIds.length > 0 && !queryError) {
     try {
       const { data: profileRows } = await getSupabaseAdmin()
-        .from('profiles')
-        .select('id, full_name, email')
+      .from('profiles')
+      .select('id, full_name, email')
         .in('id', handledAccountIds);
       profileMap = new Map(
         (profileRows || []).map((p: { id: string; full_name?: string | null; email?: string | null }) => [
-          p.id,
-          {
-            name: p.full_name || p.email || '—',
-            email: p.email || '—',
-          },
-        ])
-      );
+      p.id,
+      {
+        name: p.full_name || p.email || '—',
+        email: p.email || '—',
+      },
+    ])
+  );
     } catch (err) {
       console.error('[identity-verifications] profile lookup failed:', err);
     }
@@ -171,39 +171,39 @@ export default async function IdentityVerificationsPage() {
 
           {pendingItems.length === 0 && pendingRows.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 px-6 py-12 text-center text-gray-500 text-sm">
-              No pending verifications.
+                      No pending verifications.
             </div>
           ) : pendingItems.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {pendingItems.map((item) => (
                 <KycVerificationCard key={item.id} item={item} variant="pending" />
               ))}
-            </div>
+                        </div>
           ) : (
             <div className="bg-white rounded-xl border border-gray-200 px-6 py-8 text-center text-gray-500 text-sm">
               {pendingRows.length} pending submission(s) — open from history once details load, or
               refresh after deploy.
-            </div>
-          )}
+                          </div>
+                        )}
         </section>
 
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">History</h2>
           {handledRows.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 px-6 py-8 text-center text-gray-500 text-sm">
-              No completed verifications yet.
+                      No completed verifications yet.
             </div>
           ) : (
             <div className="space-y-2">
               {handledRows.map((v) => {
                 const profile = profileMap.get(v.account_id);
-                const verifiedAt = v.verified_at
+                  const verifiedAt = v.verified_at
                   ? new Date(v.verified_at).toLocaleString()
                   : null;
                 const notes = v.rejection_reason
-                  ? String(v.rejection_reason)
-                  : v.status === 'verified'
-                    ? 'Approved'
+                          ? String(v.rejection_reason)
+                          : v.status === 'verified'
+                          ? 'Approved'
                     : '';
 
                 return (
@@ -216,9 +216,9 @@ export default async function IdentityVerificationsPage() {
                     verifiedAt={verifiedAt}
                     notes={notes}
                   />
-                );
-              })}
-            </div>
+                  );
+                })}
+          </div>
           )}
         </section>
       </main>
