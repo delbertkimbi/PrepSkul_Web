@@ -30,6 +30,41 @@ interface OcrVariant {
   mimeType: string
 }
 
+/** Hard cap on OpenRouter vision calls per image to control credit usage. */
+const MAX_VISION_CALLS_PER_IMAGE = 4
+
+const OCR_PRIMARY_PROMPT =
+  'Extract all text content from this image. Preserve the structure, bullet points, and formatting. Return only the extracted text, no explanations.'
+
+const OCR_HANDWRITING_PROMPT =
+  'Carefully read handwritten and faint text in this image. Reconstruct likely words where letters are unclear using nearby context. Keep line structure. Return only extracted text with no explanation.'
+
+/** Cheap model first; escalate only when budget allows. */
+const OCR_VISION_MODELS = [
+  'google/gemini-flash-1.5-8b',
+  'google/gemini-flash-1.5',
+  'qwen/qwen-2.5-vl-7b-instruct',
+]
+
+const VISUAL_FALLBACK_MODELS = ['google/gemini-flash-1.5', 'qwen/qwen-2.5-vl-7b-instruct']
+
+class VisionCallBudget {
+  used = 0
+
+  constructor(readonly max: number = MAX_VISION_CALLS_PER_IMAGE) {}
+
+  get remaining(): number {
+    return Math.max(0, this.max - this.used)
+  }
+
+  consume(): void {
+    if (this.used >= this.max) {
+      throw new Error('Vision call budget exceeded for this image')
+    }
+    this.used += 1
+  }
+}
+
 /**
  * Get main Supabase admin client for skulMate
  * Uses ONLY main Supabase project (not Ticha)
@@ -134,9 +169,7 @@ async function buildOcrVariants(
   originalBuffer: Buffer,
   originalMimeType: string
 ): Promise<OcrVariant[]> {
-  const variants: OcrVariant[] = [
-    { name: 'original', buffer: originalBuffer, mimeType: originalMimeType },
-  ]
+  const variants: OcrVariant[] = []
 
   try {
     const base = sharp(originalBuffer, { failOn: 'none' }).rotate()
@@ -152,36 +185,12 @@ async function buildOcrVariants(
       .png({ compressionLevel: 9 })
       .toBuffer()
     variants.push({ name: 'enhanced', buffer: enhanced, mimeType: 'image/png' })
-
-    const highContrast = await base
-      .clone()
-      .resize({ width: targetWidth, fit: 'inside', withoutEnlargement: false })
-      .grayscale()
-      .normalise()
-      .sharpen()
-      .threshold(148)
-      .png({ compressionLevel: 9 })
-      .toBuffer()
-    variants.push({
-      name: 'high-contrast',
-      buffer: highContrast,
-      mimeType: 'image/png',
-    })
-
-    const denoised = await base
-      .clone()
-      .resize({ width: targetWidth, fit: 'inside', withoutEnlargement: false })
-      .median(1)
-      .normalise()
-      .sharpen()
-      .png({ compressionLevel: 9 })
-      .toBuffer()
-    variants.push({ name: 'denoised', buffer: denoised, mimeType: 'image/png' })
   } catch (error) {
-    console.warn('[skulMate OCR] Could not build image variants:', error)
+    console.warn('[skulMate OCR] Could not build enhanced variant:', error)
   }
 
-  // De-duplicate by size to avoid repeated OCR calls on identical outputs.
+  variants.push({ name: 'original', buffer: originalBuffer, mimeType: originalMimeType })
+
   const seen = new Set<string>()
   return variants.filter((v) => {
     const key = `${v.buffer.length}:${v.mimeType}`
@@ -194,144 +203,106 @@ async function buildOcrVariants(
 /**
  * Extract text from image using OpenRouter Vision (skulMate-specific, uses skulMate API key)
  */
-async function extractTextFromImageSkulMate(imageUrl: string): Promise<string> {
+async function extractTextFromImageSkulMate(
+  imageUrl: string,
+  budget: VisionCallBudget,
+  options?: { useHandwritingPrompt?: boolean }
+): Promise<string> {
   const apiKeys = getSkulMateApiKeys()
-  const extractionPrompts = [
-    'Extract all text content from this image. Preserve the structure, bullet points, and formatting. Return only the extracted text, no explanations.',
-    'Carefully read handwritten and faint text in this image. Reconstruct likely words where letters are unclear using nearby context. Keep line structure. Return only extracted text with no explanation.',
-  ]
-
-  // Lower-cost models first, then stronger models.
-  // This mirrors tichar's strategy: cheap -> better if needed.
-  const visionModels = [
-    'google/gemini-flash-1.5-8b',
-    'google/gemini-flash-1.5',
-    'qwen/qwen-2.5-vl-7b-instruct',
-    'google/gemini-1.5-pro',
-    'anthropic/claude-3-haiku-20240307',
-    'anthropic/claude-3-sonnet-20240229',
-  ]
-
-  let response: any
+  const prompt = options?.useHandwritingPrompt ? OCR_HANDWRITING_PROMPT : OCR_PRIMARY_PROMPT
   let lastError: Error | null = null
 
   for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
     const apiKey = apiKeys[keyIndex]
     let keyInvalid = false
-    for (const model of visionModels) {
-      for (let i = 0; i < extractionPrompts.length; i += 1) {
-        const prompt = extractionPrompts[i]
-        try {
-          const messages = [
+
+    for (const model of OCR_VISION_MODELS) {
+      if (budget.remaining <= 0) {
+        throw new Error(
+          `OCR budget exhausted. Last error: ${lastError?.message || 'Unknown error'}`
+        )
+      }
+
+      try {
+        budget.consume()
+        console.log(
+          `[skulMate OCR] Trying vision model: ${model} (key ${keyIndex + 1}/${apiKeys.length}, budget ${budget.used}/${budget.max})`
+        )
+        emitAgentDebugLog({
+          runId: 'image-extract',
+          hypothesisId: 'H-img-1',
+          location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:before-call',
+          message: 'Calling OpenRouter vision for OCR',
+          data: {
+            model,
+            keyIndex,
+            budgetUsed: budget.used,
+            imageUrlPrefix: imageUrl.substring(0, 80),
+          },
+        })
+
+        const response = await callOpenRouterWithKey(apiKey, {
+          model,
+          messages: [
             {
               role: 'user' as const,
               content: [
-                {
-                  type: 'text' as const,
-                  text: prompt,
-                },
-                {
-                  type: 'image_url' as const,
-                  image_url: { url: imageUrl },
-                },
+                { type: 'text' as const, text: prompt },
+                { type: 'image_url' as const, image_url: { url: imageUrl } },
               ],
             },
-          ]
+          ],
+          max_tokens: 2000,
+          temperature: 0.2,
+        })
 
-          console.log(
-            `[skulMate OCR] Trying vision model: ${model} (pass ${i + 1}, key ${keyIndex + 1}/${apiKeys.length})`
-          )
-          emitAgentDebugLog({
-            runId: 'image-extract',
-            hypothesisId: 'H-img-1',
-            location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:before-call',
-            message: 'Calling OpenRouter vision for OCR',
-            data: {
-              model,
-              promptIndex: i,
-              keyIndex,
-              imageUrlPrefix: imageUrl.substring(0, 80),
-            },
-          })
-          response = await callOpenRouterWithKey(apiKey, {
+        const extractedText = parseOpenRouterTextResponse(response)
+        if (!isMeaningfulOcrText(extractedText)) {
+          throw new Error('OCR response was low quality or too short')
+        }
+
+        console.log(`[skulMate OCR] Success with model: ${model}`)
+        return extractedText
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        console.warn(`[skulMate OCR] Model ${model} failed:`, lastError.message)
+        emitAgentDebugLog({
+          runId: 'image-extract',
+          hypothesisId: 'H-img-2',
+          location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:catch',
+          message: 'OpenRouter vision OCR call failed',
+          data: {
             model,
-            messages,
-            max_tokens: 2000,
-            temperature: 0.2,
-          })
+            keyIndex,
+            errorMessage: lastError.message,
+          },
+        })
 
-          const extractedText = parseOpenRouterTextResponse(response)
-          if (!isMeaningfulOcrText(extractedText)) {
-            throw new Error('OCR response was low quality or too short')
-          }
-
-          console.log(`[skulMate OCR] Success with model: ${model} (pass ${i + 1})`)
-          return extractedText
-        } catch (error) {
-          lastError = error instanceof Error ? error : new Error(String(error))
-          console.warn(`[skulMate OCR] Model ${model} pass ${i + 1} failed:`, lastError.message)
-          emitAgentDebugLog({
-            runId: 'image-extract',
-            hypothesisId: 'H-img-2',
-            location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:catch',
-            message: 'OpenRouter vision OCR call failed',
-            data: {
-              model,
-              promptIndex: i,
-              keyIndex,
-              errorMessage: lastError.message,
-            },
-          })
-
-          // Invalid key: move to next key if available.
-          const keyLooksInvalid =
-            lastError.message.includes('401') ||
-            lastError.message.includes('User not found') ||
-            lastError.message.includes('Invalid API key')
-          if (keyLooksInvalid) {
-            keyInvalid = true
-            break
-          }
+        const keyLooksInvalid =
+          lastError.message.includes('401') ||
+          lastError.message.includes('User not found') ||
+          lastError.message.includes('Invalid API key')
+        if (keyLooksInvalid) {
+          keyInvalid = true
+          break
         }
       }
-      if (keyInvalid) break
     }
     if (keyInvalid) continue
   }
 
-  if (!response) {
-    emitAgentDebugLog({
-      runId: 'image-extract',
-      hypothesisId: 'H-img-3',
-      location: 'lib/skulmate/extract.ts:extractTextFromImageSkulMate:no-response',
-      message: 'All vision models failed with no usable response',
-      data: {
-        lastErrorMessage: lastError?.message || 'Unknown error',
-      },
-    })
-    throw new Error(`All vision models failed. Last error: ${lastError?.message || 'Unknown error'}`)
-  }
-
-  const fallbackText = parseOpenRouterTextResponse(response)
-  if (!isMeaningfulOcrText(fallbackText)) {
-    throw new Error('OCR could not extract meaningful text from this image')
-  }
-  return fallbackText
+  throw new Error(`All vision models failed. Last error: ${lastError?.message || 'Unknown error'}`)
 }
 
 /**
  * Fallback for images that do not contain much readable text.
  * Uses vision understanding to produce structured study material context.
  */
-async function extractVisualConceptFromImageSkulMate(imageUrl: string): Promise<string> {
+async function extractVisualConceptFromImageSkulMate(
+  imageUrl: string,
+  budget: VisionCallBudget
+): Promise<string> {
   const apiKeys = getSkulMateApiKeys()
-  const visionModels = [
-    'google/gemini-flash-1.5',
-    'qwen/qwen-2.5-vl-7b-instruct',
-    'google/gemini-1.5-pro',
-    'anthropic/claude-3-sonnet-20240229',
-  ]
-
   const prompt =
     'You are helping build a study game from an image that may contain little/no text. ' +
     'Identify what is visible and convert it into concise educational notes. ' +
@@ -341,8 +312,15 @@ async function extractVisualConceptFromImageSkulMate(imageUrl: string): Promise<
   let lastError: Error | null = null
   for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
     const apiKey = apiKeys[keyIndex]
-    for (const model of visionModels) {
+    for (const model of VISUAL_FALLBACK_MODELS) {
+      if (budget.remaining <= 0) {
+        throw new Error(
+          `Visual fallback budget exhausted: ${lastError?.message || 'Unknown error'}`
+        )
+      }
+
       try {
+        budget.consume()
         const response = await callOpenRouterWithKey(apiKey, {
           model,
           messages: [
@@ -361,6 +339,7 @@ async function extractVisualConceptFromImageSkulMate(imageUrl: string): Promise<
         if (text.length >= 30) {
           return text
         }
+        throw new Error('Visual fallback response too short')
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))
         console.warn(`[skulMate OCR] Visual fallback model ${model} failed:`, lastError.message)
@@ -381,21 +360,24 @@ async function extractImage(
   imageBuffer: Buffer,
   mimeType: string
 ): Promise<ImageExtractResult> {
+  const budget = new VisionCallBudget()
   try {
     const variants = await buildOcrVariants(imageBuffer, mimeType)
     let lastBase64Error: Error | null = null
 
-    // Pass 1: OCR via base64 for each image variant (fastest path, no storage needed).
+    // Pass 1: OCR via base64 — enhanced first, then original (budget-capped).
     for (const variant of variants) {
+      if (budget.remaining <= 0) break
       try {
         const dataUrl = `data:${variant.mimeType};base64,${variant.buffer.toString('base64')}`
-        const text = await extractTextFromImageSkulMate(dataUrl)
+        const text = await extractTextFromImageSkulMate(dataUrl, budget)
         return {
           text,
           method: `openrouter-base64:${variant.name}`,
           metadata: {
             variant: variant.name,
             variantsAttempted: variants.length,
+            visionCallsUsed: budget.used,
             transport: 'base64',
           },
         }
@@ -405,24 +387,21 @@ async function extractImage(
       }
     }
 
-    // Pass 2: Upload selected variants and OCR by URL (works when base64 payload is problematic).
-    const supabase = getMainSupabaseAdmin()
-    const storageCandidates = [
-      variants.find((v) => v.name == 'enhanced'),
-      variants.find((v) => v.name == 'high-contrast'),
-      variants.find((v) => v.name == 'original'),
-    ].filter((v): v is OcrVariant => Boolean(v))
+    // Pass 2: One storage URL attempt when base64 path fails (budget-capped).
+    const storageVariant =
+      variants.find((v) => v.name === 'enhanced') ?? variants.find((v) => v.name === 'original')
 
     let lastStorageError: Error | null = null
-    for (const variant of storageCandidates) {
-      const ext = variant.mimeType.includes('png') ? 'png' : 'jpg'
+    if (storageVariant && budget.remaining > 0) {
+      const supabase = getMainSupabaseAdmin()
+      const ext = storageVariant.mimeType.includes('png') ? 'png' : 'jpg'
       const tempPath = `skulmate-temp/${Date.now()}-${Math.random().toString(36).substring(7)}.${ext}`
 
       try {
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('documents')
-          .upload(tempPath, variant.buffer, {
-            contentType: variant.mimeType,
+          .upload(tempPath, storageVariant.buffer, {
+            contentType: storageVariant.mimeType,
             cacheControl: '3600',
           })
 
@@ -434,21 +413,26 @@ async function extractImage(
           .from('documents')
           .getPublicUrl(uploadData.path)
 
-        const text = await extractTextFromImageSkulMate(publicUrl)
+        const text = await extractTextFromImageSkulMate(publicUrl, budget, {
+          useHandwritingPrompt: true,
+        })
         return {
           text,
-          method: `openrouter-storage:${variant.name}`,
+          method: `openrouter-storage:${storageVariant.name}`,
           metadata: {
-            variant: variant.name,
+            variant: storageVariant.name,
             variantsAttempted: variants.length,
-            storageCandidatesTried: storageCandidates.length,
+            visionCallsUsed: budget.used,
             transport: 'storage-url',
             base64FallbackError: lastBase64Error?.message,
           },
         }
       } catch (error) {
         lastStorageError = error instanceof Error ? error : new Error(String(error))
-        console.warn(`[skulMate OCR] Storage OCR failed for variant "${variant.name}":`, lastStorageError.message)
+        console.warn(
+          `[skulMate OCR] Storage OCR failed for variant "${storageVariant.name}":`,
+          lastStorageError.message
+        )
       } finally {
         await supabase.storage
           .from('documents')
@@ -457,24 +441,22 @@ async function extractImage(
       }
     }
 
-    // Pass 3: If OCR cannot read text, still try image understanding so we can
-    // generate educational games from objects/diagrams/scenes.
+    // Pass 3: Visual understanding fallback (single budget-capped call).
     let lastVisualError: Error | null = null
-    const visualCandidates = [
-      variants.find((v) => v.name == 'original'),
-      variants.find((v) => v.name == 'enhanced'),
-    ].filter((v): v is OcrVariant => Boolean(v))
+    const visualVariant =
+      variants.find((v) => v.name === 'original') ?? variants.find((v) => v.name === 'enhanced')
 
-    for (const variant of visualCandidates) {
+    if (visualVariant && budget.remaining > 0) {
       try {
-        const dataUrl = `data:${variant.mimeType};base64,${variant.buffer.toString('base64')}`
-        const text = await extractVisualConceptFromImageSkulMate(dataUrl)
+        const dataUrl = `data:${visualVariant.mimeType};base64,${visualVariant.buffer.toString('base64')}`
+        const text = await extractVisualConceptFromImageSkulMate(dataUrl, budget)
         return {
           text,
-          method: `openrouter-visual:${variant.name}`,
+          method: `openrouter-visual:${visualVariant.name}`,
           metadata: {
-            variant: variant.name,
+            variant: visualVariant.name,
             variantsAttempted: variants.length,
+            visionCallsUsed: budget.used,
             mode: 'visual-fallback',
             base64OcrError: lastBase64Error?.message,
             storageOcrError: lastStorageError?.message,
@@ -483,24 +465,43 @@ async function extractImage(
       } catch (error) {
         lastVisualError = error instanceof Error ? error : new Error(String(error))
         console.warn(
-          `[skulMate OCR] Visual fallback failed for variant "${variant.name}":`,
+          `[skulMate OCR] Visual fallback failed for variant "${visualVariant.name}":`,
           lastVisualError.message
         )
       }
     }
+
+    console.error('[skulMate OCR] All extraction strategies failed', {
+      visionCallsUsed: budget.used,
+      base64Error: lastBase64Error?.message,
+      storageError: lastStorageError?.message,
+      visualError: lastVisualError?.message,
+    })
 
     throw new Error(
       `All image extraction strategies failed. OCR(base64): ${lastBase64Error?.message || 'n/a'}. OCR(storage): ${lastStorageError?.message || 'n/a'}. Visual fallback: ${lastVisualError?.message || 'n/a'}`
     )
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    
-    // Upstream provider credit/outage issues should be surfaced as temporary
-    // processing outages (not as a user plan/paywall problem).
+
+    if (
+      errorMessage.includes('401') ||
+      errorMessage.includes('Invalid OpenRouter API key') ||
+      errorMessage.includes('Missing SKULMATE_OPENROUTER_API_KEY')
+    ) {
+      console.error('[skulMate OCR] OpenRouter auth error:', errorMessage)
+      throw new Error('Invalid OpenRouter API key')
+    }
+
     if (errorMessage.includes('402') || errorMessage.includes('credits') || errorMessage.includes('Insufficient credits')) {
+      console.error('[skulMate OCR] OpenRouter credits/provider error:', errorMessage)
       throw new Error('Image processing provider is temporarily unavailable')
     }
-    
+
+    if (errorMessage.includes('Vision call budget exceeded')) {
+      throw new Error('Vision call budget exceeded for this image')
+    }
+
     throw new Error(`Failed to extract text from image: ${errorMessage}`)
   }
 }

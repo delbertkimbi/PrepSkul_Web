@@ -37,6 +37,24 @@ const MAX_PROCESSING_TIME = 60000 // 60 seconds
 const DEBUG_INGEST_URL = process.env.SKULMATE_DEBUG_INGEST_URL
 const DEBUG_SESSION_ID = process.env.SKULMATE_DEBUG_SESSION_ID || 'skulmate-debug'
 
+/** Game types the Flutter app can play today — keep auto mode within this set. */
+const RELEASED_AUTO_GAME_TYPES = [
+  'quiz',
+  'flashcards',
+  'matching',
+  'fill_blank',
+  'drag_drop',
+  'puzzle_pieces',
+] as const
+
+function pickReleasedAutoGameType(options: string[]): string {
+  const released = options.filter((t) =>
+    (RELEASED_AUTO_GAME_TYPES as readonly string[]).includes(t)
+  )
+  const pool = released.length > 0 ? released : [...RELEASED_AUTO_GAME_TYPES]
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
 function emitAgentDebugLog(params: {
   runId: string
   hypothesisId: string
@@ -607,44 +625,64 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   let recommendedGameType: string = 'quiz'; // Default fallback
   if (gameType === 'auto') {
     if (sourceMode === 'topic') {
-      const topicOptions = ['flashcards', 'matching', 'fill_blank', 'quiz', 'word_search', 'bubble_pop'];
-      recommendedGameType = topicOptions[Math.floor(Math.random() * topicOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'quiz',
+      ])
     } else if (contentType === 'diagram') {
-      // Diagram-heavy inputs still work well with matching/fill-blank in current app.
-      const diagramOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'quiz'];
-      recommendedGameType = diagramOptions[Math.floor(Math.random() * diagramOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'quiz',
+        'puzzle_pieces',
+      ])
     } else if (contentType === 'formula') {
-      recommendedGameType = 'fill_blank'; // Best for formulas
+      recommendedGameType = 'fill_blank'
     } else if (contentType === 'table') {
-      recommendedGameType = Math.random() > 0.5 ? 'matching' : 'drag_drop';
+      recommendedGameType = pickReleasedAutoGameType(['matching', 'drag_drop'])
     } else if (contentType === 'graph') {
-      recommendedGameType = 'quiz'; // Best for interpretation
+      recommendedGameType = 'quiz'
     } else if (text.length < 500) {
-      // Short content - fast, currently stable modes.
-      const shortOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'bubble_pop', 'match3'];
-      recommendedGameType = shortOptions[Math.floor(Math.random() * shortOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'quiz',
+      ])
     } else if (text.split('\n').length > 20) {
-      // Structured content - keep to stable playable modes.
-      recommendedGameType = Math.random() > 0.5 ? 'matching' : 'drag_drop';
+      recommendedGameType = pickReleasedAutoGameType(['matching', 'drag_drop'])
     } else {
-      // For regular text, prioritize currently playable interactive modes.
-      const textOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'match3', 'bubble_pop', 'quiz', 'simulation', 'mystery', 'escape_room'];
-      recommendedGameType = textOptions[Math.floor(Math.random() * textOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'quiz',
+        'puzzle_pieces',
+      ])
     }
-    
-    // Check if content has many distinct terms/concepts (good for word search or crossword)
-    const wordCount = text.split(/\s+/).length;
-    const uniqueWords = new Set(text.toLowerCase().match(/\b[a-z]{4,}\b/gi) || []).size;
+
+    const uniqueWords = new Set(text.toLowerCase().match(/\b[a-z]{4,}\b/gi) || []).size
     if (uniqueWords > 15 && (recommendedGameType === 'quiz' || recommendedGameType === 'flashcards')) {
-      // High-vocabulary content - bias towards matching/fill-blank for now.
-      const wordGameOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'flashcards'];
-      recommendedGameType = wordGameOptions[Math.floor(Math.random() * wordGameOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'flashcards',
+      ])
     }
-    
-    // Final check: If somehow quiz was selected for auto mode, replace with interactive alternative
+
     if (gameType === 'auto' && recommendedGameType === 'quiz') {
-      const interactiveOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'match3', 'bubble_pop', 'simulation'];
-      recommendedGameType = interactiveOptions[Math.floor(Math.random() * interactiveOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+      ])
     }
   } else {
     recommendedGameType = gameType;
@@ -864,14 +902,14 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Items should be key terms, concepts, or visual elements from the content\n';
     userPrompt += '- Include gridData as a 2D array (8x8 or 10x10) with item identifiers\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
-  } else if (gameTypeStr === 'bubblePop') {
+  } else if (gameTypeStr === 'bubble_pop') {
     userPrompt += '- Generate ' + (numQuestions || '15-25') + ' bubbles with terms/concepts from the actual content\n';
     if (topic) userPrompt += '- Topic Focus: All bubbles MUST relate to ' + topic + '\n';
     userPrompt += '- Each bubble should contain a key term or concept from the content\n';
     userPrompt += '- Include target words that players need to pop\n';
     userPrompt += '- Create bubbles array with text, position, and target information\n';
     userPrompt += '- DO NOT create generic terms - use actual vocabulary from the content\n';
-  } else if (gameTypeStr === 'wordSearch') {
+  } else if (gameTypeStr === 'word_search') {
     userPrompt += '- Extract ' + (numQuestions || '10-15') + ' key words/terms from the actual content\n';
     if (topic) userPrompt += '- Topic Focus: All words MUST relate to ' + topic + '\n';
     userPrompt += '- Create a word search grid (12x12 or 15x15) with words hidden\n';
@@ -893,14 +931,14 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Create clues array with clue text and answer\n';
     userPrompt += '- Include gridData as a 2D array showing the crossword grid layout\n';
     userPrompt += '- DO NOT create generic clues - use actual concepts from the content\n';
-  } else if (gameTypeStr === 'diagramLabel') {
+  } else if (gameTypeStr === 'diagram_label') {
     userPrompt += '- Identify ' + (numQuestions || '8-12') + ' key parts/components from the diagram in the content\n';
     if (topic) userPrompt += '- Topic Focus: All labels MUST relate to ' + topic + '\n';
     userPrompt += '- Create labels for each part based on the actual diagram\n';
     userPrompt += '- Include diagramLabels array with label text and position coordinates\n';
     userPrompt += '- If imageUrl is available, use it for the diagram\n';
     userPrompt += '- DO NOT create generic labels - use actual parts from the diagram\n';
-  } else if (gameTypeStr === 'dragDrop') {
+  } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '- Generate ' + (numQuestions || '8-12') + ' items to drag and 3-5 drop zones based on the content\n';
     if (topic) userPrompt += '- Topic Focus: All items MUST relate to ' + topic + '\n';
     userPrompt += '- Items should be key concepts, terms, or elements from the content\n';
@@ -908,7 +946,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Include dragItems array with item text and correct drop zone\n';
     userPrompt += '- Include dropZones array with zone names and positions\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
-  } else if (gameTypeStr === 'puzzlePieces') {
+  } else if (gameTypeStr === 'puzzle_pieces') {
     userPrompt += '- Break down the content into ' + (numQuestions || '6-12') + ' puzzle pieces\n';
     if (topic) userPrompt += '- Topic Focus: All pieces MUST relate to ' + topic + '\n';
     userPrompt += '- Each piece should represent a key concept, step, or element from the content\n';
@@ -976,18 +1014,18 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '    {"blankText": "Sentence with blank from actual content", "correctAnswer": "Answer from actual content"}\n';
   } else if (gameTypeStr === 'match3') {
     userPrompt += '    {"gridData": [["item1", "item2", ...], ...], "items": ["item1", "item2", ...]}\n';
-  } else if (gameTypeStr === 'bubblePop') {
+  } else if (gameTypeStr === 'bubble_pop') {
     userPrompt += '    {"bubbles": [{"text": "Term from content", "x": 100, "y": 200, "isTarget": true}, ...], "words": ["Term1", "Term2", ...]}\n';
-  } else if (gameTypeStr === 'wordSearch') {
+  } else if (gameTypeStr === 'word_search') {
     userPrompt += '    {"gridData": [["A", "B", ...], ...], "words": ["Term1", "Term2", ...]}\n';
   } else if (gameTypeStr === 'crossword') {
     userPrompt += '    {"gridData": [["A", "B", ...], ...], "clues": [{"clue": "Clue from content", "answer": "Answer from content", "x": 0, "y": 0}, ...]}\n';
-  } else if (gameTypeStr === 'diagramLabel') {
+  } else if (gameTypeStr === 'diagram_label') {
     userPrompt += '    {"imageUrl": "url if available", "diagramLabels": [{"label": "Part name from content", "x": 100, "y": 200}, ...]}\n';
-  } else if (gameTypeStr === 'dragDrop') {
+  } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '    {"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}\n';
-  } else if (gameTypeStr === 'puzzlePieces') {
-    userPrompt += '    {"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctX": 100, "correctY": 200, "imageUrl": "url if available"}, ...]}\n';
+  } else if (gameTypeStr === 'puzzle_pieces') {
+    userPrompt += '    {"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctPosition": {"x": 0.25, "y": 0.5}, "imageUrl": "url if available"}, ...]}\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '    {"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}\n';
   } else if (gameTypeStr === 'mystery') {
@@ -1579,6 +1617,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('[skulMate] Failed to extract text:', error)
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[skulMate] Extraction error detail (for ops):', errorMessage)
         emitAgentDebugLog({
           runId: debugRunId,
           hypothesisId: 'H1',
@@ -1596,11 +1635,14 @@ export async function POST(request: NextRequest) {
             runId: debugRunId,
             hypothesisId: 'H1',
             location: 'app/api/skulmate/generate/route.ts:extract-catch',
-            message: 'Returning 503 api-key branch',
+            message: 'Returning 502 api-key branch',
           })
           return NextResponse.json(
-            { error: 'Image processing is currently unavailable due to API configuration. Please try uploading a PDF or text file instead, or contact support.' },
-            { status: 503, headers: corsHeaders }
+            {
+              errorCode: 'IMAGE_PROVIDER_AUTH',
+              error: 'Image processing is currently unavailable due to API configuration. Please try uploading a PDF or text file instead, or contact support.',
+            },
+            { status: 502, headers: corsHeaders }
           )
         }
         
@@ -1621,8 +1663,24 @@ export async function POST(request: NextRequest) {
             },
           })
           return NextResponse.json(
-            { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.' },
+            {
+              errorCode: 'IMAGE_PROVIDER_UNAVAILABLE',
+              error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.',
+            },
             { status: 503, headers: corsHeaders }
+          )
+        }
+
+        if (
+          errorMessage.includes('Vision call budget exceeded') ||
+          errorMessage.includes('All image extraction strategies failed')
+        ) {
+          return NextResponse.json(
+            {
+              errorCode: 'OCR_TEXT_EXTRACTION_FAILED',
+              error: 'We could not read text from this image. Try a clearer photo, enter text manually, or upload a PDF/DOCX/TXT file.',
+            },
+            { status: 400, headers: corsHeaders }
           )
         }
         
@@ -1633,7 +1691,10 @@ export async function POST(request: NextRequest) {
           message: 'Returning generic 400 extraction branch',
         })
         return NextResponse.json(
-          { error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, DOCX, image, or text file with readable content.` },
+          {
+            errorCode: 'OCR_TEXT_EXTRACTION_FAILED',
+            error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, DOCX, image, or text file with readable content.`,
+          },
           { status: 400, headers: corsHeaders }
         )
       }
@@ -1974,7 +2035,10 @@ export async function POST(request: NextRequest) {
         message: 'Returning 503 provider-credit branch',
       })
       return NextResponse.json(
-        { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly.' },
+        {
+          errorCode: 'IMAGE_PROVIDER_UNAVAILABLE',
+          error: 'Image processing provider is temporarily unavailable right now. Please try again shortly.',
+        },
         { status: 503, headers: corsHeaders }
       )
     }
