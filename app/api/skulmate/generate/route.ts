@@ -1590,7 +1590,9 @@ export async function POST(request: NextRequest) {
       console.log('[skulMate] Step 2: Extracting text...')
       try {
         // Extract using skulMate-specific extraction (uses ONLY main Supabase, not Ticha)
-        const extractedContent = await extractFile(fileBuffer, mimeType)
+        const extractedContent = await extractFile(fileBuffer, mimeType, sourceFileName, {
+          imageSourceUrl: requestedSourceType === 'image' ? fileUrl : undefined,
+        })
         extractedText = extractedContent.text
         extractionMethod = extractedContent.method
         extractionMeta = (extractedContent.metadata || {}) as Record<string, any>
