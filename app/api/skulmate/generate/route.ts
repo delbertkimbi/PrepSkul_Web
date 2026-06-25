@@ -31,27 +31,22 @@ import {
   buildExtractionQualityPromptSection,
 } from '@/lib/skulmate/extraction-quality'
 import { validateGenerateIntake } from '@/lib/skulmate/generate-intake-validation'
+import {
+  RELEASED_SHIPPED_GAME_TYPES,
+  assertShippedGameTypeRequest,
+  coerceToShippedGameType,
+} from '@/lib/skulmate/released-game-types'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
 const DEBUG_INGEST_URL = process.env.SKULMATE_DEBUG_INGEST_URL
 const DEBUG_SESSION_ID = process.env.SKULMATE_DEBUG_SESSION_ID || 'skulmate-debug'
 
-/** Game types the Flutter app can play today — keep auto mode within this set. */
-const RELEASED_AUTO_GAME_TYPES = [
-  'quiz',
-  'flashcards',
-  'matching',
-  'fill_blank',
-  'drag_drop',
-  'puzzle_pieces',
-] as const
-
 function pickReleasedAutoGameType(options: string[]): string {
   const released = options.filter((t) =>
-    (RELEASED_AUTO_GAME_TYPES as readonly string[]).includes(t)
+    (RELEASED_SHIPPED_GAME_TYPES as readonly string[]).includes(t)
   )
-  const pool = released.length > 0 ? released : [...RELEASED_AUTO_GAME_TYPES]
+  const pool = released.length > 0 ? released : [...RELEASED_SHIPPED_GAME_TYPES]
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
@@ -224,9 +219,11 @@ function getSkulMateApiKeys(): string[] {
 
 interface GenerateRequest {
   fileUrl?: string
+  fileUrls?: string[]
   text?: string
   youtubeUrl?: string
   sourceFileName?: string
+  sourceFileNames?: string[]
   userId?: string
   childId?: string // For parents creating games for children
   gameType?: 'quiz' | 'flashcards' | 'matching' | 'fill_blank' | 'auto' | 'match3' | 'bubble_pop' | 'word_search' | 'crossword' | 'diagram_label' | 'drag_drop' | 'puzzle_pieces' | 'simulation' | 'mystery' | 'escape_room' // auto = AI decides
@@ -336,13 +333,24 @@ function getUtcDayStartIso(date: Date = new Date()): string {
   return d.toISOString()
 }
 
-function detectRequestedSourceType(fileUrl?: string, text?: string): 'text' | 'pdf' | 'docx' | 'image' {
+function detectRequestedSourceType(fileUrl?: string, fileUrls?: string[], text?: string): 'text' | 'pdf' | 'docx' | 'image' {
   if (text && text.trim().length > 0) return 'text'
-  const lower = (fileUrl || '').toLowerCase()
+  const candidate = fileUrl || (fileUrls && fileUrls.length > 0 ? fileUrls[0] : '') || ''
+  const lower = candidate.toLowerCase()
   if (lower.includes('.pdf')) return 'pdf'
   if (lower.includes('.docx')) return 'docx'
   if (lower.includes('.txt')) return 'text'
   return 'image'
+}
+
+function inferMimeTypeFromUrl(url: string): string {
+  const lower = url.toLowerCase()
+  if (lower.includes('.pdf')) return 'application/pdf'
+  if (lower.includes('.png')) return 'image/png'
+  if (lower.includes('.jpg') || lower.includes('.jpeg')) return 'image/jpeg'
+  if (lower.includes('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  if (lower.includes('.txt')) return 'text/plain'
+  return 'application/octet-stream'
 }
 
 function resolveActualSourceType(params: {
@@ -725,9 +733,9 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += 'The learner wants to revise: ' + topic + '\n';
     userPrompt += 'Create accurate revision items covering core concepts for this topic.\n\n';
   } else {
-    userPrompt += 'CRITICAL RULES - MUST FOLLOW:\n';
-    userPrompt += '1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.\n';
-    userPrompt += '2. All questions, answers, and terms must be based on what the user actually provided.\n';
+  userPrompt += 'CRITICAL RULES - MUST FOLLOW:\n';
+  userPrompt += '1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.\n';
+  userPrompt += '2. All questions, answers, and terms must be based on what the user actually provided.\n';
   }
   
   if (gameType === 'auto') {
@@ -750,7 +758,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   if (sourceMode === 'topic' && topic) {
     userPrompt += 'Revision topic: ' + topic + '\n\n';
   } else {
-    userPrompt += 'User\'s Actual Content:\n' + text + '\n\n';
+  userPrompt += 'User\'s Actual Content:\n' + text + '\n\n';
   }
   userPrompt += 'CONTENT TYPE DETECTED: ' + contentType.toUpperCase() + '\n';
   
@@ -1267,11 +1275,13 @@ If you generate quiz again, your response will be rejected.`
     gameData.gameType = recommendedGameType
   }
   
-  // Ensure game type is valid
-  const validGameTypes = ['quiz', 'flashcards', 'matching', 'fill_blank', 'match3', 'bubble_pop', 'word_search', 'crossword', 'diagram_label', 'drag_drop', 'puzzle_pieces', 'simulation', 'mystery', 'escape_room']
-  if (!validGameTypes.includes(gameData.gameType)) {
-    console.warn(`[skulMate] Invalid game type "${gameData.gameType}", defaulting to ${recommendedGameType}`)
-    gameData.gameType = recommendedGameType
+  // Never persist unreleased game types — coerce AI output to shipped set only
+  const coercedType = coerceToShippedGameType(gameData.gameType, recommendedGameType)
+  if (coercedType !== gameData.gameType) {
+    console.warn(
+      `[skulMate] Coerced unreleased game type "${gameData.gameType}" → "${coercedType}"`
+    )
+    gameData.gameType = coercedType
   }
 
           // Validate quiz options are not placeholders
@@ -1409,9 +1419,11 @@ export async function POST(request: NextRequest) {
     const body: GenerateRequest = await request.json()
     const { 
       fileUrl, 
+      fileUrls,
       text, 
       youtubeUrl,
       sourceFileName,
+      sourceFileNames,
       userId, 
       childId, 
       gameType = 'auto',
@@ -1423,6 +1435,7 @@ export async function POST(request: NextRequest) {
 
     const intakeValidation = validateGenerateIntake({
       fileUrl,
+      fileUrls,
       text,
       youtubeUrl,
       topic,
@@ -1431,6 +1444,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: intakeValidation.error },
         { status: intakeValidation.status, headers: corsHeaders }
+      )
+    }
+
+    const gameTypeCheck = assertShippedGameTypeRequest(gameType)
+    if (!gameTypeCheck.ok) {
+      return NextResponse.json(
+        { error: gameTypeCheck.error, errorCode: gameTypeCheck.errorCode },
+        { status: 400, headers: corsHeaders }
       )
     }
 
@@ -1447,7 +1468,7 @@ export async function POST(request: NextRequest) {
     }
 
     const finalUserId = userId || sessionUserId
-    const requestedSourceType = detectRequestedSourceType(fileUrl, trimmedText || text)
+    const requestedSourceType = detectRequestedSourceType(fileUrl, fileUrls, trimmedText || text)
 
     let extractedText = trimmedText || text || ''
     let extractionMethod = trimmedText ? 'manual-text' : isTopicOnlyMode ? 'topic-only' : 'unknown'
@@ -1497,80 +1518,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // If fileUrl provided, download and extract text
-    if (fileUrl) {
-      console.log('[skulMate] Step 1: Downloading file...')
-      
-      // Extract bucket and file path from Supabase Storage URL
-      // Supports both signed URLs: /storage/v1/object/sign/{bucket}/{path}?token=...
-      // and public URLs: /storage/v1/object/public/{bucket}/{path}
-      let bucket: string
-      let filePath: string
+    // If fileUrl(s) provided, download and extract text.
+    const normalizedFileUrls = [
+      ...(fileUrl ? [fileUrl] : []),
+      ...((fileUrls || []).filter((u) => Boolean(u && u.trim())) as string[]),
+    ]
+    const uniqueFileUrls = [...new Set(normalizedFileUrls)]
+    const candidateFileUrls = uniqueFileUrls.length > 0 ? uniqueFileUrls : []
+    if (candidateFileUrls.length > 0) {
+      console.log('[skulMate] Step 1: Downloading file(s)...', {
+        total: candidateFileUrls.length,
+      })
+      const extractedSegments: string[] = []
+      const extractionRows: Array<Record<string, unknown>> = []
 
-      // Try to match signed URL format
-      const signedUrlMatch = fileUrl.match(/\/storage\/v1\/object\/sign\/([^\/]+)\/(.+?)(?:\?|$)/)
-      if (signedUrlMatch) {
-        bucket = signedUrlMatch[1]
-        filePath = signedUrlMatch[2]
-      } else {
-        // Try to match public URL format
-        const publicUrlMatch = fileUrl.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+?)(?:\?|$)/)
-        if (publicUrlMatch) {
-          bucket = publicUrlMatch[1]
-          filePath = publicUrlMatch[2]
-        } else {
-          // Fallback: try old format /uploads/...
-          const legacyMatch = fileUrl.match(/\/uploads\/(.+)$/)
-          if (legacyMatch) {
-            bucket = 'uploads'
-            filePath = legacyMatch[1]
-          } else {
-            return NextResponse.json(
-              { error: 'Invalid fileUrl format. Expected Supabase Storage URL.' },
-              { status: 400, headers: corsHeaders }
-            )
-          }
-        }
-      }
-
-      console.log(`[skulMate] Extracted bucket: ${bucket}, path: ${filePath}`)
-
-      // Download file from Storage using the URL directly (no service role key needed)
+      for (let fileIndex = 0; fileIndex < candidateFileUrls.length; fileIndex += 1) {
+        const currentFileUrl = candidateFileUrls[fileIndex]
+        const currentSourceFileName = sourceFileNames?.[fileIndex] || sourceFileName
       let fileBuffer: Buffer
       let mimeType: string
 
       try {
-        // #region agent log
         logDebug('skulmate/generate/route.ts:download', 'Before downloadFileFromUrl', {
-          fileUrl: fileUrl.substring(0, 100),
-          bucket,
-          filePath,
-        });
-        // #endregion
-        
-        // Download file directly from the signed/public URL (uses main Supabase, not Ticha)
-        // This avoids needing service role key - the URL already has access token
-        fileBuffer = await downloadFileFromUrl(fileUrl)
-        
-        // #region agent log
+            fileUrl: currentFileUrl.substring(0, 100),
+            fileIndex,
+            totalFiles: candidateFileUrls.length,
+          })
+          fileBuffer = await downloadFileFromUrl(currentFileUrl)
         logDebug('skulmate/generate/route.ts:download', 'downloadFileFromUrl succeeded', {
+            fileIndex,
           bufferSize: fileBuffer.length,
-        });
-        // #endregion
-
-        // Determine MIME type from file extension or URL
-        const urlLower = fileUrl.toLowerCase()
-        if (urlLower.includes('.pdf')) {
-          mimeType = 'application/pdf'
-        } else if (urlLower.includes('.png')) {
-          mimeType = 'image/png'
-        } else if (urlLower.includes('.jpg') || urlLower.includes('.jpeg')) {
-          mimeType = 'image/jpeg'
-        } else if (urlLower.includes('.docx')) {
-          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        } else {
-          mimeType = 'application/octet-stream'
-        }
+          })
+          mimeType = inferMimeTypeFromUrl(currentFileUrl)
 
         if (fileBuffer.length > MAX_FILE_SIZE) {
           return NextResponse.json(
@@ -1581,41 +1560,34 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('[skulMate] Failed to download file:', error)
         return NextResponse.json(
-          { error: `Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}` },
+          {
+            error: `Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            errorCode: 'FILE_DOWNLOAD_FAILED',
+          },
           { status: 500, headers: corsHeaders }
         )
       }
 
-      // Extract text from file
       console.log('[skulMate] Step 2: Extracting text...')
       try {
-        // Extract using skulMate-specific extraction (uses ONLY main Supabase, not Ticha)
-        const extractedContent = await extractFile(fileBuffer, mimeType, sourceFileName, {
-          imageSourceUrl: requestedSourceType === 'image' ? fileUrl : undefined,
-        })
-        extractedText = extractedContent.text
-        extractionMethod = extractedContent.method
-        extractionMeta = (extractedContent.metadata || {}) as Record<string, any>
-        console.log(`[skulMate] Extracted ${extractedText.length} characters using ${extractedContent.method}`)
-        
-        // Validate extracted content is meaningful.
-        // Images can now use visual-understanding fallback, so allow shorter text.
-        const minimumExtractedLength = 20
-        if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
-          console.error('[skulMate] Extracted text is too short or empty')
-          return NextResponse.json(
-            {
-              error:
-                requestedSourceType === 'image'
-                  ? 'We could not understand enough from this image yet. Please try a clearer image, a different angle, or upload text manually.'
-                  : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
-            },
-            { status: 400, headers: corsHeaders }
-          )
-        }
-        
-        // Log first 200 chars for debugging (to verify it's actual content, not generic)
-        console.log(`[skulMate] Extracted text preview: ${extractedText.substring(0, 200)}...`)
+          const extractedContent = await extractFile(fileBuffer, mimeType, currentSourceFileName, {
+            imageSourceUrl: requestedSourceType === 'image' ? currentFileUrl : undefined,
+          })
+          const segmentText = extractedContent.text?.trim() || ''
+          if (segmentText.length > 0) {
+            const prefix =
+              candidateFileUrls.length > 1
+                ? `\n\n[Image ${fileIndex + 1} Context]\n`
+                : ''
+            extractedSegments.push(`${prefix}${segmentText}`)
+          }
+          extractionRows.push({
+            index: fileIndex + 1,
+            sourceFileName: currentSourceFileName || null,
+            method: extractedContent.method,
+            metadata: extractedContent.metadata || {},
+            sourceUrl: currentFileUrl,
+          })
       } catch (error) {
         console.error('[skulMate] Failed to extract text:', error)
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -1700,12 +1672,39 @@ export async function POST(request: NextRequest) {
           { status: 400, headers: corsHeaders }
         )
       }
+      }
+
+      extractedText = extractedSegments.join('\n\n')
+      extractionMethod =
+        extractionRows.length > 1
+          ? `multi-source:${requestedSourceType}`
+          : String(extractionRows[0]?.method || extractionMethod)
+      extractionMeta = {
+        ...(extractionRows[0]?.metadata || {}),
+        filesCount: extractionRows.length,
+        extractionRows,
+      } as Record<string, any>
+      const minimumExtractedLength = 20
+      if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
+        console.error('[skulMate] Extracted text is too short or empty')
+        return NextResponse.json(
+          {
+            error:
+              requestedSourceType === 'image'
+                ? 'We could not understand enough from this image set yet. Try clearer photos, enter text manually, or upload a PDF/DOCX/TXT file.'
+                : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
+            errorCode: 'EXTRACTION_TOO_SHORT',
+          },
+          { status: 400, headers: corsHeaders }
+        )
+      }
+      console.log(`[skulMate] Extracted ${extractedText.length} characters from ${extractionRows.length} file(s)`)
     }
 
     const actualSourceType = resolveActualSourceType({
       requestedSourceType,
       extractionMethod,
-      hasManualText: Boolean(text && text.trim().length > 0 && !fileUrl),
+      hasManualText: Boolean(text && text.trim().length > 0 && candidateFileUrls.length === 0),
     })
 
     // Determine billing mode after extraction (so source type is accurate).
@@ -1718,7 +1717,7 @@ export async function POST(request: NextRequest) {
 
         const creditsRequired = calculateSkulmateCreditsRequired({
           sourceType: actualSourceType,
-          isManualText: Boolean(text && text.trim().length > 0 && !fileUrl),
+          isManualText: Boolean(text && text.trim().length > 0 && candidateFileUrls.length === 0),
           extractedTextLength: extractedText.length,
           difficulty,
           numQuestions,
@@ -1765,12 +1764,12 @@ export async function POST(request: NextRequest) {
     let extractedEntities
     let entityExtractionFailed = false
     if (extractionMethod !== 'topic-only' && extractedText.trim().length > 0) {
-      try {
-        extractedEntities = await extractEntities(extractedText)
-        console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
-      } catch (error) {
+    try {
+      extractedEntities = await extractEntities(extractedText)
+      console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
+    } catch (error) {
         entityExtractionFailed = true
-        console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
+      console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
         extractedEntities = undefined
       }
     } else {
@@ -1881,7 +1880,7 @@ export async function POST(request: NextRequest) {
             child_id: childId || null,
             title: gameData.title,
             game_type: gameData.gameType,
-            document_url: fileUrl || null,
+            document_url: candidateFileUrls[0] || null,
             source_type: actualSourceType,
             source_file_name: sourceFileName || null,
             source_text_snapshot:
@@ -1891,6 +1890,7 @@ export async function POST(request: NextRequest) {
             generation_context: {
               enrichmentMode: learnerContext?.enrichmentMode ?? 'background',
               learnerContext: learnerContext ?? null,
+              sourceUrls: candidateFileUrls,
               curriculumAlignment,
               extractionQuality,
               extractionMethod,

@@ -4,6 +4,7 @@
 
 export type GenerateIntakeInput = {
   fileUrl?: string
+  fileUrls?: string[]
   text?: string
   youtubeUrl?: string
   topic?: string
@@ -27,7 +28,10 @@ export function validateGenerateIntake(
 ): GenerateIntakeValidation {
   const trimmedTopic = input.topic?.trim() || ''
   const trimmedText = input.text?.trim() || ''
-  const hasFile = Boolean(input.fileUrl?.trim())
+  const normalizedFileUrls = (input.fileUrls || [])
+    .map((url) => url?.trim())
+    .filter((url): url is string => Boolean(url))
+  const hasFile = Boolean(input.fileUrl?.trim()) || normalizedFileUrls.length > 0
   const hasYoutube = Boolean(input.youtubeUrl?.trim())
 
   const isTopicOnlyMode = Boolean(
