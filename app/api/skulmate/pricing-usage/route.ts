@@ -56,6 +56,7 @@ async function getSkulmatePricingConfig(admin: any) {
     creditsPerImageGameBase: 10,
     freeDocTextGamesPerDay: 2,
     freeImageGamesPerDay: 4,
+    maxImagesPerPromptFree: 3,
     maxImagesPerPromptPaid: 5,
   }
 
@@ -68,6 +69,7 @@ async function getSkulmatePricingConfig(admin: any) {
         'credits_per_image_game_base',
         'free_doc_text_games_per_day',
         'free_image_games_per_day',
+        'max_images_per_prompt_free',
         'max_images_per_prompt_paid',
       ].join(',')
     )
@@ -82,6 +84,9 @@ async function getSkulmatePricingConfig(admin: any) {
     creditsPerImageGameBase: Number(data.credits_per_image_game_base ?? defaults.creditsPerImageGameBase),
     freeDocTextGamesPerDay: Number(data.free_doc_text_games_per_day ?? defaults.freeDocTextGamesPerDay),
     freeImageGamesPerDay: Number(data.free_image_games_per_day ?? defaults.freeImageGamesPerDay),
+    maxImagesPerPromptFree: Number(
+      data.max_images_per_prompt_free ?? defaults.maxImagesPerPromptFree
+    ),
     maxImagesPerPromptPaid: Number(data.max_images_per_prompt_paid ?? defaults.maxImagesPerPromptPaid),
   }
 }
