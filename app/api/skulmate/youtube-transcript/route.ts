@@ -3,7 +3,10 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchYoutubeTranscript, isYoutubeTranscriptError } from '@/lib/skulmate/youtube-transcript'
+import {
+  fetchYoutubeTranscriptWithMeta,
+  isYoutubeTranscriptError,
+} from '@/lib/skulmate/youtube-transcript'
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -26,7 +29,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const transcript = await fetchYoutubeTranscript(youtubeUrl)
+    const result = await fetchYoutubeTranscriptWithMeta(youtubeUrl)
+    const transcript = result.text
     if (transcript.trim().length < 50) {
       return NextResponse.json(
         {
@@ -38,7 +42,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ transcript, youtubeUrl }, { headers })
+    return NextResponse.json(
+      { transcript, youtubeUrl, source: result.source },
+      { headers }
+    )
   } catch (err) {
     const message =
       err instanceof Error

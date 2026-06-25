@@ -25,7 +25,7 @@ import {
 import { extractEntities } from '../extract-entities/route'
 import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
 import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
-import { fetchYoutubeTranscript, isYoutubeTranscriptError } from '@/lib/skulmate/youtube-transcript'
+import { fetchYoutubeTranscript, isYoutubeTranscriptError, fetchYoutubeTranscriptWithMeta } from '@/lib/skulmate/youtube-transcript'
 import {
   assessExtractionQuality,
   buildExtractionQualityPromptSection,
@@ -36,6 +36,10 @@ import {
   assertShippedGameTypeRequest,
   coerceToShippedGameType,
 } from '@/lib/skulmate/released-game-types'
+import {
+  assertImageBundleWithinLimit,
+  resolveImageBundleLimit,
+} from '@/lib/skulmate/image-bundle-limits'
 import { understandImageBundle, isLowConfidenceUnderstand } from '@/lib/skulmate/understand'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
@@ -278,6 +282,7 @@ type SkulmatePricingConfig = {
   creditsPerImageGameBase: number
   freeDocTextGamesPerDay: number
   freeImageGamesPerDay: number
+  maxImagesPerPromptFree: number
   maxImagesPerPromptPaid: number
 }
 
@@ -295,6 +300,7 @@ async function getSkulmatePricingConfig(admin: any): Promise<SkulmatePricingConf
     creditsPerImageGameBase: 10,
     freeDocTextGamesPerDay: 2,
     freeImageGamesPerDay: 4,
+    maxImagesPerPromptFree: 3,
     maxImagesPerPromptPaid: 5,
   }
 
@@ -308,6 +314,7 @@ async function getSkulmatePricingConfig(admin: any): Promise<SkulmatePricingConf
           'credits_per_image_game_base',
           'free_doc_text_games_per_day',
           'free_image_games_per_day',
+          'max_images_per_prompt_free',
           'max_images_per_prompt_paid',
         ].join(',')
       )
@@ -322,7 +329,12 @@ async function getSkulmatePricingConfig(admin: any): Promise<SkulmatePricingConf
       creditsPerImageGameBase: Number(data.credits_per_image_game_base ?? defaults.creditsPerImageGameBase),
       freeDocTextGamesPerDay: Number(data.free_doc_text_games_per_day ?? defaults.freeDocTextGamesPerDay),
       freeImageGamesPerDay: Number(data.free_image_games_per_day ?? defaults.freeImageGamesPerDay),
-      maxImagesPerPromptPaid: Number(data.max_images_per_prompt_paid ?? defaults.maxImagesPerPromptPaid),
+      maxImagesPerPromptFree: Number(
+        data.max_images_per_prompt_free ?? defaults.maxImagesPerPromptFree
+      ),
+      maxImagesPerPromptPaid: Number(
+        data.max_images_per_prompt_paid ?? defaults.maxImagesPerPromptPaid
+      ),
     }
   } catch {
     return defaults
@@ -956,11 +968,11 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Include dropZones array with zone names and positions\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
   } else if (gameTypeStr === 'puzzle_pieces') {
-    userPrompt += '- Break down the content into ' + (numQuestions || '6-12') + ' puzzle pieces\n';
+    userPrompt += '- Break the lesson into ' + (numQuestions || '4-8') + ' ordered steps or concept tiles\n';
     if (topic) userPrompt += '- Topic Focus: All pieces MUST relate to ' + topic + '\n';
-    userPrompt += '- Each piece should represent a key concept, step, or element from the content\n';
-    userPrompt += '- Create puzzlePieces array with piece data and correct positions\n';
-    userPrompt += '- Pieces should form a complete picture/concept when assembled\n';
+    userPrompt += '- Each piece is one step in a process, timeline, or explanation (sequence puzzle)\n';
+    userPrompt += '- Create puzzlePieces array with id, text, and order (0-based correct sequence index)\n';
+    userPrompt += '- Pieces must form a logical sequence when ordered — not random spatial positions\n';
     userPrompt += '- DO NOT create generic pieces - use actual concepts from the content\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '- Generate a decision-based simulation game based ONLY on the content provided\n';
@@ -1034,7 +1046,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '    {"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}\n';
   } else if (gameTypeStr === 'puzzle_pieces') {
-    userPrompt += '    {"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctPosition": {"x": 0.25, "y": 0.5}, "imageUrl": "url if available"}, ...]}\n';
+    userPrompt += '    {"puzzlePieces": [{"id": "step1", "text": "First step from content", "order": 0}, {"id": "step2", "text": "Next step", "order": 1}, ...], "imageUrl": "optional diagram url"}\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '    {"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}\n';
   } else if (gameTypeStr === 'mystery') {
@@ -1490,10 +1502,14 @@ export async function POST(request: NextRequest) {
     if (youtubeUrl && !trimmedText) {
       console.log('[skulMate] Step 0: Fetching YouTube transcript...')
       try {
-        extractedText = await fetchYoutubeTranscript(youtubeUrl)
-        extractionMethod = 'youtube-transcript'
-        extractionMeta = { youtubeUrl }
-        console.log(`[skulMate] YouTube transcript length: ${extractedText.length}`)
+        const yt = await fetchYoutubeTranscriptWithMeta(youtubeUrl)
+        extractedText = yt.text
+        extractionMethod =
+          yt.source === 'metadata' ? 'youtube-metadata' : 'youtube-transcript'
+        extractionMeta = { youtubeUrl, transcriptSource: yt.source }
+        console.log(
+          `[skulMate] YouTube source=${yt.source} length: ${extractedText.length}`
+        )
       } catch (error: unknown) {
         const message =
           error instanceof Error
@@ -1531,6 +1547,41 @@ export async function POST(request: NextRequest) {
     const uniqueFileUrls = [...new Set(normalizedFileUrls)]
     const candidateFileUrls = uniqueFileUrls.length > 0 ? uniqueFileUrls : []
     if (candidateFileUrls.length > 0) {
+      const looksLikeImages =
+        requestedSourceType === 'image' ||
+        candidateFileUrls.every(
+          (url) => detectRequestedSourceType(undefined, [url], '') === 'image'
+        )
+      if (looksLikeImages) {
+        const admin = getServiceSupabaseAdmin()
+        if (admin) {
+          const pricing = await getSkulmatePricingConfig(admin)
+          let hasPaidCredits = false
+          if (finalUserId) {
+            await ensureUserCreditsRow(admin, finalUserId)
+            userCreditsBalance = await getUserCreditsBalance(admin, finalUserId)
+            hasPaidCredits = userCreditsBalance >= 2
+          }
+          const limit = resolveImageBundleLimit(
+            {
+              maxImagesPerPromptFree: pricing.maxImagesPerPromptFree,
+              maxImagesPerPromptPaid: pricing.maxImagesPerPromptPaid,
+            },
+            hasPaidCredits
+          )
+          const bundleCheck = assertImageBundleWithinLimit(
+            candidateFileUrls.length,
+            limit
+          )
+          if (!bundleCheck.ok) {
+            return NextResponse.json(
+              { error: bundleCheck.error, errorCode: bundleCheck.errorCode },
+              { status: 400, headers: corsHeaders }
+            )
+          }
+        }
+      }
+
       console.log('[skulMate] Step 1: Downloading file(s)...', {
         total: candidateFileUrls.length,
       })

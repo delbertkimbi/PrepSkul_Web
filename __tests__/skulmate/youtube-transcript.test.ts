@@ -1,6 +1,8 @@
 import {
   parseYoutubeVideoId,
   YoutubeTranscriptError,
+  extractYoutubeMetadataFromHtml,
+  buildYoutubeMetadataStudyText,
 } from '@/lib/skulmate/youtube-transcript'
 
 describe('youtube-transcript', () => {
@@ -34,6 +36,19 @@ describe('youtube-transcript', () => {
       const err = new YoutubeTranscriptError('no captions', 'YOUTUBE_NO_CAPTIONS')
       expect(err.errorCode).toBe('YOUTUBE_NO_CAPTIONS')
       expect(err.message).toContain('no captions')
+    })
+  })
+
+  describe('extractYoutubeMetadataFromHtml', () => {
+    it('parses title and description from watch page HTML', () => {
+      const html = `
+        "title":"Photosynthesis Explained - YouTube",
+        "shortDescription":"Plants convert sunlight into energy through photosynthesis. Chlorophyll absorbs light and powers glucose production in leaves."
+      `
+      const meta = extractYoutubeMetadataFromHtml(html)
+      expect(meta.title).toContain('Photosynthesis')
+      expect(meta.description.length).toBeGreaterThan(40)
+      expect(buildYoutubeMetadataStudyText(meta).length).toBeGreaterThan(50)
     })
   })
 })
