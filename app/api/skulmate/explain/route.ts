@@ -4,7 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
+import {
+  buildExplainApiStyleInstruction,
+  resolveExplanationStyle,
+  type ExplanationStyle,
+} from '@/lib/skulmate/explanation-style'
+import type { LearnerContextInput } from '@/lib/skulmate/learner-context'
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -15,6 +22,10 @@ const corsHeaders: Record<string, string> = {
 interface ExplainRequest {
   term: string
   definition: string
+  language?: string
+  learnerContext?: LearnerContextInput | null
+  weakTopicReroute?: boolean
+  gameId?: string
 }
 
 interface ExplainAIResponse {
@@ -43,6 +54,30 @@ function getSkulMateApiKey(): string {
     )
   }
   return key
+}
+
+function getServiceSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!url || !key) return null
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+async function loadLastExplanationStyle(
+  gameId?: string
+): Promise<ExplanationStyle | null> {
+  if (!gameId) return null
+  const admin = getServiceSupabaseAdmin()
+  if (!admin) return null
+  const { data } = await admin
+    .from('skulmate_games')
+    .select('generation_context')
+    .eq('id', gameId)
+    .maybeSingle()
+  const ctx = data?.generation_context as { explanationStyle?: ExplanationStyle } | null
+  return ctx?.explanationStyle ?? null
 }
 
 async function searchYouTube(query: string): Promise<
@@ -103,7 +138,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: ExplainRequest = await request.json()
-    const { term, definition } = body
+    const { term, definition, learnerContext, weakTopicReroute, gameId } = body
 
     if (!term || typeof term !== 'string') {
       return NextResponse.json(
@@ -112,10 +147,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let userId: string | null = null
+    const authHeader = request.headers.get('authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const admin = getServiceSupabaseAdmin()
+      if (admin) {
+        const token = authHeader.slice(7)
+        const { data } = await admin.auth.getUser(token)
+        userId = data.user?.id ?? null
+      }
+    }
+
+    const lastStyle = await loadLastExplanationStyle(gameId)
+    const explanationStyle = resolveExplanationStyle({
+      learnerContext: learnerContext ?? null,
+      userId,
+      weakTopicReroute: Boolean(weakTopicReroute),
+      lastStyle,
+    })
+    const styleInstruction = buildExplainApiStyleInstruction(explanationStyle)
+
     const systemPrompt = `You are an educational assistant helping students learn flashcard terms.
 Given a term and its definition, you will:
-1. Generate a clear 2–3 paragraph explanation that deepens understanding.
+1. Generate a clear explanation that deepens understanding (2–3 short paragraphs).
 2. Decide whether a short YouTube video would meaningfully help.
+
+EXPLANATION DELIVERY (silent — never name the style to the student):
+${styleInstruction}
 
 QUALITY RULES FOR youtubeQuery:
 - Return a short YouTube search query (3–8 words) ONLY when a brief educational video would genuinely help (e.g. concepts, processes, how things work).
@@ -124,14 +182,14 @@ QUALITY RULES FOR youtubeQuery:
 
 Respond with JSON only, no markdown:
 {
-  "explanation": "Your 2-3 paragraph explanation here...",
+  "explanation": "Your explanation here...",
   "youtubeQuery": "optional short search query" or null
 }`
 
     const userPrompt = `Term: ${term}
 Definition: ${definition}
 
-Return a JSON object with "explanation" (2–3 paragraphs) and "youtubeQuery" (short search string or null).`
+Return a JSON object with "explanation" and "youtubeQuery" (short search string or null).`
 
     const models = [
       'openai/gpt-4o-mini',
@@ -190,7 +248,11 @@ Return a JSON object with "explanation" (2–3 paragraphs) and "youtubeQuery" (s
     }
 
     return NextResponse.json(
-      { explanation, videos: videos.length > 0 ? videos : undefined },
+      {
+        explanation,
+        videos: videos.length > 0 ? videos : undefined,
+        explanationStyle,
+      },
       { headers }
     )
   } catch (err) {

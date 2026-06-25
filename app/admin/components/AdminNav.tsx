@@ -32,6 +32,7 @@ const operationsItems = [
   { name: 'Session Attendance', href: '/admin/session-attendance' },
   { name: 'Payout Queue', href: '/admin/payouts' },
   { name: 'Ops Events', href: '/admin/operations-events' },
+  { name: 'SkulMate Ops', href: '/admin/skulmate' },
   { name: 'Active Mobile Users', href: '/admin/users/active' },
 ];
 

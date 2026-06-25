@@ -8,14 +8,48 @@ import { extractFile } from '@/lib/skulmate/extract'
 import { callOpenRouterWithKey } from '@/lib/ticha/openrouter'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { createClient } from '@supabase/supabase-js'
+import {
+  buildBackgroundLearnerPromptSection,
+  type LearnerContextInput,
+} from '@/lib/skulmate/learner-context'
+import {
+  buildCurriculumBackgroundPromptSection,
+  matchCurriculumNodes,
+  resolveBackgroundCurriculumAlignment,
+} from '@/lib/skulmate/curriculum-matcher'
+import {
+  buildExplanationStylePromptSection,
+  resolveExplanationStyle,
+  type ExplanationStyle,
+} from '@/lib/skulmate/explanation-style'
 import { extractEntities } from '../extract-entities/route'
 import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
 import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
+import { fetchYoutubeTranscript, isYoutubeTranscriptError } from '@/lib/skulmate/youtube-transcript'
+import {
+  assessExtractionQuality,
+  buildExtractionQualityPromptSection,
+} from '@/lib/skulmate/extraction-quality'
+import { validateGenerateIntake } from '@/lib/skulmate/generate-intake-validation'
+import {
+  RELEASED_SHIPPED_GAME_TYPES,
+  assertShippedGameTypeRequest,
+  coerceToShippedGameType,
+} from '@/lib/skulmate/released-game-types'
+import { understandImageBundle, isLowConfidenceUnderstand } from '@/lib/skulmate/understand'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
 const DEBUG_INGEST_URL = process.env.SKULMATE_DEBUG_INGEST_URL
 const DEBUG_SESSION_ID = process.env.SKULMATE_DEBUG_SESSION_ID || 'skulmate-debug'
+
+function pickReleasedAutoGameType(options: string[]): string {
+  const released = options.filter((t) =>
+    (RELEASED_SHIPPED_GAME_TYPES as readonly string[]).includes(t)
+  )
+  const pool = released.length > 0 ? released : [...RELEASED_SHIPPED_GAME_TYPES]
+  return pool[Math.floor(Math.random() * pool.length)]
+}
 
 function emitAgentDebugLog(params: {
   runId: string
@@ -186,14 +220,18 @@ function getSkulMateApiKeys(): string[] {
 
 interface GenerateRequest {
   fileUrl?: string
+  fileUrls?: string[]
   text?: string
+  youtubeUrl?: string
   sourceFileName?: string
+  sourceFileNames?: string[]
   userId?: string
   childId?: string // For parents creating games for children
   gameType?: 'quiz' | 'flashcards' | 'matching' | 'fill_blank' | 'auto' | 'match3' | 'bubble_pop' | 'word_search' | 'crossword' | 'diagram_label' | 'drag_drop' | 'puzzle_pieces' | 'simulation' | 'mystery' | 'escape_room' // auto = AI decides
   difficulty?: 'easy' | 'medium' | 'hard'
   topic?: string
   numQuestions?: number
+  learnerContext?: LearnerContextInput
 }
 
 interface GameItem {
@@ -296,13 +334,24 @@ function getUtcDayStartIso(date: Date = new Date()): string {
   return d.toISOString()
 }
 
-function detectRequestedSourceType(fileUrl?: string, text?: string): 'text' | 'pdf' | 'docx' | 'image' {
+function detectRequestedSourceType(fileUrl?: string, fileUrls?: string[], text?: string): 'text' | 'pdf' | 'docx' | 'image' {
   if (text && text.trim().length > 0) return 'text'
-  const lower = (fileUrl || '').toLowerCase()
+  const candidate = fileUrl || (fileUrls && fileUrls.length > 0 ? fileUrls[0] : '') || ''
+  const lower = candidate.toLowerCase()
   if (lower.includes('.pdf')) return 'pdf'
   if (lower.includes('.docx')) return 'docx'
   if (lower.includes('.txt')) return 'text'
   return 'image'
+}
+
+function inferMimeTypeFromUrl(url: string): string {
+  const lower = url.toLowerCase()
+  if (lower.includes('.pdf')) return 'application/pdf'
+  if (lower.includes('.png')) return 'image/png'
+  if (lower.includes('.jpg') || lower.includes('.jpeg')) return 'image/jpeg'
+  if (lower.includes('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  if (lower.includes('.txt')) return 'text/plain'
+  return 'application/octet-stream'
 }
 
 function resolveActualSourceType(params: {
@@ -316,6 +365,7 @@ function resolveActualSourceType(params: {
   if (extractionMethod === 'mammoth') return 'docx'
   if (extractionMethod.startsWith('openrouter-')) return 'image'
   if (extractionMethod === 'plain-text') return 'text'
+  if (extractionMethod === 'topic-only') return 'text'
   return requestedSourceType
 }
 
@@ -465,7 +515,12 @@ async function generateGameContent(
   difficulty: 'easy' | 'medium' | 'hard' = 'medium',
   topic?: string,
   numQuestions?: number,
-  extractedEntities?: { entities: any[], relationships: any[], conflicts: any[], progression: any[] }
+  extractedEntities?: { entities: any[], relationships: any[], conflicts: any[], progression: any[] },
+  learnerContext?: LearnerContextInput | null,
+  curriculumPromptSection?: string,
+  extractionQualityPromptSection?: string,
+  explanationStylePromptSection?: string,
+  sourceMode: 'topic' | 'source' = 'source',
 ): Promise<{ gameData: GameData; usageSummary: GenerationUsageSummary }> {
   // Build world context from extracted entities
   let worldContext = ''
@@ -488,6 +543,21 @@ Use these entities, relationships, and conflicts to build an immersive game worl
 Wrong understanding should lead to consequences, not just "incorrect" feedback.`
   }
 
+  const sourceRules =
+    sourceMode === 'topic'
+      ? `CRITICAL RULES - TOPIC-ONLY MODE (no uploaded notes):
+1. The learner named a topic/subject to revise — build accurate, curriculum-appropriate revision content for that topic
+2. Use well-established facts and concepts for the topic; do NOT invent citations, quotes, or page references
+3. Keep difficulty appropriate for secondary school / early university revision
+4. All items must clearly relate to the stated topic`
+      : `CRITICAL RULES - READ CAREFULLY:
+1. You MUST use ONLY the content provided by the user - do NOT generate generic or made-up content
+2. All questions, terms, definitions, and answers MUST be based on the ACTUAL text provided
+3. If the content is about a specific topic, your game MUST reflect that exact topic
+4. Do NOT create generic questions like "What is X?" if X is not mentioned in the content
+5. Extract key concepts, facts, and information directly from the provided text
+6. If the content mentions specific examples, use those examples - do NOT make up new ones`
+
   const systemPrompt = `You are a creative educational game designer. Transform learning content into FUN, engaging, and interactive games that make learning addictive and enjoyable.
 
 MENTAL MODEL: Notes → World → Gameplay
@@ -496,13 +566,7 @@ MENTAL MODEL: Notes → World → Gameplay
 - Make decisions matter - wrong understanding leads to consequences, not just "wrong"
 - Create immersive experiences, not tests${worldContext}
 
-CRITICAL RULES - READ CAREFULLY:
-1. You MUST use ONLY the content provided by the user - do NOT generate generic or made-up content
-2. All questions, terms, definitions, and answers MUST be based on the ACTUAL text provided
-3. If the content is about a specific topic, your game MUST reflect that exact topic
-4. Do NOT create generic questions like "What is X?" if X is not mentioned in the content
-5. Extract key concepts, facts, and information directly from the provided text
-6. If the content mentions specific examples, use those examples - do NOT make up new ones
+${sourceRules}
 7. 🚨🚨🚨 CRITICAL: When the system recommends a game type, you MUST generate that exact type. DO NOT default to quiz. DO NOT generate quiz unless the recommended type is explicitly "quiz". If told to generate 'wordSearch', generate wordSearch with a word search grid. If told 'match3', generate match3 with a match-3 grid. If told 'bubblePop', generate bubble pop with bubbles. DO NOT ignore the recommendation and generate quiz questions instead.
 8. QUIZ IS THE LAST RESORT: Only generate quiz if the recommended game type is "quiz". For all other recommendations (wordSearch, match3, bubblePop, crossword, etc.), generate that specific interactive game type.
 9. INTERACTIVE GAMES ARE THE GOAL: Students want FUN, engaging games like Candy Crush, not boring quizzes. Make learning addictive and entertaining!
@@ -569,43 +633,65 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   // Determine recommended game type for auto mode - prioritize interactive game types
   let recommendedGameType: string = 'quiz'; // Default fallback
   if (gameType === 'auto') {
-    // Smart game type selection based on content - only pick currently playable types.
-    if (contentType === 'diagram') {
-      // Diagram-heavy inputs still work well with matching/fill-blank in current app.
-      const diagramOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'quiz'];
-      recommendedGameType = diagramOptions[Math.floor(Math.random() * diagramOptions.length)];
+    if (sourceMode === 'topic') {
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'quiz',
+      ])
+    } else if (contentType === 'diagram') {
+      recommendedGameType = pickReleasedAutoGameType([
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'quiz',
+        'puzzle_pieces',
+      ])
     } else if (contentType === 'formula') {
-      recommendedGameType = 'fill_blank'; // Best for formulas
+      recommendedGameType = 'fill_blank'
     } else if (contentType === 'table') {
-      recommendedGameType = Math.random() > 0.5 ? 'matching' : 'drag_drop';
+      recommendedGameType = pickReleasedAutoGameType(['matching', 'drag_drop'])
     } else if (contentType === 'graph') {
-      recommendedGameType = 'quiz'; // Best for interpretation
+      recommendedGameType = 'quiz'
     } else if (text.length < 500) {
-      // Short content - fast, currently stable modes.
-      const shortOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'bubble_pop', 'match3'];
-      recommendedGameType = shortOptions[Math.floor(Math.random() * shortOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'quiz',
+      ])
     } else if (text.split('\n').length > 20) {
-      // Structured content - keep to stable playable modes.
-      recommendedGameType = Math.random() > 0.5 ? 'matching' : 'drag_drop';
+      recommendedGameType = pickReleasedAutoGameType(['matching', 'drag_drop'])
     } else {
-      // For regular text, prioritize currently playable interactive modes.
-      const textOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'match3', 'bubble_pop', 'quiz', 'simulation', 'mystery', 'escape_room'];
-      recommendedGameType = textOptions[Math.floor(Math.random() * textOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'quiz',
+        'puzzle_pieces',
+      ])
     }
-    
-    // Check if content has many distinct terms/concepts (good for word search or crossword)
-    const wordCount = text.split(/\s+/).length;
-    const uniqueWords = new Set(text.toLowerCase().match(/\b[a-z]{4,}\b/gi) || []).size;
+
+    const uniqueWords = new Set(text.toLowerCase().match(/\b[a-z]{4,}\b/gi) || []).size
     if (uniqueWords > 15 && (recommendedGameType === 'quiz' || recommendedGameType === 'flashcards')) {
-      // High-vocabulary content - bias towards matching/fill-blank for now.
-      const wordGameOptions = ['matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'flashcards'];
-      recommendedGameType = wordGameOptions[Math.floor(Math.random() * wordGameOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'flashcards',
+      ])
     }
-    
-    // Final check: If somehow quiz was selected for auto mode, replace with interactive alternative
+
     if (gameType === 'auto' && recommendedGameType === 'quiz') {
-      const interactiveOptions = ['flashcards', 'matching', 'fill_blank', 'drag_drop', 'word_search', 'crossword', 'match3', 'bubble_pop', 'simulation'];
-      recommendedGameType = interactiveOptions[Math.floor(Math.random() * interactiveOptions.length)];
+      recommendedGameType = pickReleasedAutoGameType([
+        'flashcards',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+      ])
     }
   } else {
     recommendedGameType = gameType;
@@ -643,9 +729,15 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   }
   
   userPrompt += 'Convert the following ' + contentType + ' content into a ' + gameTypeName + ' game.\n\n';
+  if (sourceMode === 'topic' && topic) {
+    userPrompt += 'TOPIC-ONLY REQUEST:\n';
+    userPrompt += 'The learner wants to revise: ' + topic + '\n';
+    userPrompt += 'Create accurate revision items covering core concepts for this topic.\n\n';
+  } else {
   userPrompt += 'CRITICAL RULES - MUST FOLLOW:\n';
   userPrompt += '1. You MUST use ONLY the content below. Do NOT generate generic questions or content that is not in the provided text.\n';
   userPrompt += '2. All questions, answers, and terms must be based on what the user actually provided.\n';
+  }
   
   if (gameType === 'auto') {
     userPrompt += '3. 🚨🚨🚨 ABSOLUTE REQUIREMENT: The gameType in your JSON response MUST be "' + recommendedGameType + '".\n';
@@ -664,7 +756,11 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   userPrompt += '7. The correct answer must be clearly identifiable from the content provided.\n';
   userPrompt += '8. All options should be plausible but only one should be correct based on the content.\n\n';
   
+  if (sourceMode === 'topic' && topic) {
+    userPrompt += 'Revision topic: ' + topic + '\n\n';
+  } else {
   userPrompt += 'User\'s Actual Content:\n' + text + '\n\n';
+  }
   userPrompt += 'CONTENT TYPE DETECTED: ' + contentType.toUpperCase() + '\n';
   
   if (gameType === 'auto') {
@@ -693,6 +789,17 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '\nNUMBER OF ITEMS REQUIRED: ' + numQuestions + '\n';
     userPrompt += '- Generate exactly ' + numQuestions + ' questions/items (or as close as possible given the content)\n';
     userPrompt += '- Do not generate fewer than ' + Math.max(5, numQuestions - 2) + ' or more than ' + (numQuestions + 2) + ' items\n';
+  }
+
+  userPrompt += buildBackgroundLearnerPromptSection(learnerContext);
+  if (curriculumPromptSection) {
+    userPrompt += curriculumPromptSection;
+  }
+  if (extractionQualityPromptSection) {
+    userPrompt += extractionQualityPromptSection;
+  }
+  if (explanationStylePromptSection) {
+    userPrompt += explanationStylePromptSection;
   }
   
   userPrompt += '\n';
@@ -804,14 +911,14 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Items should be key terms, concepts, or visual elements from the content\n';
     userPrompt += '- Include gridData as a 2D array (8x8 or 10x10) with item identifiers\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
-  } else if (gameTypeStr === 'bubblePop') {
+  } else if (gameTypeStr === 'bubble_pop') {
     userPrompt += '- Generate ' + (numQuestions || '15-25') + ' bubbles with terms/concepts from the actual content\n';
     if (topic) userPrompt += '- Topic Focus: All bubbles MUST relate to ' + topic + '\n';
     userPrompt += '- Each bubble should contain a key term or concept from the content\n';
     userPrompt += '- Include target words that players need to pop\n';
     userPrompt += '- Create bubbles array with text, position, and target information\n';
     userPrompt += '- DO NOT create generic terms - use actual vocabulary from the content\n';
-  } else if (gameTypeStr === 'wordSearch') {
+  } else if (gameTypeStr === 'word_search') {
     userPrompt += '- Extract ' + (numQuestions || '10-15') + ' key words/terms from the actual content\n';
     if (topic) userPrompt += '- Topic Focus: All words MUST relate to ' + topic + '\n';
     userPrompt += '- Create a word search grid (12x12 or 15x15) with words hidden\n';
@@ -833,14 +940,14 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Create clues array with clue text and answer\n';
     userPrompt += '- Include gridData as a 2D array showing the crossword grid layout\n';
     userPrompt += '- DO NOT create generic clues - use actual concepts from the content\n';
-  } else if (gameTypeStr === 'diagramLabel') {
+  } else if (gameTypeStr === 'diagram_label') {
     userPrompt += '- Identify ' + (numQuestions || '8-12') + ' key parts/components from the diagram in the content\n';
     if (topic) userPrompt += '- Topic Focus: All labels MUST relate to ' + topic + '\n';
     userPrompt += '- Create labels for each part based on the actual diagram\n';
     userPrompt += '- Include diagramLabels array with label text and position coordinates\n';
     userPrompt += '- If imageUrl is available, use it for the diagram\n';
     userPrompt += '- DO NOT create generic labels - use actual parts from the diagram\n';
-  } else if (gameTypeStr === 'dragDrop') {
+  } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '- Generate ' + (numQuestions || '8-12') + ' items to drag and 3-5 drop zones based on the content\n';
     if (topic) userPrompt += '- Topic Focus: All items MUST relate to ' + topic + '\n';
     userPrompt += '- Items should be key concepts, terms, or elements from the content\n';
@@ -848,7 +955,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Include dragItems array with item text and correct drop zone\n';
     userPrompt += '- Include dropZones array with zone names and positions\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
-  } else if (gameTypeStr === 'puzzlePieces') {
+  } else if (gameTypeStr === 'puzzle_pieces') {
     userPrompt += '- Break down the content into ' + (numQuestions || '6-12') + ' puzzle pieces\n';
     if (topic) userPrompt += '- Topic Focus: All pieces MUST relate to ' + topic + '\n';
     userPrompt += '- Each piece should represent a key concept, step, or element from the content\n';
@@ -916,18 +1023,18 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '    {"blankText": "Sentence with blank from actual content", "correctAnswer": "Answer from actual content"}\n';
   } else if (gameTypeStr === 'match3') {
     userPrompt += '    {"gridData": [["item1", "item2", ...], ...], "items": ["item1", "item2", ...]}\n';
-  } else if (gameTypeStr === 'bubblePop') {
+  } else if (gameTypeStr === 'bubble_pop') {
     userPrompt += '    {"bubbles": [{"text": "Term from content", "x": 100, "y": 200, "isTarget": true}, ...], "words": ["Term1", "Term2", ...]}\n';
-  } else if (gameTypeStr === 'wordSearch') {
+  } else if (gameTypeStr === 'word_search') {
     userPrompt += '    {"gridData": [["A", "B", ...], ...], "words": ["Term1", "Term2", ...]}\n';
   } else if (gameTypeStr === 'crossword') {
     userPrompt += '    {"gridData": [["A", "B", ...], ...], "clues": [{"clue": "Clue from content", "answer": "Answer from content", "x": 0, "y": 0}, ...]}\n';
-  } else if (gameTypeStr === 'diagramLabel') {
+  } else if (gameTypeStr === 'diagram_label') {
     userPrompt += '    {"imageUrl": "url if available", "diagramLabels": [{"label": "Part name from content", "x": 100, "y": 200}, ...]}\n';
-  } else if (gameTypeStr === 'dragDrop') {
+  } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '    {"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}\n';
-  } else if (gameTypeStr === 'puzzlePieces') {
-    userPrompt += '    {"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctX": 100, "correctY": 200, "imageUrl": "url if available"}, ...]}\n';
+  } else if (gameTypeStr === 'puzzle_pieces') {
+    userPrompt += '    {"puzzlePieces": [{"id": "piece1", "text": "Concept from content", "correctPosition": {"x": 0.25, "y": 0.5}, "imageUrl": "url if available"}, ...]}\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '    {"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}\n';
   } else if (gameTypeStr === 'mystery') {
@@ -1169,11 +1276,13 @@ If you generate quiz again, your response will be rejected.`
     gameData.gameType = recommendedGameType
   }
   
-  // Ensure game type is valid
-  const validGameTypes = ['quiz', 'flashcards', 'matching', 'fill_blank', 'match3', 'bubble_pop', 'word_search', 'crossword', 'diagram_label', 'drag_drop', 'puzzle_pieces', 'simulation', 'mystery', 'escape_room']
-  if (!validGameTypes.includes(gameData.gameType)) {
-    console.warn(`[skulMate] Invalid game type "${gameData.gameType}", defaulting to ${recommendedGameType}`)
-    gameData.gameType = recommendedGameType
+  // Never persist unreleased game types — coerce AI output to shipped set only
+  const coercedType = coerceToShippedGameType(gameData.gameType, recommendedGameType)
+  if (coercedType !== gameData.gameType) {
+    console.warn(
+      `[skulMate] Coerced unreleased game type "${gameData.gameType}" → "${coercedType}"`
+    )
+    gameData.gameType = coercedType
   }
 
           // Validate quiz options are not placeholders
@@ -1311,29 +1420,43 @@ export async function POST(request: NextRequest) {
     const body: GenerateRequest = await request.json()
     const { 
       fileUrl, 
+      fileUrls,
       text, 
+      youtubeUrl,
       sourceFileName,
+      sourceFileNames,
       userId, 
       childId, 
       gameType = 'auto',
       difficulty = 'medium',
       topic,
-      numQuestions
+      numQuestions,
+      learnerContext,
     } = body
 
-    if (!fileUrl && !text) {
+    const intakeValidation = validateGenerateIntake({
+      fileUrl,
+      fileUrls,
+      text,
+      youtubeUrl,
+      topic,
+    })
+    if (!intakeValidation.ok) {
       return NextResponse.json(
-        { error: 'Either fileUrl or text is required' },
+        { error: intakeValidation.error },
+        { status: intakeValidation.status, headers: corsHeaders }
+      )
+    }
+
+    const gameTypeCheck = assertShippedGameTypeRequest(gameType)
+    if (!gameTypeCheck.ok) {
+      return NextResponse.json(
+        { error: gameTypeCheck.error, errorCode: gameTypeCheck.errorCode },
         { status: 400, headers: corsHeaders }
       )
     }
 
-    if (text && text.trim().length < 50) {
-      return NextResponse.json(
-        { error: 'Text must be at least 50 characters long' },
-        { status: 400, headers: corsHeaders }
-      )
-    }
+    const { isTopicOnlyMode, trimmedTopic, trimmedText } = intakeValidation
 
     // Get user session from main Supabase (not Ticha)
     let sessionUserId: string | undefined
@@ -1346,10 +1469,10 @@ export async function POST(request: NextRequest) {
     }
 
     const finalUserId = userId || sessionUserId
-    const requestedSourceType = detectRequestedSourceType(fileUrl, text)
+    const requestedSourceType = detectRequestedSourceType(fileUrl, fileUrls, trimmedText || text)
 
-    let extractedText = text || ''
-    let extractionMethod = text ? 'manual-text' : 'unknown'
+    let extractedText = trimmedText || text || ''
+    let extractionMethod = trimmedText ? 'manual-text' : isTopicOnlyMode ? 'topic-only' : 'unknown'
     let extractionMeta: Record<string, any> = {}
     let billingMode: BillingMode = 'free'
     let billedCredits = 0
@@ -1357,80 +1480,81 @@ export async function POST(request: NextRequest) {
     let userCreditsBalance = 0
     let freeLimitForSource = 0
 
-    // If fileUrl provided, download and extract text
-    if (fileUrl) {
-      console.log('[skulMate] Step 1: Downloading file...')
-      
-      // Extract bucket and file path from Supabase Storage URL
-      // Supports both signed URLs: /storage/v1/object/sign/{bucket}/{path}?token=...
-      // and public URLs: /storage/v1/object/public/{bucket}/{path}
-      let bucket: string
-      let filePath: string
+    if (isTopicOnlyMode) {
+      extractedText = ''
+      extractionMethod = 'topic-only'
+      extractionMeta = { topic: trimmedTopic }
+      console.log(`[skulMate] Topic-only mode: ${trimmedTopic}`)
+    }
 
-      // Try to match signed URL format
-      const signedUrlMatch = fileUrl.match(/\/storage\/v1\/object\/sign\/([^\/]+)\/(.+?)(?:\?|$)/)
-      if (signedUrlMatch) {
-        bucket = signedUrlMatch[1]
-        filePath = signedUrlMatch[2]
-      } else {
-        // Try to match public URL format
-        const publicUrlMatch = fileUrl.match(/\/storage\/v1\/object\/public\/([^\/]+)\/(.+?)(?:\?|$)/)
-        if (publicUrlMatch) {
-          bucket = publicUrlMatch[1]
-          filePath = publicUrlMatch[2]
-        } else {
-          // Fallback: try old format /uploads/...
-          const legacyMatch = fileUrl.match(/\/uploads\/(.+)$/)
-          if (legacyMatch) {
-            bucket = 'uploads'
-            filePath = legacyMatch[1]
-          } else {
-            return NextResponse.json(
-              { error: 'Invalid fileUrl format. Expected Supabase Storage URL.' },
-              { status: 400, headers: corsHeaders }
-            )
-          }
-        }
+    if (youtubeUrl && !trimmedText) {
+      console.log('[skulMate] Step 0: Fetching YouTube transcript...')
+      try {
+        extractedText = await fetchYoutubeTranscript(youtubeUrl)
+        extractionMethod = 'youtube-transcript'
+        extractionMeta = { youtubeUrl }
+        console.log(`[skulMate] YouTube transcript length: ${extractedText.length}`)
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : 'No transcript available for this video. Try Paste or Upload instead.'
+        const errorCode = isYoutubeTranscriptError(error)
+          ? error.errorCode
+          : 'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
+        return NextResponse.json(
+          {
+            error: message,
+            errorCode,
+          },
+          { status: 422, headers: corsHeaders }
+        )
       }
 
-      console.log(`[skulMate] Extracted bucket: ${bucket}, path: ${filePath}`)
+      if (extractedText.trim().length < 50) {
+        return NextResponse.json(
+          {
+            error:
+              'Transcript was too short to generate a game. Try Paste or Upload instead.',
+            errorCode: 'YOUTUBE_TRANSCRIPT_TOO_SHORT',
+          },
+          { status: 422, headers: corsHeaders }
+        )
+      }
+    }
 
-      // Download file from Storage using the URL directly (no service role key needed)
+    // If fileUrl(s) provided, download and extract text.
+    const normalizedFileUrls = [
+      ...(fileUrl ? [fileUrl] : []),
+      ...((fileUrls || []).filter((u) => Boolean(u && u.trim())) as string[]),
+    ]
+    const uniqueFileUrls = [...new Set(normalizedFileUrls)]
+    const candidateFileUrls = uniqueFileUrls.length > 0 ? uniqueFileUrls : []
+    if (candidateFileUrls.length > 0) {
+      console.log('[skulMate] Step 1: Downloading file(s)...', {
+        total: candidateFileUrls.length,
+      })
+      const extractedSegments: string[] = []
+      const extractionRows: Array<Record<string, unknown>> = []
+
+      for (let fileIndex = 0; fileIndex < candidateFileUrls.length; fileIndex += 1) {
+        const currentFileUrl = candidateFileUrls[fileIndex]
+        const currentSourceFileName = sourceFileNames?.[fileIndex] || sourceFileName
       let fileBuffer: Buffer
       let mimeType: string
 
       try {
-        // #region agent log
         logDebug('skulmate/generate/route.ts:download', 'Before downloadFileFromUrl', {
-          fileUrl: fileUrl.substring(0, 100),
-          bucket,
-          filePath,
-        });
-        // #endregion
-        
-        // Download file directly from the signed/public URL (uses main Supabase, not Ticha)
-        // This avoids needing service role key - the URL already has access token
-        fileBuffer = await downloadFileFromUrl(fileUrl)
-        
-        // #region agent log
+            fileUrl: currentFileUrl.substring(0, 100),
+            fileIndex,
+            totalFiles: candidateFileUrls.length,
+          })
+          fileBuffer = await downloadFileFromUrl(currentFileUrl)
         logDebug('skulmate/generate/route.ts:download', 'downloadFileFromUrl succeeded', {
+            fileIndex,
           bufferSize: fileBuffer.length,
-        });
-        // #endregion
-
-        // Determine MIME type from file extension or URL
-        const urlLower = fileUrl.toLowerCase()
-        if (urlLower.includes('.pdf')) {
-          mimeType = 'application/pdf'
-        } else if (urlLower.includes('.png')) {
-          mimeType = 'image/png'
-        } else if (urlLower.includes('.jpg') || urlLower.includes('.jpeg')) {
-          mimeType = 'image/jpeg'
-        } else if (urlLower.includes('.docx')) {
-          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        } else {
-          mimeType = 'application/octet-stream'
-        }
+          })
+          mimeType = inferMimeTypeFromUrl(currentFileUrl)
 
         if (fileBuffer.length > MAX_FILE_SIZE) {
           return NextResponse.json(
@@ -1441,42 +1565,38 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error('[skulMate] Failed to download file:', error)
         return NextResponse.json(
-          { error: `Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}` },
+          {
+            error: `Failed to download file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            errorCode: 'FILE_DOWNLOAD_FAILED',
+          },
           { status: 500, headers: corsHeaders }
         )
       }
 
-      // Extract text from file
       console.log('[skulMate] Step 2: Extracting text...')
       try {
-        // Extract using skulMate-specific extraction (uses ONLY main Supabase, not Ticha)
-        const extractedContent = await extractFile(fileBuffer, mimeType)
-        extractedText = extractedContent.text
-        extractionMethod = extractedContent.method
-        extractionMeta = (extractedContent.metadata || {}) as Record<string, any>
-        console.log(`[skulMate] Extracted ${extractedText.length} characters using ${extractedContent.method}`)
-        
-        // Validate extracted content is meaningful.
-        // Images can now use visual-understanding fallback, so allow shorter text.
-        const minimumExtractedLength = 20
-        if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
-          console.error('[skulMate] Extracted text is too short or empty')
-          return NextResponse.json(
-            {
-              error:
-                requestedSourceType === 'image'
-                  ? 'We could not understand enough from this image yet. Please try a clearer image, a different angle, or upload text manually.'
-                  : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
-            },
-            { status: 400, headers: corsHeaders }
-          )
-        }
-        
-        // Log first 200 chars for debugging (to verify it's actual content, not generic)
-        console.log(`[skulMate] Extracted text preview: ${extractedText.substring(0, 200)}...`)
+          const extractedContent = await extractFile(fileBuffer, mimeType, currentSourceFileName, {
+            imageSourceUrl: requestedSourceType === 'image' ? currentFileUrl : undefined,
+          })
+          const segmentText = extractedContent.text?.trim() || ''
+          if (segmentText.length > 0) {
+            const prefix =
+              candidateFileUrls.length > 1
+                ? `\n\n[Image ${fileIndex + 1} Context]\n`
+                : ''
+            extractedSegments.push(`${prefix}${segmentText}`)
+          }
+          extractionRows.push({
+            index: fileIndex + 1,
+            sourceFileName: currentSourceFileName || null,
+            method: extractedContent.method,
+            metadata: extractedContent.metadata || {},
+            sourceUrl: currentFileUrl,
+          })
       } catch (error) {
         console.error('[skulMate] Failed to extract text:', error)
         const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        console.error('[skulMate] Extraction error detail (for ops):', errorMessage)
         emitAgentDebugLog({
           runId: debugRunId,
           hypothesisId: 'H1',
@@ -1494,11 +1614,14 @@ export async function POST(request: NextRequest) {
             runId: debugRunId,
             hypothesisId: 'H1',
             location: 'app/api/skulmate/generate/route.ts:extract-catch',
-            message: 'Returning 503 api-key branch',
+            message: 'Returning 502 api-key branch',
           })
           return NextResponse.json(
-            { error: 'Image processing is currently unavailable due to API configuration. Please try uploading a PDF or text file instead, or contact support.' },
-            { status: 503, headers: corsHeaders }
+            {
+              errorCode: 'IMAGE_PROVIDER_AUTH',
+              error: 'Image processing is currently unavailable due to API configuration. Please try uploading a PDF or text file instead, or contact support.',
+            },
+            { status: 502, headers: corsHeaders }
           )
         }
         
@@ -1519,8 +1642,24 @@ export async function POST(request: NextRequest) {
             },
           })
           return NextResponse.json(
-            { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.' },
+            {
+              errorCode: 'IMAGE_PROVIDER_UNAVAILABLE',
+              error: 'Image processing provider is temporarily unavailable right now. Please try again shortly, or use Enter text manually.',
+            },
             { status: 503, headers: corsHeaders }
+          )
+        }
+
+        if (
+          errorMessage.includes('Vision call budget exceeded') ||
+          errorMessage.includes('All image extraction strategies failed')
+        ) {
+          return NextResponse.json(
+            {
+              errorCode: 'OCR_TEXT_EXTRACTION_FAILED',
+              error: 'We could not read text from this image. Try a clearer photo, enter text manually, or upload a PDF/DOCX/TXT file.',
+            },
+            { status: 400, headers: corsHeaders }
           )
         }
         
@@ -1531,16 +1670,79 @@ export async function POST(request: NextRequest) {
           message: 'Returning generic 400 extraction branch',
         })
         return NextResponse.json(
-          { error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, DOCX, image, or text file with readable content.` },
+          {
+            errorCode: 'OCR_TEXT_EXTRACTION_FAILED',
+            error: `Failed to extract text from your file: ${errorMessage}. Please ensure the file is a valid PDF, DOCX, image, or text file with readable content.`,
+          },
           { status: 400, headers: corsHeaders }
         )
       }
+      }
+
+      extractedText = extractedSegments.join('\n\n')
+      extractionMethod =
+        extractionRows.length > 1
+          ? `multi-source:${requestedSourceType}`
+          : String(extractionRows[0]?.method || extractionMethod)
+      extractionMeta = {
+        ...(extractionRows[0]?.metadata || {}),
+        filesCount: extractionRows.length,
+        extractionRows,
+      } as Record<string, any>
+      const minimumExtractedLength = 20
+      if (
+        (!extractedText || extractedText.trim().length < minimumExtractedLength) &&
+        requestedSourceType === 'image' &&
+        candidateFileUrls.length > 0
+      ) {
+        try {
+          console.log('[skulMate] Trying multimodal understand bundle for image set...')
+          const understood = await understandImageBundle(candidateFileUrls)
+          const ocrPrefix =
+            extractedSegments.length > 0
+              ? `${extractedSegments.join('\n\n')}\n\n[Multimodal synthesis]\n`
+              : ''
+          extractedText = `${ocrPrefix}${understood.studyText}`.trim()
+          extractionMethod =
+            candidateFileUrls.length > 1
+              ? 'multi-understand:image'
+              : 'openrouter-understand:bundle'
+          extractionMeta = {
+            ...(extractionMeta || {}),
+            understandBundle: true,
+            confidence: understood.confidence,
+            topicLabel: understood.topicLabel,
+            concepts: understood.concepts,
+            perImageEvidence: understood.perImageEvidence,
+            filesCount: candidateFileUrls.length,
+          }
+        } catch (understandError) {
+          console.error('[skulMate] Understand bundle failed:', understandError)
+        }
+      }
+
+      if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
+        console.error('[skulMate] Extracted text is too short or empty')
+        const isImageFailure = requestedSourceType === 'image'
+        return NextResponse.json(
+          {
+            error: isImageFailure
+              ? 'We could not understand enough from this image set yet. Try clearer photos, enter text manually, or upload a PDF/DOCX/TXT file.'
+              : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
+            errorCode: isImageFailure
+              ? 'OCR_TEXT_EXTRACTION_FAILED'
+              : 'EXTRACTION_TOO_SHORT',
+          },
+          { status: 400, headers: corsHeaders }
+        )
+      }
+      console.log(`[skulMate] Extracted ${extractedText.length} characters from ${extractionRows.length} file(s)`)
     }
 
     const actualSourceType = resolveActualSourceType({
       requestedSourceType,
       extractionMethod,
-      hasManualText: Boolean(text && text.trim().length > 0 && !fileUrl),
+      hasManualText: Boolean(text && text.trim().length > 0 && candidateFileUrls.length === 0),
     })
 
     // Determine billing mode after extraction (so source type is accurate).
@@ -1553,7 +1755,7 @@ export async function POST(request: NextRequest) {
 
         const creditsRequired = calculateSkulmateCreditsRequired({
           sourceType: actualSourceType,
-          isManualText: Boolean(text && text.trim().length > 0 && !fileUrl),
+          isManualText: Boolean(text && text.trim().length > 0 && candidateFileUrls.length === 0),
           extractedTextLength: extractedText.length,
           difficulty,
           numQuestions,
@@ -1598,25 +1800,98 @@ export async function POST(request: NextRequest) {
     // Step 1: Extract entities & relationships (cheaper model)
     console.log('[skulMate] Step 3a: Extracting entities and relationships...')
     let extractedEntities
+    let entityExtractionFailed = false
+    if (extractionMethod !== 'topic-only' && extractedText.trim().length > 0) {
     try {
       extractedEntities = await extractEntities(extractedText)
       console.log(`[skulMate] Extracted ${extractedEntities.entities.length} entities, ${extractedEntities.relationships.length} relationships, ${extractedEntities.conflicts.length} conflicts`)
     } catch (error) {
+        entityExtractionFailed = true
       console.warn('[skulMate] Entity extraction failed, continuing without entities:', error)
-      // Continue without entities - not critical for game generation
+        extractedEntities = undefined
+      }
+    } else {
       extractedEntities = undefined
+    }
+
+    const extractionQualitySourceType =
+      extractionMethod === 'youtube-transcript' ? 'youtube' : actualSourceType
+    const extractionQuality = assessExtractionQuality({
+      extractedText,
+      extractionMethod,
+      extractionMeta,
+      sourceType: extractionQualitySourceType,
+      entitiesExtracted: extractedEntities?.entities?.length ?? null,
+      entityExtractionFailed,
+    })
+    const extractionQualityPromptSection =
+      buildExtractionQualityPromptSection(extractionQuality)
+    if (extractionQuality.level !== 'high') {
+      console.log(
+        `[skulMate] Extraction QA: ${extractionQuality.level} (${extractionQuality.confidence}) flags=${extractionQuality.flags.join(',') || 'none'}`
+      )
+    }
+
+    let effectiveGameType = gameType
+    let needsSourceVerification = false
+    const understandConfidence =
+      typeof extractionMeta?.confidence === 'number' ? extractionMeta.confidence : null
+
+    if (
+      actualSourceType === 'image' &&
+      (extractionQuality.confidence < 0.6 ||
+        (understandConfidence != null && isLowConfidenceUnderstand(understandConfidence)))
+    ) {
+      needsSourceVerification = true
+      if (gameType === 'auto') {
+        effectiveGameType = 'flashcards'
+        console.log(
+          '[skulMate] Low image confidence — preferring flashcards (needsSourceVerification)'
+        )
+      }
     }
 
     // Step 2: Analyze content type & determine game type (already done in generateGameContent)
     // Step 3: Generate game world/structure (creative model for simulations/mysteries/escape rooms)
+    const curriculumAlignment = resolveBackgroundCurriculumAlignment({
+      extractedText,
+      learnerContext: learnerContext ?? null,
+    })
+    const curriculumMatches = matchCurriculumNodes({
+      extractedText,
+      learnerContext: learnerContext ?? null,
+    })
+    const curriculumPromptSection = buildCurriculumBackgroundPromptSection(
+      curriculumAlignment,
+      curriculumMatches,
+    )
+
+    const explanationStyle = resolveExplanationStyle({
+      learnerContext: learnerContext ?? null,
+      userId: finalUserId,
+      weakTopicReroute: Boolean(
+        (learnerContext as { weakTopicReroute?: boolean } | null)?.weakTopicReroute
+      ),
+      lastStyle:
+        ((learnerContext as { lastExplanationStyle?: ExplanationStyle } | null)
+          ?.lastExplanationStyle as ExplanationStyle | undefined) ?? null,
+    })
+    const explanationStylePromptSection =
+      buildExplanationStylePromptSection(explanationStyle)
+
     console.log('[skulMate] Step 3b: Generating game content...')
     const generationResult = await generateGameContent(
       extractedText, 
-      gameType,
+      effectiveGameType,
       difficulty,
-      topic,
+      isTopicOnlyMode ? trimmedTopic : topic,
       numQuestions,
-      extractedEntities // Pass extracted entities for world-building
+      extractedEntities,
+      learnerContext ?? null,
+      curriculumPromptSection,
+      extractionQualityPromptSection,
+      explanationStylePromptSection,
+      isTopicOnlyMode ? 'topic' : 'source',
     )
     const gameData = generationResult.gameData
 
@@ -1662,13 +1937,26 @@ export async function POST(request: NextRequest) {
             child_id: childId || null,
             title: gameData.title,
             game_type: gameData.gameType,
-            document_url: fileUrl || null,
+            document_url: candidateFileUrls[0] || null,
             source_type: actualSourceType,
             source_file_name: sourceFileName || null,
             source_text_snapshot:
               actualSourceType === 'text' && text && text.trim().length >= 50
                 ? text
                 : null,
+            generation_context: {
+              enrichmentMode: learnerContext?.enrichmentMode ?? 'background',
+              learnerContext: learnerContext ?? null,
+              sourceUrls: candidateFileUrls,
+              curriculumAlignment,
+              extractionQuality,
+              extractionMethod,
+              explanationStyle,
+              topic: topic ?? null,
+              difficulty,
+              needsSourceVerification,
+              understandConfidence,
+            },
           })
           .select()
           .maybeSingle()
@@ -1734,6 +2022,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         extractionMethod,
         extractionMeta,
+        extractionQuality,
         textLengthChars: extractedText.length,
         itemsCount: itemsCountForCost,
         billing_mode: billingMode,
@@ -1807,7 +2096,10 @@ export async function POST(request: NextRequest) {
         message: 'Returning 503 provider-credit branch',
       })
       return NextResponse.json(
-        { error: 'Image processing provider is temporarily unavailable right now. Please try again shortly.' },
+        {
+          errorCode: 'IMAGE_PROVIDER_UNAVAILABLE',
+          error: 'Image processing provider is temporarily unavailable right now. Please try again shortly.',
+        },
         { status: 503, headers: corsHeaders }
       )
     }
