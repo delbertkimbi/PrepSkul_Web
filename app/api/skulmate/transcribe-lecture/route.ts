@@ -9,6 +9,7 @@ import { DeepgramClient } from '@/lib/services/transcription/deepgram.client'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 
 const MIN_TRANSCRIPT_LENGTH = 50
+const MIN_RECORDING_SECONDS = 15
 
 interface TranscribeRequest {
   audioUrl: string
@@ -39,6 +40,50 @@ function getAdminSupabase() {
 export async function OPTIONS(request: NextRequest) {
   const origin = request.headers.get('origin')
   return new NextResponse(null, { status: 204, headers: corsHeaders(origin) })
+}
+
+function mapTranscribeError(error: unknown): {
+  message: string
+  errorCode: string
+  status: number
+} {
+  const message = error instanceof Error ? error.message : 'Transcription failed'
+  const lower = message.toLowerCase()
+
+  if (
+    lower.includes('401') ||
+    lower.includes('unauthorized') ||
+    lower.includes('invalid credentials') ||
+    lower.includes('invalid token')
+  ) {
+    return {
+      message:
+        'Speech transcription is temporarily unavailable due to a server configuration issue.',
+      errorCode: 'DEEPGRAM_AUTH',
+      status: 502,
+    }
+  }
+
+  if (
+    lower.includes('fetch failed') ||
+    lower.includes('could not be fetched') ||
+    lower.includes('url') && lower.includes('error') ||
+    lower.includes('403') ||
+    lower.includes('unreachable')
+  ) {
+    return {
+      message:
+        'Could not access the audio file for transcription. Please try recording again.',
+      errorCode: 'AUDIO_UNREACHABLE',
+      status: 502,
+    }
+  }
+
+  return {
+    message,
+    errorCode: 'TRANSCRIPTION_FAILED',
+    status: 500,
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -79,6 +124,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401, headers }
+      )
+    }
+
+    if (
+      durationSeconds != null &&
+      durationSeconds > 0 &&
+      durationSeconds < MIN_RECORDING_SECONDS
+    ) {
+      return NextResponse.json(
+        {
+          error: `Recording is too short. Please record at least ${MIN_RECORDING_SECONDS} seconds of clear speech.`,
+          errorCode: 'AUDIO_TOO_SHORT',
+        },
+        { status: 422, headers }
       )
     }
 
@@ -134,11 +193,10 @@ export async function POST(request: NextRequest) {
     )
   } catch (error: unknown) {
     console.error('[transcribe-lecture] Error:', error)
-    const message =
-      error instanceof Error ? error.message : 'Transcription failed'
+    const mapped = mapTranscribeError(error)
     return NextResponse.json(
-      { error: message, errorCode: 'TRANSCRIPTION_FAILED' },
-      { status: 500, headers }
+      { error: mapped.message, errorCode: mapped.errorCode },
+      { status: mapped.status, headers }
     )
   }
 }

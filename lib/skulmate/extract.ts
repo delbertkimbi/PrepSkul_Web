@@ -8,6 +8,7 @@ import { extractPdf } from '../ticha/extract/extractPdf'
 import { extractDocx } from '../ticha/extract/extractDocx'
 import { extractText } from '../ticha/extract/extractText'
 import { callOpenRouterWithKey } from '../ticha/openrouter'
+import { understandImageBundle } from './understand'
 const DEBUG_INGEST_URL = 'http://127.0.0.1:7242/ingest/7b5e5a52-47e1-4b45-99f3-6240f3527478'
 const DEBUG_SESSION_ID = '793f36'
 const sharp = require('sharp') as typeof import('sharp')
@@ -156,7 +157,7 @@ function parseOpenRouterTextResponse(response: any): string {
   return ''
 }
 
-function isMeaningfulOcrText(text: string): boolean {
+export function isMeaningfulOcrText(text: string): boolean {
   const normalized = normalizeExtractedText(text)
   if (normalized.length < 10) return false
 
@@ -295,63 +296,25 @@ async function extractTextFromImageSkulMate(
 }
 
 /**
- * Fallback for images that do not contain much readable text.
- * Uses vision understanding to produce structured study material context.
+ * Multimodal understand fallback for images where OCR fails or is low quality.
  */
-async function extractVisualConceptFromImageSkulMate(
+async function extractUnderstandFromImageUrl(
   imageUrl: string,
-  budget: VisionCallBudget,
-  options?: { models?: string[] }
-): Promise<string> {
-  const apiKeys = getSkulMateApiKeys()
-  const prompt =
-    'You are helping build a study game from an image that may contain little/no text. ' +
-    'Identify what is visible and convert it into concise educational notes. ' +
-    'Return plain text only with these sections: ' +
-    'Main subject, key observations, related concepts, and 5 short study questions.'
-
-  const modelsToTry = options?.models ?? [VISUAL_FALLBACK_MODELS[0]]
-  let lastError: Error | null = null
-  for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex += 1) {
-    const apiKey = apiKeys[keyIndex]
-    for (const model of modelsToTry) {
-      if (budget.remaining <= 0) {
-        throw new Error(
-          `Visual fallback budget exhausted: ${lastError?.message || 'Unknown error'}`
-        )
-      }
-
-      try {
-        budget.consume()
-        const response = await callOpenRouterWithKey(apiKey, {
-          model,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                { type: 'image_url', image_url: { url: imageUrl } },
-              ],
-            },
-          ],
-          max_tokens: 1800,
-          temperature: 0.2,
-        })
-        const text = parseOpenRouterTextResponse(response)
-        if (text.length >= 30) {
-          return text
-        }
-        throw new Error('Visual fallback response too short')
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error))
-        console.warn(`[skulMate OCR] Visual fallback model ${model} failed:`, lastError.message)
-      }
-    }
+  label: string
+): Promise<ImageExtractResult> {
+  const understood = await understandImageBundle([imageUrl])
+  return {
+    text: understood.studyText,
+    method: `openrouter-understand:${label}`,
+    metadata: {
+      variant: label,
+      mode: 'understand',
+      confidence: understood.confidence,
+      topicLabel: understood.topicLabel,
+      concepts: understood.concepts,
+      perImageEvidence: understood.perImageEvidence,
+    },
   }
-
-  throw new Error(
-    `Visual understanding fallback failed: ${lastError?.message || 'Unknown error'}`
-  )
 }
 
 /**
@@ -371,9 +334,9 @@ async function extractImage(
     label: string
     resolveImageUrl: () => Promise<string>
     model: string
-    mode: 'ocr' | 'visual'
+    mode: 'ocr' | 'understand'
     useHandwritingPrompt?: boolean
-    transport: 'source-url' | 'base64' | 'storage-url' | 'visual'
+    transport: 'source-url' | 'base64' | 'storage-url' | 'understand'
   }
 
   try {
@@ -452,16 +415,20 @@ async function extractImage(
       })
     }
 
-    const visualVariant =
+    const understandVariant =
       variants.find((v) => v.name === 'original') ?? variants.find((v) => v.name === 'enhanced')
-    if (visualVariant) {
+    const understandUrl =
+      options?.imageSourceUrl?.trim() ||
+      (understandVariant
+        ? `data:${understandVariant.mimeType};base64,${understandVariant.buffer.toString('base64')}`
+        : null)
+    if (understandUrl) {
       attempts.push({
-        label: `visual-${visualVariant.name}`,
-        resolveImageUrl: async () =>
-          `data:${visualVariant.mimeType};base64,${visualVariant.buffer.toString('base64')}`,
+        label: understandVariant ? `understand-${understandVariant.name}` : 'understand-source',
+        resolveImageUrl: async () => understandUrl,
         model: VISUAL_FALLBACK_MODELS[0],
-        mode: 'visual',
-        transport: 'visual',
+        mode: 'understand',
+        transport: 'understand',
       })
     }
 
@@ -469,15 +436,23 @@ async function extractImage(
       if (budget.remaining <= 0) break
       try {
         const imageUrl = await attempt.resolveImageUrl()
-        const text =
-          attempt.mode === 'visual'
-            ? await extractVisualConceptFromImageSkulMate(imageUrl, budget, {
-                models: [attempt.model],
-              })
-            : await extractTextFromImageSkulMate(imageUrl, budget, {
-                useHandwritingPrompt: attempt.useHandwritingPrompt,
-                models: [attempt.model],
-              })
+        if (attempt.mode === 'understand') {
+          const result = await extractUnderstandFromImageUrl(imageUrl, attempt.label)
+          return {
+            ...result,
+            metadata: {
+              ...result.metadata,
+              variantsAttempted: variants.length,
+              visionCallsUsed: budget.used,
+              transport: attempt.transport,
+            },
+          }
+        }
+
+        const text = await extractTextFromImageSkulMate(imageUrl, budget, {
+          useHandwritingPrompt: attempt.useHandwritingPrompt,
+          models: [attempt.model],
+        })
 
         return {
           text,

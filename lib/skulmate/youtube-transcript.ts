@@ -5,6 +5,25 @@
 const USER_AGENT =
   'Mozilla/5.0 (compatible; PrepSkul-SkulMate/1.0; +https://prepskul.com)'
 
+export type YoutubeTranscriptErrorCode =
+  | 'YOUTUBE_NO_CAPTIONS'
+  | 'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
+  | 'YOUTUBE_URL_INVALID'
+
+export class YoutubeTranscriptError extends Error {
+  readonly errorCode: YoutubeTranscriptErrorCode
+
+  constructor(message: string, errorCode: YoutubeTranscriptErrorCode) {
+    super(message)
+    this.name = 'YoutubeTranscriptError'
+    this.errorCode = errorCode
+  }
+}
+
+export function isYoutubeTranscriptError(err: unknown): err is YoutubeTranscriptError {
+  return err instanceof YoutubeTranscriptError
+}
+
 export function parseYoutubeVideoId(rawUrl: string): string | null {
   const trimmed = rawUrl.trim()
   if (!trimmed) return null
@@ -113,20 +132,37 @@ function extractCaptionTrackUrl(html: string): string | null {
 export async function fetchYoutubeTranscript(youtubeUrl: string): Promise<string> {
   const videoId = parseYoutubeVideoId(youtubeUrl)
   if (!videoId) {
-    throw new Error('Invalid YouTube URL')
+    throw new YoutubeTranscriptError(
+      'Invalid YouTube URL',
+      'YOUTUBE_URL_INVALID'
+    )
   }
 
   const watchUrl = `https://www.youtube.com/watch?v=${videoId}`
-  const watchResponse = await fetch(watchUrl, {
-    headers: { 'User-Agent': USER_AGENT },
-  })
+  let html: string
+  try {
+    const watchResponse = await fetch(watchUrl, {
+      headers: { 'User-Agent': USER_AGENT },
+    })
 
-  if (!watchResponse.ok) {
-    throw new Error('Could not load YouTube video page')
+    if (!watchResponse.ok) {
+      throw new YoutubeTranscriptError(
+        'Could not load YouTube video page',
+        'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
+      )
+    }
+
+    html = await watchResponse.text()
+  } catch (error) {
+    if (isYoutubeTranscriptError(error)) throw error
+    throw new YoutubeTranscriptError(
+      'Could not reach YouTube to fetch captions',
+      'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
+    )
   }
 
-  const html = await watchResponse.text()
   const captionUrl = extractCaptionTrackUrl(html)
+  const hadCaptionTracks = captionUrl != null
 
   if (captionUrl) {
     try {
@@ -150,7 +186,15 @@ export async function fetchYoutubeTranscript(youtubeUrl: string): Promise<string
     }
   }
 
-  throw new Error(
-    'No transcript available for this video. Try Paste or Upload instead.'
+  if (!hadCaptionTracks) {
+    throw new YoutubeTranscriptError(
+      'This video has no captions. Try a video with subtitles turned on, or paste notes manually.',
+      'YOUTUBE_NO_CAPTIONS'
+    )
+  }
+
+  throw new YoutubeTranscriptError(
+    'Transcript could not be loaded right now. Try again or paste notes manually.',
+    'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
   )
 }

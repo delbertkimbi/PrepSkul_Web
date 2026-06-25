@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchYoutubeTranscript } from '@/lib/skulmate/youtube-transcript'
+import { fetchYoutubeTranscript, isYoutubeTranscriptError } from '@/lib/skulmate/youtube-transcript'
 
 const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -44,10 +44,13 @@ export async function POST(request: NextRequest) {
       err instanceof Error
         ? err.message
         : 'No transcript available for this video.'
+    const errorCode = isYoutubeTranscriptError(err)
+      ? err.errorCode
+      : 'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
     return NextResponse.json(
       {
         error: message,
-        errorCode: 'YOUTUBE_TRANSCRIPT_UNAVAILABLE',
+        errorCode,
       },
       { status: 422, headers }
     )

@@ -9,6 +9,7 @@ export type ExtractionQualityFlag =
   | 'short_text'
   | 'ocr_fallback'
   | 'visual_fallback'
+  | 'understand_pass'
   | 'high_ocr_retries'
   | 'low_lexical_diversity'
   | 'noisy_text'
@@ -90,7 +91,16 @@ export function assessExtractionQuality(
   const method = input.extractionMethod || ''
   const meta = input.extractionMeta || {}
 
-  if (method.includes('visual') || meta.mode === 'visual-fallback') {
+  if (method.includes('understand') || meta.mode === 'understand') {
+    flags.push('understand_pass')
+    const understandConfidence =
+      typeof meta.confidence === 'number' ? meta.confidence : null
+    if (understandConfidence != null && understandConfidence < 0.6) {
+      confidence -= 0.25
+    } else {
+      confidence -= 0.12
+    }
+  } else if (method.includes('visual') || meta.mode === 'visual-fallback') {
     flags.push('visual_fallback')
     confidence -= 0.35
   } else if (method.startsWith('openrouter')) {

@@ -25,7 +25,7 @@ import {
 import { extractEntities } from '../extract-entities/route'
 import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
 import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
-import { fetchYoutubeTranscript } from '@/lib/skulmate/youtube-transcript'
+import { fetchYoutubeTranscript, isYoutubeTranscriptError } from '@/lib/skulmate/youtube-transcript'
 import {
   assessExtractionQuality,
   buildExtractionQualityPromptSection,
@@ -36,6 +36,7 @@ import {
   assertShippedGameTypeRequest,
   coerceToShippedGameType,
 } from '@/lib/skulmate/released-game-types'
+import { understandImageBundle, isLowConfidenceUnderstand } from '@/lib/skulmate/understand'
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB
 const MAX_PROCESSING_TIME = 60000 // 60 seconds
@@ -1493,14 +1494,18 @@ export async function POST(request: NextRequest) {
         extractionMethod = 'youtube-transcript'
         extractionMeta = { youtubeUrl }
         console.log(`[skulMate] YouTube transcript length: ${extractedText.length}`)
-      } catch (error: any) {
+      } catch (error: unknown) {
         const message =
-          error?.message ||
-          'No transcript available for this video. Try Paste or Upload instead.'
+          error instanceof Error
+            ? error.message
+            : 'No transcript available for this video. Try Paste or Upload instead.'
+        const errorCode = isYoutubeTranscriptError(error)
+          ? error.errorCode
+          : 'YOUTUBE_TRANSCRIPT_UNAVAILABLE'
         return NextResponse.json(
           {
             error: message,
-            errorCode: 'YOUTUBE_TRANSCRIPT_UNAVAILABLE',
+            errorCode,
           },
           { status: 422, headers: corsHeaders }
         )
@@ -1685,15 +1690,48 @@ export async function POST(request: NextRequest) {
         extractionRows,
       } as Record<string, any>
       const minimumExtractedLength = 20
+      if (
+        (!extractedText || extractedText.trim().length < minimumExtractedLength) &&
+        requestedSourceType === 'image' &&
+        candidateFileUrls.length > 0
+      ) {
+        try {
+          console.log('[skulMate] Trying multimodal understand bundle for image set...')
+          const understood = await understandImageBundle(candidateFileUrls)
+          const ocrPrefix =
+            extractedSegments.length > 0
+              ? `${extractedSegments.join('\n\n')}\n\n[Multimodal synthesis]\n`
+              : ''
+          extractedText = `${ocrPrefix}${understood.studyText}`.trim()
+          extractionMethod =
+            candidateFileUrls.length > 1
+              ? 'multi-understand:image'
+              : 'openrouter-understand:bundle'
+          extractionMeta = {
+            ...(extractionMeta || {}),
+            understandBundle: true,
+            confidence: understood.confidence,
+            topicLabel: understood.topicLabel,
+            concepts: understood.concepts,
+            perImageEvidence: understood.perImageEvidence,
+            filesCount: candidateFileUrls.length,
+          }
+        } catch (understandError) {
+          console.error('[skulMate] Understand bundle failed:', understandError)
+        }
+      }
+
       if (!extractedText || extractedText.trim().length < minimumExtractedLength) {
         console.error('[skulMate] Extracted text is too short or empty')
+        const isImageFailure = requestedSourceType === 'image'
         return NextResponse.json(
           {
-            error:
-              requestedSourceType === 'image'
-                ? 'We could not understand enough from this image set yet. Try clearer photos, enter text manually, or upload a PDF/DOCX/TXT file.'
-                : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
-            errorCode: 'EXTRACTION_TOO_SHORT',
+            error: isImageFailure
+              ? 'We could not understand enough from this image set yet. Try clearer photos, enter text manually, or upload a PDF/DOCX/TXT file.'
+              : 'Failed to extract meaningful text from your file. Please ensure the file contains readable text, diagrams, or images with text.',
+            errorCode: isImageFailure
+              ? 'OCR_TEXT_EXTRACTION_FAILED'
+              : 'EXTRACTION_TOO_SHORT',
           },
           { status: 400, headers: corsHeaders }
         )
@@ -1794,6 +1832,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let effectiveGameType = gameType
+    let needsSourceVerification = false
+    const understandConfidence =
+      typeof extractionMeta?.confidence === 'number' ? extractionMeta.confidence : null
+
+    if (
+      actualSourceType === 'image' &&
+      (extractionQuality.confidence < 0.6 ||
+        (understandConfidence != null && isLowConfidenceUnderstand(understandConfidence)))
+    ) {
+      needsSourceVerification = true
+      if (gameType === 'auto') {
+        effectiveGameType = 'flashcards'
+        console.log(
+          '[skulMate] Low image confidence — preferring flashcards (needsSourceVerification)'
+        )
+      }
+    }
+
     // Step 2: Analyze content type & determine game type (already done in generateGameContent)
     // Step 3: Generate game world/structure (creative model for simulations/mysteries/escape rooms)
     const curriculumAlignment = resolveBackgroundCurriculumAlignment({
@@ -1825,7 +1882,7 @@ export async function POST(request: NextRequest) {
     console.log('[skulMate] Step 3b: Generating game content...')
     const generationResult = await generateGameContent(
       extractedText, 
-      gameType,
+      effectiveGameType,
       difficulty,
       isTopicOnlyMode ? trimmedTopic : topic,
       numQuestions,
@@ -1897,6 +1954,8 @@ export async function POST(request: NextRequest) {
               explanationStyle,
               topic: topic ?? null,
               difficulty,
+              needsSourceVerification,
+              understandConfidence,
             },
           })
           .select()
