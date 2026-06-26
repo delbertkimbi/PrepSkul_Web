@@ -26,6 +26,8 @@ import { extractEntities } from '../extract-entities/route'
 import { estimateSkulmateGameCost } from '@/lib/skulmate/costing'
 import { recordSkulmateUsageEvent } from '@/lib/skulmate/usage-metering'
 import { fetchYoutubeTranscript, isYoutubeTranscriptError, fetchYoutubeTranscriptWithMeta } from '@/lib/skulmate/youtube-transcript'
+import { buildRevisionDeckFromGame } from '@/lib/skulmate/revision-deck'
+import { projectDeckToGameItems } from '@/lib/skulmate/deck-projector'
 import {
   assessExtractionQuality,
   buildExtractionQualityPromptSection,
@@ -1542,9 +1544,18 @@ export async function POST(request: NextRequest) {
       console.log('[skulMate] Step 0: Fetching YouTube transcript...')
       try {
         const yt = await fetchYoutubeTranscriptWithMeta(youtubeUrl)
+        if (yt.source === 'metadata') {
+          return NextResponse.json(
+            {
+              error:
+                'Could not read video captions — only the title/description was available, which is not enough to build an accurate game. Try a video with subtitles/CC on, or paste notes manually.',
+              errorCode: 'YOUTUBE_TRANSCRIPT_UNAVAILABLE',
+            },
+            { status: 422, headers: corsHeaders }
+          )
+        }
         extractedText = yt.text
-        extractionMethod =
-          yt.source === 'metadata' ? 'youtube-metadata' : 'youtube-transcript'
+        extractionMethod = 'youtube-transcript'
         extractionMeta = { youtubeUrl, transcriptSource: yt.source }
         console.log(
           `[skulMate] YouTube source=${yt.source} length: ${extractedText.length}`
@@ -1983,7 +1994,38 @@ export async function POST(request: NextRequest) {
       explanationStylePromptSection,
       isTopicOnlyMode ? 'topic' : 'source',
     )
-    const gameData = generationResult.gameData
+    let gameData = generationResult.gameData
+
+    const revisionDeck = buildRevisionDeckFromGame({
+      gameData,
+      extractedText,
+      topic: isTopicOnlyMode ? trimmedTopic : topic,
+      sourceType: actualSourceType,
+      linkedGameId: undefined,
+      entityLabels: extractedEntities?.entities?.map((entity) => entity.name),
+    })
+
+    const projectedItems = projectDeckToGameItems(
+      revisionDeck,
+      gameData.gameType || 'quiz'
+    )
+    if (projectedItems.length > 0) {
+      gameData = {
+        ...gameData,
+        items: projectedItems as GameItem[],
+        metadata: {
+          ...gameData.metadata,
+          totalItems: projectedItems.length,
+        },
+      }
+    }
+    if (revisionDeck.cards.length === 0) {
+      console.warn('[skulMate] Revision deck has no cards after generation')
+    } else {
+      console.log(
+        `[skulMate] Revision deck ready: ${revisionDeck.cards.length} cards, concept check: ${revisionDeck.conceptCheckCardIds.length}`
+      )
+    }
 
     // Charge credits before persisting game to avoid creating unpaid games.
     if (finalUserId && billingMode === 'credits' && billedCredits > 0) {
@@ -2046,6 +2088,7 @@ export async function POST(request: NextRequest) {
               difficulty,
               needsSourceVerification,
               understandConfidence,
+              revisionDeck,
             },
           })
           .select()
@@ -2056,8 +2099,11 @@ export async function POST(request: NextRequest) {
           console.error('[skulMate] Game error details:', JSON.stringify(gameError))
           // Continue without saving to DB - but log the error
         } else if (game && game.id) {
-          gameId = game.id
-          console.log(`[skulMate] Game saved with ID: ${gameId}`)
+          const savedGameId = game.id
+          gameId = savedGameId
+          revisionDeck.id = savedGameId
+          revisionDeck.linkedGameId = savedGameId
+          console.log(`[skulMate] Game saved with ID: ${savedGameId}`)
 
           // Insert game data
           const { error: dataError } = await supabase
@@ -2132,6 +2178,7 @@ export async function POST(request: NextRequest) {
         id: gameId,
         ...gameData,
       },
+      deck: revisionDeck,
       processingTime,
       billing: {
         mode: billingMode,

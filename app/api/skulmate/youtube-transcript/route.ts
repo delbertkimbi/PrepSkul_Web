@@ -30,6 +30,16 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await fetchYoutubeTranscriptWithMeta(youtubeUrl)
+    if (result.source === 'metadata') {
+      return NextResponse.json(
+        {
+          error:
+            'Could not read video captions — only the title/description was available. Try a video with subtitles/CC on, or paste notes manually.',
+          errorCode: 'YOUTUBE_TRANSCRIPT_UNAVAILABLE',
+        },
+        { status: 422, headers }
+      )
+    }
     const transcript = result.text
     if (transcript.trim().length < 50) {
       return NextResponse.json(
