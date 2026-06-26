@@ -25,6 +25,33 @@ describe('learner-context background policy', () => {
     expect(alignment.mode).not.toBe('school_matched')
   })
 
+  it('includes intelligence signals when present', () => {
+    const section = buildBackgroundLearnerPromptSection({
+      enrichmentMode: 'background',
+      intelligenceSignals: {
+        studyingDeckTitle: 'Internet Safety',
+        deckStudyMode: 'tutor',
+        weakTopics: [{ topicId: 'open:internet-safety', masteryScore: 0.4 }],
+        recentDeckTitles: ['Biology', 'Internet Safety'],
+      },
+    })
+    expect(section).toContain('Internet Safety')
+    expect(section).toContain('LEARNER INTELLIGENCE')
+    expect(section).toContain('open:internet-safety')
+  })
+
+  it('surfaces tutor follow-up hints in intelligence signals', () => {
+    const section = buildBackgroundLearnerPromptSection({
+      enrichmentMode: 'background',
+      intelligenceSignals: {
+        tutorFollowUpCount: 4,
+        needsHumanTutorHint: true,
+      },
+    })
+    expect(section).toContain('Repeated explanation requests')
+    expect(section).toContain('live tutor')
+  })
+
   it('empty context adds no prompt section', () => {
     expect(buildBackgroundLearnerPromptSection(null)).toBe('')
     expect(buildBackgroundLearnerPromptSection({})).toBe('')

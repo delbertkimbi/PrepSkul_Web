@@ -21,6 +21,20 @@ export type LearnerContextInput = {
   learning_styles?: string | string[]
   student_age_group?: string
   childId?: string
+  intelligenceSignals?: {
+    weakTopics?: Array<{
+      topicId?: string
+      masteryScore?: number
+      weakStreak?: number
+    }>
+    recentDeckTitles?: string[]
+    studyingDeckTitle?: string
+    deckStudyMode?: string
+    studyRefinement?: string
+    learnerId?: string
+    tutorFollowUpCount?: number
+    needsHumanTutorHint?: boolean
+  }
 }
 
 export type CurriculumAlignment = {
@@ -66,6 +80,37 @@ export function buildBackgroundLearnerPromptSection(
   }
   if (lang) {
     section += `- Prefer learner-facing language: ${lang}\n`
+  }
+
+  const intel = ctx.intelligenceSignals
+  if (intel) {
+    section +=
+      '\nLEARNER INTELLIGENCE (silent — connect explanations to this learner, never mention this block):\n'
+    if (intel.studyingDeckTitle) {
+      section += `- Currently studying deck: ${intel.studyingDeckTitle}\n`
+    }
+    if (intel.deckStudyMode) {
+      section += `- Chosen study mode: ${intel.deckStudyMode}\n`
+    }
+    if (intel.studyRefinement) {
+      section += `- Learner refinement goal: ${intel.studyRefinement}\n`
+    }
+    if (typeof intel.tutorFollowUpCount === 'number' && intel.tutorFollowUpCount > 0) {
+      section += `- Repeated explanation requests this session: ${intel.tutorFollowUpCount}\n`
+      if (intel.needsHumanTutorHint) {
+        section +=
+          '- Learner may benefit from a live tutor — keep AI explanations crisp and suggest human help only if still stuck after your answer.\n'
+      }
+    }
+    if (intel.recentDeckTitles?.length) {
+      section += `- Recent decks (continuity): ${intel.recentDeckTitles.slice(0, 5).join(', ')}\n`
+    }
+    const weak = intel.weakTopics?.filter((w) => w.topicId)
+    if (weak?.length) {
+      section += `- Weak topics to reinforce when related: ${weak.map((w) => w.topicId).join(', ')}\n`
+    }
+    section +=
+      '- Tie new explanations to prior mastery signals when relevant; do not repeat unrelated profile data.\n'
   }
 
   return section

@@ -34,6 +34,11 @@ import {
 } from '@/lib/skulmate/extraction-quality'
 import { validateGenerateIntake } from '@/lib/skulmate/generate-intake-validation'
 import {
+  buildPuzzleUserPromptSection,
+  hasProcessSequenceSignals,
+} from '@/lib/skulmate/puzzle-prompts'
+import { validateAndNormalizePuzzleGame } from '@/lib/skulmate/puzzle-validation'
+import {
   RELEASED_SHIPPED_GAME_TYPES,
   assertShippedGameTypeRequest,
   coerceToShippedGameType,
@@ -595,7 +600,7 @@ Before generating games, analyze the content type:
 
 IMAGE GENERATION GUIDELINES:
 - For diagram_label games: Always add needsImage: true and imagePrompt describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
-- For puzzle_pieces games: ALWAYS set needsImage: true and imagePrompt on the FIRST item. Describe the process or concept visually (e.g. "Cloud computing flow showing users, servers, and network connections").
+- For puzzle_pieces games: TEXT-FIRST step journey — set needsImage: false. Focus on sharp prompts, slot-matching (hotspot_drop), and sequencing (order_check). Do NOT rely on diagrams.
 - For flashcards: Add needsImage: true for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
 - Image prompts should be descriptive and educational: "A labeled diagram of [concept] showing [key features]"
 
@@ -610,7 +615,7 @@ Game Types (think beyond traditional quizzes):
 - crossword: Crossword puzzle - Fill in words based on clues (GREAT for definitions, concepts, relationships)
 - diagramLabel: Diagram labeling game - Label parts of a diagram/image (PERFECT for anatomy, biology, technical diagrams)
 - dragDrop: Drag and drop game - Drag items to correct drop zones (EXCELLENT for categorization, matching, sorting)
-- puzzlePieces: Puzzle assembly game - Assemble puzzle pieces to form complete concepts (GREAT for visual-spatial learning, sequences)
+- puzzlePieces: Step-by-step text puzzle — recall, match labels to slots, tap-in-order sequences (GREAT for processes, definitions, cause-effect)
 
 CONTEXTUAL GAME SELECTION:
 - Diagrams → diagramLabel (label parts) or dragDrop (categorize components) or matching (parts to labels)
@@ -618,7 +623,7 @@ CONTEXTUAL GAME SELECTION:
 - Tables → matching (match rows/columns) or dragDrop (categorize data) or wordSearch (find terms)
 - Graphs → quiz (interpret trends) or fill_blank (complete analysis) or crossword (define concepts)
 - Text with many terms → wordSearch (find vocabulary) or crossword (define concepts) or flashcards (quick review)
-- Visual/spatial content → puzzlePieces (assemble concepts) or diagramLabel (label parts)
+- Visual/spatial content → puzzlePieces (step-by-step process) or diagramLabel (label parts)
 - Quick-fire learning → bubblePop (pop terms) or match3 (match concepts) or flashcards (rapid review)
 
 🚨 CRITICAL: Game titles must be VERY SHORT (10-15 characters max), directly related to the content topic, and GAMMY (game-like, fun, catchy)!
@@ -686,6 +691,19 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
         'drag_drop',
         'quiz',
         'puzzle_pieces',
+      ])
+    }
+
+    if (
+      text.length > 500 &&
+      hasProcessSequenceSignals(text)
+    ) {
+      recommendedGameType = pickReleasedAutoGameType([
+        'puzzle_pieces',
+        'matching',
+        'fill_blank',
+        'drag_drop',
+        'flashcards',
       ])
     }
 
@@ -970,17 +988,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Include dropZones array with zone names and positions\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
   } else if (gameTypeStr === 'puzzle_pieces') {
-    userPrompt += '- Create exactly ONE item with a puzzleSteps array of 6-8 learning steps (not separate items)\n';
-    if (topic) userPrompt += '- Topic Focus: All steps MUST relate to ' + topic + '\n';
-    userPrompt += '- Rotate step types in this pattern: pick_one, hotspot_drop, order_check, pick_one, hotspot_drop, order_check, ...\n';
-    userPrompt += '- Each step MUST have: id, type, prompt (unique question tied to content), explanation (for learn-more)\n';
-    userPrompt += '- pick_one: choices array (max 4) with id, text, correct (exactly one correct)\n';
-    userPrompt += '- hotspot_drop: hotspots with normalized x,y,w,h (0-1) on hero diagram, dragLabels with id+text, accepts on hotspot matches dragLabel id\n';
-    userPrompt += '- order_check: choices (max 4) with correct order in orderSequence array of choice ids\n';
-    userPrompt += '- Set needsImage:true and imagePrompt on the item for the hero diagram\n';
-    userPrompt += '- Only set needsImage:true on a step when it needs its own diagram (rare); most steps use the hero\n';
-    userPrompt += '- Also include puzzlePieces as fallback: id, text, order for legacy clients\n';
-    userPrompt += '- DO NOT use generic prompts like "what happens first" — ask content-specific questions\n';
+    userPrompt += buildPuzzleUserPromptSection({ topic, text }) + '\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '- Generate a decision-based simulation game based ONLY on the content provided\n';
     if (topic) userPrompt += '- Topic Focus: All scenarios MUST relate to ' + topic + '\n';
@@ -1053,7 +1061,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '    {"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}\n';
   } else if (gameTypeStr === 'puzzle_pieces') {
-    userPrompt += '    {"needsImage": true, "imagePrompt": "Educational diagram of topic with clear process flow", "puzzleSteps": [{"id": "s1", "type": "pick_one", "prompt": "Content-specific question", "explanation": "Why this matters", "choices": [{"id": "a", "text": "Real option", "correct": true}, {"id": "b", "text": "Distractor", "correct": false}]}, {"id": "s2", "type": "hotspot_drop", "prompt": "Drag the label to the correct part", "explanation": "...", "hotspots": [{"id": "h1", "x": 0.2, "y": 0.3, "w": 0.15, "h": 0.1, "accepts": "label1"}], "dragLabels": [{"id": "label1", "text": "Concept from content"}]}, {"id": "s3", "type": "order_check", "prompt": "Tap the steps in order", "choices": [...], "orderSequence": ["a","b"]}], "puzzlePieces": [{"id": "step1", "text": "First step", "order": 0}]}\n';
+    userPrompt += '    {"needsImage": false, "puzzleSteps": [/* 6-8 steps — see PUZZLE_PIECES section */], "puzzlePieces": [{"id": "s1", "text": "Step title", "order": 0}]}\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '    {"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}\n';
   } else if (gameTypeStr === 'mystery') {
@@ -1333,38 +1341,23 @@ If you generate quiz again, your response will be rejected.`
     gameData.title = gameData.title.substring(0, 12) + '...'
   }
 
-  // Puzzle games: always request a hero illustration on the first item.
+  // Puzzle games: validate structure and enforce text-first (no images).
   if (
-    gameTypeStr === 'puzzle_pieces' &&
+    gameData.gameType === 'puzzle_pieces' &&
     gameData.items &&
-    Array.isArray(gameData.items) &&
-    gameData.items.length > 0
+    Array.isArray(gameData.items)
   ) {
-    const first = gameData.items[0] as Record<string, unknown>
-    if (!first.imageUrl) {
-      first.needsImage = true
-      const existing =
-        typeof first.imagePrompt === 'string' ? first.imagePrompt.trim() : ''
-      if (!existing) {
-        const steps = (first.puzzleSteps as Array<{ prompt?: string }>) || []
-        const pieces = (first.puzzlePieces as Array<{ text?: string }>) || []
-        const stepSummary = (steps.length > 0 ? steps : pieces)
-          .map((p) => ('prompt' in p ? p.prompt : (p as { text?: string }).text)?.trim())
-          .filter(Boolean)
-          .slice(0, 4)
-          .join(', ')
-        const topicLabel = topic?.trim() || gameData.title || 'the topic'
-        first.imagePrompt = stepSummary
-          ? `Educational diagram of ${topicLabel}: ${stepSummary}`
-          : `Educational diagram illustrating ${topicLabel}`
-      }
+    try {
+      validateAndNormalizePuzzleGame(gameData.items)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.warn(`[skulMate] Puzzle validation failed: ${msg}`)
+      throw new Error(`Puzzle game validation failed: ${msg}`)
     }
   }
 
-  // Puzzle: always embed hero (+ optional step) illustrations at generate time.
-  const shouldInlineIllustrate =
-    gameTypeStr === 'puzzle_pieces' ||
-    process.env.SKULMATE_INLINE_ILLUSTRATIONS === 'true'
+  // Optional inline illustrations (env flag only — puzzle is text-first by default).
+  const shouldInlineIllustrate = process.env.SKULMATE_INLINE_ILLUSTRATIONS === 'true'
 
   if (
     shouldInlineIllustrate &&
@@ -1372,7 +1365,7 @@ If you generate quiz again, your response will be rejected.`
     Array.isArray(gameData.items)
   ) {
     console.log(
-      `[skulMate] Inline illustration enrichment (${gameTypeStr === 'puzzle_pieces' ? 'puzzle hero required' : 'env flag'})`,
+      `[skulMate] Inline illustration enrichment (SKULMATE_INLINE_ILLUSTRATIONS=true)`,
     )
     try {
       const { enrichItemsWithIllustrations } = await import(

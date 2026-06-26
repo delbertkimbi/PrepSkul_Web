@@ -45,6 +45,8 @@ export type RevisionDeck = {
   conceptCheckCardIds: string[]
   linkedGameId?: string
   gameType: string
+  /** True only when the learner explicitly saved this upload as a deck library item. */
+  librarySaved?: boolean
 }
 
 type BuildDeckInput = {
@@ -102,29 +104,11 @@ function buildNotes(extractedText: string, topic?: string): string {
 }
 
 function buildKnowledgeUnits(
-  topicLabel: string,
-  entityLabels?: string[]
+  _topicLabel: string,
+  _entityLabels?: string[]
 ): KnowledgeUnit[] {
-  const labels = (entityLabels ?? [])
-    .map((label) => label.trim())
-    .filter((label) => label.length > 1)
-    .slice(0, 6)
-
-  if (labels.length >= 2) {
-    return labels.map((name, index) => ({
-      id: slugId(name, index),
-      name,
-      priority: index < 2 ? 'high' : 'medium',
-    }))
-  }
-
-  return [
-    {
-      id: slugId(topicLabel || 'core', 0),
-      name: topicLabel || 'Core concepts',
-      priority: 'high',
-    },
-  ]
+  // Subdecks are created by the learner — not auto-generated at intake.
+  return []
 }
 
 function unitIdForIndex(units: KnowledgeUnit[], index: number): string {
@@ -354,5 +338,6 @@ export function buildRevisionDeckFromGame(input: BuildDeckInput): RevisionDeck {
     conceptCheckCardIds: pickConceptCheckCardIds(cards),
     linkedGameId: input.linkedGameId,
     gameType,
+    librarySaved: false,
   }
 }
