@@ -593,7 +593,7 @@ Before generating games, analyze the content type:
 
 IMAGE GENERATION GUIDELINES:
 - For diagram_label games: Always add needsImage: true and imagePrompt describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
-- For puzzle_pieces games: Add needsImage: true for visual concepts that need illustration
+- For puzzle_pieces games: Set needsImage: true on the FIRST item ONLY when the topic is inherently visual (anatomy, lab process, geography map). Use false for plain text sequences.
 - For flashcards: Add needsImage: true for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
 - Image prompts should be descriptive and educational: "A labeled diagram of [concept] showing [key features]"
 
@@ -1326,9 +1326,14 @@ If you generate quiz again, your response will be rejected.`
     gameData.title = gameData.title.substring(0, 12) + '...'
   }
 
-  // Phase 3: Image Generation (if needed)
-  if (gameData.items && Array.isArray(gameData.items)) {
-    console.log('[skulMate] Checking for items that need illustrations...')
+  // Phase 3: Illustrations — on-demand by default (fast generate).
+  // Set SKULMATE_INLINE_ILLUSTRATIONS=true to embed during generate.
+  if (
+    process.env.SKULMATE_INLINE_ILLUSTRATIONS === 'true' &&
+    gameData.items &&
+    Array.isArray(gameData.items)
+  ) {
+    console.log('[skulMate] Inline illustration enrichment enabled')
     try {
       const { enrichItemsWithIllustrations } = await import(
         '@/lib/skulmate/illustration-generator'
