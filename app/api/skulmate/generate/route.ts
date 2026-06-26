@@ -1327,23 +1327,19 @@ If you generate quiz again, your response will be rejected.`
   }
 
   // Phase 3: Image Generation (if needed)
-  // Check items with needsImage flag and generate images
   if (gameData.items && Array.isArray(gameData.items)) {
-    console.log('[skulMate] Checking for items that need images...')
-    for (const item of gameData.items) {
-      if (item.needsImage && item.imagePrompt && !item.imageUrl) {
-        try {
-          console.log(`[skulMate] Generating image for: ${item.imagePrompt}`)
-          // TODO: Implement image generation API call
-          // For now, image generation is handled client-side via ImageGenerationService
-          // Server-side generation would require a separate image generation API endpoint
-          // or integration with image generation models through OpenRouter
-          console.log(`[skulMate] Image generation requested for: ${item.imagePrompt}`)
-        } catch (e) {
-          console.warn(`[skulMate] Image generation failed for item: ${e}`)
-          // Continue without image - games work fine without generated images
-        }
-      }
+    console.log('[skulMate] Checking for items that need illustrations...')
+    try {
+      const { enrichItemsWithIllustrations } = await import(
+        '@/lib/skulmate/illustration-generator'
+      )
+      await enrichItemsWithIllustrations(
+        gameData.items as Array<Record<string, unknown>>,
+        gameTypeStr,
+        topic,
+      )
+    } catch (e) {
+      console.warn('[skulMate] Illustration enrichment skipped:', e)
     }
   }
 

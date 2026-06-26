@@ -294,6 +294,7 @@ IntakeBundle → Understand → LearningArtifact → Compile → Validate → Pe
 |---------|--------------|------------------|
 | `SKULMATE_OPENROUTER_API_KEY` | Vision, generation | `extract.ts`, generate |
 | `OPENROUTER_API_KEY` | Fallback key | `getSkulMateApiKeys()` |
+| `SKULMATE_IMAGE_MODEL` | Diagram illustrations (optional) | `illustration-generator.ts`; default `black-forest-labs/flux.2-klein-4b` |
 | `DEEPGRAM_API_KEY` | Lecture recording | `DeepgramClient` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Signed URL download, transcript persist | generate, transcribe |
 | `NEXT_PUBLIC_SUPABASE_URL` | Storage, auth | — |
