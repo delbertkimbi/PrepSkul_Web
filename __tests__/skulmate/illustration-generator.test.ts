@@ -124,6 +124,49 @@ describe('illustration-generator', () => {
     expect(mockUpload).toHaveBeenCalledTimes(1)
   })
 
+  it('enriches puzzle step images when needsImage is set', async () => {
+    const items = [
+      {
+        needsImage: true,
+        imagePrompt: 'hero diagram',
+        puzzleSteps: [
+          {
+            needsImage: true,
+            imagePrompt: 'step close-up diagram',
+          },
+          { needsImage: false, imagePrompt: 'skip' },
+        ],
+      },
+    ] as Array<Record<string, unknown>>
+
+    const publicUrl =
+      'https://example.supabase.co/storage/v1/object/public/documents/skulmate-illustrations/step.png'
+    mockGetPublicUrl
+      .mockReturnValue({ data: { publicUrl: null } })
+      .mockReturnValue({ data: { publicUrl } })
+
+    const pngBytes = Buffer.from('fake-png')
+    let imageCalls = 0
+    global.fetch = jest.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/api/v1/images')) {
+        imageCalls += 1
+        return {
+          ok: true,
+          json: async () => ({ data: [{ b64_json: pngBytes.toString('base64') }] }),
+        } as Response
+      }
+      throw new Error(`Unexpected fetch: ${url}`)
+    }) as typeof fetch
+
+    await enrichItemsWithIllustrations(items, 'puzzle_pieces', 'SOA')
+    const steps = items[0].puzzleSteps as Array<Record<string, unknown>>
+    expect(items[0].imageUrl).toBe(publicUrl)
+    expect(steps[0].imageUrl).toBe(publicUrl)
+    expect(steps[1].imageUrl).toBeUndefined()
+    expect(imageCalls).toBe(2)
+  })
+
   it('calls OpenRouter image API and uploads PNG to storage', async () => {
     const publicUrl =
       'https://example.supabase.co/storage/v1/object/public/documents/skulmate-illustrations/abc.png'

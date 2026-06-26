@@ -593,7 +593,7 @@ Before generating games, analyze the content type:
 
 IMAGE GENERATION GUIDELINES:
 - For diagram_label games: Always add needsImage: true and imagePrompt describing the diagram (e.g., "A labeled diagram of a cell showing mitochondria, nucleus, and cell membrane")
-- For puzzle_pieces games: Set needsImage: true on the FIRST item ONLY when the topic is inherently visual (anatomy, lab process, geography map). Use false for plain text sequences.
+- For puzzle_pieces games: ALWAYS set needsImage: true and imagePrompt on the FIRST item. Describe the process or concept visually (e.g. "Cloud computing flow showing users, servers, and network connections").
 - For flashcards: Add needsImage: true for terms/concepts that benefit from visual explanation (anatomy, biology, geography, historical events, etc.)
 - Image prompts should be descriptive and educational: "A labeled diagram of [concept] showing [key features]"
 
@@ -968,12 +968,17 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Include dropZones array with zone names and positions\n';
     userPrompt += '- DO NOT create generic items - use actual concepts from the content\n';
   } else if (gameTypeStr === 'puzzle_pieces') {
-    userPrompt += '- Break the lesson into ' + (numQuestions || '4-8') + ' ordered steps or concept tiles\n';
-    if (topic) userPrompt += '- Topic Focus: All pieces MUST relate to ' + topic + '\n';
-    userPrompt += '- Each piece is one step in a process, timeline, or explanation (sequence puzzle)\n';
-    userPrompt += '- Create puzzlePieces array with id, text, and order (0-based correct sequence index)\n';
-    userPrompt += '- Pieces must form a logical sequence when ordered — not random spatial positions\n';
-    userPrompt += '- DO NOT create generic pieces - use actual concepts from the content\n';
+    userPrompt += '- Create exactly ONE item with a puzzleSteps array of 6-8 learning steps (not separate items)\n';
+    if (topic) userPrompt += '- Topic Focus: All steps MUST relate to ' + topic + '\n';
+    userPrompt += '- Rotate step types in this pattern: pick_one, hotspot_drop, order_check, pick_one, hotspot_drop, order_check, ...\n';
+    userPrompt += '- Each step MUST have: id, type, prompt (unique question tied to content), explanation (for learn-more)\n';
+    userPrompt += '- pick_one: choices array (max 4) with id, text, correct (exactly one correct)\n';
+    userPrompt += '- hotspot_drop: hotspots with normalized x,y,w,h (0-1) on hero diagram, dragLabels with id+text, accepts on hotspot matches dragLabel id\n';
+    userPrompt += '- order_check: choices (max 4) with correct order in orderSequence array of choice ids\n';
+    userPrompt += '- Set needsImage:true and imagePrompt on the item for the hero diagram\n';
+    userPrompt += '- Only set needsImage:true on a step when it needs its own diagram (rare); most steps use the hero\n';
+    userPrompt += '- Also include puzzlePieces as fallback: id, text, order for legacy clients\n';
+    userPrompt += '- DO NOT use generic prompts like "what happens first" — ask content-specific questions\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '- Generate a decision-based simulation game based ONLY on the content provided\n';
     if (topic) userPrompt += '- Topic Focus: All scenarios MUST relate to ' + topic + '\n';
@@ -1046,7 +1051,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   } else if (gameTypeStr === 'drag_drop') {
     userPrompt += '    {"dragItems": [{"text": "Item from content", "correctZone": "zone1"}, ...], "dropZones": [{"name": "Zone from content", "x": 100, "y": 200}, ...]}\n';
   } else if (gameTypeStr === 'puzzle_pieces') {
-    userPrompt += '    {"puzzlePieces": [{"id": "step1", "text": "First step from content", "order": 0}, {"id": "step2", "text": "Next step", "order": 1}, ...], "imageUrl": "optional diagram url"}\n';
+    userPrompt += '    {"needsImage": true, "imagePrompt": "Educational diagram of topic with clear process flow", "puzzleSteps": [{"id": "s1", "type": "pick_one", "prompt": "Content-specific question", "explanation": "Why this matters", "choices": [{"id": "a", "text": "Real option", "correct": true}, {"id": "b", "text": "Distractor", "correct": false}]}, {"id": "s2", "type": "hotspot_drop", "prompt": "Drag the label to the correct part", "explanation": "...", "hotspots": [{"id": "h1", "x": 0.2, "y": 0.3, "w": 0.15, "h": 0.1, "accepts": "label1"}], "dragLabels": [{"id": "label1", "text": "Concept from content"}]}, {"id": "s3", "type": "order_check", "prompt": "Tap the steps in order", "choices": [...], "orderSequence": ["a","b"]}], "puzzlePieces": [{"id": "step1", "text": "First step", "order": 0}]}\n';
   } else if (gameTypeStr === 'simulation') {
     userPrompt += '    {"role": "Role from content", "scenarios": [{"situation": "Scenario from content", "actions": ["Action 1", "Action 2", ...], "consequences": {"Action 1": "Consequence based on content", ...}}, ...]}\n';
   } else if (gameTypeStr === 'mystery') {
@@ -1326,14 +1331,47 @@ If you generate quiz again, your response will be rejected.`
     gameData.title = gameData.title.substring(0, 12) + '...'
   }
 
-  // Phase 3: Illustrations — on-demand by default (fast generate).
-  // Set SKULMATE_INLINE_ILLUSTRATIONS=true to embed during generate.
+  // Puzzle games: always request a hero illustration on the first item.
   if (
-    process.env.SKULMATE_INLINE_ILLUSTRATIONS === 'true' &&
+    gameTypeStr === 'puzzle_pieces' &&
+    gameData.items &&
+    Array.isArray(gameData.items) &&
+    gameData.items.length > 0
+  ) {
+    const first = gameData.items[0] as Record<string, unknown>
+    if (!first.imageUrl) {
+      first.needsImage = true
+      const existing =
+        typeof first.imagePrompt === 'string' ? first.imagePrompt.trim() : ''
+      if (!existing) {
+        const steps = (first.puzzleSteps as Array<{ prompt?: string }>) || []
+        const pieces = (first.puzzlePieces as Array<{ text?: string }>) || []
+        const stepSummary = (steps.length > 0 ? steps : pieces)
+          .map((p) => ('prompt' in p ? p.prompt : (p as { text?: string }).text)?.trim())
+          .filter(Boolean)
+          .slice(0, 4)
+          .join(', ')
+        const topicLabel = topic?.trim() || gameData.title || 'the topic'
+        first.imagePrompt = stepSummary
+          ? `Educational diagram of ${topicLabel}: ${stepSummary}`
+          : `Educational diagram illustrating ${topicLabel}`
+      }
+    }
+  }
+
+  // Puzzle: always embed hero (+ optional step) illustrations at generate time.
+  const shouldInlineIllustrate =
+    gameTypeStr === 'puzzle_pieces' ||
+    process.env.SKULMATE_INLINE_ILLUSTRATIONS === 'true'
+
+  if (
+    shouldInlineIllustrate &&
     gameData.items &&
     Array.isArray(gameData.items)
   ) {
-    console.log('[skulMate] Inline illustration enrichment enabled')
+    console.log(
+      `[skulMate] Inline illustration enrichment (${gameTypeStr === 'puzzle_pieces' ? 'puzzle hero required' : 'env flag'})`,
+    )
     try {
       const { enrichItemsWithIllustrations } = await import(
         '@/lib/skulmate/illustration-generator'

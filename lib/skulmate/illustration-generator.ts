@@ -10,7 +10,7 @@ export function buildIllustrationPrompt(imagePrompt: string, topic?: string): st
   const topicLine = topic?.trim() ? `Topic: ${topic.trim()}. ` : ''
   return (
     `${topicLine}Educational diagram for secondary students: ${subject}. ` +
-    'Clean flat illustration, white background, no text, no labels, no watermark, centered subject, simple and accurate.'
+    'Modern flat vector illustration, soft colors, clear process arrows and icons, white background, no text, no labels, no watermark, centered composition, accurate and engaging.'
   )
 }
 
@@ -176,20 +176,45 @@ export async function enrichItemsWithIllustrations(
 ): Promise<void> {
   let puzzleHeroDone = false
   for (const item of items) {
-    if (!shouldGenerateIllustration(gameType, item)) continue
-    if (gameType === 'puzzle_pieces') {
-      if (puzzleHeroDone) continue
-      puzzleHeroDone = true
+    if (shouldGenerateIllustration(gameType, item)) {
+      if (gameType === 'puzzle_pieces') {
+        if (puzzleHeroDone) continue
+        puzzleHeroDone = true
+      }
+      const prompt = String(item.imagePrompt)
+      try {
+        const result = await generateEducationalIllustration(prompt, { topic })
+        item.imageUrl = result.imageUrl
+        console.log(
+          `[skulMate] illustration ${result.cached ? 'cache hit' : 'generated'} for item hero`,
+        )
+      } catch (e) {
+        console.warn('[skulMate] illustration generation skipped:', e)
+      }
     }
-    const prompt = String(item.imagePrompt)
-    try {
-      const result = await generateEducationalIllustration(prompt, { topic })
-      item.imageUrl = result.imageUrl
-      console.log(
-        `[skulMate] illustration ${result.cached ? 'cache hit' : 'generated'} for prompt`,
-      )
-    } catch (e) {
-      console.warn('[skulMate] illustration generation skipped:', e)
+
+    if (gameType !== 'puzzle_pieces') continue
+
+    const steps = item.puzzleSteps as Array<Record<string, unknown>> | undefined
+    if (!Array.isArray(steps)) continue
+
+    for (const step of steps) {
+      if (step.imageUrl) continue
+      const needsImage = step.needsImage === true
+      const stepPrompt =
+        typeof step.imagePrompt === 'string' ? step.imagePrompt.trim() : ''
+      if (!needsImage || stepPrompt.length === 0) continue
+      try {
+        const result = await generateEducationalIllustration(stepPrompt, {
+          topic,
+        })
+        step.imageUrl = result.imageUrl
+        console.log(
+          `[skulMate] step illustration ${result.cached ? 'cache hit' : 'generated'}`,
+        )
+      } catch (e) {
+        console.warn('[skulMate] step illustration skipped:', e)
+      }
     }
   }
 }
