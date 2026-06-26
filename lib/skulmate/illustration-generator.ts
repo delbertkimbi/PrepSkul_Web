@@ -174,8 +174,13 @@ export async function enrichItemsWithIllustrations(
   gameType: string | undefined,
   topic?: string,
 ): Promise<void> {
+  let puzzleHeroDone = false
   for (const item of items) {
     if (!shouldGenerateIllustration(gameType, item)) continue
+    if (gameType === 'puzzle_pieces') {
+      if (puzzleHeroDone) continue
+      puzzleHeroDone = true
+    }
     const prompt = String(item.imagePrompt)
     try {
       const result = await generateEducationalIllustration(prompt, { topic })
