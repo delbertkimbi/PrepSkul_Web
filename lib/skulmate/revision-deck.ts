@@ -151,19 +151,25 @@ function cardFromFlashcardItem(
   index: number,
   unitId: string
 ): RevisionDeckCard | null {
-  const term = asString(item.term)
-  const definition = asString(item.definition)
+  const statement = asString(item.statement)
+  const term = asString(item.term) || statement
+  const definition = asString(item.definition) || asString(item.answer)
   if (!term || !definition) return null
+
+  const tags = ['flashcard']
+  if (statement && (definition.toLowerCase() === 'true' || definition.toLowerCase() === 'false')) {
+    tags.push('true_false')
+  }
 
   return {
     id: slugId(term, index),
     knowledgeUnitId: unitId,
     cardType: 'term_def',
-    prompt: term,
+    prompt: statement || term,
     answer: definition,
     explanation: asString(item.explanation) || undefined,
     difficulty: term.length <= 18 ? 'easy' : 'medium',
-    tags: ['flashcard'],
+    tags,
     gameItemIndex: index,
   }
 }
@@ -274,6 +280,87 @@ function cardsFromGameItems(
   return cards
 }
 
+function snippetFromExtractedText(extractedText: string, term: string): string | undefined {
+  const trimmed = extractedText.trim()
+  if (trimmed.length < 40) return undefined
+  const lower = trimmed.toLowerCase()
+  const needle = term.toLowerCase()
+  const index = lower.indexOf(needle)
+  if (index < 0) return undefined
+  const start = Math.max(0, index - 40)
+  const end = Math.min(trimmed.length, index + needle.length + 80)
+  return trimmed.slice(start, end).trim()
+}
+
+/** Inject synthesized MCQ and true/false variety into flashcard-only decks. */
+export function enrichFlashcardDeck(
+  cards: RevisionDeckCard[],
+  extractedText = ''
+): RevisionDeckCard[] {
+  if (cards.length < 4) return cards
+
+  const termCards = cards.filter((c) => c.cardType === 'term_def')
+  if (termCards.length < 4) return cards
+
+  const answerPool = termCards
+    .map((c) => c.answer)
+    .filter((a, i, arr) => arr.findIndex((x) => x.toLowerCase() === a.toLowerCase()) === i)
+
+  const enriched: RevisionDeckCard[] = []
+  let synthMcq = 0
+
+  cards.forEach((card, index) => {
+    let next: RevisionDeckCard = { ...card }
+    if (
+      card.cardType === 'term_def' &&
+      !card.sourceQuote &&
+      extractedText.trim().length > 0
+    ) {
+      const quote = snippetFromExtractedText(extractedText, card.prompt)
+      if (quote) next = { ...next, sourceQuote: quote }
+    }
+    enriched.push(next)
+
+    if (card.cardType !== 'term_def') return
+
+    if ((index + 1) % 3 === 0) {
+      const distractors = answerPool
+        .filter((a) => a.toLowerCase() !== card.answer.toLowerCase())
+        .slice(0, 3)
+      if (distractors.length >= 2) {
+        enriched.push({
+          id: `${card.id}-mcq-${synthMcq++}`,
+          knowledgeUnitId: card.knowledgeUnitId,
+          cardType: 'mcq',
+          prompt: `What is the definition of "${card.prompt}"?`,
+          answer: card.answer,
+          distractors,
+          explanation: card.explanation,
+          difficulty: 'medium',
+          tags: ['synthesized_mcq'],
+          gameItemIndex: card.gameItemIndex,
+        })
+      }
+    }
+
+    if ((index + 1) % 5 === 0 && !card.tags?.includes('true_false')) {
+      enriched.push({
+        id: `${card.id}-tf-${index}`,
+        knowledgeUnitId: card.knowledgeUnitId,
+        cardType: 'term_def',
+        prompt: `${card.prompt} is defined as: "${card.answer.slice(0, 72)}${card.answer.length > 72 ? '…' : ''}"`,
+        answer: 'True',
+        explanation: card.explanation,
+        difficulty: 'easy',
+        tags: ['true_false', 'flashcard'],
+        gameItemIndex: card.gameItemIndex,
+      })
+    }
+  })
+
+  return enriched
+}
+
 export function pickConceptCheckCardIds(cards: RevisionDeckCard[]): string[] {
   if (cards.length === 0) return []
 
@@ -326,7 +413,11 @@ export function buildRevisionDeckFromGame(input: BuildDeckInput): RevisionDeck {
     topicLabel,
     input.entityLabels
   )
-  const cards = cardsFromGameItems(gameType, items, knowledgeUnits)
+  const rawCards = cardsFromGameItems(gameType, items, knowledgeUnits)
+  const cards =
+    gameType === 'flashcards'
+      ? enrichFlashcardDeck(rawCards, input.extractedText)
+      : rawCards
 
   return {
     title,

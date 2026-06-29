@@ -113,6 +113,7 @@ function checkRoleBasedPermissions(
     'profile_rejected',
     'profile_improvement',
     'profile_complete',
+    'onboarding_reminder',
     'earnings_added',
     'earnings_activated',
     'payout_status',

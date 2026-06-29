@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
+import { getUserFromBearer } from '@/lib/supabase-mobile-auth';
 
 const bodySchema = z.object({
   platform: z.enum(['ios', 'android', 'web']).optional(),
@@ -14,10 +14,7 @@ const bodySchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getUserFromBearer(request);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

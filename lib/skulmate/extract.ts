@@ -450,9 +450,9 @@ async function extractImage(
         }
 
         const text = await extractTextFromImageSkulMate(imageUrl, budget, {
-          useHandwritingPrompt: attempt.useHandwritingPrompt,
-          models: [attempt.model],
-        })
+                useHandwritingPrompt: attempt.useHandwritingPrompt,
+                models: [attempt.model],
+              })
 
         return {
           text,
