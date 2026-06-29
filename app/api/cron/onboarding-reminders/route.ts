@@ -56,6 +56,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, processed: 0, message: 'No incomplete tutors' });
     }
 
+    const userIds = progressRows.map((p) => p.user_id as string);
+    const { data: profileRows, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('id, user_type')
+      .in('id', userIds);
+
+    if (profileError) {
+      console.error('Onboarding reminders cron: profile fetch error', profileError);
+      return NextResponse.json(
+        { error: 'Failed to fetch tutor profiles', details: profileError.message },
+        { status: 500 }
+      );
+    }
+
+    const tutorIds = new Set(
+      (profileRows || [])
+        .filter((p) => (p.user_type as string | null)?.toLowerCase() === 'tutor')
+        .map((p) => p.id as string)
+    );
+
+    const tutorProgressRows = progressRows.filter((p) => tutorIds.has(p.user_id as string));
+
+    if (!tutorProgressRows.length) {
+      return NextResponse.json({ success: true, processed: 0, message: 'No tutor accounts with incomplete onboarding' });
+    }
+
     // 2. User IDs that already received an onboarding_reminder in the last 24h
     const { data: recentReminders } = await supabaseAdmin
       .from('notifications')
@@ -66,7 +92,7 @@ export async function GET(request: NextRequest) {
     const recentlyReminded = new Set((recentReminders || []).map((r) => r.user_id));
 
     // 3. Eligible tutors: incomplete/skipped and not reminded in last 24h
-    const eligible = progressRows.filter((p) => !recentlyReminded.has(p.user_id));
+    const eligible = tutorProgressRows.filter((p) => !recentlyReminded.has(p.user_id));
     const toProcess = eligible.slice(0, MAX_TUTORS_PER_RUN);
 
     const baseUrl =

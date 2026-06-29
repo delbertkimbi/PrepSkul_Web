@@ -131,7 +131,7 @@ export function pickCampaign(
     if (n) return n;
   }
 
-  if (ctx.hasSkulMateStats && (ctx.role === 'student' || ctx.role === 'learner')) {
+  if (ctx.hasSkulMateStats && (ctx.role === 'student' || ctx.role === 'learner' || ctx.role === 'parent')) {
     const s = tryPick('daily_skulmate_streak');
     if (s) return s;
   }

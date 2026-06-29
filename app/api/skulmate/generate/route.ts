@@ -909,6 +909,8 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
     userPrompt += '- Terms should be key concepts extracted from the actual content\n';
     userPrompt += '- Definitions should be clear and educational, based on the actual content\n';
     userPrompt += '- DO NOT make up terms or definitions that are not in the content\n';
+    userPrompt += '- Optional per item: "explanation" (1-2 sentences), "statement" (declarative for true/false), "highlightTerms" (array of key words)\n';
+    userPrompt += '- Mix a few true/false statements using "statement" + definition "True" or "False" where appropriate\n';
     userPrompt += '- For ' + contentType + 's: Include visual/spatial concepts where relevant\n';
   } else if (gameTypeStr === 'matching') {
     userPrompt += '- Generate ' + (numQuestions || '10-12') + ' matching pairs based ONLY on the content provided\n';
@@ -1043,7 +1045,7 @@ Think BIG: Create games that feel like entertainment, not homework. Make learnin
   if (gameTypeStr === 'quiz') {
     userPrompt += '    {"question": "Question based on actual content", "options": ["Real option 1 from content", "Real option 2 from content", "Real option 3 from content", "Real option 4 from content"], "correctAnswer": 0, "explanation": "Explanation based on content"}\n';
   } else if (gameTypeStr === 'flashcards') {
-    userPrompt += '    {"term": "Term from actual content", "definition": "Definition from actual content"}\n';
+    userPrompt += '    {"term": "Term from actual content", "definition": "Definition from actual content", "explanation": "optional", "statement": "optional declarative T/F statement", "highlightTerms": ["optional"]}\n';
   } else if (gameTypeStr === 'matching') {
     userPrompt += '    {"leftItem": "Item from actual content", "rightItem": "Matching item from actual content"}\n';
   } else if (gameTypeStr === 'fill_blank') {
