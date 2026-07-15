@@ -24,6 +24,7 @@ import {
 } from "@/lib/sbc/content"
 import { buildPartnershipWhatsAppMessage } from "@/lib/sbc/build-partnership-whatsapp"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { useSbcLanguage } from "@/lib/sbc/i18n"
 import { sbcBtnPrimary } from "@/lib/sbc/styles"
 import { SbcBackButton } from "@/components/sbc/sbc-back-button"
 import { Eyebrow, PaperSheet, Tape } from "@/components/sbc/paper-ui"
@@ -71,6 +72,7 @@ const initialFormData: FormData = {
 
 export default function SbcPartnerPage() {
   const sbcPath = useSbcPath()
+  const { t } = useSbcLanguage()
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [submitted, setSubmitted] = useState(false)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
@@ -143,7 +145,7 @@ export default function SbcPartnerPage() {
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
               <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#1B2C4F]">Inquiry sent!</h1>
+            <h1 className="text-2xl sm:text-3xl font-black text-[#1B2C4F]">{t("Inquiry sent!")}</h1>
             <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
               We&apos;ve opened WhatsApp with your partnership details. Send the message to reach the PrepSkul team. We&apos;ll review and get back to you soon.
             </p>
@@ -163,7 +165,7 @@ export default function SbcPartnerPage() {
               <Button asChild className={sbcBtnPrimary}>
                 <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-4 w-4" />
-                  Chat on WhatsApp
+                  {t("Chat on WhatsApp")}
                 </a>
               </Button>
             </div>
@@ -183,10 +185,10 @@ export default function SbcPartnerPage() {
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-2">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
             <div className="mb-9 text-center">
-              <Eyebrow>Build the future with us</Eyebrow>
+              <Eyebrow>{t("Build the future with us")}</Eyebrow>
               <div>
                 <h1 className="sbc-display mt-5 text-5xl sm:text-6xl lg:text-7xl font-black uppercase text-[#132d63] mb-4">
-                  Partner with <span className="text-[#2864d7]">SBC</span>
+                  {t("Partner with")} <span className="text-[#2864d7]">SBC</span>
                 </h1>
                 <p className="mx-auto max-w-2xl text-slate-500 text-sm sm:text-base leading-relaxed">
                   Investors, startups, NGOs, brands, and schools are welcome to partner with PrepSkul and DelTech Hub on Summer Build Camp. Tell us who you are and how you&apos;d like to get involved.
@@ -456,7 +458,7 @@ export default function SbcPartnerPage() {
                 className={`w-full text-sm sm:text-base font-bold h-12 sm:h-14 px-4 ${sbcBtnPrimary} shadow-md shadow-blue-900/15 whitespace-normal leading-snug`}
               >
                 <MessageCircle className="mr-2 h-5 w-5 shrink-0" />
-                Send Partnership Inquiry via WhatsApp
+                {t("Send Partnership Inquiry via WhatsApp")}
               </Button>
             </form>
           </motion.div>
