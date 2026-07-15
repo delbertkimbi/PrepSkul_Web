@@ -1,0 +1,68 @@
+@layer components {
+  .sbc-site {
+    --sbc-navy: #132d63;
+    --sbc-blue: #2864d7;
+    --sbc-teal: #168c91;
+    --sbc-yellow: #f5c843;
+    background-color: #faf8f3;
+    background-image: radial-gradient(rgba(19, 45, 99, 0.045) 0.7px, transparent 0.7px);
+    background-size: 7px 7px;
+  }
+
+  .sbc-display {
+    font-family: var(--font-fredoka), var(--font-poppins), sans-serif;
+    font-weight: 600 !important;
+    letter-spacing: -0.025em;
+  }
+
+  .sbc-wordmark {
+    font-family: var(--font-fredoka), var(--font-poppins), sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    transform: rotate(-1deg);
+    transform-origin: left center;
+  }
+
+  .sbc-paper {
+    box-shadow: 0 16px 32px rgba(37, 49, 69, 0.12), 0 2px 4px rgba(37, 49, 69, 0.08);
+  }
+
+  .sbc-paper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0.35;
+    background-image: radial-gradient(rgba(42, 50, 63, 0.12) 0.55px, transparent 0.55px);
+    background-size: 5px 5px;
+    mix-blend-mode: multiply;
+  }
+
+  .sbc-paper-button:hover {
+    transform: translateY(-3px) rotate(-1deg);
+    box-shadow: 0 10px 0 #12295f, 0 15px 24px rgba(30, 58, 138, 0.18);
+  }
+
+  .sbc-torn-divider {
+    background: #fffdf7;
+    clip-path: polygon(0 28%, 3% 50%, 7% 24%, 11% 58%, 16% 31%, 22% 53%, 28% 22%, 34% 61%, 40% 31%, 46% 55%, 52% 20%, 58% 59%, 64% 30%, 71% 55%, 78% 21%, 85% 59%, 92% 30%, 96% 51%, 100% 28%, 100% 100%, 0 100%);
+  }
+
+  .sbc-photo {
+    filter: drop-shadow(0 15px 18px rgba(28, 40, 58, 0.18));
+  }
+
+  .sbc-field {
+    min-height: 48px;
+    border: 1px solid rgba(19, 45, 99, 0.18) !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sbc-paper-button {
+      transition: none !important;
+    }
+  }
+}

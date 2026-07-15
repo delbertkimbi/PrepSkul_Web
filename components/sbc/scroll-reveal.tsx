@@ -12,7 +12,7 @@ interface ScrollRevealProps extends HTMLMotionProps<"div"> {
 export function ScrollReveal({ delay = 0, children, className, ...props }: ScrollRevealProps) {
   return (
     <motion.div
-      initial="hidden"
+      initial={false}
       whileInView="visible"
       viewport={viewportOnce}
       variants={fadeUp}
@@ -34,7 +34,7 @@ export function ScrollRevealStagger({
 }) {
   return (
     <motion.div
-      initial="hidden"
+      initial={false}
       whileInView="visible"
       viewport={viewportOnce}
       variants={{

@@ -1,81 +1,9 @@
-import Link from "next/link"
+"use client"
+
 import Image from "next/image"
-import { Phone, Globe, Facebook, Linkedin } from "lucide-react"
-import { SBC_CONTACT, SBC_LOGO } from "@/lib/sbc/content"
+import Link from "next/link"
+import { Facebook, Linkedin, Phone } from "lucide-react"
+import { useSbcPath } from "@/lib/sbc/use-sbc-path"
+import { SBC_CONTACT } from "@/lib/sbc/content"
 
-export default function SbcFooter() {
-  return (
-    <footer className="border-t border-slate-200 bg-white/80 text-slate-600">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 sm:py-12 min-w-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Image src={SBC_LOGO} alt="Summer Build Camp" width={44} height={44} className="h-10 w-auto sm:h-11 object-contain" />
-            </div>
-            <p className="text-sm leading-relaxed">
-              Summer Build Camp bridges the technology and entrepreneurial gap for young innovators across Africa.
-            </p>
-          </div>
-
-          <div>
-            <h3 className="text-[#1B2C4F] font-semibold mb-3">Program</h3>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/sbc#about" className="hover:text-[#4A6FBF] transition-colors">About SBC</Link></li>
-              <li><Link href="/sbc/program" className="hover:text-[#4A6FBF] transition-colors">Curriculum</Link></li>
-              <li><Link href="/sbc#pricing" className="hover:text-[#4A6FBF] transition-colors">Pricing</Link></li>
-              <li><Link href="/sbc/register" className="hover:text-[#4A6FBF] transition-colors">Register</Link></li>
-              <li><Link href="/sbc/partner" className="hover:text-[#4A6FBF] transition-colors">Partner with SBC</Link></li>
-              <li><Link href="/sbc/faq" className="hover:text-[#4A6FBF] transition-colors">FAQ</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-[#1B2C4F] font-semibold mb-3">Organizers</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="https://prepskul.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors">
-                  PrepSkul
-                </a>
-              </li>
-              <li>
-                <a href="https://deltech-hub.vercel.app/" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors">
-                  DelTech Hub
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-[#1B2C4F] font-semibold mb-3">Contact</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-[#4A6FBF] shrink-0" />
-                <a href={`tel:+237${SBC_CONTACT.phone}`} className="hover:text-[#4A6FBF] transition-colors">
-                  +237 {SBC_CONTACT.phoneDisplay}
-                </a>
-              </li>
-              <li className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-[#4A6FBF] shrink-0" />
-                <a href={SBC_CONTACT.website} className="hover:text-[#4A6FBF] transition-colors break-all">
-                  sbc.prepskul.com
-                </a>
-              </li>
-              <li className="flex items-center gap-3 pt-1">
-                <a href="https://facebook.com/prepskul" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors" aria-label="PrepSkul on Facebook">
-                  <Facebook className="h-5 w-5" />
-                </a>
-                <a href="https://linkedin.com/company/prepskul" target="_blank" rel="noopener noreferrer" className="hover:text-[#4A6FBF] transition-colors" aria-label="PrepSkul on LinkedIn">
-                  <Linkedin className="h-5 w-5" />
-                </a>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="mt-8 sm:mt-10 pt-6 border-t border-slate-100 text-center text-xs text-slate-400">
-          <p>© {new Date().getFullYear()} Summer Build Camp · Organized by PrepSkul in collaboration with DelTech Hub</p>
-        </div>
-      </div>
-    </footer>
-  )
-}
+export default function SbcFooter(){const path=useSbcPath();return <footer className="relative mt-auto bg-[#132d63] px-4 pb-8 pt-16 text-white sm:px-6"><div aria-hidden className="absolute inset-x-0 top-0 h-8 bg-[#faf8f3] [clip-path:polygon(0_0,100%_0,100%_35%,94%_68%,88%_36%,81%_72%,74%_40%,67%_70%,59%_35%,51%_72%,43%_39%,35%_69%,27%_37%,19%_72%,10%_38%,0_70%)]"/><div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-2 lg:grid-cols-4"><div><p className="text-xs font-black uppercase tracking-[.16em] text-[#f5c843]">Organized by</p><div className="mt-3 flex items-center gap-3"><div className="flex items-center gap-2"><Image src="/prepskul-white.png" alt="" width={34} height={34} className="h-7 w-7 object-contain"/><span className="text-lg font-black tracking-tight">PrepSkul</span></div><span className="text-sm font-black text-white/35">×</span><Image src="/deltech-white.png" alt="DelTech Hub" width={92} height={32} className="h-7 w-auto object-contain"/></div><p className="mt-4 max-w-xs text-sm leading-6 text-white/65">A one-week AI and innovation experience for young problem-solvers.</p></div><div><h3 className="font-black uppercase tracking-wider text-[#f5c843]">Explore</h3><div className="mt-4 space-y-2 text-sm text-white/75"><Link className="block hover:text-white" href={path()}>Home</Link><Link className="block hover:text-white" href={path("/about")}>About our vision</Link><Link className="block hover:text-white" href={path("/program")}>Roadmap</Link><Link className="block hover:text-white" href={path("/faq")}>FAQ</Link><Link className="block hover:text-white" href={path("/partner")}>Partner with us</Link></div></div><div><h3 className="font-black uppercase tracking-wider text-[#f5c843]">Camp details</h3><p className="mt-4 text-sm leading-7 text-white/75">4–8 August 2026<br/>Buea onsite + online<br/>Ages 9–18<br/>Demo Day · 8 August</p></div><div><h3 className="font-black uppercase tracking-wider text-[#f5c843]">Talk to us</h3><a href={`tel:+237${SBC_CONTACT.phone}`} className="mt-4 flex items-center gap-2 text-sm"><Phone className="h-4 w-4"/>+237 {SBC_CONTACT.phoneDisplay}</a><div className="mt-5 flex gap-4"><a aria-label="PrepSkul on Facebook" href="https://facebook.com/prepskul"><Facebook/></a><a aria-label="PrepSkul on LinkedIn" href="https://linkedin.com/company/prepskul"><Linkedin/></a></div></div></div><p className="mx-auto mt-12 max-w-6xl border-t border-white/10 pt-6 text-xs text-white/45">© 2026 Summer Build Camp · PrepSkul × DelTech Hub</p></footer>}

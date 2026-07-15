@@ -8,29 +8,33 @@ export const SBC_CONTACT = {
 
 export const SBC_LOGO = "/sbclogo.png"
 
+// Keep every SBC registration surface synchronized with the actual program state.
+export const SBC_REGISTRATION_OPEN = true
+
 export const SBC_PRICING = {
-  registrationFee: 10_000,
-  programFee: 39_000,
-  registrationDeadline: "June 30, 2026",
+  registrationFee: 8_000,
+  siblingFee: 5_000,
+  programFee: 8_000,
+  registrationDeadline: "While spaces last",
   currency: "FCFA",
 }
 
 export const SBC_SCHEDULE = {
-  startDate: "July 19, 2026",
-  endDate: "August 30, 2026",
-  duration: "6 weeks",
-  days: "Saturdays, Sundays & Mondays",
-  location: "UB Junction, Buea",
-  ages: "10 to 17",
-  dateRange: "July 19, 2026 to August 30, 2026",
-  sessionsPerWeek: 3,
-  totalSessions: 18,
+  startDate: "August 4, 2026",
+  endDate: "August 8, 2026",
+  duration: "1 week",
+  days: "Tuesday to Saturday",
+  location: "Buea onsite + online participation",
+  ages: "9 to 18",
+  dateRange: "August 4 to August 8, 2026",
+  sessionsPerWeek: 5,
+  totalSessions: 5,
 }
 
 export const SBC_INTRO = {
   tagline: "AI and Entrepreneurship for Young Innovators",
   summary:
-    "Most young people today are growing up alongside AI without ever being taught how to use it. Summer Build Camp closes that gap. Over 6 weeks, children aged 10 to 17 go from curious to capable, building real products, real brands, and real business ideas using AI tools.",
+    "A one-week hands-on program where young learners turn ideas into real solutions using AI, creativity and teamwork.",
   partners: "Organized by DelTech Hub · In partnership with PrepSkul · i2D · AD",
 }
 
@@ -60,12 +64,12 @@ export const SBC_MILESTONES = [
 
 export const SBC_HERO_STATS = [
   {
-    value: "6",
-    label: "Weeks",
-    detail: "July to August. Every week builds on the last.",
+    value: "5",
+    label: "Days",
+    detail: "August 4–8. Every day moves the idea forward.",
   },
   {
-    value: "10–17",
+    value: "9–18",
     label: "Ages",
     detail: "Designed for young innovators across Africa.",
   },
@@ -100,9 +104,9 @@ export const SBC_WEEKLY_SESSIONS = [
 export const SBC_PROGRAM_STRUCTURE = [
   {
     label: "Duration",
-    title: "6 Weeks",
+    title: "5 Days",
     description:
-      "18 total sessions across the program. Designed to fit alongside school schedules during July and August.",
+      "One focused week from discovery to a live Demo Day showcase.",
     icon: "calendar" as const,
   },
   {
@@ -124,57 +128,48 @@ export const SBC_PROGRAM_STRUCTURE = [
 export const SBC_CURRICULUM_WEEKS = [
   {
     week: 1,
-    title: "Think Like a Founder",
+    title: "Discover & Understand",
     learn:
-      "What entrepreneurs do, how to identify real problems worth solving, and how AI is creating opportunities for young builders and creators right now.",
-    do: "Conduct live interviews to discover a real problem. Use AI research tools to analyse and document findings. Begin designing a solution concept.",
+      "Welcome, icebreakers, real-world AI examples and the entrepreneurial mindset.",
+    do: "Explore problems around us and choose one meaningful challenge to investigate.",
     produce:
-      "A validated problem statement and a first-draft solution concept ready to build on.",
+      "A clearly defined real-world problem worth solving.",
   },
   {
     week: 2,
-    title: "AI as Your Co-Builder",
+    title: "Ideate & Plan",
     learn:
-      "How AI tools work, how to write effective prompts, and how to use AI for writing, designing, researching, and creating content at speed.",
-    do: "Use AI to generate and refine a business idea, write a company description, and design the first version of a product concept using AI creation tools.",
+      "Idea generation with AI, problem validation, customer empathy and project planning.",
+    do: "Listen, learn, assign roles and turn a promising idea into a practical plan.",
     produce:
-      "A refined business idea, company description, and product concept document.",
+      "A validated solution concept and a simple build plan.",
   },
   {
     week: 3,
-    title: "Design and Build Your Brand",
+    title: "Build & Create",
     learn:
-      "Brand design fundamentals: naming, colour theory, typography, and visual identity. How to use AI design tools to create professional marketing assets.",
-    do: "Design a full brand identity using AI tools: company name, logo, colour palette, tagline, and a marketing flyer ready to share with the world.",
+      "AI tools, prompt engineering, solution design and rapid prototyping.",
+    do: "Build a first app, web, product or design prototype and test the core idea.",
     produce:
-      "A complete brand kit: name, logo, colours, tagline, and a share-ready marketing flyer.",
+      "A working first version of the team’s solution.",
   },
   {
     week: 4,
-    title: "Code and Build the Product",
+    title: "Improve & Prepare",
     learn:
-      "Introduction to coding and product development using AI-assisted tools. Building apps, websites, and digital products without needing years of technical experience.",
-    do: "Code and build a working product prototype using AI coding assistants and no-code platforms. Test it with real users and improve based on feedback.",
+      "Product improvement, branding, storytelling, marketing and pitch training.",
+    do: "Collect feedback, refine the prototype and rehearse a clear team presentation.",
     produce:
-      "A working digital prototype tested with real users and ready to demo.",
+      "A stronger prototype and a confident Demo Day pitch.",
   },
   {
     week: 5,
-    title: "Market, Sell and Tell Your Story",
+    title: "Pitch & Celebrate",
     learn:
-      "Sales and marketing fundamentals: pricing, communication, and persuasion. Creating AI-generated video content and marketing materials that get attention and drive action.",
-    do: "Produce a 90-second AI-generated marketing video for their product. Write sales copy, set a price, and attempt to secure one real committed customer.",
+      "Public speaking, product demonstrations and responding to an audience.",
+    do: "Present on Demo Day to parents, mentors and guests, then celebrate the journey.",
     produce:
-      "A marketing video, sales copy, pricing strategy, and at least one real customer commitment.",
-  },
-  {
-    week: 6,
-    title: "Demo Day — Present and Launch",
-    learn:
-      "Pitching, public speaking, and how to present a business idea with clarity and confidence to investors, mentors, and real audiences.",
-    do: "Deliver a live 3-minute founder pitch. Demo the working product. Present the brand. Answer real questions from a panel of mentors and guests.",
-    produce:
-      "A live Demo Day pitch, product demo, and official certificate of completion.",
+      "A live pitch, prototype showcase and certificate of completion.",
   },
 ] as const
 
@@ -336,7 +331,7 @@ export const SBC_FAQ = [
   {
     question: "Who is Summer Build Camp for?",
     answer:
-      "SBC is designed for young innovators aged 10 to 17 across Cameroon and Africa who are curious about technology and entrepreneurship. No prior coding experience is required.",
+      "SBC is designed for young innovators aged 9 to 18 who are curious about technology, creativity and entrepreneurship. No prior coding experience is required.",
   },
   {
     question: "Do students need their own laptop?",
@@ -346,12 +341,12 @@ export const SBC_FAQ = [
   {
     question: "When does the program run?",
     answer:
-      "SBC runs for 6 weeks from July 19 to August 30, 2026. Each week includes Saturday and Sunday onsite sessions in Buea, plus a live online session on Monday.",
+      "SBC runs from Tuesday, August 4 to Saturday, August 8, 2026. The week ends with a live Demo Day presentation.",
   },
   {
     question: "What are the fees?",
     answer:
-      "Registration is 10,000 FCFA (deadline: June 30, 2026). The program fee of 39,000 FCFA is paid in installments throughout the 6-week program.",
+      "Registration is 8,000 XAF for one child. When registering more than one child, the fee is 5,000 XAF per child.",
   },
   {
     question: "What will my child walk away with?",
@@ -361,7 +356,7 @@ export const SBC_FAQ = [
   {
     question: "Is this only for Buea residents?",
     answer:
-      "The onsite sessions are hosted in Buea, but online participants can join the Monday live sessions from anywhere. We welcome students from across Cameroon and Africa.",
+      "No. The onsite experience is hosted in Buea, with online participation available for learners joining from elsewhere.",
   },
   {
     question: "Can my organization partner with SBC?",

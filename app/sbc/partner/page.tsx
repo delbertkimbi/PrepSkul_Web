@@ -26,6 +26,7 @@ import { buildPartnershipWhatsAppMessage } from "@/lib/sbc/build-partnership-wha
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
 import { sbcBtnPrimary } from "@/lib/sbc/styles"
 import { SbcBackButton } from "@/components/sbc/sbc-back-button"
+import { Eyebrow, PaperSheet, Tape } from "@/components/sbc/paper-ui"
 import {
   AlertCircle,
   Building2,
@@ -177,30 +178,29 @@ export default function SbcPartnerPage() {
     <SbcPageShell>
       <SbcHeader />
 
-      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0 relative">
+      <div className="flex-1 py-10 sm:py-14 lg:py-20 min-w-0 relative">
         <SbcBackButton className="absolute top-6 left-4 sm:left-6 lg:left-8 z-10" />
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-2">
           <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-start gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-[#eef3ff] flex items-center justify-center shrink-0">
-                <Handshake className="h-6 w-6 text-[#4A6FBF]" />
-              </div>
+            <div className="mb-9 text-center">
+              <Eyebrow>Build the future with us</Eyebrow>
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#1B2C4F] mb-2">
-                  Partner with SBC
+                <h1 className="sbc-display mt-5 text-5xl sm:text-6xl lg:text-7xl font-black uppercase text-[#132d63] mb-4">
+                  Partner with <span className="text-[#2864d7]">SBC</span>
                 </h1>
-                <p className="text-slate-500 text-sm sm:text-base leading-relaxed">
+                <p className="mx-auto max-w-2xl text-slate-500 text-sm sm:text-base leading-relaxed">
                   Investors, startups, NGOs, brands, and schools are welcome to partner with PrepSkul and DelTech Hub on Summer Build Camp. Tell us who you are and how you&apos;d like to get involved.
                 </p>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-[#eef3ff] border border-[#4A6FBF]/15 p-4 sm:p-5 mb-8 text-sm text-slate-600">
+            <PaperSheet tone="yellow" className="p-4 sm:p-5 mb-8 text-sm text-slate-600" rotate={-1}>
+              <Tape className="-top-3 right-12 rotate-6" color="cream" />
               <p className="flex items-start gap-2">
                 <Building2 className="h-4 w-4 text-[#4A6FBF] mt-0.5 shrink-0" />
                 Your inquiry will be sent to the PrepSkul team via WhatsApp (+237 {SBC_CONTACT.phoneDisplay}) for review.
               </p>
-            </div>
+            </PaperSheet>
 
             <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
               <fieldset className="space-y-4 rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 shadow-sm">
