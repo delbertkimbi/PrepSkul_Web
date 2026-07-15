@@ -1,97 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { Menu, X } from "lucide-react"
-import { SBC_LOGO } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
-import { sbcBtnPrimary } from "@/lib/sbc/styles"
+import { PaperButton } from "@/components/sbc/paper-ui"
 
 export default function SbcHeader() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const sbcPath = useSbcPath()
-
-  const navLinks = [
-    { href: sbcPath("#about"), label: "About" },
-    { href: sbcPath("/program"), label: "Program" },
-    { href: sbcPath("/partner"), label: "Partner" },
-    { href: sbcPath("#pricing"), label: "Pricing" },
-    { href: sbcPath("/faq"), label: "FAQ" },
-  ]
-
-  return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md shadow-sm">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 min-w-0">
-        <div className="flex items-center justify-between gap-3 py-3.5 sm:py-4">
-          <Link href={sbcPath()} className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <Image
-              src={SBC_LOGO}
-              alt="Summer Build Camp"
-              width={88}
-              height={88}
-              className="h-14 w-auto sm:h-16 lg:h-[4.5rem] object-contain shrink-0 drop-shadow-md"
-              priority
-            />
-          
-          </Link>
-
-          <nav className="hidden md:flex items-center gap-5 lg:gap-6 shrink-0">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-slate-600 hover:text-[#4A6FBF] transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <Button
-              asChild
-              size="sm"
-              className={`${sbcBtnPrimary} font-semibold shadow-md shadow-blue-900/15`}
-            >
-              <Link href={sbcPath("/register")}>Register Now</Link>
-            </Button>
-          </nav>
-
-          <button
-            type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-[#1B2C4F] hover:bg-slate-100 shrink-0"
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
-        </div>
-
-        {menuOpen && (
-          <div className="md:hidden border-t border-slate-100 pb-4 pt-2">
-            <nav className="flex flex-col gap-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="px-2 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-md"
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <Button
-                asChild
-                size="sm"
-                className={`mt-2 w-full ${sbcBtnPrimary} font-semibold`}
-              >
-                <Link href={sbcPath("/register")} onClick={() => setMenuOpen(false)}>
-                  Register Now
-                </Link>
-              </Button>
-            </nav>
-          </div>
-        )}
-      </div>
-    </header>
-  )
+  const [open,setOpen] = useState(false)
+  const path = useSbcPath()
+  const links = [{label:"About",href:path("/about")},{label:"Roadmap",href:path("/program")},{label:"What you’ll build",href:path("#build")},{label:"FAQ",href:path("/faq")}]
+  return <header className="sticky top-0 z-50 border-b border-[#132d63]/10 bg-[#faf8f3]/95 backdrop-blur"><div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 sm:px-6"><Link href={path()} aria-label="Summer Build Camp home" className="relative flex h-14 w-32 items-center overflow-hidden sm:w-36"><Image src="/sbclogo.png" alt="Summer Build Camp" width={554} height={451} priority className="h-24 w-32 scale-[1.45] object-contain sm:w-36"/></Link><nav className="hidden items-center gap-6 md:flex">{links.map(l=><Link key={l.label} href={l.href} className="text-sm font-bold text-[#132d63] transition hover:-rotate-1 hover:text-[#2864d7]">{l.label}</Link>)}<Link href={path("/register")}><PaperButton className="px-5 py-2.5 text-sm shadow-[0_5px_0_#12295f]">Register now</PaperButton></Link></nav><button onClick={()=>setOpen(!open)} aria-expanded={open} aria-controls="sbc-menu" aria-label="Toggle navigation" className="rounded-xl border border-[#132d63]/15 bg-white p-2 md:hidden">{open?<X/>:<Menu/>}</button></div>{open&&<nav id="sbc-menu" className="border-t border-[#132d63]/10 px-4 pb-5 pt-3 md:hidden">{links.map(l=><Link onClick={()=>setOpen(false)} key={l.label} href={l.href} className="block rounded-xl px-3 py-3 font-bold">{l.label}</Link>)}<Link onClick={()=>setOpen(false)} href={path("/register")} className="mt-2 block rounded-xl bg-[#1e3a8a] px-4 py-3 text-center font-black text-white">Register now</Link></nav>}</header>
 }

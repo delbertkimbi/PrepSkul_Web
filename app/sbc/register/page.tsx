@@ -2,325 +2,62 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, MapPin, MessageCircle, Users } from "lucide-react"
 import SbcHeader from "@/components/sbc/sbc-header"
 import SbcFooter from "@/components/sbc/sbc-footer"
 import { SbcPageShell } from "@/components/sbc/sbc-page-shell"
-import { PricingBadge } from "@/components/sbc/pricing-badge"
-import { Button } from "@/components/ui/button"
+import { Eyebrow, PaperButton, PaperSheet, Tape } from "@/components/sbc/paper-ui"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { SBC_CONTACT, SBC_PRICING, SBC_SCHEDULE } from "@/lib/sbc/content"
+import { SBC_CONTACT, SBC_PRICING } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
-import { sbcBtnPrimary } from "@/lib/sbc/styles"
-import { SbcBackButton } from "@/components/sbc/sbc-back-button"
-import { CheckCircle2, MessageCircle, AlertCircle } from "lucide-react"
 
-interface FormData {
-  student_name: string
-  student_age: string
-  parent_name: string
-  phone: string
-  email: string
-  city: string
-  has_device: string
-  idea: string
-}
+type Form = { parent: string; phone: string; email: string; childCount: string; children: string; mode: string; city: string }
+const initial: Form = { parent:"", phone:"", email:"", childCount:"1", children:"", mode:"onsite", city:"" }
 
-export default function SbcRegisterPage() {
-  const sbcPath = useSbcPath()
-  const [formData, setFormData] = useState<FormData>({
-    student_name: "",
-    student_age: "",
-    parent_name: "",
-    phone: "",
-    email: "",
-    city: "",
-    has_device: "",
-    idea: "",
-  })
-  const [submitted, setSubmitted] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
+export default function RegisterPage() {
+  const path = useSbcPath()
+  const [form,setForm] = useState(initial)
+  const [errors,setErrors] = useState<Partial<Record<keyof Form,string>>>({})
+  const [sent,setSent] = useState(false)
+  const [consent,setConsent] = useState(false)
+  const [consentError,setConsentError] = useState("")
+  const count = Math.max(1, Number(form.childCount) || 1)
+  const priceEach = count > 1 ? SBC_PRICING.siblingFee : SBC_PRICING.registrationFee
+  const total = priceEach * count
 
-  const validate = () => {
-    const next: Partial<Record<keyof FormData, string>> = {}
-    if (!formData.student_name.trim()) next.student_name = "Student name is required"
-    if (!formData.student_age) next.student_age = "Age is required"
-    if (!formData.parent_name.trim()) next.parent_name = "Parent/guardian name is required"
-    if (!formData.phone.trim()) next.phone = "Phone number is required"
-    if (!formData.city.trim()) next.city = "City is required"
-    if (!formData.has_device) next.has_device = "Please select an option"
-    setErrors(next)
-    return Object.keys(next).length === 0
-  }
+  const message = () => [
+    "Hello PrepSkul! I would like to register for Summer Build Camp 2026.", "",
+    `*Parent/Guardian:* ${form.parent}`, `*Phone:* ${form.phone}`,
+    form.email && `*Email:* ${form.email}`, `*Number of children:* ${count}`,
+    `*Children (names and ages):* ${form.children}`, `*Participation:* ${form.mode === "onsite" ? "Onsite in Buea" : "Online"}`,
+    `*City:* ${form.city}`, "", `*Registration total:* ${total.toLocaleString()} XAF (${priceEach.toLocaleString()} XAF per child)`
+  ].filter(Boolean).join("\n")
 
-  const buildWhatsAppMessage = () => {
-    const deviceLabel =
-      formData.has_device === "yes"
-        ? "Yes, has laptop/phone"
-        : formData.has_device === "no"
-          ? "No device, will use center laptops"
-          : formData.has_device
-
-    return [
-      "Hello PrepSkul! I'd like to register for Summer Build Camp (SBC).",
-      "",
-      `*Student:* ${formData.student_name} (Age: ${formData.student_age})`,
-      `*Parent/Guardian:* ${formData.parent_name}`,
-      `*Phone:* ${formData.phone}`,
-      formData.email ? `*Email:* ${formData.email}` : "",
-      `*City:* ${formData.city}`,
-      `*Has device:* ${deviceLabel}`,
-      formData.idea ? `*Idea/Interest:* ${formData.idea}` : "",
-      "",
-      `I understand the registration fee is ${SBC_PRICING.registrationFee.toLocaleString()} ${SBC_PRICING.currency} and the program fee is ${SBC_PRICING.programFee.toLocaleString()} ${SBC_PRICING.currency} (installments).`,
-    ]
-      .filter(Boolean)
-      .join("\n")
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!validate()) return
-    setSubmitted(true)
-    const message = encodeURIComponent(buildWhatsAppMessage())
-    window.open(`${SBC_CONTACT.whatsapp}?text=${message}`, "_blank")
+    const next: typeof errors = {}
+    if (!form.parent.trim()) next.parent = "Parent or guardian name is required"
+    if (!form.phone.trim()) next.phone = "Phone number is required"
+    if (!form.children.trim()) next.children = "Add each child’s name and age"
+    if (!form.city.trim()) next.city = "City is required"
+    if (!consent) setConsentError("Your consent is required before continuing")
+    else setConsentError("")
+    setErrors(next)
+    if (Object.keys(next).length || !consent) return
+    setSent(true)
+    window.open(`${SBC_CONTACT.whatsapp}?text=${encodeURIComponent(message())}`, "_blank", "noopener,noreferrer")
   }
 
-  if (submitted) {
-    return (
-      <SbcPageShell>
-        <SbcHeader />
-        <div className="flex-1 flex items-center justify-center px-4 py-16 sm:py-20 min-w-0">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="max-w-md w-full text-center space-y-5 sm:space-y-6"
-          >
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[#1B2C4F]">You&apos;re almost in!</h1>
-            <p className="text-slate-600 leading-relaxed text-sm sm:text-base">
-              We&apos;ve opened WhatsApp with your registration details. Send the message to complete your registration with our team.
-            </p>
-            <p className="text-sm text-slate-400">
-              Didn&apos;t see WhatsApp open?{" "}
-              <a
-                href={`${SBC_CONTACT.whatsapp}?text=${encodeURIComponent(buildWhatsAppMessage())}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#4A6FBF] hover:underline"
-              >
-                Click here to send manually
-              </a>
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center pt-2">
-              <SbcBackButton />
-              <Button asChild className={sbcBtnPrimary}>
-                <a href={SBC_CONTACT.whatsapp} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  Chat on WhatsApp
-                </a>
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-        <SbcFooter />
-      </SbcPageShell>
-    )
-  }
+  if (sent) return <SbcPageShell><SbcHeader/><main className="flex flex-1 items-center justify-center px-4 py-20"><PaperSheet className="max-w-xl p-8 text-center sm:p-12"><CheckCircle2 className="mx-auto h-14 w-14 text-[#168c91]"/><h1 className="sbc-display mt-5 text-4xl font-black uppercase">Almost there!</h1><p className="mt-4 leading-7 text-slate-600">WhatsApp has opened with your details. Send that message to our team to confirm availability and payment.</p><a className="mt-7 inline-block" href={`${SBC_CONTACT.whatsapp}?text=${encodeURIComponent(message())}`} target="_blank" rel="noreferrer"><PaperButton><MessageCircle className="mr-2 h-5 w-5"/>Continue on WhatsApp</PaperButton></a><div><Link href={path()} className="mt-6 inline-block text-sm font-bold text-[#2864d7]">Back to SBC</Link></div></PaperSheet></main><SbcFooter/></SbcPageShell>
 
-  return (
-    <SbcPageShell>
-      <SbcHeader />
+  const field = (key: keyof Form, label: string, placeholder: string, type="text") => <div className="space-y-2"><Label htmlFor={key} className="font-bold text-[#132d63]">{label}</Label><Input id={key} type={type} value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})} placeholder={placeholder} className="sbc-field"/>{errors[key]&&<p className="flex items-center gap-1 text-xs text-red-600"><AlertCircle className="h-3 w-3"/>{errors[key]}</p>}</div>
 
-      <div className="flex-1 py-8 sm:py-12 lg:py-16 min-w-0 relative">
-        <SbcBackButton className="absolute top-6 left-4 sm:left-6 lg:left-8 z-10" />
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-10 sm:pt-2">
-          <div className="grid lg:grid-cols-5 gap-8 lg:gap-10">
-            {/* Mobile pricing summary first */}
-            <div className="lg:col-span-2 lg:order-2 space-y-4 sm:space-y-6">
-              <div className="lg:sticky lg:top-24 space-y-4 sm:space-y-6">
-                <PricingBadge />
-
-                <div className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 space-y-3 sm:space-y-4 shadow-sm">
-                  <h3 className="font-bold text-lg text-[#1B2C4F]">Program Details</h3>
-                  <ul className="space-y-2.5 text-sm text-slate-600">
-                    <li><span className="text-[#1B2C4F] font-medium">Dates:</span> {SBC_SCHEDULE.dateRange}</li>
-                    <li><span className="text-[#1B2C4F] font-medium">Schedule:</span> {SBC_SCHEDULE.days}</li>
-                    <li><span className="text-[#1B2C4F] font-medium">Location:</span> {SBC_SCHEDULE.location}</li>
-                    <li><span className="text-[#1B2C4F] font-medium">Ages:</span> {SBC_SCHEDULE.ages}</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-2xl bg-[#eef3ff] border border-[#4A6FBF]/25 p-4 sm:p-5">
-                  <p className="text-sm text-[#4A6FBF] font-semibold mb-1">Registration Deadline</p>
-                  <p className="text-xl sm:text-2xl font-black text-[#1B2C4F]">{SBC_PRICING.registrationDeadline}</p>
-                  <p className="text-xs text-slate-500 mt-2">Spots are limited. Register early to secure your place.</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Form */}
-            <div className="lg:col-span-3 lg:order-1 min-w-0">
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black mb-2 text-[#1B2C4F]">Register for SBC</h1>
-                <p className="text-slate-500 mb-6 sm:mb-8 text-sm sm:text-base">
-                  Fill in the details below. You&apos;ll be directed to WhatsApp to confirm your spot with our team.
-                </p>
-
-                <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2 min-w-0">
-                      <Label htmlFor="student_name" className="text-slate-700">Student&apos;s Full Name *</Label>
-                      <Input
-                        id="student_name"
-                        value={formData.student_name}
-                        onChange={(e) => setFormData({ ...formData, student_name: e.target.value })}
-                        className="bg-white border-slate-200"
-                        placeholder="e.g. Amina Ngu"
-                      />
-                      {errors.student_name && (
-                        <p className="text-red-500 text-xs flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 shrink-0" /> {errors.student_name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2 min-w-0">
-                      <Label htmlFor="student_age" className="text-slate-700">Student&apos;s Age *</Label>
-                      <Select value={formData.student_age} onValueChange={(v) => setFormData({ ...formData, student_age: v })}>
-                        <SelectTrigger className="bg-white border-slate-200 w-full">
-                          <SelectValue placeholder="Select age" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Array.from({ length: 12 }, (_, i) => i + 7).map((age) => (
-                            <SelectItem key={age} value={String(age)}>{age} years old</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.student_age && (
-                        <p className="text-red-500 text-xs flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 shrink-0" /> {errors.student_age}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2 min-w-0">
-                      <Label htmlFor="parent_name" className="text-slate-700">Parent/Guardian Name *</Label>
-                      <Input
-                        id="parent_name"
-                        value={formData.parent_name}
-                        onChange={(e) => setFormData({ ...formData, parent_name: e.target.value })}
-                        className="bg-white border-slate-200"
-                      />
-                      {errors.parent_name && (
-                        <p className="text-red-500 text-xs flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 shrink-0" /> {errors.parent_name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="space-y-2 min-w-0">
-                      <Label htmlFor="phone" className="text-slate-700">WhatsApp / Phone *</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="bg-white border-slate-200"
-                        placeholder="e.g. 653301997"
-                      />
-                      {errors.phone && (
-                        <p className="text-red-500 text-xs flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 shrink-0" /> {errors.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2 min-w-0">
-                      <Label htmlFor="email" className="text-slate-700">Email (optional)</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="bg-white border-slate-200"
-                      />
-                    </div>
-                    <div className="space-y-2 min-w-0">
-                      <Label htmlFor="city" className="text-slate-700">City *</Label>
-                      <Input
-                        id="city"
-                        value={formData.city}
-                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                        className="bg-white border-slate-200"
-                        placeholder="e.g. Buea"
-                      />
-                      {errors.city && (
-                        <p className="text-red-500 text-xs flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3 shrink-0" /> {errors.city}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 min-w-0">
-                    <Label className="text-slate-700">Does the student have a laptop or phone? *</Label>
-                    <Select value={formData.has_device} onValueChange={(v) => setFormData({ ...formData, has_device: v })}>
-                      <SelectTrigger className="bg-white border-slate-200 w-full">
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="yes">Yes, has laptop and/or phone</SelectItem>
-                        <SelectItem value="no">No, will use center laptops</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.has_device && (
-                      <p className="text-red-500 text-xs flex items-center gap-1">
-                        <AlertCircle className="h-3 w-3 shrink-0" /> {errors.has_device}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2 min-w-0">
-                    <Label htmlFor="idea" className="text-slate-700">Any idea or area of interest? (optional)</Label>
-                    <Textarea
-                      id="idea"
-                      value={formData.idea}
-                      onChange={(e) => setFormData({ ...formData, idea: e.target.value })}
-                      className="bg-white border-slate-200 min-h-[96px] resize-y"
-                      placeholder="e.g. An app to help students find study groups, a fashion brand, a game..."
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className={`w-full text-sm sm:text-base font-bold h-12 sm:h-14 px-4 ${sbcBtnPrimary} shadow-md shadow-blue-900/15 whitespace-normal leading-snug`}
-                  >
-                    <MessageCircle className="mr-2 h-5 w-5 shrink-0" />
-                    Complete Registration via WhatsApp
-                  </Button>
-                </form>
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <SbcFooter />
-    </SbcPageShell>
-  )
+  return <SbcPageShell><SbcHeader/><main className="px-4 py-12 sm:px-6 lg:py-20"><div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1fr_370px]">
+    <div><Eyebrow>Registration is open</Eyebrow><h1 className="sbc-display mt-5 text-5xl font-black uppercase leading-none sm:text-7xl">Save their <span className="text-[#2864d7]">seat.</span></h1><p className="mt-5 max-w-2xl leading-7 text-slate-600">Tell us who is joining. After this short form, we’ll prepare a WhatsApp message so our team can confirm the registration with you.</p>
+      <PaperSheet className="mt-9 p-5 min-[375px]:p-6 sm:p-8"><Tape className="-top-3 left-1/2 -translate-x-1/2"/><form onSubmit={submit} className="space-y-5"><div className="grid gap-5 sm:grid-cols-2">{field("parent","Parent / guardian name *","e.g. Grace N.")}{field("phone","WhatsApp phone *","e.g. 653 30 19 97","tel")}</div><div className="grid gap-5 sm:grid-cols-2">{field("email","Email (optional)","you@example.com","email")}{field("city","City *","e.g. Buea")}</div><div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor="childCount" className="font-bold">Number of children *</Label><select id="childCount" value={form.childCount} onChange={e=>setForm({...form,childCount:e.target.value})} className="sbc-field w-full px-3">{[1,2,3,4,5,6].map(n=><option key={n}>{n}</option>)}</select></div><div className="space-y-2"><Label htmlFor="mode" className="font-bold">Participation *</Label><select id="mode" value={form.mode} onChange={e=>setForm({...form,mode:e.target.value})} className="sbc-field w-full px-3"><option value="onsite">Onsite in Buea</option><option value="online">Online</option></select></div></div><div className="space-y-2"><Label htmlFor="children" className="font-bold">Child name(s) and age(s) *</Label><Textarea id="children" value={form.children} onChange={e=>setForm({...form,children:e.target.value})} placeholder={count>1?"e.g. Amina — 12\nJoel — 9":"e.g. Amina — 12"} className="min-h-28 rounded-2xl bg-white/80"/>{errors.children&&<p className="text-xs text-red-600">{errors.children}</p>}</div><div className="rounded-2xl border border-[#132d63]/15 bg-[#eaf3ff]/70 p-4"><label className="flex cursor-pointer items-start gap-3 text-xs leading-5 text-slate-600"><input type="checkbox" checked={consent} onChange={e=>{setConsent(e.target.checked);if(e.target.checked)setConsentError("")}} className="mt-1 h-4 w-4 shrink-0 accent-[#1e3a8a]"/><span>I am the parent or authorized guardian of the child or children named above. I consent to PrepSkul and the SBC team using these details solely to process this registration and contact me about the program. I have read the <a href="https://prepskul.com/en/privacy-policy" target="_blank" rel="noreferrer" className="font-bold text-[#2864d7] underline">Privacy Policy</a>.</span></label>{consentError&&<p className="mt-2 text-xs font-semibold text-red-600">{consentError}</p>}</div><button type="submit" className="w-full"><PaperButton className="w-full">Continue to WhatsApp <ArrowRight className="ml-2 h-5 w-5"/></PaperButton></button><p className="text-center text-xs leading-5 text-slate-500">Submitting this form does not make a payment. Our team will confirm the next step in WhatsApp.</p></form></PaperSheet>
+    </div>
+    <aside className="lg:pt-20"><PaperSheet tone="yellow" className="p-7 lg:sticky lg:top-28" rotate={2}><Tape color="cream" className="-right-4 -top-3 rotate-12"/><p className="text-xs font-black uppercase tracking-widest">Your SBC note</p><div className="mt-6 space-y-5 text-sm"><p className="flex gap-3"><CalendarDays className="h-5 w-5 shrink-0 text-[#2864d7]"/><span><b className="block">4–8 August 2026</b>Tuesday to Saturday</span></p><p className="flex gap-3"><MapPin className="h-5 w-5 shrink-0 text-[#168c91]"/><span><b className="block">Buea + online</b>Ages 9–18</span></p><p className="flex gap-3"><Users className="h-5 w-5 shrink-0 text-[#6a47bd]"/><span><b className="block">{count} {count===1?"child":"children"}</b>{priceEach.toLocaleString()} XAF per child</span></p></div><div className="mt-7 border-t-2 border-dashed border-[#132d63]/20 pt-5"><span className="text-xs font-bold uppercase">Registration total</span><strong className="block text-4xl font-black">{total.toLocaleString()} <small className="text-base">XAF</small></strong>{count>1&&<p className="mt-2 text-xs font-bold text-[#168c91]">Sibling/group rate applied</p>}</div></PaperSheet></aside>
+  </div></main><SbcFooter/></SbcPageShell>
 }
