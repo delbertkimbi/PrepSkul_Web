@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Fredoka } from "next/font/google"
+import { SbcLanguageProvider } from "@/lib/sbc/i18n"
 import "./sbc.css"
 
 const fredoka = Fredoka({
@@ -53,5 +54,5 @@ export const metadata: Metadata = {
 }
 
 export default function SbcLayout({ children }: { children: React.ReactNode }) {
-  return <div className={fredoka.variable}>{children}</div>
+  return <SbcLanguageProvider><div className={fredoka.variable}>{children}</div></SbcLanguageProvider>
 }
