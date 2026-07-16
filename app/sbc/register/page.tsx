@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { AlertCircle, ArrowRight, CalendarDays, CheckCircle2, MapPin, MessageCircle, UserRound, Users } from "lucide-react"
 import SbcHeader from "@/components/sbc/sbc-header"
@@ -10,7 +10,7 @@ import { Eyebrow, PaperButton, PaperSheet, Tape } from "@/components/sbc/paper-u
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { SBC_CONTACT, SBC_PRICING } from "@/lib/sbc/content"
+import { SBC_CONTACT, SBC_PACKAGES, type SbcPackageId } from "@/lib/sbc/content"
 import { useSbcPath } from "@/lib/sbc/use-sbc-path"
 import { useSbcLanguage } from "@/lib/sbc/i18n"
 
@@ -27,15 +27,23 @@ export default function RegisterPage() {
   const [sent, setSent] = useState(false)
   const [consent, setConsent] = useState(false)
   const [consentError, setConsentError] = useState("")
+  const [packageId, setPackageId] = useState<SbcPackageId>("explorer")
+
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("package")
+    if (SBC_PACKAGES.some((pkg) => pkg.id === requested)) setPackageId(requested as SbcPackageId)
+  }, [])
 
   const isParent = registrantType === "parent"
   const count = isParent ? Math.max(1, Number(form.childCount) || 1) : 1
-  const priceEach = count > 1 ? SBC_PRICING.siblingFee : SBC_PRICING.registrationFee
+  const selectedPackage = SBC_PACKAGES.find((pkg) => pkg.id === packageId) ?? SBC_PACKAGES[0]
+  const priceEach = count > 1 ? selectedPackage.familyPrice : selectedPackage.price
   const total = priceEach * count
 
   const message = () => locale === "fr" ? [
     "Bonjour PrepSkul ! Je souhaite m’inscrire au Summer Build Camp 2026.", "",
     `*Type d’inscription :* ${isParent ? "Parent / Tuteur" : "Participant"}`,
+    `*Forfait :* ${selectedPackage.name}`,
     `*Nom :* ${form.name}`, `*Téléphone :* ${form.phone}`,
     form.email && `*E-mail :* ${form.email}`,
     isParent && `*Nombre d’enfants :* ${count}`,
@@ -45,6 +53,7 @@ export default function RegisterPage() {
   ].filter(Boolean).join("\n") : [
     "Hello PrepSkul! I would like to register for Summer Build Camp 2026.", "",
     `*Registration type:* ${isParent ? "Parent / Guardian" : "Participant"}`,
+    `*Package:* ${selectedPackage.name}`,
     `*Name:* ${form.name}`, `*Phone:* ${form.phone}`,
     form.email && `*Email:* ${form.email}`,
     isParent && `*Number of children:* ${count}`,
@@ -87,6 +96,7 @@ export default function RegisterPage() {
         <fieldset className="space-y-3"><legend className="font-bold text-[#132d63]">{t("I’m registering as")}</legend><div className="grid grid-cols-2 gap-3">{([{ value: "parent", label: "Parent / Guardian", icon: Users }, { value: "participant", label: "Participant", icon: UserRound }] as const).map(({ value, label, icon: Icon }) => <button key={value} type="button" onClick={() => updateType(value)} aria-pressed={registrantType === value} className={`flex min-h-14 items-center justify-center gap-2 rounded-2xl border-2 px-3 py-3 text-sm font-black transition ${registrantType === value ? "border-[#132d63] bg-[#dfeeff] text-[#132d63] shadow-[0_4px_0_#132d63]" : "border-[#132d63]/15 bg-white text-slate-500 hover:border-[#2864d7]"}`}><Icon className="h-5 w-5"/>{t(label)}</button>)}</div></fieldset>
         <div className="grid gap-5 sm:grid-cols-2">{field("name", isParent ? "Parent / guardian name *" : "Your full name *", isParent ? "e.g. Grace N." : "e.g. Amina N.")}{field("phone", "WhatsApp phone *", "e.g. 653 30 19 97", "tel")}</div>
         <div className="grid gap-5 sm:grid-cols-2">{field("email", "Email (optional)", "you@example.com", "email")}{field("city", "City *", "e.g. Buea")}</div>
+        <fieldset className="space-y-3"><legend className="font-bold text-[#132d63]">{t("Choose a package *")}</legend><p className="-mt-1 text-xs leading-5 text-slate-500">{t("Every package includes the complete 5-day camp. Choose the post-camp support that fits your child.")}</p><div className="grid gap-3 sm:grid-cols-3">{SBC_PACKAGES.map((pkg) => <button key={pkg.id} type="button" onClick={() => setPackageId(pkg.id)} aria-pressed={packageId === pkg.id} className={`rounded-2xl border-2 p-4 text-left transition ${packageId === pkg.id ? "border-[#132d63] bg-[#dfeeff] shadow-[0_4px_0_#132d63]" : "border-[#132d63]/15 bg-white hover:border-[#2864d7]"}`}><span className="block font-black text-[#132d63]">{t(pkg.name)}</span><span className="mt-1 block text-xs font-bold text-[#168c91]">{pkg.price.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} XAF</span><span className="mt-2 block text-[11px] leading-4 text-slate-500">{t(pkg.tagline)}</span></button>)}</div><Link href={path("/pricing")} className="inline-block text-xs font-bold text-[#2864d7] underline decoration-[#f5c843] decoration-2 underline-offset-4">{t("Compare all packages")}</Link></fieldset>
         {isParent ? <div className="space-y-3"><Label className="font-bold">{t("Number of children *")}</Label><div className="grid grid-cols-6 gap-2" role="group" aria-label={t("Number of children *")}>{[1,2,3,4,5,6].map((number) => <button key={number} type="button" onClick={() => setForm({ ...form, childCount: String(number) })} aria-pressed={count === number} className={`aspect-square rounded-xl border-2 text-sm font-black transition ${count === number ? "border-[#132d63] bg-[#f5c843] text-[#132d63] shadow-[0_3px_0_#132d63]" : "border-[#2864d7]/20 bg-[#eaf3ff] text-[#2864d7] hover:border-[#2864d7]"}`}>{number}</button>)}</div></div> : field("age", "Your age *", "e.g. 15", "number")}
         <div className="space-y-3"><Label className="font-bold">{t("Participation *")}</Label><div className="grid grid-cols-2 gap-3">{(["onsite", "online"] as const).map((mode) => <button key={mode} type="button" onClick={() => setForm({ ...form, mode })} aria-pressed={form.mode === mode} className={`rounded-2xl border-2 px-3 py-3 text-sm font-black transition ${form.mode === mode ? "border-[#168c91] bg-[#dff5ef] text-[#132d63] shadow-[0_3px_0_#168c91]" : "border-[#132d63]/15 bg-white text-slate-500"}`}>{t(mode === "onsite" ? "Onsite in Buea" : "Online")}</button>)}</div></div>
         {isParent && <div className="space-y-2"><Label htmlFor="children" className="font-bold">{t("Child name(s) and age(s) *")}</Label><Textarea id="children" value={form.children} onChange={(e) => setForm({ ...form, children: e.target.value })} placeholder={count > 1 ? "e.g. Amina — 12\nJoel — 9" : "e.g. Amina — 12"} className="min-h-28 rounded-2xl bg-white/80"/>{errors.children && <p className="text-xs text-red-600">{errors.children}</p>}</div>}
@@ -94,6 +104,6 @@ export default function RegisterPage() {
         <button type="submit" className="w-full"><PaperButton className="w-full">{t("Continue to WhatsApp")} <ArrowRight className="ml-2 h-5 w-5"/></PaperButton></button><p className="text-center text-xs leading-5 text-slate-500">{t("Submitting this form does not make a payment. Our team will confirm the next step in WhatsApp.")}</p>
       </form></PaperSheet>
     </div>
-    <aside className="lg:pt-20"><PaperSheet tone="yellow" className="p-7 lg:sticky lg:top-28" rotate={2}><Tape color="cream" className="-right-4 -top-3 rotate-12"/><p className="text-xs font-black uppercase tracking-widest">{t("Your SBC note")}</p><div className="mt-6 space-y-5 text-sm"><p className="flex gap-3"><CalendarDays className="h-5 w-5 shrink-0 text-[#2864d7]"/><span><b className="block">4–8 {t("August")} 2026</b>{t("Tuesday to Saturday")}</span></p><p className="flex gap-3"><MapPin className="h-5 w-5 shrink-0 text-[#168c91]"/><span><b className="block">{t("Buea + online")}</b>{t("Ages 9–18")}</span></p><p className="flex gap-3"><Users className="h-5 w-5 shrink-0 text-[#6a47bd]"/><span><b className="block">{isParent ? `${count} ${t(count === 1 ? "child" : "children")}` : `1 ${t("participant")}`}</b>{priceEach.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} XAF</span></p></div><div className="mt-7 border-t-2 border-dashed border-[#132d63]/20 pt-5"><span className="text-xs font-bold uppercase">{t("Registration total")}</span><strong className="block text-4xl font-black">{total.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} <small className="text-base">XAF</small></strong>{count > 1 && <p className="mt-2 text-xs font-bold text-[#168c91]">{t("Sibling/group rate applied")}</p>}</div></PaperSheet></aside>
+    <aside className="lg:pt-20"><PaperSheet tone="yellow" className="p-7 lg:sticky lg:top-28" rotate={2}><Tape color="cream" className="-right-4 -top-3 rotate-12"/><p className="text-xs font-black uppercase tracking-widest">{t("Your SBC note")}</p><div className="mt-4 rounded-xl bg-white/55 p-3"><b className="block text-lg text-[#132d63]">{t(selectedPackage.name)}</b><span className="text-xs font-bold text-[#168c91]">{t(selectedPackage.tagline)}</span></div><div className="mt-6 space-y-5 text-sm"><p className="flex gap-3"><CalendarDays className="h-5 w-5 shrink-0 text-[#2864d7]"/><span><b className="block">4–8 {t("August")} 2026</b>{t("Tuesday to Saturday")}</span></p><p className="flex gap-3"><MapPin className="h-5 w-5 shrink-0 text-[#168c91]"/><span><b className="block">{t("Buea + online")}</b>{t("Ages 9–18")}</span></p><p className="flex gap-3"><Users className="h-5 w-5 shrink-0 text-[#6a47bd]"/><span><b className="block">{isParent ? `${count} ${t(count === 1 ? "child" : "children")}` : `1 ${t("participant")}`}</b>{priceEach.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} XAF {t("per child")}</span></p></div><div className="mt-7 border-t-2 border-dashed border-[#132d63]/20 pt-5"><span className="text-xs font-bold uppercase">{t("Registration total")}</span><strong className="block text-4xl font-black">{total.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} <small className="text-base">XAF</small></strong>{count > 1 && <p className="mt-2 text-xs font-bold text-[#168c91]">{t("Family price applied")}</p>}</div></PaperSheet></aside>
   </div></main><SbcFooter/></SbcPageShell>
 }

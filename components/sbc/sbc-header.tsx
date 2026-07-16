@@ -15,6 +15,7 @@ export default function SbcHeader() {
   const links = [
     { label: "About", href: path("/about") },
     { label: "Roadmap", href: path("/program") },
+    { label: "Packages", href: path("/pricing") },
     { label: "What you’ll build", href: path("#build") },
     { label: "FAQ", href: path("/faq") },
   ]

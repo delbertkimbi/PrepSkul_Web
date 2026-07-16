@@ -12,12 +12,47 @@ export const SBC_LOGO = "/sbclogo.png"
 export const SBC_REGISTRATION_OPEN = true
 
 export const SBC_PRICING = {
-  registrationFee: 8_000,
-  siblingFee: 5_000,
-  programFee: 8_000,
   registrationDeadline: "While spaces last",
   currency: "FCFA",
 }
+
+export const SBC_PACKAGES = [
+  {
+    id: "explorer",
+    name: "Explorer",
+    tagline: "Discover AI. Build Your First Innovation.",
+    price: 8_000,
+    familyPrice: 5_000,
+    perfectFor: "Families looking for the complete Summer Build Camp experience.",
+    description: "Everything a learner needs for an exciting week of AI, innovation and entrepreneurship.",
+    includes: ["Complete 5-day Summer Build Camp experience", "AI & Innovation workshops", "Team-based project development", "Entrepreneurial thinking sessions", "Hands-on activities and challenges", "Demo Day participation", "Certificate of Participation", "SBC Participant Guide", "AI Prompt Starter Pack", "Digital learning resources"],
+    bestFor: "Best for first-time participants and families seeking an affordable entry into AI and innovation.",
+  },
+  {
+    id: "creator",
+    name: "Creator",
+    tagline: "Turn Ideas into Real Projects.",
+    price: 19_900,
+    familyPrice: 15_000,
+    perfectFor: "Learners who want to continue building after Summer Build Camp.",
+    description: "Post-camp mentorship, AI tools and practical resources to refine ideas and keep building.",
+    includes: ["Everything in Explorer", "2 weeks of guided post-camp mentorship", "Weekly mentor check-ins", "Project review and feedback sessions", "1,000 SBC AI Credits", "Innovation Toolkit, Business Model Canvas and Pitch Deck Templates", "Project Planning Toolkit and extended AI learning resources", "Official Summer Build Camp T-Shirt", "Innovation Welcome Pack", "SBC Innovation Journal"],
+    bestFor: "Best for learners who want to keep building and improving their projects after the camp.",
+  },
+  {
+    id: "innovator",
+    name: "Innovator",
+    tagline: "Build, Launch and Grow with a Year of Mentorship.",
+    price: 45_000,
+    familyPrice: 30_000,
+    perfectFor: "Young innovators ready to build, launch and grow beyond Summer Build Camp.",
+    description: "The SBC Innovator Fellowship provides year-long mentorship, AI resources and growth opportunities.",
+    includes: ["Everything in Creator", "1 year of personalized mentorship", "Monthly innovation coaching, goal setting and project reviews", "5,000 SBC AI Credits", "Premium AI Innovation Toolkit and ongoing resource updates", "Pitch development, presentation skills and prototype refinement", "Preparation for selected innovation and entrepreneurship competitions", "Parent progress report", "SBC Alumni Community and priority access to future programs"],
+    bestFor: "Best for learners committed to turning ideas into real projects and continuing their innovation journey beyond the camp.",
+  },
+] as const
+
+export type SbcPackageId = typeof SBC_PACKAGES[number]["id"]
 
 export const SBC_SCHEDULE = {
   startDate: "August 4, 2026",
@@ -346,7 +381,15 @@ export const SBC_FAQ = [
   {
     question: "What are the fees?",
     answer:
-      "Registration is 8,000 XAF for one child. When registering more than one child, the fee is 5,000 XAF per child.",
+      "Explorer is 8,000 XAF, Creator is 19,900 XAF and Innovator is 45,000 XAF. Families registering two or more children receive a reduced per-child rate for every package.",
+  },
+  {
+    question: "Do all learners receive the same training?",
+    answer: "Yes. Every learner receives the complete five-day curriculum, workshops, team projects, Demo Day and certificate. Packages differ only in the continued mentorship, AI resources and support available after camp.",
+  },
+  {
+    question: "Can I upgrade a package later?",
+    answer: "Yes. Subject to availability, families may upgrade to a higher package before or during Summer Build Camp by paying the difference in package fees.",
   },
   {
     question: "What will my child walk away with?",
