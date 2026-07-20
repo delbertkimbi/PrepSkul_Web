@@ -1,310 +1,65 @@
 "use client"
-import { PEAPShowcase } from "@/components/peap-showcase"
-import { getStartedUrl } from "@/lib/get-started-url"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Typewriter } from "@/components/typewriter"
-import { TestimonialsSection } from "@/components/testimonials-section"
-import { FAQSection } from "@/components/faq-section"
-import { PhoneMockup } from "@/components/phone-mockup"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { OrganizationSchema, LocalBusinessSchema, FAQSchema } from "@/components/seo-schema"
-import Link from "next/link"
+
 import Image from "next/image"
-import { CheckCircle2, BookOpen, TrendingUp } from "lucide-react"
-import { AnimatedCounter } from "@/components/animated-counter"
-import { getTranslations } from "@/lib/translations"
+import Link from "next/link"
+import { ArrowRight, BookOpen, Check, Clock3, GraduationCap, Sparkles, Star, Users } from "lucide-react"
+import { Footer } from "@/components/footer"
+import { Header } from "@/components/header"
+import { LocalBusinessSchema, OrganizationSchema } from "@/components/seo-schema"
 import { useLocale } from "@/lib/locale-context"
-import { type Locale } from "@/lib/i18n"
+
+const content = {
+  en: {
+    hero: { title: "From classroom teaching to real understanding.", body: "PrepSkul combines trusted tutors, personalized learning tools, and practical programs to help every learner understand difficult concepts, build confidence, and keep progressing.", primary: "Find Learning Support", secondary: "Explore Programs", alt: "A PrepSkul tutor guiding a learner through a lesson" },
+    journey: ["Understand the learner", "Guide the next step", "Practice with purpose", "Track progress"],
+    pathways: { title: "Choose the right path forward.", body: "Find the support that fits what the learner needs now.", items: [{ icon: BookOpen, tone: "blue", title: "Personalized Tutoring", body: "Find the right tutor for academic support, skills guidance and steady progress.", href: "https://app.prepskul.com" }, { icon: Clock3, tone: "purple", title: "Programs and Experiences", body: "Build, revise, collaborate and prepare through PEAP, SBC and focused workshops.", href: "/programs" }, { icon: Sparkles, tone: "green", title: "SkulMate", body: "Revisit lessons, ask questions and practise at the right level. Coming soon.", href: "#skulmate" }] },
+    programs: { title: "Featured learning experiences", body: "Thoughtfully designed programs where learners can practise, build and see the value of what they know.", cards: [{ title: "Summer Build Camp", tag: "Technology · entrepreneurship", body: "Six weeks of AI, creativity and product building for young innovators.", image: "/sbc-og.png", href: "/sbc", alt: "Young learners collaborating at Summer Build Camp" }, { title: "Exam Accelerator", tag: "Focused revision", body: "A guided path from difficult concepts to calm, confident exam preparation.", image: "/program2.jpg", href: "/programs/peap", alt: "Learners in a guided exam revision session" }] },
+    tutors: { title: "The right person can change how learning feels.", body: "PrepSkul connects learners with caring human guidance, not just more content to work through.", cards: ["A guide who explains at the right level", "Practice that is shaped around the learner", "Encouragement that makes progress feel possible"] },
+    schools: { title: "Support your learners beyond the shared lesson.", body: "Our school partnership package includes PTA 1-on-1, a focused catch-up program for identifying learners who are falling behind and helping them get back on track.", points: ["Identify the learning gap", "Provide personal PTA 1-on-1 support", "Track the learner’s catch-up"], cta: "Explore school partnerships", alt: "School leaders and a PrepSkul partner reviewing a learning support plan" },
+    skulmate: { title: "A learning companion designed for the real school day.", body: "SkulMate is being developed to help learners stay present in class, revisit the lesson later and practise with purpose without a phone in hand.", cta: "Follow SkulMate", alt: "A learner wearing SkulMate while facing the teacher with the rest of the class" },
+    final: { title: "A clearer next step starts here.", body: "Tell us what the learner is working through. We will help find the right support.", primary: "Talk to PrepSkul", secondary: "Find a tutor" },
+  },
+  fr: {
+    hero: { title: "De l’enseignement en classe à une vraie compréhension.", body: "PrepSkul réunit des tuteurs de confiance, des outils d’apprentissage personnalisés et des programmes pratiques pour aider chaque apprenant à comprendre les notions difficiles, prendre confiance et continuer à progresser.", primary: "Trouver un accompagnement", secondary: "Découvrir les programmes", alt: "Un tuteur PrepSkul accompagne un apprenant pendant une leçon" },
+    journey: ["Comprendre l’apprenant", "Guider la prochaine étape", "Pratiquer avec intention", "Suivre les progrès"],
+    pathways: { title: "Choisir le bon chemin pour avancer.", body: "Trouvez le soutien qui correspond au besoin de l’apprenant aujourd’hui.", items: [{ icon: BookOpen, tone: "blue", title: "Tutorat personnalisé", body: "Trouver le bon tuteur pour le soutien scolaire, les compétences et une progression régulière.", href: "https://app.prepskul.com" }, { icon: Clock3, tone: "purple", title: "Programmes et expériences", body: "Construire, réviser, collaborer et se préparer avec PEAP, SBC et des ateliers ciblés.", href: "/programs" }, { icon: Sparkles, tone: "green", title: "SkulMate", body: "Revoir les leçons, poser des questions et pratiquer au bon niveau. Bientôt disponible.", href: "#skulmate" }] },
+    programs: { title: "Expériences d’apprentissage à découvrir", body: "Des programmes conçus avec attention pour permettre aux apprenants de pratiquer, créer et voir la valeur de leurs acquis.", cards: [{ title: "Summer Build Camp", tag: "Technologie · entrepreneuriat", body: "Six semaines autour de l’IA, la créativité et la création de produits.", image: "/sbc-og.png", href: "/sbc", alt: "De jeunes apprenants collaborent au Summer Build Camp" }, { title: "Accélérateur d’examens", tag: "Révision ciblée", body: "Un parcours guidé des notions difficiles vers une préparation sereine.", image: "/program2.jpg", href: "/programs/peap", alt: "Des apprenants participent à une révision guidée" }] },
+    tutors: { title: "La bonne personne peut changer le rapport à l’apprentissage.", body: "PrepSkul relie les apprenants à un accompagnement humain attentif, pas seulement à davantage de contenu.", cards: ["Une explication adaptée au bon niveau", "Une pratique construite autour de l’apprenant", "Des encouragements qui rendent le progrès possible"] },
+    schools: { title: "Soutenez vos apprenants au-delà de la leçon collective.", body: "Notre forfait scolaire inclut PTA individuel, un programme de rattrapage qui identifie les apprenants en retard et les aide à revenir sur la bonne voie.", points: ["Identifier l’écart d’apprentissage", "Apporter un suivi PTA individuel", "Suivre le rattrapage de l’apprenant"], cta: "Découvrir les partenariats", alt: "Des responsables scolaires et PrepSkul examinent un plan d’accompagnement" },
+    skulmate: { title: "Un compagnon d’apprentissage pensé pour la vraie journée d’école.", body: "SkulMate est conçu pour aider les apprenants à rester attentifs en classe, revoir la leçon et pratiquer utilement sans téléphone en main.", cta: "Suivre SkulMate", alt: "Un apprenant portant SkulMate et faisant face à l’enseignant" },
+    final: { title: "Une prochaine étape plus claire commence ici.", body: "Dites-nous ce que l’apprenant traverse. Nous aiderons à trouver le bon soutien.", primary: "Parler à PrepSkul", secondary: "Trouver un tuteur" },
+  },
+} as const
 
 export default function HomePage() {
   const { locale } = useLocale()
-  const t = getTranslations(locale)
-  const faqData = [...t.faq.items]
+  const t = content[locale]
+  const localize = (href: string) => href.startsWith("http") ? href : `/${locale}${href}`
 
-  return (
-    <div className="min-h-screen flex flex-col">
-      <OrganizationSchema />
-      <LocalBusinessSchema />
-      <FAQSchema faqs={faqData} />
-      <Header />
-
-      <section className="relative overflow-hidden bg-gradient-to-br from-gray-50 to-white hero-section-full">
-        <div
-          className="decorative-circle hidden lg:block"
-          style={{ width: "200px", height: "200px", top: "10%", left: "5%" }}
-        ></div>
-        <div
-          className="decorative-circle hidden lg:block"
-          style={{ width: "150px", height: "150px", bottom: "15%", left: "10%" }}
-        ></div>
-
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center h-full max-w-7xl mx-auto">
-            {/* Left side - Content */}
-            <div className="space-y-7 z-10 lg:pr-8 text-left">
-              <div className="space-y-5">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
-                  {t.home.hero.title}{" "}
-                  <span className="text-primary block mt-2">
-                    <Typewriter words={[...t.home.hero.titleWords]} />
-                  </span>
-                </h1>
-                <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl">
-                  {t.home.hero.subtitle}
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Button size="lg" asChild className="w-full sm:w-auto text-base font-semibold h-12 px-8">
-                <Link href={getStartedUrl()}>{t.home.hero.getStarted}</Link>
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  asChild
-                  className="w-full sm:w-auto text-base font-semibold h-12 px-8 bg-transparent"
-                >
-                  <Link href={`/${locale}/programs`}>{t.home.hero.viewSubjects}</Link>
-                </Button>
-              </div>
-            </div>
-
-            <div className="relative lg:min-h-[600px] flex items-center justify-center">
-              <div
-                className="hero-circular-shape-large hidden lg:block"
-                style={{
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                }}
-              ></div>
-
-              <div className="relative z-10 flex justify-center items-center w-full">
-                <PhoneMockup locale={locale} />
-              </div>
-            </div>
-          </div>
+  return <div className="min-h-screen overflow-hidden bg-[#fbfcff] text-[#182544]">
+    <OrganizationSchema /><LocalBusinessSchema /><Header />
+    <main>
+      <section className="glass-hero relative overflow-hidden border-b border-[#182544]/5">
+        <div className="absolute -left-28 top-0 h-[33rem] w-[33rem] rounded-full bg-[#b9dcff]/45 blur-3xl" /><div className="absolute right-[-12rem] top-10 h-[32rem] w-[32rem] rounded-full bg-[#d9c7ff]/45 blur-3xl" />
+        <div className="relative mx-auto grid max-w-[1440px] gap-12 px-5 py-14 sm:px-8 lg:min-h-[690px] lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:px-12 xl:px-20">
+          <div><h1 className="max-w-3xl text-[3.15rem] font-extrabold leading-[0.98] tracking-[-0.065em] sm:text-7xl lg:text-[5.15rem]">{t.hero.title}</h1><p className="mt-7 max-w-xl text-base leading-8 text-[#5e6b84] sm:text-lg">{t.hero.body}</p><div className="mt-9 flex flex-col items-start gap-4 sm:flex-row sm:items-center"><Link href="https://app.prepskul.com" className="glass-primary">{t.hero.primary}<ArrowRight className="h-4 w-4" /></Link><Link href={`/${locale}/programs`} className="glass-link">{t.hero.secondary}<ArrowRight className="h-4 w-4" /></Link></div></div>
+          <div className="relative mx-auto w-full max-w-[650px]"><div className="glass-frame"><div className="relative aspect-[1.07/1] overflow-hidden rounded-[26px]"><Image src="/african-tutor-teaching-student-at-home-with-books-.jpg" alt={t.hero.alt} fill priority sizes="(max-width: 1024px) 94vw, 52vw" className="object-cover" /><div className="absolute inset-0 bg-gradient-to-t from-[#182544]/35 via-transparent to-transparent" /></div><div className="glass-progress"><div className="flex items-center justify-between"><span className="text-xs font-bold text-[#5e6b84]">This week&apos;s learning</span><span className="rounded-full bg-[#e6f7ee] px-2.5 py-1 text-[10px] font-extrabold text-[#18794e]">On track</span></div><p className="mt-3 text-lg font-extrabold">A clearer path forward</p><div className="mt-4 flex gap-2">{[75, 55, 90].map((value) => <span key={value} className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#e8edf6]"><span className="block h-full rounded-full bg-gradient-to-r from-[#3b82f6] to-[#7c5ce5]" style={{ width: `${value}%` }} /></span>)}</div></div></div><div className="glass-float glass-float-left"><GraduationCap className="h-5 w-5 text-[#6c4bd2]" /><span>Guidance that fits</span></div></div>
         </div>
       </section>
 
-      <section className="py-16 bg-white border-y">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
-            <div className="text-center space-y-2">
-              <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={600} suffix="+" />
-              </div>
-              <p className="text-sm text-muted-foreground font-medium">{t.home.stats.learnersGuided}</p>
-            </div>
-            <div className="text-center space-y-2">
-              <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={1000} suffix="+" />
-              </div>
-              <p className="text-sm text-muted-foreground font-medium">{t.home.stats.expertTutors}</p>
-            </div>
-            <div className="text-center space-y-2">
-              <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={130} suffix="+" />
-              </div>
-              <p className="text-sm text-muted-foreground font-medium">{t.home.stats.subjectsCovered}</p>
-            </div>
-            <div className="text-center space-y-2">
-              <div className="text-4xl sm:text-5xl font-bold text-primary">
-                <AnimatedCounter end={7} suffix="+" />
-              </div>
-              <p className="text-sm text-muted-foreground font-medium">{t.home.stats.citiesCovered}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section className="relative z-10 -mt-1"><div className="mx-auto grid max-w-[1220px] gap-3 px-5 sm:grid-cols-2 sm:px-8 lg:grid-cols-4">{t.journey.map((item, index) => <div key={item} className="glass-journey"><span>0{index + 1}</span><p>{item}</p>{index < 3 && <ArrowRight className="ml-auto hidden h-4 w-4 text-[#9cabc4] lg:block" />}</div>)}</div></section>
 
-      <section className="py-12 bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3">{t.home.learningOptions.title}</h2>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              {t.home.learningOptions.subtitle}
-            </p>
-          </div>
+      <section id="pathways" className="px-5 py-24 sm:px-8 sm:py-32 lg:px-12 xl:px-20"><div className="mx-auto max-w-[1220px]"><div className="mx-auto max-w-2xl text-center"><h2 className="text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">{t.pathways.title}</h2><p className="mt-5 text-base leading-8 text-[#5e6b84] sm:text-lg">{t.pathways.body}</p></div><div className="mt-14 grid gap-5 lg:grid-cols-3">{t.pathways.items.map((item) => { const Icon = item.icon; return <Link href={localize(item.href)} key={item.title} className={`glass-pathway glass-${item.tone} group`}><span className="glass-icon"><Icon className="h-5 w-5" /></span><h3>{item.title}</h3><p>{item.body}</p><span className="glass-cta">Explore <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span></Link> })}</div></div></section>
 
-          <div className="grid sm:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
-              <div className="relative h-56 w-full overflow-hidden">
-                <Image
-                  src="/young-african-girl-online-learning-session.jpg"
-                  alt="Young African girl engaged in online learning session with tutor on laptop"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-5 space-y-2">
-                <h3 className="font-bold text-xl">{t.home.learningOptions.online.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t.home.learningOptions.online.description}
-                </p>
-              </CardContent>
-            </Card>
+      <section className="glass-section px-5 py-20 sm:px-8 sm:py-28 lg:px-12 xl:px-20"><div className="mx-auto max-w-[1220px]"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><h2 className="max-w-2xl text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">{t.programs.title}</h2></div><p className="max-w-md text-base leading-8 text-[#5e6b84]">{t.programs.body}</p></div><div className="mt-12 grid gap-6 lg:grid-cols-2">{t.programs.cards.map((program) => <Link key={program.title} href={localize(program.href)} className="glass-program group"><div className="relative aspect-[16/9] overflow-hidden"><Image src={program.image} alt={program.alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.04]" /></div><div className="p-7"><span>{program.tag}</span><h3>{program.title}</h3><p>{program.body}</p><div className="mt-6 flex items-center gap-2 text-sm font-extrabold text-[#2859c5]">View experience <ArrowRight className="h-4 w-4" /></div></div></Link>)}</div></div></section>
 
-            <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
-              <div className="relative h-56 w-full overflow-hidden">
-                <Image
-                  src="/african-tutor-teaching-student-at-home-with-books-.jpg"
-                  alt="Tutor teaching student at home with personalized attention"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-5 space-y-2">
-                <h3 className="font-bold text-xl">{t.home.learningOptions.home.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t.home.learningOptions.home.description}
-                </p>
-              </CardContent>
-            </Card>
+      <section className="px-5 py-24 sm:px-8 sm:py-32 lg:px-12 xl:px-20"><div className="mx-auto grid max-w-[1220px] gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center"><div className="relative mx-auto w-full max-w-[470px]"><div className="absolute -inset-8 rounded-full bg-[#d3f4e2]/65 blur-3xl" /><div className="relative glass-tutor-image"><Image src="/group-class-prepskul.png" alt="PrepSkul learning session" fill sizes="(max-width: 1024px) 90vw, 40vw" className="object-cover" /></div><div className="glass-tutor-badge"><div className="flex -space-x-2">{[0, 1, 2].map((n) => <span key={n} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#dce9ff] text-[10px] font-extrabold text-[#2859c5]">{n + 1}</span>)}</div><p>Personal learning support</p></div></div><div><h2 className="text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">{t.tutors.title}</h2><p className="mt-6 max-w-xl text-base leading-8 text-[#5e6b84] sm:text-lg">{t.tutors.body}</p><div className="mt-9 space-y-3">{t.tutors.cards.map((item) => <div className="glass-check" key={item}><Check className="h-4 w-4 text-[#168451]" />{item}</div>)}</div><Link href="https://app.prepskul.com" className="glass-primary mt-9">Find a tutor <ArrowRight className="h-4 w-4" /></Link></div></div></section>
 
-            <Card className="p-0 border-2 hover:border-primary transition-all hover:shadow-xl overflow-hidden group">
-              <div className="relative h-56 w-full overflow-hidden">
-                <Image
-                  src="/group-class-prepskul.png"
-                  alt="Group of students learning together collaboratively"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-5 space-y-2">
-                <h3 className="font-bold text-xl">{t.home.learningOptions.group.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t.home.learningOptions.group.description}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <section id="schools" className="px-5 pb-24 sm:px-8 sm:pb-32 lg:px-12 xl:px-20"><div className="glass-school mx-auto grid max-w-[1220px] overflow-hidden lg:grid-cols-[1fr_0.96fr]"><div className="p-7 sm:p-12 lg:p-14"><h2 className="max-w-xl text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">{t.schools.title}</h2><p className="mt-6 max-w-xl text-base leading-8 text-[#53617b]">{t.schools.body}</p><div className="mt-8 space-y-3">{t.schools.points.map((point) => <div key={point} className="flex items-center gap-3 text-sm font-bold"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-extrabold text-[#6c4bd2]">✓</span>{point}</div>)}</div><Link href={`/${locale}/schools`} className="glass-primary mt-9">{t.schools.cta}<ArrowRight className="h-4 w-4" /></Link></div><div className="relative min-h-[360px]"><Image src="/images/site-2026/schools-partnership-hero.webp" alt={t.schools.alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" /><div className="absolute inset-x-6 bottom-6 rounded-2xl border border-white/50 bg-white/75 p-4 backdrop-blur-xl"><p className="text-xs font-extrabold text-[#182544]">PTA 1-on-1 learner catch-up</p><p className="mt-1 text-xs leading-5 text-[#5e6b84]">Personal support, coordinated with the school.</p></div></div></div></section>
 
-      <section className="py-10">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-3">{t.home.programs.title}</h2>
-            <p className="text-base text-muted-foreground max-w-3xl mx-auto">
-              {t.home.programs.subtitle}
-            </p>
-          </div>
+      <section id="skulmate" className="glass-skulmate px-5 py-20 text-white sm:px-8 sm:py-28 lg:px-12 xl:px-20"><div className="mx-auto grid max-w-[1220px] gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:items-center"><div><div className="glass-pill border-white/20 bg-white/10 text-[#d9e6ff]">SkulMate · In development</div><h2 className="mt-5 text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">{t.skulmate.title}</h2><p className="mt-6 max-w-xl text-base leading-8 text-[#c8d3e8] sm:text-lg">{t.skulmate.body}</p><Link href={`/${locale}/contact?interest=skulmate`} className="mt-8 inline-flex items-center gap-2 border-b border-[#8fb1ff] pb-1 text-sm font-extrabold">{t.skulmate.cta}<ArrowRight className="h-4 w-4" /></Link></div><div className="relative overflow-hidden rounded-[30px] border border-white/15 bg-white/10 p-3 shadow-2xl"><div className="relative aspect-[16/10] overflow-hidden rounded-[22px]"><Image src="/images/site-2026/skulmate-classroom-forward-v3.webp" alt={t.skulmate.alt} fill sizes="(max-width: 1024px) 100vw, 55vw" className="object-cover" /><div className="absolute bottom-4 left-4 h-20 w-20 overflow-hidden rounded-full border-2 border-white/90 bg-black shadow-[0_10px_24px_rgba(0,0,0,.35)] sm:h-24 sm:w-24"><Image src="/images/site-2026/skulmate-product-hero.webp" alt="SkulMate watch" fill sizes="96px" className="object-cover" /></div></div></div></div></section>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-            <Card className="p-0 overflow-hidden border-2 hover:border-primary transition-all hover:shadow-xl group">
-              <div className="relative h-64 w-full overflow-hidden">
-                <Image
-                  src="/african-student-studying-mathematics-and-science-w.jpg"
-                  alt="Student studying mathematics and science with tutor guidance"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <BookOpen className="w-6 h-6 flex-shrink-0 mt-0.5 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-2xl">{t.home.programs.academic.title}</h3>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t.home.programs.academic.description}
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
-                    <span className="text-sm">
-                      <strong>{t.home.programs.academic.subjects.math.split(':')[0]}:</strong> {t.home.programs.academic.subjects.math.split(':')[1]}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
-                    <span className="text-sm">
-                      <strong>{t.home.programs.academic.subjects.languages.split(':')[0]}:</strong> {t.home.programs.academic.subjects.languages.split(':')[1]}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
-                    <span className="text-sm">
-                      <strong>{t.home.programs.academic.subjects.exams.split(':')[0]}:</strong> {t.home.programs.academic.subjects.exams.split(':')[1]}
-                    </span>
-                  </li>
-                </ul>
-                <Button size="lg" asChild className="w-full text-base font-semibold">
-                  <Link href={`/${locale}/programs`}>{t.home.hero.viewSubjects}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="p-0 overflow-hidden border-2 hover:border-primary transition-all hover:shadow-xl group">
-              <div className="relative h-64 w-full overflow-hidden">
-                <Image
-                  src="/african-young-person-learning-coding-on-laptop-wit.jpg"
-                  alt="Young person learning coding and technology skills"
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <TrendingUp className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="font-bold text-2xl">{t.home.programs.skills.title}</h3>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t.home.programs.skills.description}
-                </p>
-                <ul className="space-y-2">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
-                    <span className="text-sm">
-                      <strong>{t.home.programs.skills.subjects.tech.split(':')[0]}:</strong> {t.home.programs.skills.subjects.tech.split(':')[1]}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
-                    <span className="text-sm">
-                      <strong>{t.home.programs.skills.subjects.arts.split(':')[0]}:</strong> {t.home.programs.skills.subjects.arts.split(':')[1]}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 flex-shrink-0 mt-0.5 text-primary" />
-                    <span className="text-sm">
-                      <strong>{t.home.programs.skills.subjects.life.split(':')[0]}:</strong> {t.home.programs.skills.subjects.life.split(':')[1]}
-                    </span>
-                  </li>
-                </ul>
-                <Button size="lg" variant="outline" asChild className="w-full text-base font-semibold bg-transparent">
-                  <Link href={`/${locale}/programs`}>{t.home.hero.viewSubjects}</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-      <PEAPShowcase locale={locale as Locale} />
-
-      <TestimonialsSection />
-
-      <FAQSection />
-
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t.home.cta.title}</h2>
-          <p className="text-base mb-8 max-w-3xl mx-auto opacity-95 leading-relaxed">
-            {t.home.cta.subtitle}
-          </p>
-          <Button size="lg" variant="secondary" asChild className="text-base font-semibold px-8 h-11">
-            <Link href={`/${locale}/contact`}>{t.home.cta.button}</Link>
-          </Button>
-        </div>
-      </section>
-
-      <Footer />
-    </div>
-  )
+      <section className="px-5 py-24 sm:px-8 sm:py-32 lg:px-12 xl:px-20"><div className="glass-final mx-auto max-w-[1220px] text-center"><h2 className="mx-auto max-w-3xl text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-6xl">{t.final.title}</h2><p className="mx-auto mt-5 max-w-xl text-base leading-8 text-[#5e6b84]">{t.final.body}</p><div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row"><Link href={`/${locale}/contact`} className="glass-primary">{t.final.primary}<ArrowRight className="h-4 w-4" /></Link><Link href="https://app.prepskul.com" className="glass-secondary">{t.final.secondary}</Link></div></div></section>
+    </main><Footer />
+  </div>
 }

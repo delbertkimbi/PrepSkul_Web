@@ -1,282 +1,91 @@
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
-import { Search, UserCheck, Calendar, Video, CheckCircle, DollarSign, Clock, Sparkles } from "lucide-react"
+import { ArrowRight, BookOpenCheck, ClipboardCheck, LineChart, SearchCheck } from "lucide-react"
+import { Footer } from "@/components/footer"
+import { Header } from "@/components/header"
+
+const steps = [
+  {
+    number: "01",
+    title: "Understand the learner",
+    body: "Start with the learner's goals, current level and the concepts that need more attention.",
+    icon: SearchCheck,
+  },
+  {
+    number: "02",
+    title: "Guide the next step",
+    body: "Connect the learner with the right support, whether that is a tutor, a focused program or a school partnership.",
+    icon: ClipboardCheck,
+  },
+  {
+    number: "03",
+    title: "Practice with purpose",
+    body: "Turn classroom teaching into clearer understanding through focused explanations and meaningful practice.",
+    icon: BookOpenCheck,
+  },
+  {
+    number: "04",
+    title: "Track progress",
+    body: "Review what is improving and adjust the next step so learning keeps moving forward.",
+    icon: LineChart,
+  },
+]
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-white text-[#17213a]">
       <Header />
-
-      {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-balance">
-              How <span className="text-accent">PrepSkul</span> Works
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground text-pretty">
-              Getting started with PrepSkul is simple. Follow these easy steps to connect with a qualified tutor and
-              begin your learning journey.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Steps Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto space-y-12">
-            {/* Step 1 */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4 order-2 md:order-1">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground font-bold text-xl">
-                  1
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-bold">Tell Us What You Need</h3>
-                <p className="text-muted-foreground">
-                  Share your learning goals, subjects you need help with, and your preferred learning style. Whether
-                  it's academic tutoring or skill development, we'll match you with the right tutor.
-                </p>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">Academic Support</span>
-                  <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-sm">Skill Training</span>
-                  <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">Exam Prep</span>
-                </div>
-              </div>
-              <div className="order-1 md:order-2">
-                <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-2">
-                  <CardContent className="pt-6 flex items-center justify-center h-64">
-                    <Search className="h-24 w-24 text-primary" />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="order-1">
-                <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-2">
-                  <CardContent className="pt-6 flex items-center justify-center h-64">
-                    <UserCheck className="h-24 w-24 text-accent" />
-                  </CardContent>
-                </Card>
-              </div>
-              <div className="space-y-4 order-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent text-accent-foreground font-bold text-xl">
-                  2
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-bold">Get Matched with a Tutor</h3>
-                <p className="text-muted-foreground">
-                  We'll connect you with a qualified, vetted tutor who specializes in your subject area. All our tutors
-                  are experienced educators passionate about helping students succeed.
-                </p>
-                <div className="flex items-center gap-2 pt-2">
-                  <CheckCircle className="h-5 w-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">All tutors are verified and background-checked</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-4 order-2 md:order-1">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground font-bold text-xl">
-                  3
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-bold">Schedule Your Sessions</h3>
-                <p className="text-muted-foreground">
-                  Choose a schedule that works for you. Whether you prefer morning, afternoon, or evening sessions,
-                  we'll accommodate your availability. Sessions can be rescheduled if needed.
-                </p>
-                <div className="flex items-center gap-2 pt-2">
-                  <Clock className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Flexible scheduling to fit your routine</span>
-                </div>
-              </div>
-              <div className="order-1 md:order-2">
-                <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-2">
-                  <CardContent className="pt-6 flex items-center justify-center h-64">
-                    <Calendar className="h-24 w-24 text-primary" />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="order-1">
-                <Card className="bg-gradient-to-br from-accent/10 to-primary/10 border-2">
-                  <CardContent className="pt-6 flex items-center justify-center h-64">
-                    <Sparkles className="h-24 w-24 text-accent" />
-                  </CardContent>
-                </Card>
-              </div>
-              <div className="space-y-4 order-2">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-accent text-accent-foreground font-bold text-xl">
-                  4
-                </div>
-                <h3 className="text-2xl sm:text-3xl font-bold">Start Learning & Growing</h3>
-                <p className="text-muted-foreground">
-                  Begin your personalized learning journey. Track your progress, receive feedback, and watch yourself
-                  grow academically and personally with dedicated guidance.
-                </p>
-                <div className="flex items-center gap-2 pt-2">
-                  <CheckCircle className="h-5 w-5 text-accent" />
-                  <span className="text-sm text-muted-foreground">Regular progress updates and feedback</span>
-                </div>
-              </div>
+      <main>
+        <section className="border-b border-[#17213a]/10 bg-[#f7f9fd]">
+          <div className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28 xl:px-20">
+            <div className="max-w-4xl">
+              <h1 className="max-w-3xl text-5xl font-extrabold leading-[.98] tracking-[-.06em] sm:text-6xl lg:text-7xl">
+                From classroom teaching to real understanding.
+              </h1>
+              <p className="mt-7 max-w-2xl text-lg leading-8 text-[#5f6b85] sm:text-xl">
+                PrepSkul brings together trusted tutors, personalized learning tools and practical programs to help every learner understand difficult concepts, build confidence and keep progressing.
+              </p>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Learning Options */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Choose Your Learning Style</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              We offer flexible learning options to match your preferences and schedule
-            </p>
+        <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 xl:px-20">
+          <div className="mb-12 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+            <div>
+              <h2 className="max-w-xl text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">A clear learning loop.</h2>
+              <p className="mt-4 max-w-xl text-lg leading-8 text-[#69758c]">The support is personal, but the process stays simple and visible.</p>
+            </div>
+            <Link href="/contact" className="glass-primary inline-flex w-fit items-center gap-3 rounded-md px-6 py-3.5 text-sm font-extrabold">Find learning support <ArrowRight className="h-4 w-4" /></Link>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="pt-6 space-y-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Video className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-xl">Online Learning</h3>
-                <p className="text-sm text-muted-foreground">
-                  Connect with tutors from anywhere via video sessions. Perfect for busy schedules and remote learning.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Learn from home</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Access to wider tutor pool</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Recorded sessions available</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-accent transition-colors bg-accent text-accent-foreground">
-              <CardContent className="pt-6 space-y-4">
-                <div className="w-12 h-12 bg-accent-foreground/10 rounded-full flex items-center justify-center">
-                  <UserCheck className="h-6 w-6 text-accent-foreground" />
-                </div>
-                <h3 className="font-semibold text-xl">Home Tutoring</h3>
-                <p className="text-sm text-accent-foreground/90">
-                  Personalized one-on-one sessions at your location. Get focused attention in a comfortable environment.
-                </p>
-                <ul className="space-y-2 text-sm text-accent-foreground/90">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-                    <span>Face-to-face interaction</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-                    <span>Personalized attention</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-accent-foreground mt-0.5 flex-shrink-0" />
-                    <span>Comfortable learning space</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary transition-colors">
-              <CardContent className="pt-6 space-y-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <UserCheck className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-xl">Group Sessions</h3>
-                <p className="text-sm text-muted-foreground">
-                  Learn together with peers in small groups. Collaborative learning at an affordable price.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Peer learning benefits</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>More affordable option</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>Build study community</span>
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
+          <div className="grid border-l border-t border-[#17213a]/12 sm:grid-cols-2 lg:grid-cols-4">
+            {steps.map((step) => {
+              const Icon = step.icon
+              return (
+                <article key={step.number} className="group min-h-[275px] border-b border-r border-[#17213a]/12 bg-white p-7 transition-colors duration-300 hover:bg-[#f4f7ff] sm:p-8">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-extrabold text-[#3156a6]">{step.number}</span>
+                    <Icon className="h-6 w-6 text-[#3156a6] transition-transform duration-300 group-hover:-translate-y-1" />
+                  </div>
+                  <h3 className="mt-14 text-2xl font-extrabold tracking-[-.04em]">{step.title}</h3>
+                  <p className="mt-4 text-[15px] leading-7 text-[#69758c]">{step.body}</p>
+                </article>
+              )
+            })}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Affordability Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-6">
-                <h2 className="text-3xl sm:text-4xl font-bold">Affordable & Flexible</h2>
-                <p className="text-muted-foreground">
-                  Quality education shouldn't break the bank. We offer competitive pricing with flexible payment options
-                  to make learning accessible to everyone.
-                </p>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <DollarSign className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold">Pay As You Go</div>
-                      <div className="text-sm text-muted-foreground">No long-term commitments required</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Clock className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold">Flexible Scheduling</div>
-                      <div className="text-sm text-muted-foreground">Book sessions that fit your calendar</div>
-                    </div>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="font-semibold">Money-Back Guarantee</div>
-                      <div className="text-sm text-muted-foreground">Not satisfied? Get a full refund</div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-
-              <Card className="bg-gradient-to-br from-primary to-accent text-primary-foreground">
-                <CardContent className="pt-6 space-y-6">
-                  <h3 className="text-2xl font-bold">Ready to Get Started?</h3>
-                  <p className="text-primary-foreground/90">
-                    Join hundreds of learners who are already achieving their goals with PrepSkul
-                  </p>
-                  <Button size="lg" variant="secondary" asChild className="w-full">
-                    <Link href="/contact">Start Learning Today</Link>
-                  </Button>
-                </CardContent>
-              </Card>
+        <section className="border-y border-[#17213a]/10 bg-[#17213a] text-white">
+          <div className="mx-auto grid max-w-[1440px] gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:px-12 lg:py-20 xl:px-20">
+            <div>
+              <h2 className="max-w-xl text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">Start with the support that fits now.</h2>
+              <p className="mt-5 max-w-xl text-lg leading-8 text-white/70">Choose one-to-one academic support, a practical program, or a conversation about support for a school.</p>
+            </div>
+            <div className="flex flex-wrap content-center gap-3 lg:justify-end">
+              <Link href="/contact" className="inline-flex items-center gap-3 rounded-md bg-[#4d79d8] px-6 py-3.5 text-sm font-extrabold transition-colors hover:bg-white hover:text-[#17213a]">Find learning support <ArrowRight className="h-4 w-4" /></Link>
+              <Link href="/programs" className="inline-flex items-center gap-3 rounded-md border border-white/30 px-6 py-3.5 text-sm font-extrabold transition-colors hover:bg-white/10">Explore programs <ArrowRight className="h-4 w-4" /></Link>
             </div>
           </div>
-        </div>
-      </section>
-
+        </section>
+      </main>
       <Footer />
     </div>
   )

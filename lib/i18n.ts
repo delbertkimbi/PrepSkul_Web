@@ -16,8 +16,8 @@ export const localeFlags = {
 // Language-specific metadata
 export const localeMetadata = {
   en: {
-    title: "PrepSkul: Find Trusted Home and Online Tutors in Cameroon",
-    description: "Find the best online and home tutors in Cameroon. Expert tutoring for GCE, BEPC, Baccalauréat, Math, English, Science. 500+ students guided, 50+ expert tutors, 7+ cities covered. Start learning today!",
+    title: "PrepSkul | From Teaching to Understanding",
+    description: "PrepSkul bridges classroom teaching and individual understanding through trusted tutors, practical learning programs, and SkulMate.",
     keywords: [
       "online tutor Cameroon",
       "home tutor Cameroon", 
@@ -54,10 +54,10 @@ export const localeMetadata = {
       siteName: "PrepSkul",
       images: [
         {
-          url: "https://prepskul.com/logo.jpg",
+          url: "https://prepskul.com/images/hero-tutoring.png",
           width: 1200,
           height: 630,
-          alt: "PrepSkul - Expert Tutoring in Cameroon"
+          alt: "A PrepSkul tutor guiding a learner from teaching to understanding"
         }
       ] as any
     },
@@ -68,8 +68,8 @@ export const localeMetadata = {
     }
   },
   fr: {
-    title: "PrepSkul - #1 Cours Particuliers & En Ligne au Cameroun | Tuteurs Experts",
-    description: "Trouvez les meilleurs tuteurs en ligne et à domicile au Cameroun. Cours particuliers pour GCE, BEPC, Baccalauréat, Mathématiques, Anglais, Sciences. 500+ étudiants guidés, 50+ tuteurs experts, 7+ villes couvertes. Commencez à apprendre dès aujourd'hui !",
+    title: "PrepSkul | De l’enseignement à la compréhension",
+    description: "PrepSkul relie l’enseignement en classe à la compréhension individuelle grâce aux tuteurs, aux programmes pratiques et à SkulMate.",
     keywords: [
       "tuteur en ligne Cameroun",
       "cours particuliers Cameroun",
@@ -106,10 +106,10 @@ export const localeMetadata = {
       siteName: "PrepSkul",
       images: [
         {
-          url: "https://prepskul.com/logo.jpg",
+          url: "https://prepskul.com/images/hero-tutoring.png",
           width: 1200,
           height: 630,
-          alt: "PrepSkul - Cours Particuliers au Cameroun"
+          alt: "Un tuteur PrepSkul guide un apprenant vers la compréhension"
         }
       ] as any
     },

@@ -1,10 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Only use custom distDir locally to avoid OneDrive sync issues
-  // On Vercel, use default .next directory
-  ...(process.env.VERCEL ? {} : {
-    distDir: '../../../prepskul_build',
-  }),
+  // Keep development output separate from production builds. Sharing one
+  // directory between `next dev` and `next build` can delete vendor chunks
+  // from a running server and cause intermittent MODULE_NOT_FOUND errors.
+  distDir: process.env.NEXT_DIST_DIR || (process.env.NODE_ENV === 'development' ? '.next-dev' : '.next'),
   eslint: {
     ignoreDuringBuilds: true,
   },

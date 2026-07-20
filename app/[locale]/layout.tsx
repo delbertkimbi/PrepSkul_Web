@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins, Lato } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { PerformanceOptimizer } from "@/components/performance-optimizer"
 import { LocaleProvider } from "@/lib/locale-context"
@@ -8,20 +7,6 @@ import { localeMetadata, type Locale } from "@/lib/i18n"
 import "../globals.css"
 import { Suspense } from "react"
 import { AndroidAppPrompt } from "@/components/AndroidAppPrompt"
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-  display: "swap",
-})
-
-const lato = Lato({
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-  variable: "--font-lato",
-  display: "swap",
-})
 
 export async function generateMetadata({ 
   params 
@@ -54,27 +39,20 @@ export async function generateMetadata({
       telephone: false,
     },
     metadataBase: new URL("https://prepskul.com"),
-    alternates: {
-      canonical: `/${locale}`,
-      languages: {
-        'en': '/en',
-        'fr': '/fr',
-      }
-    },
     openGraph: {
       ...(metadata?.openGraph || {}),
       type: "website",
       url: `https://prepskul.com/${locale}`,
       locale: locale === 'fr' ? 'fr_CM' : 'en_CM',
       siteName: "PrepSkul",
-      title: metadata?.title || "PrepSkul - Expert Tutoring in Cameroon",
-      description: metadata?.description || "Find the best online and home tutors in Cameroon. Expert tutoring for GCE, BEPC, Baccalauréat, Math, English, Science.",
+      title: metadata?.title || "PrepSkul | Guided Learning",
+      description: metadata?.description || "Trusted tutors, personalized learning tools, and practical programs that help learners understand and progress.",
       images: [
         {
-          url: "https://prepskul.com/logo.jpg",
+          url: "https://prepskul.com/images/hero-tutoring.png",
           width: 1200,
           height: 630,
-          alt: "PrepSkul - Expert Tutoring in Cameroon",
+          alt: "A PrepSkul tutor guiding a learner from teaching to understanding",
         },
       ],
     },
@@ -94,9 +72,6 @@ export async function generateMetadata({
         "max-snippet": -1,
       },
     },
-    verification: {
-      google: "your-google-verification-code",
-    },
   }
 }
 
@@ -110,15 +85,13 @@ export default async function LocaleLayout({
   const { locale } = await params
 
   return (
-    <html lang={locale}>
-      <body className={`${poppins.variable} ${lato.variable} font-sans antialiased`}>
-        <PerformanceOptimizer />
-        <LocaleProvider locale={locale}>
-          <Suspense fallback={null}>{children}</Suspense>
-        </LocaleProvider>
-        <AndroidAppPrompt />
-        <Analytics />
-      </body>
-    </html>
+    <>
+      <PerformanceOptimizer />
+      <LocaleProvider locale={locale}>
+        <Suspense fallback={null}>{children}</Suspense>
+      </LocaleProvider>
+      <AndroidAppPrompt />
+      <Analytics />
+    </>
   )
 }

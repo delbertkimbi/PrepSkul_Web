@@ -1,111 +1,86 @@
 "use client"
 
-import Link from "next/link"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { LanguageSwitcher } from "@/components/language-switcher"
-import { Menu, X } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
+import { ArrowRight, Menu, X } from "lucide-react"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLocale } from "@/lib/locale-context"
-import { getTranslations } from "@/lib/translations"
-import { getStartedUrl } from "@/lib/get-started-url"
+import { getSiteContent } from "@/lib/site-content"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { locale } = useLocale()
-  const t = getTranslations(locale)
+  const copy = getSiteContent(locale)
+
+  const navItems = [
+    { label: copy.nav.learn, href: `/${locale}#guidance` },
+    { label: copy.nav.programs, href: `/${locale}#programs` },
+    { label: copy.nav.skulmate, href: `/${locale}#skulmate` },
+    { label: copy.nav.schools, href: `/${locale}/schools` },
+  ]
+
+  const closeMenu = () => setMobileMenuOpen(false)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-1">
-            <Image
-              src="/app_logo(blue).png"
-              alt="PrepSkul"
-              width={33}
-              height={33}
-              className="h-8 w-8 object-contain"
-              priority
-            />
-            <span className="text-2xl font-black" style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}>
-              PrepSkul
-            </span>
+    <header className="sticky top-0 z-50 border-b border-[#182544]/10 bg-white/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center px-5 sm:px-8 lg:px-12 xl:px-20">
+        <Link href={`/${locale}`} className="flex shrink-0 items-center gap-2.5" onClick={closeMenu}>
+          <Image src="/app_logo(blue).png" alt="PrepSkul" width={34} height={34} className="h-7 w-7 object-contain" priority />
+          <span className="text-[1.2rem] font-extrabold tracking-[-0.055em] text-[#14213d]">PrepSkul</span>
+        </Link>
+
+        <nav className="ml-14 hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} className="text-[13px] font-bold text-[#34405a] transition-colors hover:text-[#2859c5]">
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="ml-auto hidden items-center gap-1 lg:flex">
+          <LanguageSwitcher currentLocale={locale} />
+          <Link href={`/${locale}/tutors`} className="px-4 py-3 text-[13px] font-bold text-[#34405a] transition-colors hover:text-[#2859c5]">
+            {copy.nav.tutor}
           </Link>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}`} className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-              {t.nav.home}
-            </Link>
-            <Link
-              href={`/${locale}/about`}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              {t.nav.about}
-            </Link>
-            <Link
-              href={`/${locale}/programs`}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              {t.nav.programs}
-            </Link>
-            <Link
-              href={`/${locale}/contact`}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              {t.nav.contact}
-            </Link>
-          </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            <LanguageSwitcher currentLocale={locale} />
-            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link href={getStartedUrl()}>{t.nav.getStarted}</Link>
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          <Link href="https://app.prepskul.com" className="ml-2 inline-flex h-10 items-center gap-2 rounded-md bg-[#182544] px-5 text-[13px] font-extrabold text-white transition-colors hover:bg-[#2859c5]">
+            {copy.nav.cta}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border/40">
-            <nav className="flex flex-col gap-4">
-              <Link href={`/${locale}`} className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                {t.nav.home}
-              </Link>
-              <Link
-                href={`/${locale}/about`}
-                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                {t.nav.about}
-              </Link>
-              <Link
-                href={`/${locale}/programs`}
-                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                {t.nav.programs}
-              </Link>
-              <Link
-                href={`/${locale}/contact`}
-                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                {t.nav.contact}
-              </Link>
-              <div className="flex items-center gap-2 pt-2">
-                <LanguageSwitcher currentLocale={locale} />
-                <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Link href={getStartedUrl()}>{t.nav.getStarted}</Link>
-                </Button>
-              </div>
-            </nav>
-          </div>
-        )}
+        <button
+          type="button"
+          className="ml-auto inline-flex h-10 w-10 items-center justify-center border border-[#14213d]/20 text-[#14213d] lg:hidden"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="mobile-navigation"
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
+
+      {mobileMenuOpen && (
+        <div id="mobile-navigation" className="border-t border-[#17213a]/10 bg-white px-4 py-5 lg:hidden">
+          <nav className="mx-auto flex max-w-[1440px] flex-col" aria-label="Mobile navigation">
+            {navItems.map((item) => (
+              <Link key={item.href} href={item.href} onClick={closeMenu} className="border-b border-[#17213a]/10 py-4 text-base font-bold text-[#17213a]">
+                {item.label}
+              </Link>
+            ))}
+            <Link href={`/${locale}/tutors`} onClick={closeMenu} className="border-b border-[#17213a]/10 py-4 text-base font-bold text-[#17213a]">
+              {copy.nav.tutor}
+            </Link>
+            <div className="mt-5 flex items-center gap-3">
+              <LanguageSwitcher currentLocale={locale} />
+              <Link href="https://app.prepskul.com" onClick={closeMenu} className="ml-auto inline-flex h-11 items-center gap-2 rounded-md bg-[#17213a] px-5 text-sm font-extrabold text-white">
+                {copy.nav.cta}<ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
