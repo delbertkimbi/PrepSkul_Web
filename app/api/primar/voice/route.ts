@@ -99,8 +99,10 @@ const SOUNDS_FR = ['ah','ee','oh','ue','euh','mmm','lll','sss','rrr','fff','puh'
 const WORDS_EN = ['cat','dog','sun','cup','bed','pen','hat','map','bag','box','leg','pot','six','van','web','zip','run','big','red','top','yam','hut','fan','net','pig','bus','log','mat','jug','kid','hen','tin','pan','mango','plantain','drum','ball','apple','key','star','tap','ant','kite','nest','vase','yoyo',
   // Phrase joiners. Not in the word bank because they cannot be drawn, but a
   // phrase read aloud with a silent gap in it is worse than no phrase at all.
-  'on','in']
-const WORDS_FR = ['lit','sac','mur','rue','pot','bus','dos','bol','tapis','lune','porte','robe','tasse','moto','vélo','main','pain','chat','rat','nid','sel','mangue','sur']
+  'on','in',
+  // Longer words, for counting syllables.
+  'banana','tomato','umbrella']
+const WORDS_FR = ['lit','sac','mur','rue','pot','bus','dos','bol','tapis','lune','porte','robe','tasse','moto','vélo','main','pain','chat','rat','nid','sel','mangue','sur','poule','ballon']
 
 /** Number words, so a total can be named rather than only shown. */
 const NUMBER_WORDS_EN = ['zero','one','two','three','four','five','six','seven','eight','nine','ten',
