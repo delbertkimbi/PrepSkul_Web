@@ -141,10 +141,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // PRIORITY 2d3: Handle /primar route (skip locale redirection)
-  if (pathname.startsWith('/primar')) {
-    return NextResponse.next()
-  }
+          // PRIORITY 2d3: Handle /primar route (skip locale redirection).
+          // Marketplace www stays off Primar unless PRIMAR_ENABLED=true.
+          if (pathname.startsWith('/primar')) {
+            const primarEnabled = process.env.PRIMAR_ENABLED === 'true'
+            if (!isSkulmateSubdomain && !primarEnabled) {
+              return NextResponse.redirect(new URL('/', request.url))
+            }
+            return NextResponse.next()
+          }
   
   // PRIORITY 2e: Handle /tutor/[id] (share links and OG metadata - no locale)
   // Served by app/tutor/[id]/page.tsx for rich previews and redirects
