@@ -38,3 +38,4 @@ secrets.txt
 .next-codex/
 .next-dev/
 .prepskul-dev.lock
+*.log

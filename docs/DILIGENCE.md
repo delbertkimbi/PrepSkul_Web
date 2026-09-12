@@ -14,3 +14,5 @@ Env names: [ENV_SETUP_INSTRUCTIONS.md](ENV_SETUP_INSTRUCTIONS.md). Do not commit
 - Live Fapshi: collection/disburse live users and keys
 - Group classes: `GROUP_CLASSES_ENABLED`
 - Primar on www: keep `PRIMAR_ENABLED` unset/false; `skulmate.` host still serves the kids experiment
+
+Folder map: [STRUCTURE.md](STRUCTURE.md).
