@@ -30,3 +30,11 @@ firebase-service-account.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local junk / leaked inventories
+.DS_Store
+**/.DS_Store
+secrets.txt
+.next-codex/
+.next-dev/
+.prepskul-dev.lock
