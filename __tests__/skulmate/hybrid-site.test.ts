@@ -1,0 +1,165 @@
+import { isHarvestPack, flattenHarvestCorpus } from '@/lib/skulmate/harvest-schema'
+import { HARVEST_PACKS } from '@/lib/skulmate/harvest-packs'
+import { aliveCopy } from '@/lib/marketing/alive-copy'
+import { packById, DEFAULT_REGION_ID } from '@/lib/skulmate/region-packs'
+import { getTranslations } from '@/lib/translations'
+import { fallbackNotebook } from '@/lib/marketing/notebook'
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
+describe('harvest schema', () => {
+  it('accepts a Cameroon-first pack without locking the tutor to one country', () => {
+    const pack = {
+      version: 1 as const,
+      source: 'test',
+      regionId: 'cm',
+      notes: 'Calibration only',
+      units: [
+        {
+          id: 'u1',
+          regionId: 'cm',
+          systemId: 'cm-francophone',
+          levelIds: ['cm1'],
+          subjectId: 'maths',
+          topic: 'Place value',
+          language: 'both' as const,
+          misconceptions: ['tens and ones swapped'],
+          sequence: ['show 34 with sticks'],
+          examples: ['34 plantains'],
+          examHooks: [],
+          transfer: ['market stall'],
+          corpus:
+            'A CM1 learner in Yaoundé often mixes tens and ones when they write 34 as 43. Ask them to make the number with sticks before writing. Do not tell the tutor they may only teach Cameroon.',
+        },
+      ],
+    }
+    expect(isHarvestPack(pack)).toBe(true)
+    expect(flattenHarvestCorpus(pack)[0]).toMatch(/plantains/)
+    expect(HARVEST_PACKS).toEqual([])
+  })
+})
+
+describe('PrepSkul marketing copy', () => {
+  it('treats PrepSkul as the product and SkulMate as the in-app experience', () => {
+    const copy = aliveCopy('en')
+    const blob = [
+      copy.hero.title,
+      copy.hero.subtitle,
+      copy.science.title,
+      copy.science.body,
+      copy.cta.title,
+      copy.faq.map((item) => item.q + ' ' + item.a).join(' '),
+    ].join(' ')
+
+    expect(copy.hero.primary).toBe('Get started')
+    expect(copy.hero.statLine).toMatch(/11,280\+/)
+    expect(copy.hero.statLine).toMatch(/sessions tutored/)
+    expect(copy.hero.statLine).toMatch(/4\.8\/5/)
+    expect(copy.hero.statLine).toMatch(/minutes tutored/)
+    expect(copy.hero.statLine).not.toMatch(/600\+/)
+    expect(copy.hero.statLine).not.toMatch(/35 cities/)
+    expect(copy.hero.statLine).not.toMatch(/5,639/)
+    expect(copy.hero.statLine).not.toMatch(/104,169/)
+    expect(copy.hero.statLine).not.toMatch(/GCE/)
+    expect(copy.hero.stats).toHaveLength(3)
+    expect(copy.hero.stats[0]?.start).toBe(11280)
+    expect(copy.hero.stats[1]?.start).toBe(4.8)
+    expect(copy.hero.stats[2]?.start).toBe(174360)
+    expect(copy.hero.stats[2]?.liveMs).toBeGreaterThan(0)
+    expect(copy.hero.stats.every((stat) => !/GCE|BEPC|Bac/i.test(stat.value + stat.label))).toBe(true)
+    expect(copy.audienceKicker).toMatch(/Students, parents, and teachers/)
+    expect(copy.audienceKicker).not.toMatch(/WHO PREPSKUL/)
+    expect(copy.hero.primary).not.toMatch(/Try Mate/)
+    expect(blob).toMatch(/PrepSkul is the tutoring product/)
+    expect(blob).toMatch(/feature of PrepSkul/)
+    expect(blob).not.toMatch(/PrepSkul is Mate/)
+    expect(copy.science.title).toMatch(/tutor in the app/)
+    expect(copy.tools.every((tool) => tool.tile.startsWith('/onboard/art/'))).toBe(true)
+    expect(copy.audiences.every((aud) => !aud.image.startsWith('/marketing/'))).toBe(true)
+    expect(copy.notebook.title).toMatch(/notebook/i)
+    expect(copy.toolsTitle).toMatch(/tutor who teaches/)
+  })
+
+  it('keeps tutor requests in the app and the public list on the site', () => {
+    const copy = aliveCopy('en')
+    expect(copy.find.lead).toMatch(/tutor_profiles/)
+    expect(copy.find.request).toMatch(/app/)
+    expect(copy.split.body).toMatch(/same Next\.js API/)
+    expect(copy.split.body).toMatch(/same Supabase/)
+    expect(copy.hybrid.title).toMatch(/Book them in the app/)
+    const how = copy.faq.find((item) => item.q.includes('human tutor'))
+    expect(how?.a).toMatch(/PrepSkul app/)
+    expect(how?.a).toMatch(/WebRTC/)
+    const backend = copy.faq.find((item) => item.q.includes('backend'))
+    expect(backend?.a).toMatch(/tutor_requests/)
+  })
+
+  it('covers subjects, ages, always-on talk, and hybrid tutors', () => {
+    const faq = aliveCopy('en').faq.map((item) => item.q + ' ' + item.a).join(' ')
+    expect(faq).toMatch(/SIL/)
+    expect(faq).toMatch(/University/)
+    expect(faq).toMatch(/no tap-to-talk/i)
+    expect(faq).toMatch(/request/)
+    expect(faq).toMatch(/WebRTC/)
+    expect(faq).not.toMatch(/only teach Cameroon/)
+    expect(DEFAULT_REGION_ID).toBe('cm')
+    expect(packById('cm').systems.length).toBe(2)
+  })
+
+  it('keeps the homepage hero in PrepSkul voice', () => {
+    const hero = getTranslations('en').home.hero
+    expect(hero.title).toMatch(/Learn with a tutor who actually teaches/)
+    expect(hero.getStarted).toBe('Get started')
+    expect(hero.subtitle).toMatch(/SkulMate, the tutor inside PrepSkul/)
+  })
+})
+
+describe('notebook SEO blocks', () => {
+  it('ships three Cameroon-first notes with unique slugs and tiles', () => {
+    const posts = fallbackNotebook('en')
+    expect(posts).toHaveLength(3)
+    expect(new Set(posts.map((post) => post.slug)).size).toBe(3)
+    expect(posts.every((post) => post.tile.startsWith('/onboard/art/'))).toBe(true)
+    expect(posts.map((post) => post.title + post.body).join(' ')).toMatch(/SkulMate/)
+    expect(posts.map((post) => post.body).join(' ')).toMatch(/PrepSkul/)
+    expect(fallbackNotebook('fr')).toHaveLength(3)
+  })
+})
+
+describe('hybrid marketing chrome', () => {
+  it('hides notebook from the homepage and product nav', () => {
+    const page = readFileSync(join(process.cwd(), 'app/[locale]/page.tsx'), 'utf8')
+    const header = readFileSync(join(process.cwd(), 'components/header.tsx'), 'utf8')
+    const footer = readFileSync(join(process.cwd(), 'components/footer.tsx'), 'utf8')
+    expect(page).not.toMatch(/listNotebookPosts/)
+    expect(header).not.toMatch(/\/notebook/)
+    expect(footer).not.toMatch(/\/notebook/)
+  })
+
+  it('keeps the tutor photo still and animates Mate beside the live stats', () => {
+    const home = readFileSync(join(process.cwd(), 'components/marketing/alive-home.tsx'), 'utf8')
+    const mate = readFileSync(join(process.cwd(), 'components/marketing/mate-point.tsx'), 'utf8')
+    expect(home).toMatch(/african-tutor-teaching-student-at-home-with-books-/)
+    expect(home).toMatch(/MatePoint/)
+    expect(home).toMatch(/Laurel/)
+    expect(home).toMatch(/LiveTicker/)
+    expect(home).toMatch(/ps-live-stats/)
+    expect(home).not.toMatch(/MateOrbit/)
+    expect(home).not.toMatch(/mate-wave\.png/)
+    expect(mate).toMatch(/<svg/)
+    expect(mate).not.toMatch(/\.png/)
+  })
+
+  it('keeps notebook in the crawler background', () => {
+    const sitemap = readFileSync(join(process.cwd(), 'app/sitemap.ts'), 'utf8')
+    const robots = readFileSync(join(process.cwd(), 'app/robots.ts'), 'utf8')
+    const llms = readFileSync(join(process.cwd(), 'app/llms.txt/route.ts'), 'utf8')
+    const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8')
+    expect(sitemap).toMatch(/notebook/)
+    expect(robots).toMatch(/llms\.txt/)
+    expect(robots).toMatch(/notebook/)
+    expect(llms).toMatch(/Notebook/)
+    expect(css).not.toMatch(/hero-circular-shape/)
+    expect(css).not.toMatch(/linear-gradient\(135deg/)
+  })
+})

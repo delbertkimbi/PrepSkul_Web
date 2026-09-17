@@ -1,111 +1,107 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { LanguageSwitcher } from "@/components/language-switcher"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
 import { useLocale } from "@/lib/locale-context"
 import { getTranslations } from "@/lib/translations"
-import { getStartedUrl } from "@/lib/get-started-url"
+import { locales, type Locale } from "@/lib/i18n"
+import { usePathname, useRouter } from "next/navigation"
+import { PaperButton } from "@/components/marketing/paper"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { locale } = useLocale()
   const t = getTranslations(locale)
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const links = [
+    { href: `/${locale}/onboard`, label: "SkulMate" },
+    { href: `/${locale}/find`, label: t.nav.tutors },
+    { href: `/${locale}/programs`, label: t.nav.programs },
+    { href: `/${locale}/about`, label: t.nav.about },
+    { href: `/${locale}#faq`, label: "FAQ" },
+  ]
+
+  function switchLocale(next: Locale) {
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, "") || "/"
+    router.push(`/${next}${pathWithoutLocale}`)
+  }
+
+  const languageToggle = (mobile = false) => (
+    <div
+      className={`flex items-center gap-1 rounded-xl border border-[#1B2C4F]/15 bg-white p-1 ${mobile ? "mt-3 justify-center" : ""}`}
+      aria-label="Language"
+    >
+      {locales.map((code) => (
+        <button
+          key={code}
+          type="button"
+          onClick={() => switchLocale(code)}
+          aria-pressed={locale === code}
+          className={`rounded-lg px-2 py-1 text-xs font-black transition ${
+            locale === code ? "bg-[#1B2C4F] text-white" : "text-[#1B2C4F] hover:bg-[#dfeeff]"
+          }`}
+        >
+          {code.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-1">
-            <Image
-              src="/app_logo(blue).png"
-              alt="PrepSkul"
-              width={33}
-              height={33}
-              className="h-8 w-8 object-contain"
-              priority
-            />
-            <span className="text-2xl font-black" style={{ fontFamily: 'var(--font-lato), Lato, sans-serif' }}>
-              PrepSkul
-            </span>
+    <header className="ps-header">
+      <div className="ps-wrap flex h-[4.25rem] items-center justify-between">
+        <Link href={`/${locale}`} className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/app_logo(blue).png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
+            suppressHydrationWarning
+          />
+          <span className="ps-wordmark text-[1.45rem] text-[#1B2C4F]">PrepSkul</span>
+        </Link>
+
+        <nav className="hidden items-center gap-6 md:flex">
+          {links.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-bold text-[#1B2C4F]/75 transition hover:-rotate-1 hover:text-[#0EA5E9]"
+            >
+              {item.label}
+            </Link>
+          ))}
+          {languageToggle()}
+          <Link href={`/${locale}/onboard`}>
+            <PaperButton className="px-5 py-2.5 text-sm shadow-[0_5px_0_#0f1a2e]">{t.nav.getStarted}</PaperButton>
           </Link>
+        </nav>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            <Link href={`/${locale}`} className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-              {t.nav.home}
-            </Link>
-            <Link
-              href={`/${locale}/about`}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              {t.nav.about}
-            </Link>
-            <Link
-              href={`/${locale}/programs`}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              {t.nav.programs}
-            </Link>
-            <Link
-              href={`/${locale}/contact`}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              {t.nav.contact}
-            </Link>
-          </nav>
-
-          <div className="hidden md:flex items-center gap-3">
-            <LanguageSwitcher currentLocale={locale} />
-            <Button asChild className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              <Link href={getStartedUrl()}>{t.nav.getStarted}</Link>
-            </Button>
-          </div>
-
-          {/* Mobile Menu Button */}
-          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
-        </div>
-
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border/40">
-            <nav className="flex flex-col gap-4">
-              <Link href={`/${locale}`} className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                {t.nav.home}
-              </Link>
-              <Link
-                href={`/${locale}/about`}
-                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                {t.nav.about}
-              </Link>
-              <Link
-                href={`/${locale}/programs`}
-                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                {t.nav.programs}
-              </Link>
-              <Link
-                href={`/${locale}/contact`}
-                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              >
-                {t.nav.contact}
-              </Link>
-              <div className="flex items-center gap-2 pt-2">
-                <LanguageSwitcher currentLocale={locale} />
-                <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground">
-                  <Link href={getStartedUrl()}>{t.nav.getStarted}</Link>
-                </Button>
-              </div>
-            </nav>
-          </div>
-        )}
+        <button className="rounded-xl border border-[#1B2C4F]/15 bg-white p-2 md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
       </div>
+
+      {mobileMenuOpen ? (
+        <nav className="border-t border-[#1B2C4F]/10 md:hidden">
+          <div className="ps-wrap flex flex-col gap-1 py-4">
+            {links.map((item) => (
+              <Link key={item.href} href={item.href} className="rounded-xl px-3 py-3 font-bold" onClick={() => setMobileMenuOpen(false)}>
+                {item.label}
+              </Link>
+            ))}
+            {languageToggle(true)}
+            <Link href={`/${locale}/onboard`} className="mt-3" onClick={() => setMobileMenuOpen(false)}>
+              <PaperButton className="w-full">{t.nav.getStarted}</PaperButton>
+            </Link>
+          </div>
+        </nav>
+      ) : null}
     </header>
   )
 }

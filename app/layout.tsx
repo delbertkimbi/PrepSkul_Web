@@ -1,7 +1,14 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins, Lato } from "next/font/google"
+import { Fredoka, Poppins } from "next/font/google"
 import "./globals.css"
+
+const fredoka = Fredoka({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-fredoka",
+  display: "swap",
+})
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -10,17 +17,10 @@ const poppins = Poppins({
   display: "swap",
 })
 
-const lato = Lato({
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-  variable: "--font-lato",
-  display: "swap",
-})
-
 export const metadata: Metadata = {
   title: "PrepSkul: Find Trusted Home and Online Tutors in Cameroon",
   description:
-    "Get connected with verified home and online tutors who don't just teach, but mentor and inspire — offering personalized support for academics, skill development, and exam preparation in Cameroon and beyond.",
+    "Get connected with verified home and online tutors who don't just teach, but mentor and inspire, offering personalized support for academics, skill development, and exam preparation in Cameroon and beyond.",
   icons: {
     icon: [
       { url: "/logo.jpg", sizes: "32x32", type: "image/jpeg" },
@@ -39,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${poppins.variable} ${lato.variable} font-sans antialiased`}>
+      <body className={`${fredoka.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

@@ -282,28 +282,19 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen">
       <Header />
 
-      {/* Hero Section */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center space-y-4">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-primary">
-              {t.contact.hero.title}
-            </h1>
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-              {t.contact.hero.subtitle}
-            </p>
-          </div>
-        </div>
+      <section className="ps-wrap py-14">
+        <h1 className="ps-h1 max-w-3xl">{t.contact.hero.title}</h1>
+        <p className="ps-lead mt-4 max-w-2xl">{t.contact.hero.subtitle}</p>
       </section>
 
       {/* Contact Form Section */}
       <section className="py-8">
         <div className="container mx-auto px-4">
           <div className="max-w-2xl mx-auto">
-            <Card className="shadow-lg border">
+            <Card className="rounded-[1.75rem] border-0 bg-white shadow-none">
               <CardContent className="pt-6 pb-6 px-4">
                 {isSuccess ? (
                   <div className="text-center space-y-4">

@@ -11,17 +11,17 @@ export const translations = {
       howItWorks: "How It Works",
       testimonials: "Testimonials",
       contact: "Contact",
-      getStarted: "Get Started"
+      getStarted: "Get started"
     },
     
     // Homepage
     home: {
       hero: {
-        title: "Connect & Learn at the Right",
-        titleWords: ["Level", "Pace", "Stride"],
-        subtitle: "Find experienced, qualified tutors across Africa for personalized learning. Whether online or at home, one-on-one or in groups, we help you achieve academic excellence.",
-        getStarted: "Get Started",
-        viewSubjects: "View Programs"
+        title: "Learn with a tutor who actually teaches.",
+        titleWords: ["teaches", "fits", "lasts"],
+        subtitle: "Talk it through with SkulMate, the tutor inside PrepSkul. When you want a person, find one or request one. Live online, or at the table.",
+        getStarted: "Get started",
+        viewSubjects: "Find a tutor"
       },
       stats: {
         learnersGuided: "Learners Reached",
@@ -68,9 +68,9 @@ export const translations = {
         }
       },
       cta: {
-        title: "Ready to Excel in Your Studies?",
-        subtitle: "Join hundreds of students across Cameroon who are achieving their academic dreams with personalized tutoring from PrepSkul. Start your journey to success today.",
-        button: "Start Learning"
+        title: "Ready to learn with PrepSkul?",
+        subtitle: "Start with SkulMate in the app, or find a human tutor for a live class or an onsite visit.",
+        button: "Get started"
       },
       examAccelerator: {
         badge: "National Impact Initiative",
@@ -627,11 +627,11 @@ export const translations = {
     // Homepage
     home: {
       hero: {
-        title: "Trouvez Votre",
-        titleWords: ["Tuteur", "Mentor", "Guide"],
-        subtitle: "Connectez-vous avec des tuteurs expérimentés et qualifiés à travers le Cameroun pour un apprentissage personnalisé. Que ce soit en ligne ou à domicile, en tête-à-tête ou en groupes, nous vous aidons à atteindre l'excellence académique.",
+        title: "Apprends avec un tuteur qui enseigne vraiment.",
+        titleWords: ["enseigne", "tient", "suit"],
+        subtitle: "Parle avec SkulMate, le tuteur dans PrepSkul. Pour une personne, trouve-en une ou fais une demande. En direct en ligne, ou à table.",
         getStarted: "Commencer",
-        viewSubjects: "Voir les Matières"
+        viewSubjects: "Trouver un tuteur"
       },
       stats: {
         learnersGuided: "Apprenants Guidés",
@@ -678,9 +678,9 @@ export const translations = {
         }
       },
       cta: {
-        title: "Prêt à Exceller dans Vos Études ?",
-        subtitle: "Rejoignez des centaines d'étudiants à travers le Cameroun qui réalisent leurs rêves académiques avec le tutorat personnalisé de PrepSkul. Commencez votre parcours vers le succès dès aujourd'hui.",
-        button: "Commencer à Apprendre"
+        title: "Prêt à apprendre avec PrepSkul ?",
+        subtitle: "Commence avec SkulMate dans l’app, ou trouve un tuteur humain pour un cours en direct ou sur place.",
+        button: "Commencer"
       },
       examAccelerator: {
         badge: "Initiative d'impact national",

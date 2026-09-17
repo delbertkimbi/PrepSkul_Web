@@ -3,7 +3,7 @@ const nextConfig = {
   // Only use custom distDir locally to avoid OneDrive sync issues
   // On Vercel, use default .next directory
   ...(process.env.VERCEL ? {} : {
-    distDir: '../../../prepskul_build',
+    distDir: process.env.NEXT_DIST_DIR || '.next',
   }),
   eslint: {
     ignoreDuringBuilds: true,

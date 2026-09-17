@@ -3,34 +3,31 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useLocale } from "@/lib/locale-context"
 import { getTranslations } from "@/lib/translations"
+import { aliveCopy } from "@/lib/marketing/alive-copy"
+import { PaperSheet } from "@/components/marketing/paper"
 
 export function FAQSection() {
   const { locale } = useLocale()
   const t = getTranslations(locale)
-  const faqs = [...t.faq.items]
+  const faqs = aliveCopy(locale).faq.map((item) => ({ question: item.q, answer: item.a }))
 
   return (
-    <section className="py-16">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t.faq.title}</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t.faq.subtitle}
-          </p>
-        </div>
-
-        <div className="max-w-3xl mx-auto">
-          <Accordion type="single" collapsible className="space-y-4">
+    <section className="px-4 py-20 sm:px-6">
+      <div className="mx-auto max-w-3xl">
+        <h2 className="ps-h2">{t.faq.title}</h2>
+        <p className="ps-lead mt-3">{aliveCopy(locale).faqLead}</p>
+        <PaperSheet className="mt-10 p-4 sm:p-6">
+          <Accordion type="single" collapsible>
             {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`} className="border rounded-lg px-6 bg-card">
-                <AccordionTrigger className="text-left hover:no-underline py-4">
-                  <span className="font-semibold">{faq.question}</span>
+              <AccordionItem key={index} value={`item-${index}`} className="border-b border-[#1B2C4F]/12 px-2">
+                <AccordionTrigger className="py-5 text-left text-[15px] font-black hover:no-underline">
+                  {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="text-muted-foreground pb-4">{faq.answer}</AccordionContent>
+                <AccordionContent className="pb-5 text-sm leading-relaxed text-[#5C6B84]">{faq.answer}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
+        </PaperSheet>
       </div>
     </section>
   )

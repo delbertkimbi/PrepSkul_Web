@@ -1,6 +1,5 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins, Lato } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { PerformanceOptimizer } from "@/components/performance-optimizer"
 import { LocaleProvider } from "@/lib/locale-context"
@@ -8,20 +7,6 @@ import { localeMetadata, type Locale } from "@/lib/i18n"
 import "../globals.css"
 import { Suspense } from "react"
 import { AndroidAppPrompt } from "@/components/AndroidAppPrompt"
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-  display: "swap",
-})
-
-const lato = Lato({
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-  variable: "--font-lato",
-  display: "swap",
-})
 
 export async function generateMetadata({ 
   params 
@@ -110,15 +95,13 @@ export default async function LocaleLayout({
   const { locale } = await params
 
   return (
-    <html lang={locale}>
-      <body className={`${poppins.variable} ${lato.variable} font-sans antialiased`}>
-        <PerformanceOptimizer />
-        <LocaleProvider locale={locale}>
-          <Suspense fallback={null}>{children}</Suspense>
-        </LocaleProvider>
-        <AndroidAppPrompt />
-        <Analytics />
-      </body>
-    </html>
+    <div lang={locale} className="ps-site min-h-screen">
+      <PerformanceOptimizer />
+      <LocaleProvider locale={locale}>
+        <Suspense fallback={null}>{children}</Suspense>
+      </LocaleProvider>
+      <AndroidAppPrompt />
+      <Analytics />
+    </div>
   )
 }
