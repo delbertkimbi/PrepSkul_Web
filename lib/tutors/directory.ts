@@ -71,6 +71,9 @@ export function toPublicTutor(row: Record<string, unknown>): PublicTutor | null 
 }
 
 export async function listPublicTutors(limit = 24): Promise<{ tutors: PublicTutor[]; unavailable: boolean }> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return { tutors: [], unavailable: true }
+  }
   try {
     const { getSupabaseAdmin } = await import("@/lib/supabase-admin")
     const supabase = getSupabaseAdmin()
@@ -93,7 +96,7 @@ export async function listPublicTutors(limit = 24): Promise<{ tutors: PublicTuto
 
     return { tutors, unavailable: false }
   } catch (error) {
-    console.error("[tutors/directory] unavailable", error)
+    console.error("[tutors/directory] unavailable", error instanceof Error ? error.message : error)
     return { tutors: [], unavailable: true }
   }
 }

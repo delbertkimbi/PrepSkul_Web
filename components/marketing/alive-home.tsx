@@ -109,7 +109,7 @@ export function AliveHome({
 
           <div className="relative mx-auto w-full max-w-xl">
             <PaperSheet className="overflow-hidden p-3 sm:p-3.5" rotate={1.5} tone="cream">
-              <Tape className="-top-4 left-1/2 -translate-x-1/2" />
+              <Tape color="yellow" className="-top-4 left-1/2 -translate-x-1/2" />
               <div className="relative min-h-[240px] overflow-hidden rounded-[18px] bg-[#fffdf7] sm:min-h-[300px] lg:min-h-[340px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

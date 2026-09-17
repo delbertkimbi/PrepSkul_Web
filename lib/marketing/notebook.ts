@@ -109,6 +109,9 @@ function toPost(row: Record<string, unknown>, locale: "en" | "fr"): NotebookPost
 
 export async function listNotebookPosts(locale: string, limit = 3): Promise<NotebookPost[]> {
   const language = loc(locale)
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return fallbackNotebook(language).slice(0, limit)
+  }
   try {
     const { getSupabaseAdmin } = await import("@/lib/supabase-admin")
     const supabase = getSupabaseAdmin()
@@ -132,6 +135,9 @@ export async function listNotebookPosts(locale: string, limit = 3): Promise<Note
 export async function getNotebookPost(locale: string, slug: string): Promise<NotebookPost | null> {
   const language = loc(locale)
   const fromFallback = fallbackNotebook(language).find((post) => post.slug === slug) ?? null
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return fromFallback
+  }
   try {
     const { getSupabaseAdmin } = await import("@/lib/supabase-admin")
     const supabase = getSupabaseAdmin()

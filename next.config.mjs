@@ -14,6 +14,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   webpack: (config, { isServer }) => {
     // Exclude canvas from client-side bundles (it's a Node.js native module)
     if (!isServer) {
