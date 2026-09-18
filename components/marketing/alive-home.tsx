@@ -376,6 +376,7 @@ export function AliveHome({
         <FAQSection />
       </div>
 
+      <TornDivider flip />
       <section className="ps-navy overflow-visible px-4 pb-24 pt-10 sm:px-6 lg:pb-28">
         <div className="h-16 sm:h-20" aria-hidden />
         <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-[1.1fr_0.9fr]">

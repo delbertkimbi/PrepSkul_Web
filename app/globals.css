@@ -687,6 +687,25 @@
   color: #e8e4d8;
 }
 
+.ps-footer-tear {
+  position: absolute;
+  inset-inline: 0;
+  top: -22px;
+  height: 24px;
+  pointer-events: none;
+  background-color: #1b2c4f;
+  background-image:
+    radial-gradient(rgba(255, 253, 247, 0.1) 1.1px, transparent 1.1px),
+    radial-gradient(rgba(255, 253, 247, 0.05) 2px, transparent 2px);
+  background-size: 10px 10px, 32px 32px;
+  background-position: 0 0, 7px 11px;
+  clip-path: polygon(
+    0 58%, 4% 12%, 9% 64%, 15% 8%, 21% 70%, 27% 18%, 33% 62%, 40% 6%,
+    46% 68%, 53% 14%, 59% 60%, 66% 10%, 73% 66%, 80% 16%, 87% 62%,
+    93% 8%, 100% 54%, 100% 100%, 0 100%
+  );
+}
+
 .ps-cutout {
   background: transparent;
   filter: drop-shadow(0 10px 14px rgba(27, 44, 79, 0.18));

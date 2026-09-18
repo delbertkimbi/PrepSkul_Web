@@ -12,11 +12,8 @@ export function Footer() {
 
   return (
     <footer className="ps-footer ps-navy">
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-8 bg-[#fffdf7] [clip-path:polygon(0_0,100%_0,100%_35%,94%_68%,88%_36%,81%_72%,74%_40%,67%_70%,59%_35%,51%_72%,43%_39%,35%_69%,27%_37%,19%_72%,10%_38%,0_70%)]"
-      />
-      <div className="ps-wrap grid gap-10 pb-10 pt-16 md:grid-cols-4">
+      <div aria-hidden className="ps-footer-tear" />
+      <div className="ps-wrap grid gap-10 pb-10 pt-12 md:grid-cols-4">
         <div className="space-y-4">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
