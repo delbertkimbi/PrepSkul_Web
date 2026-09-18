@@ -684,9 +684,7 @@
 
 .ps-footer {
   position: relative;
-  background: #fffdf7;
-  color: #1b2c4f;
-  border-top: 1px solid rgba(27, 44, 79, 0.1);
+  color: #e8e4d8;
 }
 
 .ps-cutout {

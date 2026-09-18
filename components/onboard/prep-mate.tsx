@@ -62,8 +62,11 @@ export function PrepMate({
       raf = requestAnimationFrame(draw)
     }
 
-    const onMood = () => state.trigger(moodRef.current)
-    onMood()
+    const onMood = () => {
+      const next = moodRef.current
+      if (next === state.mood) return
+      state.trigger(next)
+    }
     if (!reduce) state.tick(0)
     paint(canvas, state, size, Boolean(reduce))
     raf = requestAnimationFrame(draw)
@@ -122,13 +125,12 @@ class MateSim {
   private rng = Math.random
 
   constructor(mood: PrepMateMood) {
-    this.mood = mood
-    this.prev = mood
     this.bodyV = 28
     if (mood !== "idle") this.trigger(mood)
   }
 
   trigger(mood: PrepMateMood) {
+    if (this.mood === mood && this.prev === mood) return
     this.mood = mood
     this.prev = mood
     this.reaction = 1

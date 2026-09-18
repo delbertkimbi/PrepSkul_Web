@@ -200,7 +200,7 @@ export function AliveHome({
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
             <div className="ps-cutout-navy ps-mate-well">
-              <PrepMate mood="talk" size={280} />
+              <PrepMate mood="idle" size={280} />
             </div>
           </div>
           <div>
