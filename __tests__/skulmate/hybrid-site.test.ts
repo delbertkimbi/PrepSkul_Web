@@ -52,6 +52,11 @@ describe('PrepSkul marketing copy', () => {
     ].join(' ')
 
     expect(copy.hero.primary).toBe('Get started')
+    expect(copy.hero.subtitle).toMatch(/AI tutor inside PrepSkul/)
+    expect(copy.hero.subtitle).toMatch(/browse tutors/)
+    expect(copy.hero.subtitle).toMatch(/preferences/)
+    expect(copy.hero.subtitle).not.toMatch(/browse tutors here, then book or request in the app/)
+    expect(aliveCopy('fr').hero.subtitle).toMatch(/tuteur IA/)
     expect(copy.hero.statLine).toMatch(/11,280\+/)
     expect(copy.hero.statLine).toMatch(/sessions tutored/)
     expect(copy.hero.statLine).toMatch(/4\.8\/5/)
@@ -110,7 +115,9 @@ describe('PrepSkul marketing copy', () => {
     const hero = getTranslations('en').home.hero
     expect(hero.title).toMatch(/Learn with a tutor who actually teaches/)
     expect(hero.getStarted).toBe('Get started')
-    expect(hero.subtitle).toMatch(/SkulMate, the tutor inside PrepSkul/)
+    expect(hero.subtitle).toMatch(/SkulMate, the AI tutor inside PrepSkul/)
+    expect(hero.subtitle).toMatch(/browse tutors/)
+    expect(hero.subtitle).toMatch(/preferences/)
   })
 })
 
@@ -148,6 +155,25 @@ describe('hybrid marketing chrome', () => {
     expect(home).not.toMatch(/mate-wave\.png/)
     expect(mate).toMatch(/<svg/)
     expect(mate).not.toMatch(/\.png/)
+  })
+
+  it('uses the canvas PrepMate for marketing pictures, not static cutouts', () => {
+    const home = readFileSync(join(process.cwd(), 'components/marketing/alive-home.tsx'), 'utf8')
+    const find = readFileSync(join(process.cwd(), 'components/marketing/find-directory.tsx'), 'utf8')
+    const matePage = readFileSync(join(process.cwd(), 'app/[locale]/mate/page.tsx'), 'utf8')
+    expect(home).toMatch(/PrepMate/)
+    expect(home).toMatch(/mood="talk"/)
+    expect(home).toMatch(/mood="cheer"/)
+    expect(home).not.toMatch(/mate-talk\.png/)
+    expect(home).not.toMatch(/mate-cheer\.png/)
+    expect(find).toMatch(/PrepMate/)
+    expect(find).toMatch(/mood="think"/)
+    expect(find).not.toMatch(/mate-think\.png/)
+    expect(find).not.toMatch(/No request form/)
+    expect(find).not.toMatch(/tutor_requests from the app/)
+    expect(matePage).toMatch(/PrepMate/)
+    expect(matePage).toMatch(/mood="cheer"/)
+    expect(matePage).not.toMatch(/mate-cheer\.png/)
   })
 
   it('keeps notebook in the crawler background', () => {

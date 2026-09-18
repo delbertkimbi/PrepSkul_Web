@@ -4,7 +4,8 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
 import { getStartedUrl } from "@/lib/get-started-url"
-import { PaperButton, PaperCutout, PaperSheet, Tape } from "@/components/marketing/paper"
+import { PaperButton, PaperSheet, Tape } from "@/components/marketing/paper"
+import { PrepMate } from "@/components/onboard/prep-mate"
 import type { PublicTutor } from "@/lib/tutors/directory"
 
 function TutorCard({ tutor, bookLabel }: { tutor: PublicTutor; bookLabel: string }) {
@@ -81,7 +82,7 @@ export function FindDirectory({
         ) : (
           <PaperSheet className="relative mt-12 max-w-xl p-6 sm:p-7" tone="cream" rotate={-1}>
             <Tape className="-top-3 left-8" />
-            <PaperCutout src="/onboard/art/mate-think.png" className="h-24 w-24 sm:h-28 sm:w-28" />
+            <PrepMate mood="think" size={112} />
             <p className="mt-3 font-black uppercase text-[#1B2C4F]">{c.find.recommended}</p>
             <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{unavailable || tutors.length === 0 ? c.find.empty : c.find.empty}</p>
             <a href={getStartedUrl()} className="mt-5 inline-block">
@@ -89,12 +90,6 @@ export function FindDirectory({
             </a>
           </PaperSheet>
         )}
-
-        <p className="mt-10 max-w-xl text-sm leading-6 text-[#5C6B84]">
-          {locale.startsWith("fr")
-            ? "Pas de formulaire ici. Une demande de tuteur s’écrit dans tutor_requests depuis l’app, avec un compte."
-            : "No request form on this page. A tutor request is written to tutor_requests from the app, with an account."}
-        </p>
       </main>
       <Footer />
     </div>

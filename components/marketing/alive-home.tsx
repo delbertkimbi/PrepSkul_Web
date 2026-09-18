@@ -12,6 +12,7 @@ import { ScrollFill } from "@/components/marketing/scroll-fill"
 import { ScrollReveal } from "@/components/sbc/scroll-reveal"
 import { LiveTicker } from "@/components/marketing/live-ticker"
 import { Laurel, MatePoint } from "@/components/marketing/mate-point"
+import { PrepMate } from "@/components/onboard/prep-mate"
 import type { PublicTutor } from "@/lib/tutors/directory"
 import { type Locale } from "@/lib/i18n"
 import { ArrowRight } from "lucide-react"
@@ -194,12 +195,9 @@ export function AliveHome({
       <section className="ps-navy px-4 py-20 text-white sm:px-6 lg:py-24">
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <ScrollReveal>
-            <PaperCutout
-              src="/onboard/art/mate-talk.png"
-              alt="SkulMate"
-              lift="navy"
-              className="paper-float mx-auto w-full max-w-[20rem] sm:max-w-[22rem]"
-            />
+            <div className="mx-auto flex w-full max-w-[20rem] justify-center sm:max-w-[22rem]">
+              <PrepMate mood="talk" size={320} />
+            </div>
           </ScrollReveal>
           <div>
             <h2 className="ps-h2 text-white">{c.science.title}</h2>
@@ -391,7 +389,9 @@ export function AliveHome({
               </Link>
             </div>
           </div>
-          <PaperCutout src="/onboard/art/mate-cheer.png" alt="SkulMate" lift="navy" className="paper-float mx-auto w-full max-w-[16rem]" />
+          <div className="mx-auto flex w-full max-w-[16rem] justify-center">
+            <PrepMate mood="cheer" size={256} />
+          </div>
         </div>
       </section>
       <Footer />

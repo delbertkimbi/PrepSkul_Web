@@ -12,7 +12,7 @@ const EN = {
   hero: {
     title: "Learn with a tutor who actually teaches.",
     subtitle:
-      "Talk it through with SkulMate, the tutor inside PrepSkul. When you want a person, browse tutors here, then book or request in the app. Live online, or at the table.",
+      "Talk it through with SkulMate, the AI tutor inside PrepSkul. When you want a person, browse tutors, then book or request based on your preferences. Live online, or at the table.",
     primary: "Get started",
     secondary: "Browse tutors",
     sessions: "sessions tutored",
@@ -254,7 +254,7 @@ const FR: typeof EN = {
   hero: {
     title: "Apprends avec un tuteur qui enseigne vraiment.",
     subtitle:
-      "Parle avec SkulMate, le tuteur dans PrepSkul. Pour une personne, parcours les tuteurs ici, puis réserve ou fais une demande dans l’app. En direct en ligne, ou à table.",
+      "Parle avec SkulMate, le tuteur IA dans PrepSkul. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande selon tes préférences. En direct en ligne, ou à table.",
     primary: "Commencer",
     secondary: "Voir les tuteurs",
     sessions: "séances données",
