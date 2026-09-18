@@ -365,8 +365,8 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                             </div>
                             <div className="rounded-xl bg-[#D9EEF6] p-2 text-[11px] font-bold leading-snug" style={{ color: NAVY }}>
                               {fr
-                                ? "Tableau, image, ou check. Pas un chat figé."
-                                : "Board, picture, or a check. Not a frozen chat."}
+                                ? "Tableau, image, ou check. La leçon avance avec toi."
+                                : "Board, picture, or a check. The lesson moves with you."}
                             </div>
                           </div>
                         </div>

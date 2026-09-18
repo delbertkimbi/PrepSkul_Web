@@ -33,7 +33,7 @@ export default function MatePage() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a href={getStartedUrl()}>
-              <PaperButton>{fr ? "Ouvrir l’app" : "Open the app"}</PaperButton>
+              <PaperButton>{fr ? "Commencer" : "Get started"}</PaperButton>
             </a>
             <Link
               href={`/${locale}/find`}

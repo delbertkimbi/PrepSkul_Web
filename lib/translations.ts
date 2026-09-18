@@ -69,7 +69,7 @@ export const translations = {
       },
       cta: {
         title: "Ready to learn with PrepSkul?",
-        subtitle: "Start with SkulMate in the app, or find a human tutor for a live class or an onsite visit.",
+        subtitle: "Start with Mate, or sit with a person. Live online, or at the table.",
         button: "Get started"
       },
       examAccelerator: {
@@ -679,7 +679,7 @@ export const translations = {
       },
       cta: {
         title: "Prêt à apprendre avec PrepSkul ?",
-        subtitle: "Commence avec SkulMate dans l’app, ou trouve un tuteur humain pour un cours en direct ou sur place.",
+        subtitle: "Commence avec Mate, ou assieds-toi avec une personne. En direct en ligne, ou à table.",
         button: "Commencer"
       },
       examAccelerator: {
