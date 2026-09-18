@@ -194,11 +194,11 @@ export function AliveHome({
 
       <section className="ps-navy px-4 py-20 text-white sm:px-6 lg:py-24">
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
-          <ScrollReveal>
-            <div className="mx-auto flex w-full max-w-[20rem] justify-center sm:max-w-[22rem]">
+          <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
+            <div className="ps-cutout-navy">
               <PrepMate mood="talk" size={320} />
             </div>
-          </ScrollReveal>
+          </div>
           <div>
             <h2 className="ps-h2 text-white">{c.science.title}</h2>
             <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/75">{c.science.body}</p>
@@ -389,8 +389,10 @@ export function AliveHome({
               </Link>
             </div>
           </div>
-          <div className="mx-auto flex w-full max-w-[16rem] justify-center">
-            <PrepMate mood="cheer" size={256} />
+          <div className="mx-auto flex w-full max-w-[16rem] justify-center overflow-visible">
+            <div className="ps-cutout-navy">
+              <PrepMate mood="cheer" size={256} />
+            </div>
           </div>
         </div>
       </section>

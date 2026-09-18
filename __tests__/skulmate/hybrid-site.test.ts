@@ -164,6 +164,7 @@ describe('hybrid marketing chrome', () => {
     expect(home).toMatch(/PrepMate/)
     expect(home).toMatch(/mood="talk"/)
     expect(home).toMatch(/mood="cheer"/)
+    expect(home).toMatch(/ps-cutout-navy/)
     expect(home).not.toMatch(/mate-talk\.png/)
     expect(home).not.toMatch(/mate-cheer\.png/)
     expect(find).toMatch(/PrepMate/)
