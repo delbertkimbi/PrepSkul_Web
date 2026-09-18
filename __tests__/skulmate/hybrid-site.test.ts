@@ -51,7 +51,9 @@ describe('PrepSkul marketing copy', () => {
       copy.faq.map((item) => item.q + ' ' + item.a).join(' '),
     ].join(' ')
 
-    expect(copy.hero.primary).toBe('Get started')
+    expect(copy.hero.title).toMatch(/Talk it through/)
+    expect(copy.hero.title).toMatch(/person when you want one/)
+    expect(copy.hero.title).not.toMatch(/actually teaches/)
     expect(copy.hero.subtitle).toMatch(/AI tutor inside PrepSkul/)
     expect(copy.hero.subtitle).toMatch(/browse tutors/)
     expect(copy.hero.subtitle).toMatch(/preferences/)
@@ -130,7 +132,8 @@ describe('PrepSkul marketing copy', () => {
 
   it('keeps the homepage hero in PrepSkul voice', () => {
     const hero = getTranslations('en').home.hero
-    expect(hero.title).toMatch(/Learn with a tutor who actually teaches/)
+    expect(hero.title).toMatch(/Talk it through/)
+    expect(hero.title).not.toMatch(/actually teaches/)
     expect(hero.getStarted).toBe('Get started')
     expect(hero.subtitle).toMatch(/SkulMate, the AI tutor inside PrepSkul/)
     expect(hero.subtitle).toMatch(/browse tutors/)
@@ -183,6 +186,8 @@ describe('hybrid marketing chrome', () => {
     expect(home).toMatch(/Laurel/)
     expect(home).toMatch(/staggerMs/)
     expect(home).toMatch(/lg:pt-24/)
+    expect(home).toMatch(/Talk it through/)
+    expect(home).not.toMatch(/actually teaches/)
     expect(home).not.toMatch(/lg:pb-20 lg:pt-8/)
     expect(home).toMatch(/ps-live-stats/)
     expect(home).not.toMatch(/MateOrbit/)
@@ -223,12 +228,33 @@ describe('hybrid marketing chrome', () => {
     expect(matePage).not.toMatch(/mate-cheer\.png/)
   })
 
+  it('keeps programs and contact on the hybrid paper site, not leftover catalog pages', () => {
+    const programs = readFileSync(join(process.cwd(), 'app/[locale]/programs/page.tsx'), 'utf8')
+    const contact = readFileSync(join(process.cwd(), 'app/[locale]/contact/page.tsx'), 'utf8')
+    const how = readFileSync(join(process.cwd(), 'app/[locale]/how-it-works/page.tsx'), 'utf8')
+    const quotes = readFileSync(join(process.cwd(), 'app/[locale]/testimonials/page.tsx'), 'utf8')
+    expect(programs).toMatch(/PaperSheet/)
+    expect(programs).toMatch(/c\.programs/)
+    expect(programs).not.toMatch(/95%/)
+    expect(programs).not.toMatch(/\/contact/)
+    expect(programs).toMatch(/\/onboard/)
+    expect(programs).toMatch(/\/find/)
+    expect(contact).toMatch(/PaperSheet/)
+    expect(contact).not.toMatch(/emailjs/)
+    expect(contact).toMatch(/mailto:info@prepskul.com/)
+    expect(how).toMatch(/redirect/)
+    expect(quotes).toMatch(/redirect/)
+  })
+
   it('keeps notebook in the crawler background', () => {
     const sitemap = readFileSync(join(process.cwd(), 'app/sitemap.ts'), 'utf8')
     const robots = readFileSync(join(process.cwd(), 'app/robots.ts'), 'utf8')
     const llms = readFileSync(join(process.cwd(), 'app/llms.txt/route.ts'), 'utf8')
     const css = readFileSync(join(process.cwd(), 'app/globals.css'), 'utf8')
     expect(sitemap).toMatch(/notebook/)
+    expect(sitemap).toMatch(/programs/)
+    expect(sitemap).not.toMatch(/how-it-works/)
+    expect(sitemap).not.toMatch(/testimonials/)
     expect(robots).toMatch(/llms\.txt/)
     expect(robots).toMatch(/notebook/)
     expect(llms).toMatch(/Notebook/)

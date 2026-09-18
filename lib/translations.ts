@@ -17,7 +17,7 @@ export const translations = {
     // Homepage
     home: {
       hero: {
-        title: "Learn with a tutor who actually teaches.",
+        title: "Talk it through. A person when you want one.",
         titleWords: ["teaches", "fits", "lasts"],
         subtitle: "Talk it through with SkulMate, the AI tutor inside PrepSkul. When you want a person, browse tutors, then book or request based on your preferences. Live online, or at the table.",
         getStarted: "Get started",
@@ -627,7 +627,7 @@ export const translations = {
     // Homepage
     home: {
       hero: {
-        title: "Apprends avec un tuteur qui enseigne vraiment.",
+        title: "Parle pour comprendre. Une personne quand tu en veux une.",
         titleWords: ["enseigne", "tient", "suit"],
         subtitle: "Parle avec SkulMate, le tuteur IA dans PrepSkul. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande selon tes préférences. En direct en ligne, ou à table.",
         getStarted: "Commencer",

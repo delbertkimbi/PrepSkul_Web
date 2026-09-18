@@ -12,7 +12,7 @@ import {
 } from "@/lib/skulmate/region-packs"
 import { PrepMate, type PrepMateMood } from "@/components/onboard/prep-mate"
 import { Glyph } from "@/components/onboard/glyphs"
-import { speakMateLine, stopMateVoice } from "@/components/onboard/mate-voice"
+import { prefetchMateLine, speakMateLine, stopMateVoice } from "@/components/onboard/mate-voice"
 import type { MateVoicePhrase } from "@/lib/skulmate/mate-voice-lines"
 
 const display = Fredoka({
@@ -87,6 +87,13 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   const pack = packById(answers.countryId)
   const system = systemById(pack, answers.systemId)
 
+  useEffect(() => {
+    if (answers.voiceOut === false) return
+    void prefetchMateLine("welcome", answers.locale)
+    void prefetchMateLine("welcome_note", answers.locale)
+    void prefetchMateLine("language", answers.locale)
+  }, [answers.locale, answers.voiceOut])
+
   const steps = useMemo(() => {
     const list: Step[] = ["welcome", "language", "who", "name", "country"]
     if (pack.systems.length > 1) list.push("system")
@@ -99,8 +106,8 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   const copy = {
     welcome: fr ? "Salut ! Moi c’est Mate." : "Hi there! I’m Mate.",
     welcomeNote: fr
-      ? "On commence par ton école. Mate t’écoute à voix haute. Un tuteur humain, tu le trouves ou tu le demandes."
-      : "We start with your school. Mate listens out loud. A human tutor is someone you find or request.",
+      ? "On commence par ton école. Je t’écoute à voix haute. Un tuteur humain, tu le trouves ou tu le demandes."
+      : "We start with your school. I listen out loud. A human tutor is someone you find or request.",
     go: fr ? "C’est parti !" : "Let’s go",
     language: fr ? "On se parle en quelle langue ?" : "What language should I use with you?",
     who: fr ? "Qui apprend ici ?" : "Who is learning here?",
@@ -418,62 +425,98 @@ function Welcome({
   onGo: () => void
 }) {
   const [typed, setTyped] = useState(false)
-  const [phase, setPhase] = useState<PrepMateMood>("wave")
+  const [armed, setArmed] = useState(!voiceOut)
+  const [talking, setTalking] = useState(false)
   const [tapToHear, setTapToHear] = useState(false)
   const heardRef = useRef(false)
-
-  useEffect(() => {
-    const hop = window.setTimeout(() => setPhase("talk"), 900)
-    return () => window.clearTimeout(hop)
-  }, [])
+  const playingRef = useRef(false)
 
   useEffect(() => {
     if (!voiceOut) {
       stopMateVoice()
+      setArmed(true)
       return
     }
     let cancelled = false
+    playingRef.current = true
     const talk = async () => {
       try {
-        await speakMateLine("welcome", locale, true)
+        await speakMateLine("welcome", locale, {
+          onStart: () => {
+            if (cancelled) return
+            setTalking(true)
+            setArmed(true)
+          },
+        })
         if (cancelled) return
-        await speakMateLine("welcome_note", locale, true)
-        heardRef.current = true
-        setTapToHear(false)
+        await speakMateLine("welcome_note", locale, {
+          onStart: () => {
+            if (cancelled) return
+            setTalking(true)
+            setArmed(true)
+          },
+        })
+        if (!cancelled) {
+          heardRef.current = true
+          setTalking(false)
+          setTapToHear(false)
+        }
       } catch {
-        if (!cancelled) setTapToHear(true)
+        if (!cancelled) {
+          setArmed(true)
+          setTapToHear(true)
+          setTalking(false)
+        }
+      } finally {
+        playingRef.current = false
       }
     }
     void talk()
     return () => {
       cancelled = true
+      playingRef.current = false
       stopMateVoice()
     }
   }, [locale, voiceOut])
 
   async function hearMate() {
-    if (!voiceOut || heardRef.current) return
+    if (!voiceOut || heardRef.current || playingRef.current) return
+    playingRef.current = true
     setTapToHear(false)
     try {
-      await speakMateLine("welcome", locale, true)
-      await speakMateLine("welcome_note", locale, true)
+      await speakMateLine("welcome", locale, {
+        onStart: () => {
+          setTalking(true)
+          setArmed(true)
+        },
+      })
+      await speakMateLine("welcome_note", locale, {
+        onStart: () => setTalking(true),
+      })
       heardRef.current = true
+      setTalking(false)
     } catch {
       setTapToHear(true)
+      setArmed(true)
+      setTalking(false)
+    } finally {
+      playingRef.current = false
     }
   }
 
+  const mood: PrepMateMood = talking ? "talk" : typed ? "idle" : "wave"
+
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center pb-4 pt-2" onPointerDown={() => void hearMate()}>
+      <div className="flex flex-1 flex-col items-center justify-center pb-4 pt-2">
         <motion.div
           initial={{ scale: 0.72, y: 28, rotate: -8 }}
           animate={{ scale: 1, y: 0, rotate: 0 }}
           transition={{ type: "spring", stiffness: 260, damping: 16 }}
         >
-          <PrepMate mood={typed ? "idle" : phase} size={248} variant="hero" />
+          <PrepMate mood={mood} size={248} variant="hero" />
         </motion.div>
-        <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} onTyped={() => setTyped(true)} />
+        <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} armed={armed} onTyped={() => setTyped(true)} />
         {tapToHear ? (
           <button
             type="button"
@@ -517,11 +560,26 @@ function Paywall({
   onSkip: () => void
 }) {
   const [typed, setTyped] = useState(false)
+  const [armed, setArmed] = useState(!voiceOut)
 
   useEffect(() => {
-    if (!voiceOut) return
-    void speakMateLine("paywall", locale, true)
-    return () => stopMateVoice()
+    if (!voiceOut) {
+      setArmed(true)
+      return
+    }
+    let cancelled = false
+    setArmed(false)
+    void speakMateLine("paywall", locale, {
+      onStart: () => {
+        if (!cancelled) setArmed(true)
+      },
+    }).finally(() => {
+      if (!cancelled) setArmed(true)
+    })
+    return () => {
+      cancelled = true
+      stopMateVoice()
+    }
   }, [locale, voiceOut])
   return (
     <div className="flex flex-1 flex-col">
@@ -533,7 +591,7 @@ function Paywall({
         >
           <PrepMate mood="cheer" size={196} variant="hero" />
         </motion.div>
-        <Speech className="mt-4 w-full" title={copy.payTitle} note={copy.payNote} onTyped={() => setTyped(true)} />
+        <Speech className="mt-4 w-full" title={copy.payTitle} note={copy.payNote} armed={armed} onTyped={() => setTyped(true)} />
         <div className="mt-4 w-full">
           <Stagger ready={typed}>
             {copy.benefits.map((item) => (
@@ -581,27 +639,41 @@ function Ask({
   children: ReactNode
 }) {
   const [typed, setTyped] = useState(false)
+  const [armed, setArmed] = useState(!voiceOut)
+  const [talking, setTalking] = useState(false)
   const [phase, setPhase] = useState<PrepMateMood>(intro ?? "talk")
 
   useEffect(() => {
     setTyped(false)
+    setArmed(!voiceOut)
+    setTalking(false)
     setPhase(intro ?? "talk")
-    if (!intro) return
-    const hop = window.setTimeout(() => setPhase("talk"), 480)
-    return () => window.clearTimeout(hop)
-  }, [title, intro])
+  }, [title, intro, voiceOut])
 
   useEffect(() => {
     const phrase = voiceId as MateVoicePhrase
     if (!voiceOut) {
       stopMateVoice()
+      setArmed(true)
       return
     }
-    void speakMateLine(phrase, locale, true)
-    return () => stopMateVoice()
+    let cancelled = false
+    void speakMateLine(phrase, locale, {
+      onStart: () => {
+        if (cancelled) return
+        setTalking(true)
+        setArmed(true)
+      },
+    }).finally(() => {
+      if (!cancelled) setTalking(false)
+    })
+    return () => {
+      cancelled = true
+      stopMateVoice()
+    }
   }, [voiceId, locale, voiceOut])
 
-  const mood = typed ? restMood : phase
+  const mood = talking ? "talk" : typed ? restMood : phase
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -613,7 +685,7 @@ function Ask({
         >
           <PrepMate mood={mood} size={108} variant="ask" />
         </motion.div>
-        <Speech title={title} note={note} tail onTyped={() => setTyped(true)} />
+        <Speech title={title} note={note} tail armed={armed} onTyped={() => setTyped(true)} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pb-4">
         <Stagger ready={typed}>{children}</Stagger>
@@ -626,22 +698,28 @@ function Speech({
   title,
   note,
   tail = false,
+  armed = true,
   className = "",
   onTyped,
 }: {
   title: string
   note?: string
   tail?: boolean
+  armed?: boolean
   className?: string
   onTyped?: () => void
 }) {
   const reduce = useReducedMotion()
-  const [shown, setShown] = useState(reduce ? title.length : 0)
+  const [shown, setShown] = useState(reduce && armed ? title.length : 0)
   const done = shown >= title.length
   const onTypedRef = useRef(onTyped)
   onTypedRef.current = onTyped
 
   useEffect(() => {
+    if (!armed) {
+      setShown(0)
+      return
+    }
     if (reduce) {
       setShown(title.length)
       onTypedRef.current?.()
@@ -670,7 +748,7 @@ function Speech({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [title, reduce])
+  }, [title, reduce, armed])
 
   return (
     <motion.div

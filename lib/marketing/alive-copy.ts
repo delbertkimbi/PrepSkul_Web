@@ -10,7 +10,7 @@ const EN = {
     tryMate: "Get started",
   },
   hero: {
-    title: "Learn with a tutor who actually teaches.",
+    title: "Talk it through. A person when you want one.",
     subtitle:
       "Talk it through with SkulMate, the AI tutor inside PrepSkul. When you want a person, browse tutors, then book or request based on your preferences. Live online, or at the table.",
     primary: "Get started",
@@ -240,6 +240,29 @@ const EN = {
     title: "From the notebook",
     lead: "Short notes we keep updating: how Mate teaches, how to pick a class, what parents see.",
   },
+  programs: {
+    title: "School, exams, and what sits beside them.",
+    lead: "Talk the stuck point through with SkulMate. Sit with a person when you want a live class or a visit at the table.",
+    schoolTitle: "School and exams",
+    schoolBody: "Maths, sciences, Français, English, hist-geo, philo. The class you are in now, through BEPC, Bac, GCE, and WAEC.",
+    beyondTitle: "Beyond the syllabus",
+    beyondBody: "Code, design, public speaking. Same Mate. Same tutors. When the week needs it.",
+    subjectsTitle: "What you can bring",
+    subjects: [
+      { title: "Maths", body: "The linear equation. The bit that did not land.", tile: "/onboard/art/tile-maths.png", tone: "yellow" as const },
+      { title: "Sciences", body: "Photosynthesis. A practical. The diagram you cannot yet see.", tile: "/onboard/art/tile-flask.png", tone: "mint" as const },
+      { title: "Languages", body: "Français, English, an essay, a spoken exam.", tile: "/onboard/art/tile-book.png", tone: "blue" as const },
+      { title: "Code and making", body: "A first program, a poster, a talk in front of the class.", tile: "/onboard/art/tile-laptop.png", tone: "sky" as const },
+    ],
+    howTitle: "How a week looks",
+    how: [
+      { title: "Talk with Mate", body: "Say it out loud. He stays on the stuck point." },
+      { title: "Find or request a person", body: "Browse tutors, or tell us who you are looking for." },
+      { title: "Live, or at the table", body: "A class on the screen, or someone who sits with you." },
+    ],
+    mateCta: "Meet SkulMate",
+    tutorsCta: "Browse tutors",
+  },
 }
 
 const FR: typeof EN = {
@@ -252,7 +275,7 @@ const FR: typeof EN = {
     tryMate: "Commencer",
   },
   hero: {
-    title: "Apprends avec un tuteur qui enseigne vraiment.",
+    title: "Parle pour comprendre. Une personne quand tu en veux une.",
     subtitle:
       "Parle avec SkulMate, le tuteur IA dans PrepSkul. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande selon tes préférences. En direct en ligne, ou à table.",
     primary: "Commencer",
@@ -481,6 +504,29 @@ const FR: typeof EN = {
   notebook: {
     title: "Du carnet",
     lead: "Des notes qu’on met à jour: comment Mate enseigne, comment choisir un cours, ce que voient les parents.",
+  },
+  programs: {
+    title: "L’école, les examens, et ce qui s’assoit à côté.",
+    lead: "Parle du point qui bloque avec SkulMate. Assieds-toi avec une personne pour un cours en direct ou une visite à table.",
+    schoolTitle: "École et examens",
+    schoolBody: "Maths, sciences, Français, English, hist-géo, philo. La classe où tu es, jusqu’au BEPC, Bac, GCE, et WAEC.",
+    beyondTitle: "Au-delà du programme",
+    beyondBody: "Code, design, prise de parole. Le même Mate. Les mêmes tuteurs. Quand la semaine en a besoin.",
+    subjectsTitle: "Ce que tu peux apporter",
+    subjects: [
+      { title: "Maths", body: "L’équation linéaire. Le morceau qui n’a pas pris.", tile: "/onboard/art/tile-maths.png", tone: "yellow" as const },
+      { title: "Sciences", body: "La photosynthèse. Un TP. Le schéma que tu ne vois pas encore.", tile: "/onboard/art/tile-flask.png", tone: "mint" as const },
+      { title: "Langues", body: "Français, English, un essai, un oral.", tile: "/onboard/art/tile-book.png", tone: "blue" as const },
+      { title: "Code et faire", body: "Un premier programme, une affiche, un oral devant la classe.", tile: "/onboard/art/tile-laptop.png", tone: "sky" as const },
+    ],
+    howTitle: "Une semaine, comme ça",
+    how: [
+      { title: "Parler avec Mate", body: "Dis-le à voix haute. Il reste sur le point qui bloque." },
+      { title: "Trouver ou demander une personne", body: "Parcours les tuteurs, ou dis-nous qui tu cherches." },
+      { title: "En direct, ou à table", body: "Un cours à l’écran, ou quelqu’un qui s’assoit avec toi." },
+    ],
+    mateCta: "Rencontrer SkulMate",
+    tutorsCta: "Voir les tuteurs",
   },
 }
 

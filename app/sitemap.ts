@@ -4,8 +4,7 @@ import { listAllNotebookPosts } from '@/lib/marketing/notebook'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://prepskul.com'
   const locales = ['en', 'fr']
-  const pages = ['', 'about', 'programs', 'tutors', 'find', 'notebook', 'how-it-works', 'testimonials', 'contact']
-  const cities = ['douala', 'yaounde', 'buea', 'bamenda', 'garoua', 'maroua', 'limbe']
+  const pages = ['', 'about', 'programs', 'find', 'mate', 'onboard', 'notebook', 'contact', 'tutors']
   const notes = await listAllNotebookPosts().catch(() => [])
 
   const sitemap: MetadataRoute.Sitemap = [
@@ -25,15 +24,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: new Date(),
         changeFrequency: page === '' || page === 'notebook' || page === 'find' ? 'daily' : 'weekly',
         priority: page === '' ? 1 : page === 'notebook' || page === 'find' ? 0.9 : 0.8,
-      })
-    })
-
-    cities.forEach(city => {
-      sitemap.push({
-        url: `${baseUrl}/${locale}/tutors/${city}`,
-        lastModified: new Date(),
-        changeFrequency: 'weekly',
-        priority: city === 'douala' || city === 'yaounde' ? 0.9 : 0.8,
       })
     })
   })

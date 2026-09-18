@@ -89,8 +89,8 @@ export function AliveHome({
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="relative z-10 text-center lg:text-left">
             <h1 className="ps-h1 text-[#1B2C4F]">
-              <span className="text-[#0EA5E9]">{fr ? "Apprends" : "Learn"}</span>{" "}
-              {fr ? "avec un tuteur qui enseigne vraiment." : "with a tutor who actually teaches."}
+              <span className="text-[#0EA5E9]">{fr ? "Parle pour comprendre." : "Talk it through."}</span>{" "}
+              {fr ? "Une personne quand tu en veux une." : "A person when you want one."}
             </h1>
             <p className="ps-lead mx-auto mt-5 max-w-xl lg:mx-0">{c.hero.subtitle}</p>
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">

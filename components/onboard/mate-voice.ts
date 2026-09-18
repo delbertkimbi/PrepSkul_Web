@@ -5,8 +5,19 @@ import { mateVoiceText } from "@/lib/skulmate/mate-voice-lines"
 let audio: HTMLAudioElement | null = null
 let objectUrl: string | null = null
 let utterance: SpeechSynthesisUtterance | null = null
+let scene = 0
+let fetchAbort: AbortController | null = null
+const clipCache = new Map<string, Blob>()
 
-export function stopMateVoice() {
+export type SpeakMateOpts = {
+  onStart?: () => void
+}
+
+function clipKey(phrase: string, locale: string) {
+  return `${locale.startsWith("fr") ? "fr" : "en"}:${phrase}`
+}
+
+function killPlayback() {
   if (audio) {
     audio.pause()
     audio.src = ""
@@ -20,6 +31,13 @@ export function stopMateVoice() {
     window.speechSynthesis.cancel()
   }
   utterance = null
+}
+
+export function stopMateVoice() {
+  scene += 1
+  fetchAbort?.abort()
+  fetchAbort = null
+  killPlayback()
 }
 
 function voiceEnabled() {
@@ -76,26 +94,74 @@ function speakBrowser(text: string, locale: string) {
   })
 }
 
-export async function speakMateLine(phrase: string, locale: string, enabled = true) {
+function parseOpts(enabledOrOpts: boolean | SpeakMateOpts = true) {
+  if (enabledOrOpts === false) return { enabled: false as const, onStart: undefined }
+  if (enabledOrOpts === true) return { enabled: true as const, onStart: undefined }
+  return { enabled: true as const, onStart: enabledOrOpts.onStart }
+}
+
+export async function prefetchMateLine(phrase: string, locale: string) {
+  const text = mateVoiceText(phrase, locale)
+  if (!text) return
+  const tag = locale.startsWith("fr") ? "fr" : "en"
+  const key = clipKey(phrase, tag)
+  if (clipCache.has(key)) return
+  try {
+    const res = await fetch(`/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}`)
+    if (!res.ok) return
+    const blob = await res.blob()
+    if (!clipCache.has(key)) clipCache.set(key, blob)
+  } catch {
+    /* next speak will retry */
+  }
+}
+
+export async function speakMateLine(
+  phrase: string,
+  locale: string,
+  enabledOrOpts: boolean | SpeakMateOpts = true,
+) {
+  const { enabled, onStart } = parseOpts(enabledOrOpts)
   if (!enabled || !voiceEnabled()) return
   const text = mateVoiceText(phrase, locale)
   if (!text) return
-  stopMateVoice()
+
+  const mine = ++scene
+  fetchAbort?.abort()
+  killPlayback()
+  fetchAbort = new AbortController()
+  const stale = () => mine !== scene
   const tag = locale.startsWith("fr") ? "fr" : "en"
+  const key = clipKey(phrase, tag)
+
   try {
-    const res = await fetch(`/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}`)
-    if (res.ok) {
-      const blob = await res.blob()
+    let blob = clipCache.get(key)
+    if (!blob) {
+      const res = await fetch(`/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}`, {
+        signal: fetchAbort.signal,
+      })
+      if (stale()) return
+      if (res.ok) {
+        blob = await res.blob()
+        if (stale()) return
+        clipCache.set(key, blob)
+      }
+    }
+    if (blob && !stale()) {
       objectUrl = URL.createObjectURL(blob)
       audio = new Audio(objectUrl)
       audio.muted = false
       audio.volume = 1
       audio.preload = "auto"
+      onStart?.()
       await playElement(audio)
       return
     }
   } catch {
-    /* try the device voice */
+    if (stale()) return
   }
+
+  if (stale()) return
+  onStart?.()
   await speakBrowser(text, tag)
 }

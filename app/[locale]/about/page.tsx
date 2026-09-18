@@ -70,7 +70,7 @@ export default function AboutPage() {
           <Link href={`/${locale}/onboard`}>
             <PaperButton>{t.about.cta.startLearning}</PaperButton>
           </Link>
-          <Link href={`/${locale}/tutors`} className="inline-flex items-center justify-center rounded-2xl border-2 border-[#1B2C4F] bg-[#fffdf7] px-6 py-3.5 font-black text-[#1B2C4F] shadow-[0_5px_0_rgba(27,44,79,.18)]">
+          <Link href={`/${locale}/contact`} className="inline-flex items-center justify-center rounded-2xl border-2 border-[#1B2C4F] bg-[#fffdf7] px-6 py-3.5 font-black text-[#1B2C4F] shadow-[0_5px_0_rgba(27,44,79,.18)]">
             {t.about.cta.becomeTutor}
           </Link>
         </div>
