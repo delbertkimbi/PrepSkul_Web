@@ -83,7 +83,11 @@ describe('PrepSkul marketing copy', () => {
     expect(copy.tools.every((tool) => tool.tile.startsWith('/onboard/art/'))).toBe(true)
     expect(copy.audiences.every((aud) => !aud.image.startsWith('/marketing/'))).toBe(true)
     expect(copy.notebook.title).toMatch(/notebook/i)
-    expect(copy.toolsTitle).toMatch(/tutor who teaches/)
+    expect(copy.toolsTitle).toMatch(/lesson with Mate/)
+    expect(copy.tools.map((tool) => tool.body).join(' ')).not.toMatch(/frozen chat/)
+    expect(copy.tools.map((tool) => tool.body).join(' ')).not.toMatch(/linear undo/)
+    expect(copy.tools.find((tool) => tool.id === 'talk')?.body).toMatch(/already listening/)
+    expect(copy.tools.find((tool) => tool.id === 'practice')?.body).toMatch(/did not land/)
   })
 
   it('keeps tutor requests in the app and the public list on the site', () => {
@@ -184,6 +188,8 @@ describe('hybrid marketing chrome', () => {
     expect(find).not.toMatch(/tutor_requests from the app/)
     expect(matePage).toMatch(/PrepMate/)
     expect(matePage).toMatch(/mood="cheer"/)
+    expect(matePage).toMatch(/already gets you/)
+    expect(matePage).not.toMatch(/teaches in the PrepSkul app/)
     expect(matePage).not.toMatch(/mate-cheer\.png/)
   })
 

@@ -24,12 +24,12 @@ export default function MatePage() {
         </PaperSheet>
         <div>
           <h1 className="ps-h1 max-w-xl text-[#1B2C4F]">
-            {fr ? "SkulMate enseigne dans l’app PrepSkul." : "SkulMate teaches in the PrepSkul app."}
+            {fr ? "Ton SkulMate, qui te comprend déjà." : "Your SkulMate, who already gets you."}
           </h1>
           <p className="ps-lead mt-5 max-w-xl">
             {fr
-              ? "Mate est le tuteur dans PrepSkul: voix ouverte, tableau, et une leçon qui se souvient de toi. Réserve un tuteur humain, ou fais une demande, dans la même app."
-              : "Mate is the tutor inside PrepSkul: always-on voice, a live board, and a lesson that remembers you. Book a human tutor, or request a match, in the same app."}
+              ? "Dis-le à voix haute. Il dessine l’idée, reste sur le point qui bloque, et se souvient comment tu aimes les explications."
+              : "Say it out loud. He draws the idea, stays on the stuck point, and remembers how you like it explained."}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a href={getStartedUrl()}>
