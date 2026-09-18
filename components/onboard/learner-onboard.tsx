@@ -475,9 +475,14 @@ function Welcome({
         </motion.div>
         <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} onTyped={() => setTyped(true)} />
         {tapToHear ? (
-          <p className="mt-3 text-center text-sm font-extrabold" style={{ color: SKY }}>
+          <button
+            type="button"
+            className="mt-3 text-center text-sm font-extrabold"
+            style={{ color: SKY }}
+            onClick={() => void hearMate()}
+          >
             {locale === "fr" ? "Touche pour entendre Mate" : "Tap to hear Mate"}
-          </p>
+          </button>
         ) : null}
       </div>
       <motion.div

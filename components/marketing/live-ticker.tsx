@@ -17,10 +17,9 @@ function formatValue(value: number, locale: string, decimals: number) {
 
 function randomBump() {
   const roll = Math.random()
-  if (roll < 0.58) return 1
-  if (roll < 0.8) return 2
-  if (roll < 0.92) return 10
-  return 3
+  if (roll < 0.9) return 1
+  if (roll < 0.97) return 2
+  return 10
 }
 
 export function LiveTicker({

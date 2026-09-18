@@ -20,9 +20,9 @@ const EN = {
     minutes: "minutes tutored",
     statLine: "11,280+ sessions tutored · 4.8/5 avg. session rating · 174,360 minutes tutored",
     stats: [
-      { value: "11,280+", label: "sessions tutored", start: 11280, suffix: "+", liveMs: 22000, decimals: 0 },
+      { value: "11,280+", label: "sessions tutored", start: 11280, suffix: "+", liveMs: 28000, decimals: 0 },
       { value: "4.8/5", label: "avg. session rating", start: 4.8, suffix: "/5", liveMs: 0, decimals: 1 },
-      { value: "174,360", label: "minutes tutored", start: 174360, suffix: "", liveMs: 5400, decimals: 0 },
+      { value: "174,360", label: "minutes tutored", start: 174360, suffix: "", liveMs: 9000, decimals: 0 },
     ],
   },
   toolsTitle: "All the tools of a tutor who teaches",
@@ -262,9 +262,9 @@ const FR: typeof EN = {
     minutes: "minutes d'enseignement",
     statLine: "11 280+ séances données · 4,8/5 note moyenne · 174 360 minutes d'enseignement",
     stats: [
-      { value: "11 280+", label: "séances données", start: 11280, suffix: "+", liveMs: 22000, decimals: 0 },
+      { value: "11 280+", label: "séances données", start: 11280, suffix: "+", liveMs: 28000, decimals: 0 },
       { value: "4,8/5", label: "note moyenne", start: 4.8, suffix: "/5", liveMs: 0, decimals: 1 },
-      { value: "174 360", label: "minutes d'enseignement", start: 174360, suffix: "", liveMs: 5400, decimals: 0 },
+      { value: "174 360", label: "minutes d'enseignement", start: 174360, suffix: "", liveMs: 9000, decimals: 0 },
     ],
   },
   toolsTitle: "Tous les outils d’un tuteur qui enseigne",
