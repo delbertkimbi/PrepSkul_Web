@@ -89,16 +89,23 @@ export function LiveTicker({
     const hi = maxMs ?? (intervalMs ? Math.round(intervalMs * 2.4) : 0)
     if (!lo || reduce || typeof window === "undefined") return
     let timer = 0
+    let lastOwn = 0
     const schedule = (first: boolean) => {
       const wait = first ? staggerMs + randomWait(lo, hi) : randomWait(lo, hi)
       timer = window.setTimeout(fire, wait)
     }
     const fire = () => {
-      const since = Date.now() - lastTickAt()
+      const now = Date.now()
+      if (now - lastOwn < lo) {
+        timer = window.setTimeout(fire, lo - (now - lastOwn) + randomWait(400, 1200))
+        return
+      }
+      const since = now - lastTickAt()
       if (since < TICK_GAP_MS) {
         timer = window.setTimeout(fire, TICK_GAP_MS - since + randomWait(900, 2800))
         return
       }
+      lastOwn = now
       stampTick()
       setValue((current) => current + (step > 1 ? step : randomBump()))
       schedule(false)
