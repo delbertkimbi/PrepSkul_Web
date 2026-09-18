@@ -16,9 +16,9 @@ export default function MatePage() {
     <div className="ps-site min-h-screen">
       <Header />
       <main className="ps-wrap grid items-center gap-10 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:py-24">
-        <PaperSheet className="relative mx-auto max-w-sm p-8" tone="cream" rotate={-1.5}>
+        <PaperSheet className="relative mx-auto max-w-sm overflow-visible p-8" tone="cream" rotate={-1.5}>
           <Tape className="-top-3 left-1/2 -translate-x-1/2" />
-          <div className="mx-auto flex h-56 w-56 items-center justify-center">
+          <div className="ps-mate-well mx-auto">
             <PrepMate mood="cheer" size={224} />
           </div>
         </PaperSheet>

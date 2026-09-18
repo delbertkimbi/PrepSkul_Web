@@ -17,7 +17,7 @@ export function Header() {
   const pathname = usePathname()
 
   const links = [
-    { href: `/${locale}/onboard`, label: "SkulMate" },
+    { href: `/${locale}/mate`, label: "SkulMate" },
     { href: `/${locale}/find`, label: t.nav.tutors },
     { href: `/${locale}/programs`, label: t.nav.programs },
     { href: `/${locale}/about`, label: t.nav.about },

@@ -137,6 +137,8 @@ export function AliveHome({
                     <LiveTicker
                       start={stat.start}
                       intervalMs={stat.liveMs}
+                      minMs={stat.liveMin}
+                      maxMs={stat.liveMax}
                       suffix={rating ? "" : stat.suffix}
                       decimals={stat.decimals}
                       locale={loc}
@@ -192,10 +194,10 @@ export function AliveHome({
 
       <TornDivider flip />
 
-      <section className="ps-navy px-4 py-20 text-white sm:px-6 lg:py-24">
+      <section className="ps-navy overflow-visible px-4 py-24 text-white sm:px-6 lg:py-28">
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
-            <div className="ps-cutout-navy">
+            <div className="ps-cutout-navy ps-mate-well">
               <PrepMate mood="talk" size={320} />
             </div>
           </div>
@@ -372,7 +374,7 @@ export function AliveHome({
         <FAQSection />
       </div>
 
-      <section className="ps-navy px-4 py-20 sm:px-6">
+      <section className="ps-navy overflow-visible px-4 py-24 sm:px-6 lg:py-28">
         <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-[1.1fr_0.9fr]">
           <div>
             <h2 className="ps-h2 text-white">{c.cta.title}</h2>
@@ -390,7 +392,7 @@ export function AliveHome({
             </div>
           </div>
           <div className="mx-auto flex w-full max-w-[16rem] justify-center overflow-visible">
-            <div className="ps-cutout-navy">
+            <div className="ps-cutout-navy ps-mate-well">
               <PrepMate mood="cheer" size={256} />
             </div>
           </div>

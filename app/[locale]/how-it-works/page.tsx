@@ -7,22 +7,15 @@ import { Search, UserCheck, Calendar, Video, CheckCircle, DollarSign, Clock, Spa
 
 export default function HowItWorksPage() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="ps-site min-h-screen">
       <Header />
 
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-b from-muted/30 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-balance">
-              How <span className="text-accent">PrepSkul</span> Works
-            </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground text-pretty">
-              Getting started with PrepSkul is simple. Follow these easy steps to connect with a qualified tutor and
-              begin your learning journey.
-            </p>
-          </div>
-        </div>
+      <section className="ps-wrap py-16 lg:py-20">
+        <h1 className="ps-h1 max-w-3xl">How PrepSkul works</h1>
+        <p className="ps-lead mt-4 max-w-2xl">
+          Talk with Mate, or sit with a person. Live online, or at the table.
+        </p>
       </section>
 
       {/* Steps Section */}

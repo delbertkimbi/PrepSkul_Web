@@ -17,14 +17,24 @@ function formatValue(value: number, locale: string, decimals: number) {
 
 function randomBump() {
   const roll = Math.random()
-  if (roll < 0.9) return 1
+  if (roll < 0.88) return 1
   if (roll < 0.97) return 2
   return 10
 }
 
+function randomWait(minMs: number, maxMs: number) {
+  return minMs + Math.random() * Math.max(0, maxMs - minMs)
+}
+
+let tickerSeed = 0
+let lastTickAt = 0
+const TICK_GAP_MS = 3200
+
 export function LiveTicker({
   start,
   intervalMs = 0,
+  minMs,
+  maxMs,
   step = 1,
   locale = "en",
   suffix = "",
@@ -33,6 +43,8 @@ export function LiveTicker({
 }: {
   start: number
   intervalMs?: number
+  minMs?: number
+  maxMs?: number
   step?: number
   locale?: string
   suffix?: string
@@ -63,18 +75,28 @@ export function LiveTicker({
   }, [value, locale, decimals])
 
   useEffect(() => {
-    if (!intervalMs || reduce || typeof window === "undefined") return
+    const lo = minMs ?? (intervalMs ? Math.round(intervalMs * 0.45) : 0)
+    const hi = maxMs ?? (intervalMs ? Math.round(intervalMs * 2.4) : 0)
+    if (!lo || reduce || typeof window === "undefined") return
+    const offset = (tickerSeed++ % 5) * 2600 + randomWait(400, 4200)
     let timer = 0
-    const tick = () => {
-      const wait = intervalMs * (0.75 + Math.random() * 0.7)
-      timer = window.setTimeout(() => {
-        setValue((current) => current + (step > 1 ? step : randomBump()))
-        tick()
-      }, wait)
+    const schedule = (first: boolean) => {
+      const wait = first ? offset + randomWait(lo, hi) : randomWait(lo, hi)
+      timer = window.setTimeout(fire, wait)
     }
-    tick()
+    const fire = () => {
+      const since = Date.now() - lastTickAt
+      if (since < TICK_GAP_MS) {
+        timer = window.setTimeout(fire, TICK_GAP_MS - since + randomWait(600, 2200))
+        return
+      }
+      lastTickAt = Date.now()
+      setValue((current) => current + (step > 1 ? step : randomBump()))
+      schedule(false)
+    }
+    schedule(true)
     return () => window.clearTimeout(timer)
-  }, [intervalMs, step, reduce])
+  }, [intervalMs, minMs, maxMs, step, reduce])
 
   useEffect(() => {
     if (!leaving || typeof window === "undefined") return

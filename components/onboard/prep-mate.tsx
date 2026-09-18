@@ -192,7 +192,10 @@ function paint(canvas: HTMLCanvasElement, sim: MateSim, cssSize: number, frozen:
   if (!ctx) return
   ctx.clearRect(0, 0, px, px)
   ctx.save()
-  ctx.scale(px / 100, px / 100)
+  const top = 16
+  const box = 100 + top + 8
+  ctx.scale(px / box, px / box)
+  ctx.translate((box - 100) / 2, top)
 
   const float = frozen ? 0 : Math.sin(sim.breath) * 1.8
   const stretch = clamp(sim.bodyV * 0.0022, -0.16, 0.16)

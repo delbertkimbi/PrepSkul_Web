@@ -208,7 +208,7 @@
   background-size: 9px 9px, 28px 28px, auto;
   background-position: 0 0, 6px 10px, 0 0;
   color: var(--navy);
-  overflow-x: clip;
+  overflow: visible;
 }
 
 .ps-display,
@@ -223,6 +223,34 @@
   font-weight: 600;
   transform: rotate(-1deg);
   transform-origin: left center;
+}
+
+.prose-ps h2 {
+  font-family: var(--font-fredoka), var(--font-poppins), sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #1b2c4f;
+  margin-top: 1.6rem;
+}
+.prose-ps h3 {
+  font-weight: 800;
+  color: #1b2c4f;
+  margin-top: 1.2rem;
+}
+.prose-ps p,
+.prose-ps li {
+  color: #5c6b84;
+  font-size: 15px;
+  line-height: 1.75;
+}
+.prose-ps ul {
+  margin-top: 0.6rem;
+  padding-left: 1.1rem;
+  list-style: disc;
+}
+.prose-ps a {
+  color: #0ea5e9;
+  font-weight: 700;
 }
 
 .paper-shader,
@@ -261,6 +289,15 @@
     radial-gradient(rgba(255, 253, 247, 0.05) 2px, transparent 2px);
   background-size: 10px 10px, 32px 32px;
   background-position: 0 0, 7px 11px;
+  overflow: visible;
+}
+
+.ps-mate-well {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  padding: 1.4rem 0.6rem 0.4rem;
 }
 
 .ps-neu {
@@ -647,8 +684,9 @@
 
 .ps-footer {
   position: relative;
-  background: var(--ps-navy);
-  color: #e8e4d8;
+  background: #fffdf7;
+  color: #1b2c4f;
+  border-top: 1px solid rgba(27, 44, 79, 0.1);
 }
 
 .ps-cutout {

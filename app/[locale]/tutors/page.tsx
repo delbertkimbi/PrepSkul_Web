@@ -127,7 +127,7 @@ export default function TutorsPage() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="ps-site min-h-screen">
       <Header />
 
       {/* Hero Section */}

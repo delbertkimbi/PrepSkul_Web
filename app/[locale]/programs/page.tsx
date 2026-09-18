@@ -51,7 +51,7 @@ export default function ProgramsPage() {
   const t = getTranslations(locale)
 
   return (
-    <div className="min-h-screen">
+    <div className="ps-site min-h-screen">
       <Header />
 
       <section className="ps-wrap py-16 lg:py-20">

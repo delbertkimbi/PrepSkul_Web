@@ -282,7 +282,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="ps-site min-h-screen">
       <Header />
 
       <section className="ps-wrap py-14">

@@ -82,7 +82,9 @@ export function FindDirectory({
         ) : (
           <PaperSheet className="relative mt-12 max-w-xl p-6 sm:p-7" tone="cream" rotate={-1}>
             <Tape className="-top-3 left-8" />
-            <PrepMate mood="think" size={112} />
+            <div className="ps-mate-well">
+              <PrepMate mood="think" size={112} />
+            </div>
             <p className="mt-3 font-black uppercase text-[#1B2C4F]">{c.find.recommended}</p>
             <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{unavailable || tutors.length === 0 ? c.find.empty : c.find.empty}</p>
             <a href={getStartedUrl()} className="mt-5 inline-block">
