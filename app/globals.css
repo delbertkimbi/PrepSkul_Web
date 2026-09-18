@@ -365,6 +365,40 @@
   color: #1b2c4f;
 }
 
+.ps-odometer {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.ps-odometer-window {
+  display: inline-block;
+  height: 1em;
+  width: 0.62em;
+  overflow: hidden;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+.ps-odometer-sep,
+.ps-odometer-suffix {
+  display: inline-block;
+  min-width: 0.28em;
+}
+
+.ps-odometer-reel {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  will-change: transform;
+  animation: ps-odometer-up 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes ps-odometer-up {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
 .ps-live-over {
   font-size: 0.48em;
   font-weight: 600;
@@ -689,7 +723,8 @@
   .ps-fill-well::before,
   .ps-mate-hop,
   .ps-mate-arm,
-  .ps-mate-blink {
+  .ps-mate-blink,
+  .ps-odometer-reel {
     animation: none !important;
     transition: none !important;
   }

@@ -85,7 +85,7 @@ export function AliveHome({
       <ScrollFill />
       <Header />
 
-      <section className="relative px-4 pb-6 pt-10 sm:px-6 lg:pb-8 lg:pt-16">
+      <section className="relative px-4 pb-4 pt-10 sm:px-6 lg:pb-4 lg:pt-24 xl:pt-28">
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="relative z-10 text-center lg:text-left">
             <h1 className="ps-h1 text-[#1B2C4F]">
@@ -124,7 +124,7 @@ export function AliveHome({
         </div>
       </section>
 
-      <section className="ps-live-stats px-4 pb-16 pt-6 sm:px-6 lg:pb-20 lg:pt-8" aria-label={c.hero.statLine}>
+      <section className="ps-live-stats px-4 pb-4 pt-4 sm:px-6 lg:pb-5 lg:pt-5" aria-label={c.hero.statLine}>
         <div className="ps-live-stats-row">
           <MatePoint />
           <div className="ps-live-stats-grid">
@@ -159,7 +159,7 @@ export function AliveHome({
 
       <TornDivider />
 
-      <section className="bg-[#fffdf7] px-4 py-20 sm:px-6 lg:py-28">
+      <section className="bg-[#fffdf7] px-4 pb-20 pt-10 sm:px-6 lg:pb-28 lg:pt-12">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal className="mx-auto max-w-3xl text-center">
             <h2 className="ps-h2 text-[#1B2C4F]">{c.toolsTitle}</h2>

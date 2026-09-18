@@ -12,6 +12,8 @@ import {
 } from "@/lib/skulmate/region-packs"
 import { PrepMate, type PrepMateMood } from "@/components/onboard/prep-mate"
 import { Glyph } from "@/components/onboard/glyphs"
+import { speakMateLine, stopMateVoice } from "@/components/onboard/mate-voice"
+import type { MateVoicePhrase } from "@/lib/skulmate/mate-voice-lines"
 
 const display = Fredoka({
   subsets: ["latin"],
@@ -149,9 +151,24 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   }
 
   function select(patch: Partial<Answers>, id: string) {
-    setAnswers({ ...answers, ...patch })
+    const next = { ...answers, ...patch }
+    setAnswers(next)
     setPulse(true)
     window.setTimeout(() => setPulse(false), 700)
+    if (patch.voiceOut === false) {
+      try {
+        window.localStorage.setItem("skulmate.voiceOut", "off")
+      } catch {
+        /* ignore */
+      }
+      stopMateVoice()
+    } else if (patch.voiceOut === true) {
+      try {
+        window.localStorage.setItem("skulmate.voiceOut", "on")
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
   function continueOn() {
@@ -234,9 +251,9 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
               transition={{ duration: 0.32, ease: EASE }}
             >
               {step === "welcome" ? (
-                <Welcome copy={copy} onGo={() => go(1, true)} />
+                <Welcome copy={copy} locale={answers.locale} voiceOut={answers.voiceOut !== false} onGo={() => go(1, true)} />
               ) : step === "paywall" ? (
-                <Paywall copy={copy} onTry={() => finish("try")} onSkip={() => finish("skip")} />
+                <Paywall copy={copy} locale={answers.locale} voiceOut={answers.voiceOut !== false} onTry={() => finish("try")} onSkip={() => finish("skip")} />
               ) : (
                 <>
                   <Ask
@@ -250,6 +267,9 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                     }
                     restMood={pulse ? "encourage" : restMood}
                     intro={step === "ready" ? "cheer" : undefined}
+                    voiceId={step}
+                    locale={answers.locale}
+                    voiceOut={answers.voiceOut !== false}
                   >
                     {step === "language" && (
                       <>
@@ -388,22 +408,64 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
 
 function Welcome({
   copy,
+  locale,
+  voiceOut,
   onGo,
 }: {
   copy: { welcome: string; welcomeNote: string; go: string }
+  locale: "en" | "fr"
+  voiceOut: boolean
   onGo: () => void
 }) {
   const [typed, setTyped] = useState(false)
   const [phase, setPhase] = useState<PrepMateMood>("wave")
+  const [tapToHear, setTapToHear] = useState(false)
+  const heardRef = useRef(false)
 
   useEffect(() => {
     const hop = window.setTimeout(() => setPhase("talk"), 900)
     return () => window.clearTimeout(hop)
   }, [])
 
+  useEffect(() => {
+    if (!voiceOut) {
+      stopMateVoice()
+      return
+    }
+    let cancelled = false
+    const talk = async () => {
+      try {
+        await speakMateLine("welcome", locale, true)
+        if (cancelled) return
+        await speakMateLine("welcome_note", locale, true)
+        heardRef.current = true
+        setTapToHear(false)
+      } catch {
+        if (!cancelled) setTapToHear(true)
+      }
+    }
+    void talk()
+    return () => {
+      cancelled = true
+      stopMateVoice()
+    }
+  }, [locale, voiceOut])
+
+  async function hearMate() {
+    if (!voiceOut || heardRef.current) return
+    setTapToHear(false)
+    try {
+      await speakMateLine("welcome", locale, true)
+      await speakMateLine("welcome_note", locale, true)
+      heardRef.current = true
+    } catch {
+      setTapToHear(true)
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col">
-      <div className="flex flex-1 flex-col items-center justify-center pb-4 pt-2">
+      <div className="flex flex-1 flex-col items-center justify-center pb-4 pt-2" onPointerDown={() => void hearMate()}>
         <motion.div
           initial={{ scale: 0.72, y: 28, rotate: -8 }}
           animate={{ scale: 1, y: 0, rotate: 0 }}
@@ -412,6 +474,11 @@ function Welcome({
           <PrepMate mood={typed ? "idle" : phase} size={248} variant="hero" />
         </motion.div>
         <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} onTyped={() => setTyped(true)} />
+        {tapToHear ? (
+          <p className="mt-3 text-center text-sm font-extrabold" style={{ color: SKY }}>
+            {locale === "fr" ? "Touche pour entendre Mate" : "Tap to hear Mate"}
+          </p>
+        ) : null}
       </div>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -427,6 +494,8 @@ function Welcome({
 
 function Paywall({
   copy,
+  locale,
+  voiceOut,
   onTry,
   onSkip,
 }: {
@@ -437,10 +506,18 @@ function Paywall({
     paySkip: string
     benefits: string[]
   }
+  locale: "en" | "fr"
+  voiceOut: boolean
   onTry: () => void
   onSkip: () => void
 }) {
   const [typed, setTyped] = useState(false)
+
+  useEffect(() => {
+    if (!voiceOut) return
+    void speakMateLine("paywall", locale, true)
+    return () => stopMateVoice()
+  }, [locale, voiceOut])
   return (
     <div className="flex flex-1 flex-col">
       <div className="flex flex-1 flex-col items-center pb-4 pt-2">
@@ -484,12 +561,18 @@ function Ask({
   note,
   restMood,
   intro,
+  voiceId,
+  locale,
+  voiceOut,
   children,
 }: {
   title: string
   note?: string
   restMood: PrepMateMood
   intro?: PrepMateMood
+  voiceId: string
+  locale: "en" | "fr"
+  voiceOut: boolean
   children: ReactNode
 }) {
   const [typed, setTyped] = useState(false)
@@ -502,6 +585,16 @@ function Ask({
     const hop = window.setTimeout(() => setPhase("talk"), 480)
     return () => window.clearTimeout(hop)
   }, [title, intro])
+
+  useEffect(() => {
+    const phrase = voiceId as MateVoicePhrase
+    if (!voiceOut) {
+      stopMateVoice()
+      return
+    }
+    void speakMateLine(phrase, locale, true)
+    return () => stopMateVoice()
+  }, [voiceId, locale, voiceOut])
 
   const mood = typed ? restMood : phase
 

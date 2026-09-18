@@ -20,9 +20,9 @@ const EN = {
     minutes: "minutes tutored",
     statLine: "11,280+ sessions tutored · 4.8/5 avg. session rating · 174,360 minutes tutored",
     stats: [
-      { value: "11,280+", label: "sessions tutored", start: 11280, suffix: "+", liveMs: 12000, decimals: 0 },
+      { value: "11,280+", label: "sessions tutored", start: 11280, suffix: "+", liveMs: 22000, decimals: 0 },
       { value: "4.8/5", label: "avg. session rating", start: 4.8, suffix: "/5", liveMs: 0, decimals: 1 },
-      { value: "174,360", label: "minutes tutored", start: 174360, suffix: "", liveMs: 720, decimals: 0 },
+      { value: "174,360", label: "minutes tutored", start: 174360, suffix: "", liveMs: 5400, decimals: 0 },
     ],
   },
   toolsTitle: "All the tools of a tutor who teaches",
@@ -139,8 +139,8 @@ const EN = {
     },
   ],
   science: {
-    title: "SkulMate is the tutor in the app.",
-    body: "Mate is the PrepSkul experience and mascot. He asks focusing questions, draws unique pictures, and keeps an assistance ledger. Pedagogy we learned. Visuals that are ours.",
+    title: "Your SkulMate, who already gets you.",
+    body: "He listens how you think, remembers where you stuck, and explains it your way. Focusing questions, unique pictures, a lesson that stays with you.",
     cta: "Meet SkulMate",
   },
   cheat: {
@@ -262,9 +262,9 @@ const FR: typeof EN = {
     minutes: "minutes d'enseignement",
     statLine: "11 280+ séances données · 4,8/5 note moyenne · 174 360 minutes d'enseignement",
     stats: [
-      { value: "11 280+", label: "séances données", start: 11280, suffix: "+", liveMs: 12000, decimals: 0 },
+      { value: "11 280+", label: "séances données", start: 11280, suffix: "+", liveMs: 22000, decimals: 0 },
       { value: "4,8/5", label: "note moyenne", start: 4.8, suffix: "/5", liveMs: 0, decimals: 1 },
-      { value: "174 360", label: "minutes d'enseignement", start: 174360, suffix: "", liveMs: 720, decimals: 0 },
+      { value: "174 360", label: "minutes d'enseignement", start: 174360, suffix: "", liveMs: 5400, decimals: 0 },
     ],
   },
   toolsTitle: "Tous les outils d’un tuteur qui enseigne",
@@ -381,8 +381,8 @@ const FR: typeof EN = {
     },
   ],
   science: {
-    title: "SkulMate est le tuteur dans l’app.",
-    body: "Mate est l’expérience et la mascotte PrepSkul. Il pose des questions, dessine des images uniques, et tient un journal d’aide. Une pédagogie apprise. Des visuels qui sont les nôtres.",
+    title: "Ton SkulMate, qui te comprend déjà.",
+    body: "Il écoute comment tu penses, retient où ça bloque, et explique à ta façon. Des questions, des images uniques, une leçon qui reste avec toi.",
     cta: "Rencontrer SkulMate",
   },
   cheat: {
