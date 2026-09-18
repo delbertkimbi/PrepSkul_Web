@@ -176,7 +176,7 @@ describe('hybrid marketing chrome', () => {
     expect(home).toMatch(/african-tutor-teaching-student-at-home-with-books-/)
     expect(home).toMatch(/MatePoint/)
     expect(home).toMatch(/Laurel/)
-    expect(home).toMatch(/LiveTicker/)
+    expect(home).toMatch(/staggerMs/)
     expect(home).toMatch(/lg:pt-24/)
     expect(home).not.toMatch(/lg:pb-20 lg:pt-8/)
     expect(home).toMatch(/ps-live-stats/)
@@ -188,7 +188,8 @@ describe('hybrid marketing chrome', () => {
     expect(ticker).toMatch(/ps-odometer/)
     expect(ticker).toMatch(/randomBump/)
     expect(ticker).toMatch(/randomWait/)
-    expect(ticker).toMatch(/TICK_GAP_MS/)
+    expect(ticker).toMatch(/staggerMs/)
+    expect(ticker).toMatch(/LAST_TICK_KEY/)
     expect(ticker).toMatch(/ps-odometer-reel/)
   })
 

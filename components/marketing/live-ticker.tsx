@@ -26,15 +26,24 @@ function randomWait(minMs: number, maxMs: number) {
   return minMs + Math.random() * Math.max(0, maxMs - minMs)
 }
 
-let tickerSeed = 0
-let lastTickAt = 0
-const TICK_GAP_MS = 3200
+const TICK_GAP_MS = 5200
+const LAST_TICK_KEY = "__psLiveTickAt"
+
+function lastTickAt() {
+  if (typeof window === "undefined") return 0
+  return Number((window as Record<string, unknown>)[LAST_TICK_KEY] || 0)
+}
+
+function stampTick() {
+  ;(window as Record<string, unknown>)[LAST_TICK_KEY] = Date.now()
+}
 
 export function LiveTicker({
   start,
   intervalMs = 0,
   minMs,
   maxMs,
+  staggerMs = 0,
   step = 1,
   locale = "en",
   suffix = "",
@@ -45,6 +54,7 @@ export function LiveTicker({
   intervalMs?: number
   minMs?: number
   maxMs?: number
+  staggerMs?: number
   step?: number
   locale?: string
   suffix?: string
@@ -78,25 +88,24 @@ export function LiveTicker({
     const lo = minMs ?? (intervalMs ? Math.round(intervalMs * 0.45) : 0)
     const hi = maxMs ?? (intervalMs ? Math.round(intervalMs * 2.4) : 0)
     if (!lo || reduce || typeof window === "undefined") return
-    const offset = (tickerSeed++ % 5) * 2600 + randomWait(400, 4200)
     let timer = 0
     const schedule = (first: boolean) => {
-      const wait = first ? offset + randomWait(lo, hi) : randomWait(lo, hi)
+      const wait = first ? staggerMs + randomWait(lo, hi) : randomWait(lo, hi)
       timer = window.setTimeout(fire, wait)
     }
     const fire = () => {
-      const since = Date.now() - lastTickAt
+      const since = Date.now() - lastTickAt()
       if (since < TICK_GAP_MS) {
-        timer = window.setTimeout(fire, TICK_GAP_MS - since + randomWait(600, 2200))
+        timer = window.setTimeout(fire, TICK_GAP_MS - since + randomWait(900, 2800))
         return
       }
-      lastTickAt = Date.now()
+      stampTick()
       setValue((current) => current + (step > 1 ? step : randomBump()))
       schedule(false)
     }
     schedule(true)
     return () => window.clearTimeout(timer)
-  }, [intervalMs, minMs, maxMs, step, reduce])
+  }, [intervalMs, minMs, maxMs, staggerMs, step, reduce])
 
   useEffect(() => {
     if (!leaving || typeof window === "undefined") return

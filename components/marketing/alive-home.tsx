@@ -128,7 +128,7 @@ export function AliveHome({
         <div className="ps-live-stats-row">
           <MatePoint />
           <div className="ps-live-stats-grid">
-            {c.hero.stats.map((stat) => {
+            {c.hero.stats.map((stat, index) => {
               const rating = stat.decimals > 0
               return (
                 <div key={stat.label} className="ps-live-stat">
@@ -139,6 +139,7 @@ export function AliveHome({
                       intervalMs={stat.liveMs}
                       minMs={stat.liveMin}
                       maxMs={stat.liveMax}
+                      staggerMs={rating ? 0 : index === 0 ? 17000 : 0}
                       suffix={rating ? "" : stat.suffix}
                       decimals={stat.decimals}
                       locale={loc}
