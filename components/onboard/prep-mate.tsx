@@ -192,8 +192,8 @@ function paint(canvas: HTMLCanvasElement, sim: MateSim, cssSize: number, frozen:
   if (!ctx) return
   ctx.clearRect(0, 0, px, px)
   ctx.save()
-  const top = 16
-  const box = 100 + top + 8
+  const top = 20
+  const box = 100 + top + 10
   ctx.scale(px / box, px / box)
   ctx.translate((box - 100) / 2, top)
 

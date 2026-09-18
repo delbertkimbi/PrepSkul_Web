@@ -195,11 +195,12 @@ export function AliveHome({
 
       <TornDivider flip />
 
-      <section className="ps-navy overflow-visible px-4 py-24 text-white sm:px-6 lg:py-28">
+      <section className="ps-navy overflow-visible px-4 pb-24 pt-10 text-white sm:px-6 lg:pb-28">
+        <div className="h-16 sm:h-20" aria-hidden />
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
             <div className="ps-cutout-navy ps-mate-well">
-              <PrepMate mood="talk" size={320} />
+              <PrepMate mood="talk" size={280} />
             </div>
           </div>
           <div>
@@ -375,7 +376,8 @@ export function AliveHome({
         <FAQSection />
       </div>
 
-      <section className="ps-navy overflow-visible px-4 py-24 sm:px-6 lg:py-28">
+      <section className="ps-navy overflow-visible px-4 pb-24 pt-10 sm:px-6 lg:pb-28">
+        <div className="h-16 sm:h-20" aria-hidden />
         <div className="mx-auto grid max-w-6xl items-center gap-8 md:grid-cols-[1.1fr_0.9fr]">
           <div>
             <h2 className="ps-h2 text-white">{c.cta.title}</h2>

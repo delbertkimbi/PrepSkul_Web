@@ -167,7 +167,7 @@ describe('hybrid marketing chrome', () => {
     expect(paper404).toMatch(/This page is not here/)
     expect(paper404).toMatch(/PrepMate/)
     const matePaint = readFileSync(join(process.cwd(), 'components/onboard/prep-mate.tsx'), 'utf8')
-    expect(matePaint).toMatch(/const top = 16/)
+    expect(matePaint).toMatch(/const top = 20/)
   })
 
   it('keeps the tutor photo still and animates Mate beside the live stats', () => {
@@ -201,7 +201,7 @@ describe('hybrid marketing chrome', () => {
     expect(home).toMatch(/mood="talk"/)
     expect(home).toMatch(/mood="cheer"/)
     expect(home).toMatch(/ps-cutout-navy/)
-    expect(home).toMatch(/ps-mate-well/)
+    expect(home).toMatch(/h-16 sm:h-20/)
     expect(home).not.toMatch(/mate-talk\.png/)
     expect(home).not.toMatch(/mate-cheer\.png/)
     expect(find).toMatch(/PrepMate/)
