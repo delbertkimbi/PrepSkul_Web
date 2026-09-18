@@ -17,7 +17,7 @@ export function Footer() {
         <div className="space-y-4">
           <Link href={`/${locale}`} className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/app_logo(white).png" alt="" width={32} height={32} className="h-8 w-8 object-contain" />
+            <img src="/app_logo(white).png" alt="" width={32} height={32} fetchPriority="high" className="h-8 w-8 object-contain" />
             <span className="ps-wordmark text-xl text-white">PrepSkul</span>
           </Link>
           <p className="max-w-xs text-sm leading-relaxed text-white/65">{t.footer.description}</p>
