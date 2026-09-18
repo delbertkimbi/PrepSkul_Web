@@ -2,10 +2,8 @@
 
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
-import Image from "next/image"
 import { 
   DollarSign, 
   Users, 
@@ -127,59 +125,51 @@ export default function TutorsPage() {
   ]
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-white text-[#17213a]">
       <Header />
 
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-28 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10"></div>
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-balance">
-              Become a <span className="text-primary">PrepSkul</span> Tutor
+      <section className="border-b border-[#17213a]/10 bg-[#f7f9fd] py-20 lg:py-28">
+        <div className="mx-auto max-w-[1440px] px-5 sm:px-8 lg:px-12 xl:px-20">
+          <div className="max-w-4xl space-y-6">
+            <h1 className="max-w-3xl text-5xl font-extrabold leading-[.98] tracking-[-.06em] sm:text-6xl lg:text-7xl">
+              Become a <span className="text-[#3156a6]">PrepSkul</span> Tutor
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground text-pretty max-w-3xl mx-auto">
               {t.tutors.hero.subtitle}
             </p>
-            <div className="pt-4">
-              <Button size="lg" asChild className="text-lg font-semibold px-8 h-12">
-                <Link href={`/${locale}/contact`}>{t.tutors.hero.applyNow}</Link>
-            </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+	            <div className="pt-4"><Link href={`/${locale}/contact`} className="glass-primary">{t.tutors.hero.applyNow}</Link></div>
+	          </div>
+	        </div>
+	      </section>
 
       {/* Why Teach with PrepSkul Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+      <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 xl:px-20">
+          <div className="mb-12 max-w-2xl">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t.tutors.whyChooseUs.title}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {t.tutors.whyChooseUs.subtitle}
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid border-l border-t border-[#17213a]/12 sm:grid-cols-2 lg:grid-cols-3">
             {benefits.map((benefit, index) => (
-              <Card key={index} className="p-4 border-2 hover:border-primary transition-all hover:shadow-xl group">
-                <CardContent className="px-4 space-y-3 text-left">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                    <benefit.icon className="h-6 w-6 text-primary" />
+              <Card key={index} className="rounded-none border-0 border-b border-r border-[#17213a]/12 bg-white p-4 shadow-none transition-colors hover:bg-[#f4f7ff]">
+                <CardContent className="px-4 py-4 space-y-3 text-left">
+                  <div className="w-12 h-12 bg-[#eaf0ff] rounded-full flex items-center justify-center">
+                    <benefit.icon className="h-6 w-6 text-[#3156a6]" />
                 </div>
                   <h3 className="text-lg font-semibold">{benefit.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{benefit.description}</p>
               </CardContent>
-            </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+	            </Card>
+	            ))}
+	            </div>
+	      </section>
 
       {/* What We're Looking For & Application Process */}
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+      <section className="border-y border-[#17213a]/10 bg-[#f7f9fd] py-20">
+        <div className="mx-auto grid max-w-[1440px] gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:px-12 xl:px-20">
             {/* What We're Looking For */}
               <div className="space-y-6">
               <div>
@@ -206,7 +196,7 @@ export default function TutorsPage() {
 
             {/* Application Process */}
             <div className="space-y-8">
-              <Card className="bg-primary text-primary-foreground border-0 shadow-xl">
+              <Card className="rounded-[22px] bg-[#17213a] text-white border-0 shadow-none">
                 <CardContent className="p-8">
                   <h2 className="text-2xl font-bold mb-6">{t.tutors.application.title}</h2>
                   <div className="space-y-2">
@@ -218,51 +208,44 @@ export default function TutorsPage() {
                     ))}
                   </div>
                   <div className="pt-6">
-                    <Button size="lg" variant="secondary" asChild className="w-full text-base font-semibold">
-                      <Link href={`/${locale}/contact`}>{t.tutors.application.applyButton}</Link>
-                  </Button>
+                    <Link href={`/${locale}/contact`} className="inline-flex w-full items-center justify-center rounded-md bg-[#4d79d8] px-6 py-3.5 text-sm font-extrabold text-white hover:bg-white hover:text-[#17213a]">{t.tutors.application.applyButton}</Link>
                   </div>
                 </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
+	              </Card>
+	            </div>
+	          </div>
+	      </section>
 
       {/* Subjects We Need Tutors For */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
+      <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 xl:px-20">
+          <div className="mb-12 max-w-2xl">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">{t.tutors.subjects.title}</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {t.tutors.subjects.subtitle}
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid border-l border-t border-[#17213a]/12 sm:grid-cols-2 lg:grid-cols-4">
             {subjects.map((subject, index) => (
-              <Card key={index} className="p-4 border-2 hover:border-primary transition-all hover:shadow-xl group bg-white">
-                <CardContent className="px-4 space-y-2">
-                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors text-left">{subject.title}</h3>
+              <Card key={index} className="rounded-none border-0 border-b border-r border-[#17213a]/12 p-4 shadow-none transition-colors hover:bg-[#f4f7ff]">
+                <CardContent className="px-4 py-4 space-y-2">
+                  <h3 className="font-semibold text-lg text-left">{subject.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed text-left">{subject.description}</p>
               </CardContent>
             </Card>
             ))}
-          </div>
-        </div>
-      </section>
+	          </div>
+	      </section>
 
       {/* Call to Action */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="py-20 bg-[#17213a] text-white">
+        <div className="mx-auto max-w-[1440px] px-5 text-center sm:px-8 lg:px-12 xl:px-20">
           <div className="max-w-3xl mx-auto space-y-6">
             <h2 className="text-3xl sm:text-4xl font-bold">{t.tutors.cta.title}</h2>
             <p className="text-lg text-primary-foreground/90">
               {t.tutors.cta.subtitle}
             </p>
-            <Button size="lg" variant="secondary" asChild className="text-lg font-semibold px-8 h-12">
-              <Link href={`/${locale}/contact`}>{t.tutors.cta.button}</Link>
-          </Button>
+            <Link href={`/${locale}/contact`} className="inline-flex rounded-md bg-[#4d79d8] px-7 py-3.5 text-sm font-extrabold text-white transition-colors hover:bg-white hover:text-[#17213a]">{t.tutors.cta.button}</Link>
           </div>
         </div>
       </section>

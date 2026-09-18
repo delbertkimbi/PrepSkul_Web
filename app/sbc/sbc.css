@@ -10,13 +10,13 @@
   }
 
   .sbc-display {
-    font-family: var(--font-fredoka), var(--font-poppins), sans-serif;
+    font-family: Fredoka, var(--font-fredoka), var(--font-poppins), sans-serif;
     font-weight: 600 !important;
     letter-spacing: -0.025em;
   }
 
   .sbc-wordmark {
-    font-family: var(--font-fredoka), var(--font-poppins), sans-serif;
+    font-family: Fredoka, var(--font-fredoka), var(--font-poppins), sans-serif;
     font-weight: 600;
     letter-spacing: -0.02em;
     transform: rotate(-1deg);

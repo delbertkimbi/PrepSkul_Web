@@ -1,26 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Poppins, Lato } from "next/font/google"
+import { Manrope } from "next/font/google"
 import "./globals.css"
 
-const poppins = Poppins({
+const manrope = Manrope({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-  display: "swap",
-})
-
-const lato = Lato({
-  subsets: ["latin"],
-  weight: ["400", "700", "900"],
-  variable: "--font-lato",
+  variable: "--font-manrope",
   display: "swap",
 })
 
 export const metadata: Metadata = {
-  title: "PrepSkul: Find Trusted Home and Online Tutors in Cameroon",
+  title: "PrepSkul | From Teaching to Understanding",
   description:
-    "Get connected with verified home and online tutors who don't just teach, but mentor and inspire — offering personalized support for academics, skill development, and exam preparation in Cameroon and beyond.",
+    "PrepSkul bridges classroom teaching and individual understanding through trusted tutors, practical learning programs, and SkulMate.",
   icons: {
     icon: [
       { url: "/logo.jpg", sizes: "32x32", type: "image/jpeg" },
@@ -39,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${poppins.variable} ${lato.variable} font-sans antialiased`}>
+      <body className={`${manrope.variable} antialiased`}>
         {children}
       </body>
     </html>
