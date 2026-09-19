@@ -423,8 +423,6 @@ function Welcome({
   const [typed, setTyped] = useState(false)
   const [armed, setArmed] = useState(!voiceOut)
   const [talking, setTalking] = useState(false)
-  const [tapToHear, setTapToHear] = useState(false)
-  const heardRef = useRef(false)
   const playingRef = useRef(false)
 
   useEffect(() => {
@@ -452,15 +450,10 @@ function Welcome({
             setArmed(true)
           },
         })
-        if (!cancelled) {
-          heardRef.current = true
-          setTalking(false)
-          setTapToHear(false)
-        }
+        if (!cancelled) setTalking(false)
       } catch {
         if (!cancelled) {
           setArmed(true)
-          setTapToHear(true)
           setTalking(false)
         }
       } finally {
@@ -475,31 +468,6 @@ function Welcome({
     }
   }, [locale, voiceOut])
 
-  async function hearMate() {
-    if (!voiceOut || heardRef.current || playingRef.current) return
-    playingRef.current = true
-    setTapToHear(false)
-    try {
-      await speakMateLine("welcome", locale, {
-        onStart: () => {
-          setTalking(true)
-          setArmed(true)
-        },
-      })
-      await speakMateLine("welcome_note", locale, {
-        onStart: () => setTalking(true),
-      })
-      heardRef.current = true
-      setTalking(false)
-    } catch {
-      setTapToHear(true)
-      setArmed(true)
-      setTalking(false)
-    } finally {
-      playingRef.current = false
-    }
-  }
-
   const mood: PrepMateMood = talking ? "talk" : typed ? "idle" : "wave"
 
   return (
@@ -513,16 +481,6 @@ function Welcome({
           <PrepMate mood={mood} size={248} variant="hero" />
         </motion.div>
         <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} armed={armed} onTyped={() => setTyped(true)} />
-        {tapToHear ? (
-          <button
-            type="button"
-            className="mt-3 text-center text-sm font-extrabold"
-            style={{ color: SKY }}
-            onClick={() => void hearMate()}
-          >
-            {locale === "fr" ? "Touche pour entendre Mate" : "Tap to hear Mate"}
-          </button>
-        ) : null}
       </div>
       <motion.div
         initial={{ opacity: 0, y: 16 }}

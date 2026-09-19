@@ -124,7 +124,7 @@ export function AliveHome({
         </div>
       </section>
 
-      <section className="ps-live-stats px-4 pb-0 pt-2 sm:px-6 sm:pb-4 sm:pt-4 lg:pb-5 lg:pt-14 xl:pt-16" aria-label={c.hero.statLine}>
+      <section className="ps-live-stats mb-[3px] px-4 pb-0 pt-2 sm:px-6 sm:pb-4 sm:pt-4 lg:pb-5 lg:pt-14 xl:pt-16" aria-label={c.hero.statLine}>
         <div className="ps-live-stats-row">
           <MatePoint />
           <div className="ps-live-stats-grid">
@@ -338,8 +338,7 @@ export function AliveHome({
                 <PaperSheet className="h-full p-5 sm:p-6" tone={program.tone} rotate={i ? 1 : -1}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={program.logo} alt="" className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-20 sm:w-20" />
-                  <p className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-[#0EA5E9]">{program.kicker}</p>
-                  <h3 className="ps-h2 mt-1">{program.title}</h3>
+                  <h3 className="ps-h2 mt-4">{program.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{program.body}</p>
                   <p className="mt-4 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
                 </PaperSheet>

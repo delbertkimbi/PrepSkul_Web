@@ -23,7 +23,7 @@ describe('SkulMate onboard voice', () => {
     expect(onboard).toMatch(/speakMateLine\("welcome"/)
     expect(onboard).not.toMatch(/start with your school/)
     expect(onboard).not.toMatch(/Hi there/)
-    expect(onboard).toMatch(/Tap to hear Mate/)
+    expect(onboard).not.toMatch(/Tap to hear Mate/)
     expect(player).toMatch(/audio\.muted = false/)
     expect(player).not.toMatch(/audio\.muted = true/)
     expect(player).toMatch(/let scene = 0/)

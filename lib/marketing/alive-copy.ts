@@ -249,7 +249,6 @@ const EN = {
     hosted: [
       {
         id: "sbc",
-        kicker: "Summer Build Camp",
         title: "SBC",
         body: "A one-week hands-on camp where young learners turn ideas into real solutions with AI, creativity, and teamwork. Ages 9 to 18. Buea onsite, or online.",
         href: "https://sbc.prepskul.com",
@@ -260,7 +259,6 @@ const EN = {
       },
       {
         id: "peap",
-        kicker: "Exam Accelerator",
         title: "PEAP",
         body: "The PrepSkul Exam Accelerator Program. A free two-week nationwide revision for O-Level and A-Level candidates. Master the hard concepts, then sit the exam with a plan.",
         href: "#peap",
@@ -541,7 +539,6 @@ const FR: typeof EN = {
     hosted: [
       {
         id: "sbc",
-        kicker: "Summer Build Camp",
         title: "SBC",
         body: "Un camp d’une semaine où les jeunes transforment une idée en solution réelle, avec l’IA, la créativité, et le travail d’équipe. 9 à 18 ans. À Buea, ou en ligne.",
         href: "https://sbc.prepskul.com",
@@ -552,7 +549,6 @@ const FR: typeof EN = {
       },
       {
         id: "peap",
-        kicker: "Accélérateur d’examens",
         title: "PEAP",
         body: "Le programme d’accélération des examens PrepSkul. Deux semaines de révision nationale, gratuites, pour les candidats O-Level et A-Level. Les concepts difficiles, puis l’examen avec un plan.",
         href: "#peap",

@@ -45,8 +45,7 @@ export default function ProgramsPage() {
                   alt=""
                   className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-20 sm:w-20"
                 />
-                <p className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-[#0EA5E9]">{program.kicker}</p>
-                <h3 className="ps-h2 mt-2">{program.title}</h3>
+                <h3 className="ps-h2 mt-5">{program.title}</h3>
                 <p className="mt-3 text-[15px] leading-7 text-[#5C6B84]">{program.body}</p>
                 <p className="mt-5 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
               </PaperSheet>
