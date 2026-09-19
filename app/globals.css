@@ -507,6 +507,10 @@
 }
 
 @media (max-width: 640px) {
+  .ps-live-stats + .ps-torn {
+    height: 16px;
+  }
+
   .ps-live-stats-row {
     flex-direction: column;
     gap: 0.4rem;

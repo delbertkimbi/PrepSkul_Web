@@ -3,14 +3,16 @@
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import { PEAPShowcase } from "@/components/peap-showcase"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
 import { PaperButton, PaperCutout, PaperSheet } from "@/components/marketing/paper"
 import { useLocale } from "@/lib/locale-context"
+import { type Locale } from "@/lib/i18n"
 
 export default function ProgramsPage() {
   const { locale } = useLocale()
   const c = aliveCopy(locale)
-  const loc = locale.startsWith("fr") ? "fr" : "en"
+  const loc = (locale.startsWith("fr") ? "fr" : "en") as Locale
 
   return (
     <div className="ps-site min-h-screen">
@@ -31,8 +33,37 @@ export default function ProgramsPage() {
         </div>
       </section>
 
-      <section className="ps-wrap grid gap-5 pb-16 md:grid-cols-2">
-        <PaperSheet className="p-6 sm:p-8" tone="blue" rotate={-1}>
+      <section className="ps-wrap pb-16">
+        <h2 className="ps-h2 max-w-xl">{c.programs.hostedTitle}</h2>
+        <div className="mt-8 grid gap-5 md:grid-cols-2">
+          {c.programs.hosted.map((program, i) => {
+            const card = (
+              <PaperSheet className="h-full p-6 sm:p-8" tone={program.tone} rotate={i ? 1 : -1}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={program.logo}
+                  alt=""
+                  className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-20 sm:w-20"
+                />
+                <p className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-[#0EA5E9]">{program.kicker}</p>
+                <h3 className="ps-h2 mt-2">{program.title}</h3>
+                <p className="mt-3 text-[15px] leading-7 text-[#5C6B84]">{program.body}</p>
+                <p className="mt-5 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
+              </PaperSheet>
+            )
+            return (
+              <a key={program.id} href={program.href}>
+                {card}
+              </a>
+            )
+          })}
+        </div>
+      </section>
+
+      <PEAPShowcase locale={loc} />
+
+      <section className="ps-wrap grid gap-5 py-16 md:grid-cols-2">
+        <PaperSheet className="p-6 sm:p-8" tone="mint" rotate={-1}>
           <PaperCutout src="/onboard/art/tile-flask.png" className="h-16 w-16 sm:h-20 sm:w-20" />
           <h2 className="ps-h2 mt-5">{c.programs.schoolTitle}</h2>
           <p className="mt-3 text-[15px] leading-7 text-[#5C6B84]">{c.programs.schoolBody}</p>

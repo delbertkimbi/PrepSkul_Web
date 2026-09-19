@@ -11,7 +11,7 @@ export function PEAPShowcase({ locale }: { locale: Locale }) {
   const ea = t.home.examAccelerator
 
   return (
-    <section className="px-4 py-8 sm:px-6">
+    <section id="peap" className="scroll-mt-24 px-4 py-8 sm:px-6">
       <div className="mx-auto max-w-6xl">
         <PaperSheet className="overflow-hidden bg-[#1B2C4F] p-7 text-white sm:p-12" rotate={-0.5}>
           <div className="grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">

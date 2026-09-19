@@ -85,12 +85,12 @@ export function AliveHome({
       <ScrollFill />
       <Header />
 
-      <section className="relative px-4 pb-4 pt-10 sm:px-6 lg:pb-4 lg:pt-24 xl:pt-28">
+      <section className="relative px-4 pb-4 pt-10 sm:px-6 lg:pb-16 lg:pt-24 xl:pb-20 xl:pt-28">
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
           <div className="relative z-10 text-center lg:text-left">
             <h1 className="ps-h1 text-[#1B2C4F]">
-              <span className="text-[#0EA5E9]">{fr ? "Parle pour comprendre." : "Talk it through."}</span>{" "}
-              {fr ? "Une personne quand tu en veux une." : "A person when you want one."}
+              <span className="text-[#0EA5E9]">{c.hero.titleLead}</span>{" "}
+              {c.hero.titleRest}
             </h1>
             <p className="ps-lead mx-auto mt-5 max-w-xl lg:mx-0">{c.hero.subtitle}</p>
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
@@ -124,7 +124,7 @@ export function AliveHome({
         </div>
       </section>
 
-      <section className="ps-live-stats px-4 pb-4 pt-4 sm:px-6 lg:pb-5 lg:pt-5" aria-label={c.hero.statLine}>
+      <section className="ps-live-stats px-4 pb-0 pt-2 sm:px-6 sm:pb-4 sm:pt-4 lg:pb-5 lg:pt-14 xl:pt-16" aria-label={c.hero.statLine}>
         <div className="ps-live-stats-row">
           <MatePoint />
           <div className="ps-live-stats-grid">
@@ -162,7 +162,7 @@ export function AliveHome({
 
       <TornDivider />
 
-      <section className="bg-[#fffdf7] px-4 pb-20 pt-10 sm:px-6 lg:pb-28 lg:pt-12">
+      <section className="bg-[#fffdf7] px-4 pb-20 pt-4 sm:px-6 sm:pt-10 lg:pb-28 lg:pt-12">
         <div className="mx-auto max-w-6xl">
           <ScrollReveal className="mx-auto max-w-3xl text-center">
             <h2 className="ps-h2 text-[#1B2C4F]">{c.toolsTitle}</h2>
@@ -330,21 +330,31 @@ export function AliveHome({
       </section>
 
       <section className="px-4 py-16 sm:px-6">
-        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-2">
-          <Link href={`/${locale}/programs`}>
-            <PaperSheet className="h-full p-5 sm:p-6" tone="blue" rotate={-1}>
-              <PaperCutout src="/onboard/art/tile-flask.png" className="h-16 w-16 sm:h-20 sm:w-20" />
-              <h3 className="ps-h2 mt-4">{fr ? "École et examens" : "School and exams"}</h3>
-              <p className="mt-2 text-sm text-[#5C6B84]">Maths · Sciences · Français · English</p>
-            </PaperSheet>
-          </Link>
-          <Link href={`/${locale}/programs`}>
-            <PaperSheet className="h-full p-5 sm:p-6" tone="yellow" rotate={1}>
-              <PaperCutout src="/onboard/art/tile-laptop.png" className="h-16 w-16 sm:h-20 sm:w-20" />
-              <h3 className="ps-h2 mt-4">{fr ? "Au-delà du programme" : "Beyond the syllabus"}</h3>
-              <p className="mt-2 text-sm text-[#5C6B84]">{fr ? "Code, design, prise de parole." : "Code, design, public speaking."}</p>
-            </PaperSheet>
-          </Link>
+        <div className="mx-auto max-w-6xl">
+          <h2 className="ps-h2 text-center">{c.programs.hostedTitle}</h2>
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
+            {c.programs.hosted.map((program, i) => {
+              const card = (
+                <PaperSheet className="h-full p-5 sm:p-6" tone={program.tone} rotate={i ? 1 : -1}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={program.logo} alt="" className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-20 sm:w-20" />
+                  <p className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-[#0EA5E9]">{program.kicker}</p>
+                  <h3 className="ps-h2 mt-1">{program.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{program.body}</p>
+                  <p className="mt-4 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
+                </PaperSheet>
+              )
+              return program.external ? (
+                <a key={program.id} href={program.href}>
+                  {card}
+                </a>
+              ) : (
+                <Link key={program.id} href={`/${locale}/programs${program.href}`}>
+                  {card}
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </section>
 
