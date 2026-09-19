@@ -4,7 +4,6 @@ import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { FAQSection } from "@/components/faq-section"
-import { PEAPShowcase } from "@/components/peap-showcase"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
 import { getStartedUrl } from "@/lib/get-started-url"
 import { PaperButton, PaperCutout, PaperPhoto, PaperSheet, Tape, TornDivider } from "@/components/marketing/paper"
@@ -227,7 +226,7 @@ export function AliveHome({
           </div>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             <PaperPhoto src="/young-african-girl-online-learning-session.jpg" alt="" className="min-h-0" rotate={-1.5} imgClassName="aspect-[4/3] h-auto max-h-56" />
-            <PaperPhoto src="/african-tutor-teaching-student-at-home-with-books-.jpg" alt="" className="min-h-0 md:-translate-y-3" rotate={2} imgClassName="aspect-[4/3] h-auto max-h-56" />
+            <PaperPhoto src="/african-student-studying-mathematics-and-science-w.jpg" alt="" className="min-h-0 md:-translate-y-3" rotate={2} imgClassName="aspect-[4/3] h-auto max-h-56" />
             <PaperPhoto src="/group-class-prepskul.png" alt="" className="min-h-0" rotate={-1} imgClassName="aspect-[4/3] h-auto max-h-56" />
           </div>
         </div>
@@ -335,12 +334,18 @@ export function AliveHome({
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {c.programs.hosted.map((program, i) => {
               const card = (
-                <PaperSheet className="h-full p-5 sm:p-6" tone={program.tone} rotate={i ? 1 : -1}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={program.logo} alt="" className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-20 sm:w-20" />
-                  <h3 className="ps-h2 mt-4">{program.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{program.body}</p>
-                  <p className="mt-4 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
+                <PaperSheet className="h-full overflow-hidden p-3 sm:p-4" tone={program.tone} rotate={i ? 1 : -1}>
+                  <div className="relative overflow-hidden rounded-[18px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={program.cover} alt="" className="h-40 w-full object-cover sm:h-48" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={program.logo} alt="" className="absolute left-3 top-3 h-12 w-12 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-14 sm:w-14" />
+                  </div>
+                  <div className="p-3 sm:p-4">
+                    <h3 className="ps-h2">{program.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{program.body}</p>
+                    <p className="mt-4 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
+                  </div>
                 </PaperSheet>
               )
               return program.external ? (
@@ -356,8 +361,6 @@ export function AliveHome({
           </div>
         </div>
       </section>
-
-      <PEAPShowcase locale={loc} />
 
       <section className="px-4 py-20 sm:px-6">
         <div className="mx-auto max-w-6xl">
