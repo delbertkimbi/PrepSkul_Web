@@ -522,6 +522,8 @@
 
   .ps-live-stats-grid {
     width: 100%;
+    flex: none;
+    max-width: none;
     gap: 0.7rem 0.35rem;
   }
 

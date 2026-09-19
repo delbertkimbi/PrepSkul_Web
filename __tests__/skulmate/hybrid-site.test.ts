@@ -278,5 +278,7 @@ describe('hybrid marketing chrome', () => {
     expect(css).not.toMatch(/hero-circular-shape/)
     expect(css).not.toMatch(/linear-gradient\(135deg/)
     expect(css).toMatch(/ps-footer-tear/)
+    expect(css).toMatch(/\.ps-live-stats \+ \.ps-torn/)
+    expect(css).toMatch(/flex: none/)
   })
 })
