@@ -245,7 +245,7 @@ const EN = {
   programs: {
     title: "Programs we host.",
     lead: "SBC and PEAP are PrepSkul programs. Everyday tutoring still sits beside them: SkulMate, and a person when you want one.",
-    hostedTitle: "What PrepSkul runs",
+    hostedTitle: "Programs we host",
     hosted: [
       {
         id: "sbc",
@@ -535,7 +535,7 @@ const FR: typeof EN = {
   programs: {
     title: "Les programmes que nous menons.",
     lead: "SBC et PEAP sont des programmes PrepSkul. Le tutorat de la semaine s’assoit à côté: SkulMate, et une personne quand tu en veux une.",
-    hostedTitle: "Ce que PrepSkul mène",
+    hostedTitle: "Les programmes que nous menons",
     hosted: [
       {
         id: "sbc",

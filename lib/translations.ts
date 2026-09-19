@@ -282,7 +282,7 @@ export const translations = {
       }
     },
     footer: {
-      description: "Guiding every learner to their full potential across Cameroon and Africa.",
+      description: "SkulMate in the app. A person when you want one. Live online, or at the table.",
       quickLinks: "Quick Links",
       contactUs: "Contact Us",
       downloadApp: "Download App",
@@ -558,55 +558,53 @@ export const translations = {
     // About page
     about: {
       hero: {
-        title: "We Believe",
-        titleAccent: "Guidance",
-        titlePrimary: "Builds",
-        titlePrimaryEnd: "Greatness",
-        subtitle: "PrepSkul is more than a tutoring platform. We're a movement dedicated to unlocking the potential of every learner across Cameroon and Africa."
+        titleLead: "PrepSkul is tutoring.",
+        titleRest: "At the right level, until it is yours.",
+        subtitle: "SkulMate, the tutor inside the app, starts the week. When you want a person, browse tutors, then book or request. Live online, or at the table. We also host SBC and PEAP."
       },
       story: {
-        title: "Our Story",
-        paragraph1: "PrepSkul was born from a simple observation: every learner has unique potential waiting to be discovered. But too often, traditional education systems fail to provide the personalized guidance needed to unlock that potential.",
-        paragraph2: "We created PrepSkul to bridge this gap. By connecting learners with qualified tutors and mentors who truly care, we're building a community where every student can thrive academically and personally.",
-        paragraph3: "Our platform goes beyond just academic tutoring. We focus on mentorship, mindset building, and personal growth, helping learners not only perform better in school but also discover who they can become."
+        title: "How we tutor",
+        paragraph1: "PrepSkul is the product. Learners and parents both study here. You learn with SkulMate, and with human tutors you find or request.",
+        paragraph2: "Mate stays on the stuck point. A linear equation. Photosynthesis. A BEPC essay. He does not dump the answer. When a human hour is what the week needs, a tutor sits with you on the screen or at the table.",
+        paragraph3: "Everyday tutoring sits beside the programs we host. SBC is a one-week camp. PEAP is the PrepSkul Exam Accelerator. Same standard: the right level, and the beauty of getting there."
       },
       mission: {
-        title: "Our Mission",
-        description: "To be part of the world's revolution in learning by helping every learner discover their potential through mentorship, guidance, and skill development."
+        title: "The job",
+        description: "Help every learner work at the right level until the idea is theirs. Questions before answers. A person when you want one."
       },
       values: {
-        title: "Our Core Values",
-        subtitle: "These principles guide everything we do at PrepSkul",
+        title: "How a lesson is supposed to feel",
+        subtitle: "Not a slogan wall. This is the work.",
         growth: {
-          title: "Growth",
-          description: "We believe in continuous improvement and helping every learner reach new heights through dedicated support and encouragement."
+          title: "Teach",
+          description: "He asks before he answers. SkulMate is built to tutor, not to dump."
         },
         trust: {
-          title: "Trust",
-          description: "We build lasting relationships based on trust, transparency, and genuine care for each learner's success and well-being."
+          title: "Stay",
+          description: "The bit that did not land gets the hour. Not the whole chapter again."
         },
         accountability: {
-          title: "Accountability",
-          description: "We hold ourselves and our tutors to the highest standards, ensuring quality education and measurable results."
+          title: "A person",
+          description: "Browse tutors, or tell us who you are looking for. Live, or at the table."
         },
         accessibility: {
-          title: "Accessibility",
-          description: "Quality education should be available to everyone. We make learning affordable and accessible across Cameroon and Africa."
+          title: "School-true",
+          description: "SIL to University. BEPC, Bac, GCE, WAEC. The class you are in now."
         },
         community: {
-          title: "Community",
-          description: "We're building a supportive learning community where students, tutors, and families grow together."
+          title: "Families",
+          description: "Parents who study get their own lessons. The parent seat is not a spy cam."
         },
         excellence: {
-          title: "Excellence",
-          description: "We strive for excellence in everything we do, from tutor selection to learning experiences and student outcomes."
+          title: "Honest",
+          description: "What is firm, what is still sticky. After the session, you can see it."
         }
       },
       cta: {
-        title: "Join Our Growing Community",
-        subtitle: "Whether you're a learner seeking guidance or a tutor ready to make an impact, there's a place for you at PrepSkul",
-        startLearning: "Start Learning",
-        becomeTutor: "Become a Tutor"
+        title: "Start with Mate, or sit with a person.",
+        subtitle: "Get started in the app, or write to us if you want to teach here.",
+        startLearning: "Get started",
+        becomeTutor: "Teach with PrepSkul"
       }
     }
   },
@@ -894,7 +892,7 @@ export const translations = {
       }
     },
     footer: {
-      description: "Guider chaque apprenant vers son plein potentiel à travers le Cameroun et l'Afrique.",
+      description: "SkulMate dans l’app. Une personne quand tu en veux une. En direct en ligne, ou à table.",
       quickLinks: "Liens Rapides",
       contactUs: "Nous Contacter",
       downloadApp: "Télécharger l'App",
@@ -1170,55 +1168,53 @@ export const translations = {
     // About page
     about: {
       hero: {
-        title: "Nous Croyons que",
-        titleAccent: "l'Orientation",
-        titlePrimary: "Construit la",
-        titlePrimaryEnd: "Grandeur",
-        subtitle: "PrepSkul est plus qu'une plateforme de tutorat. Nous sommes un mouvement dédié à libérer le potentiel de chaque apprenant à travers le Cameroun et l'Afrique."
+        titleLead: "PrepSkul, c’est du tutorat.",
+        titleRest: "Au bon niveau, jusqu’à ce que ce soit à toi.",
+        subtitle: "SkulMate, le tuteur dans l’app, commence la semaine. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande. En direct en ligne, ou à table. Nous menons aussi SBC et PEAP."
       },
       story: {
-        title: "Notre Histoire",
-        paragraph1: "PrepSkul est né d'une simple observation : chaque apprenant a un potentiel unique qui attend d'être découvert. Mais trop souvent, les systèmes éducatifs traditionnels ne parviennent pas à fournir l'orientation personnalisée nécessaire pour libérer ce potentiel.",
-        paragraph2: "Nous avons créé PrepSkul pour combler cette lacune. En connectant les apprenants avec des tuteurs et mentors qualifiés qui se soucient vraiment, nous construisons une communauté où chaque étudiant peut s'épanouir académiquement et personnellement.",
-        paragraph3: "Notre plateforme va au-delà du simple tutorat académique. Nous nous concentrons sur le mentorat, le développement de l'état d'esprit et la croissance personnelle, aidant les apprenants non seulement à mieux performer à l'école mais aussi à découvrir qui ils peuvent devenir."
+        title: "Comment on enseigne",
+        paragraph1: "PrepSkul est le produit. Les apprenants et les parents étudient ici. Tu apprends avec SkulMate, et avec des tuteurs humains que tu trouves ou que tu demandes.",
+        paragraph2: "Mate reste sur le point qui bloque. Une équation linéaire. La photosynthèse. Un essai BEPC. Il ne jette pas la réponse. Quand une heure humaine est ce qu’il faut, un tuteur s’assoit avec toi à l’écran ou à table.",
+        paragraph3: "Le tutorat de la semaine s’assoit à côté des programmes que nous menons. SBC est un camp d’une semaine. PEAP est l’accélérateur d’examens PrepSkul. Même exigence: le bon niveau, et la beauté du chemin."
       },
       mission: {
-        title: "Notre Mission",
-        description: "Faire partie de la révolution mondiale de l'apprentissage en aidant chaque apprenant à découvrir son potentiel à travers le mentorat, l'orientation et le développement de compétences."
+        title: "Le travail",
+        description: "Aider chaque apprenant à travailler au bon niveau jusqu’à ce que l’idée soit à lui. Des questions avant les réponses. Une personne quand tu en veux une."
       },
       values: {
-        title: "Nos Valeurs Fondamentales",
-        subtitle: "Ces principes guident tout ce que nous faisons chez PrepSkul",
+        title: "Ce qu’une leçon doit donner",
+        subtitle: "Pas un mur de slogans. C’est le travail.",
         growth: {
-          title: "Croissance",
-          description: "Nous croyons en l'amélioration continue et en aidant chaque apprenant à atteindre de nouveaux sommets grâce à un soutien et des encouragements dédiés."
+          title: "Enseigner",
+          description: "Il pose la question avant la réponse. SkulMate est fait pour enseigner, pas pour jeter la copie."
         },
         trust: {
-          title: "Confiance",
-          description: "Nous construisons des relations durables basées sur la confiance, la transparence et l'attention sincère portée au succès et au bien-être de chaque apprenant."
+          title: "Rester",
+          description: "Le morceau qui n’a pas pris a l’heure. Pas tout le chapitre encore."
         },
         accountability: {
-          title: "Responsabilité",
-          description: "Nous nous tenons, ainsi que nos tuteurs, aux normes les plus élevées, garantissant une éducation de qualité et des résultats mesurables."
+          title: "Une personne",
+          description: "Parcours les tuteurs, ou dis-nous qui tu cherches. En direct, ou à table."
         },
         accessibility: {
-          title: "Accessibilité",
-          description: "Une éducation de qualité devrait être accessible à tous. Nous rendons l'apprentissage abordable et accessible à travers le Cameroun et l'Afrique."
+          title: "Vrai pour l’école",
+          description: "De la SIL à l’université. BEPC, Bac, GCE, WAEC. La classe où tu es."
         },
         community: {
-          title: "Communauté",
-          description: "Nous construisons une communauté d'apprentissage solidaire où les étudiants, les tuteurs et les familles grandissent ensemble."
+          title: "Familles",
+          description: "Les parents qui étudient ont leurs propres leçons. Le siège parent n’est pas une caméra."
         },
         excellence: {
-          title: "Excellence",
-          description: "Nous visons l'excellence dans tout ce que nous faisons, de la sélection des tuteurs aux expériences d'apprentissage et aux résultats des étudiants."
+          title: "Honnête",
+          description: "Ce qui tient, ce qui reste collant. Après la séance, tu le vois."
         }
       },
       cta: {
-        title: "Rejoignez Notre Communauté Grandissante",
-        subtitle: "Que vous soyez un apprenant en quête d'orientation ou un tuteur prêt à avoir un impact, il y a une place pour vous chez PrepSkul",
-        startLearning: "Commencer à Apprendre",
-        becomeTutor: "Devenir Tuteur"
+        title: "Commence avec Mate, ou assieds-toi avec une personne.",
+        subtitle: "Démarre dans l’app, ou écris-nous si tu veux enseigner ici.",
+        startLearning: "Commencer",
+        becomeTutor: "Enseigner avec PrepSkul"
       }
     }
   }
