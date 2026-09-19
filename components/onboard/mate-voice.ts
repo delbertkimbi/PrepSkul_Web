@@ -13,8 +13,14 @@ export type SpeakMateOpts = {
   onStart?: () => void
 }
 
+const CLIP_TONE = "soft"
+
 function clipKey(phrase: string, locale: string) {
-  return `${locale.startsWith("fr") ? "fr" : "en"}:${phrase}`
+  return `${locale.startsWith("fr") ? "fr" : "en"}:${phrase}:${CLIP_TONE}`
+}
+
+function voiceUrl(phrase: string, tag: string) {
+  return `/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}&tone=${CLIP_TONE}`
 }
 
 function killPlayback() {
@@ -57,9 +63,10 @@ function pickBrowserVoice(locale: string) {
     .map((voice) => {
       const name = voice.name.toLowerCase()
       let score = 0
-      if (/abeo|henri|guy|jason|ryan|thomas|david|george|neural/.test(name)) score += 4
-      if (/male|boy|young/.test(name)) score += 3
-      if (/google|samantha|karen|moira/.test(name)) score += 1
+      if (/abeo|henri/.test(name)) score += 6
+      if (/boy|young|child|kid/.test(name)) score += 4
+      if (/jason|ryan/.test(name)) score += 1
+      if (/david|george|guy|thomas/.test(name)) score -= 3
       if (voice.localService) score += 1
       return { voice, score }
     })
@@ -80,8 +87,8 @@ function speakBrowser(text: string, locale: string) {
   window.speechSynthesis.cancel()
   const line = new SpeechSynthesisUtterance(text)
   line.lang = locale.startsWith("fr") ? "fr-FR" : "en-GB"
-  line.rate = 1.04
-  line.pitch = 1.12
+  line.rate = 0.98
+  line.pitch = 1.28
   line.volume = 1
   const chosen = pickBrowserVoice(locale)
   if (chosen) line.voice = chosen
@@ -107,7 +114,7 @@ export async function prefetchMateLine(phrase: string, locale: string) {
   const key = clipKey(phrase, tag)
   if (clipCache.has(key)) return
   try {
-    const res = await fetch(`/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}`)
+    const res = await fetch(voiceUrl(phrase, tag))
     if (!res.ok) return
     const blob = await res.blob()
     if (!clipCache.has(key)) clipCache.set(key, blob)
@@ -137,7 +144,7 @@ export async function speakMateLine(
   try {
     let blob = clipCache.get(key)
     if (!blob) {
-      const res = await fetch(`/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}`, {
+      const res = await fetch(voiceUrl(phrase, tag), {
         signal: fetchAbort.signal,
       })
       if (stale()) return

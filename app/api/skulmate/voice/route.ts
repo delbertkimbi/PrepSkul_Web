@@ -6,9 +6,10 @@ export const runtime = "nodejs"
 const MODEL = process.env.SKULMATE_TTS_MODEL || process.env.PRIMAR_TTS_MODEL || "microsoft/mai-voice-2"
 
 /**
- * Young, friendly mascot voice. Abeo is a young male Nigerian English neural
- * voice, the closest neighbour accent we can ship for Anglophone Cameroon.
- * Francophone falls back to Henri, a natural young-adult French male.
+ * Keep Abeo's West African accent. The grown-man read comes from a flat
+ * adult delivery, not the locale. Soften it: slightly lifted speed, a
+ * friendly Azure style, and a cache-busting tone so old clips do not stick.
+ * Francophone stays on Henri with the same delivery.
  */
 const VOICES: Record<string, string> = {
   en: process.env.SKULMATE_TTS_VOICE_EN || "en-NG-AbeoNeural",
@@ -22,6 +23,11 @@ const ALLOWED_VOICES = new Set([
   "fr-FR-HenriNeural",
   "fr-FR-DeniseNeural",
 ])
+
+/** Younger, softer than a straight adult read. Keep the same speaker. */
+const SOFT_SPEED = 1.04
+const SOFT_STYLE = "friendly"
+const SOFT_STYLE_DEGREE = 0.85
 
 function pickVoice(params: URLSearchParams, locale: string) {
   const asked = params.get("voice")
@@ -47,20 +53,50 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Voice synthesis not configured", text }, { status: 503 })
   }
 
+  const voice = pickVoice(params, locale)
+  const payload = {
+    model: MODEL,
+    input: text,
+    voice,
+    response_format: "mp3",
+    speed: SOFT_SPEED,
+    provider: {
+      options: {
+        azure: {
+          style: SOFT_STYLE,
+          styledegree: SOFT_STYLE_DEGREE,
+        },
+      },
+    },
+  }
+
   try {
-    const upstream = await fetch("https://openrouter.ai/api/v1/audio/speech", {
+    let upstream = await fetch("https://openrouter.ai/api/v1/audio/speech", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
+      body: JSON.stringify(payload),
+    })
+
+    if (!upstream.ok) {
+      const plain = {
         model: MODEL,
         input: text,
-        voice: pickVoice(params, locale),
+        voice,
         response_format: "mp3",
-      }),
-    })
+        speed: SOFT_SPEED,
+      }
+      upstream = await fetch("https://openrouter.ai/api/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(plain),
+      })
+    }
 
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => "")

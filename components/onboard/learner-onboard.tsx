@@ -13,7 +13,7 @@ import {
 import { PrepMate, type PrepMateMood } from "@/components/onboard/prep-mate"
 import { Glyph } from "@/components/onboard/glyphs"
 import { prefetchMateLine, speakMateLine, stopMateVoice } from "@/components/onboard/mate-voice"
-import type { MateVoicePhrase } from "@/lib/skulmate/mate-voice-lines"
+import { mateVoiceText, type MateVoicePhrase } from "@/lib/skulmate/mate-voice-lines"
 
 const display = Fredoka({
   subsets: ["latin"],
@@ -104,23 +104,19 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   const step = steps[Math.min(index, steps.length - 1)]
 
   const copy = {
-    welcome: fr ? "Salut ! Moi c’est Mate." : "Hi there! I’m Mate.",
-    welcomeNote: fr
-      ? "On commence par ton école. Je t’écoute à voix haute. Un tuteur humain, tu le trouves ou tu le demandes."
-      : "We start with your school. I listen out loud. A human tutor is someone you find or request.",
+    welcome: mateVoiceText("welcome", answers.locale) || "",
+    welcomeNote: mateVoiceText("welcome_note", answers.locale) || "",
     go: fr ? "C’est parti !" : "Let’s go",
-    language: fr ? "On se parle en quelle langue ?" : "What language should I use with you?",
-    who: fr ? "Qui apprend ici ?" : "Who is learning here?",
+    language: mateVoiceText("language", answers.locale) || "",
+    who: mateVoiceText("who", answers.locale) || "",
     student: fr ? "C’est moi l’élève" : "I’m the student",
     parent: fr ? "Je suis parent, et j’apprends aussi" : "I’m a parent, and I’m studying too",
-    name: fr ? "Comment je t’appelle ?" : "What should I call you?",
-    country: fr ? "Où est ton école ?" : "Where is your school?",
-    system: fr ? "Francophone ou anglophone ?" : "Francophone or anglophone?",
-    level: fr ? "Tu es en quelle classe ?" : "What class are you in?",
-    subject: fr ? "De quoi tu as le plus besoin maintenant ?" : "What do you need the most help with right now?",
-    ready: fr
-      ? "Je te coach à voix haute. Pour une personne, tu fais défiler les tuteurs ou tu en demandes un, en ligne ou sur place."
-      : "I tutor you out loud. For a person, scroll recommended tutors or request one, online or at the table.",
+    name: mateVoiceText("name", answers.locale) || "",
+    country: mateVoiceText("country", answers.locale) || "",
+    system: mateVoiceText("system", answers.locale) || "",
+    level: mateVoiceText("level", answers.locale) || "",
+    subject: mateVoiceText("subject", answers.locale) || "",
+    ready: mateVoiceText("ready", answers.locale) || "",
     start: fr ? "Continuer" : "Continue",
     next: fr ? "Continuer" : "Continue",
     skip: fr ? "Pas maintenant" : "Not now",
