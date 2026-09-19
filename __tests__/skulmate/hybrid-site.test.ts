@@ -190,6 +190,8 @@ describe('hybrid marketing chrome', () => {
     expect(home).toMatch(/african-tutor-teaching-student-at-home-with-books-/)
     expect(home.split("african-tutor-teaching-student-at-home-with-books-").length - 1).toBe(1)
     expect(home).toMatch(/african-student-studying-mathematics-and-science-w/)
+    expect(home).toMatch(/african-young-person-learning-coding-on-laptop-wit/)
+    expect(home).not.toMatch(/young-african-girl-online-learning-session/)
     expect(home).toMatch(/program\.cover/)
     expect(home).not.toMatch(/PEAPShowcase/)
     expect(aliveCopy('en').audiences.find((item) => item.id === 'teachers')?.image).toMatch(/group-of-african-students-learning-together-with-t/)

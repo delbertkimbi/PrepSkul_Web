@@ -225,7 +225,7 @@ export function AliveHome({
             ))}
           </div>
           <div className="mt-10 grid gap-6 md:grid-cols-3">
-            <PaperPhoto src="/young-african-girl-online-learning-session.jpg" alt="" className="min-h-0" rotate={-1.5} imgClassName="aspect-[4/3] h-auto max-h-56" />
+            <PaperPhoto src="/african-young-person-learning-coding-on-laptop-wit.jpg" alt="" className="min-h-0" rotate={-1.5} imgClassName="aspect-[4/3] h-auto max-h-56" />
             <PaperPhoto src="/african-student-studying-mathematics-and-science-w.jpg" alt="" className="min-h-0 md:-translate-y-3" rotate={2} imgClassName="aspect-[4/3] h-auto max-h-56" />
             <PaperPhoto src="/group-class-prepskul.png" alt="" className="min-h-0" rotate={-1} imgClassName="aspect-[4/3] h-auto max-h-56" />
           </div>
