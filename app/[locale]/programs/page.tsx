@@ -31,11 +31,7 @@ export default function ProgramsPage() {
             {c.programs.tutorsCta}
           </Link>
         </div>
-      </section>
-
-      <section className="ps-wrap pb-16">
-        <h2 className="ps-h2 max-w-xl">{c.programs.hostedTitle}</h2>
-        <div className="mt-8 grid gap-5 md:grid-cols-2">
+        <div className="mt-12 grid gap-5 md:grid-cols-2">
           {c.programs.hosted.map((program, i) => {
             const card = (
               <PaperSheet className="h-full p-6 sm:p-8" tone={program.tone} rotate={i ? 1 : -1}>
@@ -45,7 +41,7 @@ export default function ProgramsPage() {
                   alt=""
                   className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-20 sm:w-20"
                 />
-                <h3 className="ps-h2 mt-5">{program.title}</h3>
+                <h2 className="ps-h2 mt-5">{program.title}</h2>
                 <p className="mt-3 text-[15px] leading-7 text-[#5C6B84]">{program.body}</p>
                 <p className="mt-5 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
               </PaperSheet>
@@ -94,8 +90,7 @@ export default function ProgramsPage() {
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {c.programs.how.map((step, i) => (
             <PaperSheet key={step.title} className="p-6" tone={i === 1 ? "peach" : "cream"} rotate={i === 1 ? 1 : -1}>
-              <p className="text-sm font-black uppercase text-[#0EA5E9]">{String(i + 1).padStart(2, "0")}</p>
-              <h3 className="mt-3 text-xl font-black uppercase leading-tight">{step.title}</h3>
+              <h3 className="text-xl font-black uppercase leading-tight">{step.title}</h3>
               <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{step.body}</p>
             </PaperSheet>
           ))}

@@ -250,6 +250,7 @@ describe('hybrid marketing chrome', () => {
     expect(programs).toMatch(/c\.programs/)
     expect(programs).toMatch(/hosted/)
     expect(programs).not.toMatch(/program\.kicker/)
+    expect(programs).not.toMatch(/hostedTitle/)
     expect(programs).toMatch(/PEAPShowcase/)
     expect(programs).not.toMatch(/95%/)
     expect(programs).not.toMatch(/\/contact/)
