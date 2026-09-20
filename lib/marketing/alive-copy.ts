@@ -258,12 +258,12 @@ const EN = {
       {
         id: "sbc",
         title: "SBC",
-        body: "A one-week builders' camp. Learners make with AI, work in a team, and pitch on Demo Day. Ages 9 to 18. Onsite or online.",
+        body: "A one-week AI and innovation experience for young people aged 9 to 18. They go beyond using technology. They build things that matter, and solve real problems.",
         href: "https://sbc.prepskul.com",
         external: true,
         cta: "See SBC",
         logo: "/sbclogo.png",
-        cover: "/sbc-hero-builders-v2.webp",
+        cover: "/sbc-camp-side.webp",
         tone: "sky" as const,
       },
       {
@@ -279,14 +279,14 @@ const EN = {
       },
     ],
     sbc: {
-      kicker: "Innovation camp",
-      done: "Last run: August 2026.",
+      kicker: "Summer Build Camp",
+      done: "Last run: August 2026. Five days, onsite and online.",
       stats: [
-        { value: "5 days", label: "One week" },
-        { value: "9 to 18", label: "Ages" },
-        { value: "Onsite and online", label: "Same week" },
+        { value: "One week", label: "AI and innovation" },
+        { value: "Ages 9 to 18", label: "Young people" },
+        { value: "Users to builders", label: "Technology that matters" },
       ],
-      gallery: ["/sbc-gallery-student.webp", "/sbc-gallery-online.webp", "/sbc-gallery-vr.webp"],
+      gallery: ["/sbc-camp-room.webp", "/sbc-camp-coaches.webp", "/sbc-camp-build.webp"],
       cta: "Visit SBC",
     },
     peap: {
@@ -584,12 +584,12 @@ const FR: typeof EN = {
       {
         id: "sbc",
         title: "SBC",
-        body: "Un camp d’une semaine pour construire. Les jeunes font avec l’IA, travaillent en équipe, et pitchent le Demo Day. 9 à 18 ans. Sur place ou en ligne.",
+        body: "Une expérience d’une semaine en IA et innovation pour les jeunes de 9 à 18 ans. Ils ne restent pas utilisateurs. Ils construisent des technologies qui comptent, et résolvent de vrais problèmes.",
         href: "https://sbc.prepskul.com",
         external: true,
         cta: "Voir SBC",
         logo: "/sbclogo.png",
-        cover: "/sbc-hero-builders-v2.webp",
+        cover: "/sbc-camp-side.webp",
         tone: "sky" as const,
       },
       {
@@ -605,14 +605,14 @@ const FR: typeof EN = {
       },
     ],
     sbc: {
-      kicker: "Camp d’innovation",
-      done: "Dernière édition: août 2026.",
+      kicker: "Summer Build Camp",
+      done: "Dernière édition: août 2026. Cinq jours, sur place et en ligne.",
       stats: [
-        { value: "5 jours", label: "Une semaine" },
-        { value: "9 to 18", label: "Âges" },
-        { value: "Sur place et en ligne", label: "La même semaine" },
+        { value: "Une semaine", label: "IA et innovation" },
+        { value: "9 à 18 ans", label: "Jeunes" },
+        { value: "Utilisateurs, puis bâtisseurs", label: "Une techno qui compte" },
       ],
-      gallery: ["/sbc-gallery-student.webp", "/sbc-gallery-online.webp", "/sbc-gallery-vr.webp"],
+      gallery: ["/sbc-camp-room.webp", "/sbc-camp-coaches.webp", "/sbc-camp-build.webp"],
       cta: "Ouvrir SBC",
     },
     peap: {

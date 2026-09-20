@@ -566,7 +566,7 @@ export const translations = {
         title: "How we tutor",
         paragraph1: "PrepSkul is the product. Learners and parents both study here. You learn with SkulMate, and with human tutors you find or request.",
         paragraph2: "Mate stays on the stuck point. A linear equation. Photosynthesis. A BEPC essay. He does not dump the answer. When a human hour is what the week needs, a tutor sits with you on the screen or at the table.",
-        paragraph3: "Everyday tutoring sits beside the programs we host. SBC is a one-week camp. PEAP is the PrepSkul Exam Accelerator. Same standard: the right level, and the beauty of getting there."
+        paragraph3: "Everyday tutoring sits beside the programs we host. SBC is Summer Build Camp: a one-week AI and innovation experience for young people aged 9 to 18, from using technology to building it. PEAP is the PrepSkul Exam Accelerator. Same standard: the right level, and the beauty of getting there."
       },
       mission: {
         title: "The job",
@@ -1176,7 +1176,7 @@ export const translations = {
         title: "Comment on enseigne",
         paragraph1: "PrepSkul est le produit. Les apprenants et les parents étudient ici. Tu apprends avec SkulMate, et avec des tuteurs humains que tu trouves ou que tu demandes.",
         paragraph2: "Mate reste sur le point qui bloque. Une équation linéaire. La photosynthèse. Un essai BEPC. Il ne jette pas la réponse. Quand une heure humaine est ce qu’il faut, un tuteur s’assoit avec toi à l’écran ou à table.",
-        paragraph3: "Le tutorat de la semaine s’assoit à côté des programmes que nous menons. SBC est un camp d’une semaine. PEAP est l’accélérateur d’examens PrepSkul. Même exigence: le bon niveau, et la beauté du chemin."
+        paragraph3: "Le tutorat de la semaine s’assoit à côté des programmes que nous menons. SBC, c’est Summer Build Camp: une semaine d’IA et d’innovation pour les jeunes de 9 à 18 ans, d’utilisateurs de la techno à bâtisseurs. PEAP est l’accélérateur d’examens PrepSkul. Même exigence: le bon niveau, et la beauté du chemin."
       },
       mission: {
         title: "Le travail",
