@@ -5,7 +5,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
 import { getStartedUrl } from "@/lib/get-started-url"
-import { PaperButton, PaperPhoto, PaperSheet, Tape } from "@/components/marketing/paper"
+import { PaperButton, PaperSheet } from "@/components/marketing/paper"
 import { useLocale } from "@/lib/locale-context"
 import { type Locale } from "@/lib/i18n"
 
@@ -19,125 +19,109 @@ export default function ProgramsPage() {
   return (
     <div className="ps-site min-h-screen">
       <Header />
-      <section className="ps-wrap py-16 lg:py-20">
+
+      <section className="ps-wrap pt-14 pb-10 lg:pt-20 lg:pb-12">
         <h1 className="ps-h1 max-w-3xl">{c.programs.title}</h1>
-        <p className="ps-lead mt-5 max-w-2xl">{c.programs.lead}</p>
-        <div className="mt-10 grid gap-5 md:grid-cols-2">
-          {c.programs.hosted.map((program, i) => (
-            <a key={program.id} href={`#${program.id}`}>
-              <PaperSheet className="h-full overflow-hidden p-3 sm:p-4" tone={program.tone} rotate={i ? 1 : -1}>
-                <div className="relative overflow-hidden rounded-[18px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={program.cover} alt="" className="h-44 w-full object-cover sm:h-52" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={program.logo}
-                    alt=""
-                    className="absolute left-4 top-4 h-14 w-14 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1"
-                  />
+        <p className="ps-lead mt-5 max-w-xl">{c.programs.lead}</p>
+        <p className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-black text-[#1B2C4F]">
+          <a href="#sbc" className="underline decoration-[#EAB308] decoration-4 underline-offset-4">
+            {sbc?.title}
+          </a>
+          <a href="#peap" className="underline decoration-[#EAB308] decoration-4 underline-offset-4">
+            {peap?.title}
+          </a>
+        </p>
+      </section>
+
+      <section id="sbc" className="scroll-mt-24 ps-wrap pb-16 lg:pb-20">
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-[#5C6B84]">{sbc?.title}</p>
+            <h2 className="mt-2 max-w-xl text-[1.65rem] font-black uppercase leading-tight text-[#1B2C4F] sm:text-[1.9rem]">
+              {sbc?.body}
+            </h2>
+            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5C6B84]">{c.programs.sbc.done}</p>
+            <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+              {c.programs.sbc.stats.map((stat) => (
+                <div key={stat.value}>
+                  <dt className="font-black text-[#1B2C4F]">{stat.value}</dt>
+                  <dd className="text-[#5C6B84]">{stat.label}</dd>
                 </div>
-                <div className="p-3 sm:p-4">
-                  <h2 className="ps-h2">{program.title}</h2>
-                  <p className="mt-2 text-[15px] leading-7 text-[#5C6B84]">{program.body}</p>
-                  <p className="mt-4 text-sm font-black text-[#1B2C4F]">{program.cta}</p>
-                </div>
-              </PaperSheet>
+              ))}
+            </dl>
+            <a href={sbc?.href} className="mt-8 inline-block">
+              <PaperButton>{c.programs.sbc.cta}</PaperButton>
             </a>
+          </div>
+          <PaperSheet className="overflow-hidden p-2.5" tone="sky">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={sbc?.cover} alt="" className="h-52 w-full rounded-[18px] object-cover sm:h-56" />
+          </PaperSheet>
+        </div>
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          {c.programs.sbc.gallery.map((src) => (
+            <div key={src} className="overflow-hidden rounded-2xl border border-[#1B2C4F]/10">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={src} alt="" className="h-24 w-full object-cover sm:h-32" />
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="bg-[#fffdf7] py-16">
+      <section id="peap" className="scroll-mt-24 px-4 pb-16 sm:px-6 lg:pb-20">
         <div className="ps-wrap">
-          <h2 className="ps-h2 max-w-2xl">{c.programs.valuesTitle}</h2>
-          <p className="ps-lead mt-3 max-w-xl">{c.programs.valuesLead}</p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {c.programs.values.map((value, i) => (
-              <PaperSheet
-                key={value.title}
-                className="h-full p-5"
-                tone={i === 1 ? "yellow" : i === 2 ? "blue" : i === 3 ? "mint" : "cream"}
-                rotate={i % 2 ? 1 : -1}
-              >
-                <h3 className="text-lg font-black uppercase">{value.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{value.body}</p>
-              </PaperSheet>
+          <PaperSheet className="overflow-hidden bg-[#1B2C4F] p-6 text-white sm:p-8 lg:p-10" tone="navy">
+            <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-white/55">{peap?.title}</p>
+                <h2 className="mt-2 max-w-xl text-[1.65rem] font-black uppercase leading-tight text-white sm:text-[1.9rem]">
+                  {peap?.body}
+                </h2>
+                <p className="mt-4 max-w-xl text-[15px] leading-7 text-white/70">{c.programs.peap.done}</p>
+                <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+                  {c.programs.peap.stats.map((stat) => (
+                    <div key={stat.value}>
+                      <dt className="font-black text-white">{stat.value}</dt>
+                      <dd className="text-white/60">{stat.label}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <a href={getStartedUrl()} className="mt-8 inline-block">
+                  <PaperButton className="bg-white text-[#1B2C4F] shadow-[0_7px_0_#d7d2c6]">{c.programs.peap.cta}</PaperButton>
+                </a>
+              </div>
+              <div className="overflow-hidden rounded-[18px] border border-white/10 bg-white/5 p-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.programs.peap.photo} alt="" className="h-52 w-full rounded-[14px] object-cover sm:h-56" />
+              </div>
+            </div>
+            <blockquote className="mt-8 max-w-2xl border-t border-white/15 pt-6">
+              <p className="text-[15px] leading-7 text-white/85">{c.programs.peap.quote}</p>
+              <footer className="mt-2 text-sm font-bold text-white/50">{c.programs.peap.quoteName}</footer>
+            </blockquote>
+          </PaperSheet>
+        </div>
+      </section>
+
+      <section className="border-t border-[#1B2C4F]/10 py-12">
+        <div className="ps-wrap">
+          <h2 className="text-lg font-black uppercase text-[#1B2C4F]">{c.programs.valuesTitle}</h2>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[#5C6B84]">{c.programs.valuesLead}</p>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {c.programs.values.map((value) => (
+              <div key={value.title}>
+                <h3 className="text-sm font-black uppercase text-[#1B2C4F]">{value.title}</h3>
+                <p className="mt-1.5 text-sm leading-6 text-[#5C6B84]">{value.body}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="sbc" className="scroll-mt-24 ps-wrap py-16 lg:py-20">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={sbc?.logo} alt="" className="h-16 w-16 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1" />
-            <h2 className="ps-h2 mt-5">{sbc?.title}</h2>
-            <p className="ps-lead mt-4 max-w-xl">{sbc?.body}</p>
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5C6B84]">{c.programs.sbc.done}</p>
-            <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
-              {c.programs.sbc.stats.map((stat) => (
-                <p key={stat.value}>
-                  <span className="block text-lg font-black text-[#1B2C4F]">{stat.value}</span>
-                  <span className="text-sm font-bold text-[#5C6B84]">{stat.label}</span>
-                </p>
-              ))}
-            </div>
-            <a href={sbc?.href} className="mt-8 inline-block">
-              <PaperButton>{c.programs.sbc.cta}</PaperButton>
-            </a>
-          </div>
-          <PaperSheet className="relative overflow-hidden p-3" tone="sky" rotate={1.5}>
-            <Tape color="yellow" className="-top-3 left-1/2 -translate-x-1/2" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={sbc?.cover} alt="" className="h-64 w-full rounded-[18px] object-cover sm:h-80" />
-          </PaperSheet>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-3">
-          {c.programs.sbc.gallery.map((src, i) => (
-            <PaperPhoto key={src} src={src} alt="" rotate={i === 1 ? 1.5 : -1} imgClassName="aspect-[4/3] h-auto max-h-56" />
-          ))}
-        </div>
-      </section>
-
-      <section id="peap" className="scroll-mt-24 bg-[#1B2C4F] py-16 text-white lg:py-20">
-        <div className="ps-wrap grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={peap?.logo} alt="" className="h-16 w-16 rounded-2xl border border-white/15 bg-white object-contain p-1" />
-            <h2 className="ps-h2 mt-5 text-white">{peap?.title}</h2>
-            <p className="mt-4 max-w-xl text-lg leading-relaxed text-white/75">{peap?.body}</p>
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-white/70">{c.programs.peap.done}</p>
-            <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
-              {c.programs.peap.stats.map((stat) => (
-                <p key={stat.value}>
-                  <span className="block text-lg font-black text-white">{stat.value}</span>
-                  <span className="text-sm font-bold text-white/65">{stat.label}</span>
-                </p>
-              ))}
-            </div>
-            <a href={getStartedUrl()} className="mt-8 inline-block">
-              <PaperButton className="bg-white text-[#1B2C4F] shadow-[0_7px_0_#d7d2c6]">{c.programs.peap.cta}</PaperButton>
-            </a>
-          </div>
-          <PaperSheet className="relative overflow-hidden p-3" tone="cream" rotate={-1}>
-            <Tape color="yellow" className="-top-3 left-1/2 -translate-x-1/2" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={c.programs.peap.photo} alt="" className="h-64 w-full rounded-[18px] object-cover sm:h-80" />
-          </PaperSheet>
-        </div>
-        <div className="ps-wrap mt-10 max-w-3xl">
-          <PaperSheet className="p-6 sm:p-8" tone="cream" rotate={-0.5}>
-            <p className="text-lg font-black leading-snug text-[#1B2C4F]">{c.programs.peap.quote}</p>
-            <p className="mt-4 text-sm font-bold text-[#5C6B84]">{c.programs.peap.quoteName}</p>
-          </PaperSheet>
-        </div>
-      </section>
-
-      <section className="ps-wrap py-16 text-center lg:py-20">
-        <h2 className="ps-h2">{c.programs.closeTitle}</h2>
-        <p className="ps-lead mx-auto mt-3 max-w-xl">{c.programs.closeBody}</p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+      <section className="ps-wrap py-14 lg:py-16">
+        <h2 className="text-2xl font-black uppercase leading-tight text-[#1B2C4F]">{c.programs.closeTitle}</h2>
+        <p className="ps-lead mt-3 max-w-xl">{c.programs.closeBody}</p>
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row">
           <Link href={`/${loc}/onboard`}>
             <PaperButton>{c.programs.mateCta}</PaperButton>
           </Link>

@@ -269,6 +269,8 @@ describe('hybrid marketing chrome', () => {
     expect(programs).toMatch(/c\.programs\.peap/)
     expect(programs).toMatch(/c\.programs\.sbc\.gallery/)
     expect(programs).toMatch(/c\.programs\.peap\.photo/)
+    expect(programs).not.toMatch(/ps-h2/)
+    expect(programs).toMatch(/text-\[1\.65rem\]/)
     expect(programs).not.toMatch(/program\.kicker/)
     expect(programs).not.toMatch(/hostedTitle/)
     expect(programs).not.toMatch(/PEAPShowcase/)
