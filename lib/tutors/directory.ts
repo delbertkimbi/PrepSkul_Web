@@ -70,13 +70,65 @@ export function toPublicTutor(row: Record<string, unknown>): PublicTutor | null 
   }
 }
 
+export const TUTOR_SPOTLIGHTS: PublicTutor[] = [
+  {
+    id: "spotlight-maths",
+    name: "Maths",
+    subjects: ["Exam prep"],
+    city: null,
+    rating: null,
+    photoUrl: "/young-african-female-student-smiling.jpg",
+    sessions: null,
+  },
+  {
+    id: "spotlight-sciences",
+    name: "Sciences",
+    subjects: ["Live or at home"],
+    city: null,
+    rating: null,
+    photoUrl: "/young-african-male-student-confident.jpg",
+    sessions: null,
+  },
+  {
+    id: "spotlight-languages",
+    name: "Languages",
+    subjects: ["English · Français"],
+    city: null,
+    rating: null,
+    photoUrl: "/african-mother-professional.jpg",
+    sessions: null,
+  },
+  {
+    id: "spotlight-code",
+    name: "Code",
+    subjects: ["Making · design"],
+    city: null,
+    rating: null,
+    photoUrl: "/young-african-female-tech-student.jpg",
+    sessions: null,
+  },
+]
+
+export function previewPublicTutors(live: PublicTutor[], limit = 4): PublicTutor[] {
+  const real = live.slice(0, limit)
+  return real.length > 0 ? real : TUTOR_SPOTLIGHTS.slice(0, limit)
+}
+
+function directoryKey() {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+}
+
 export async function listPublicTutors(limit = 24): Promise<{ tutors: PublicTutor[]; unavailable: boolean }> {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = directoryKey()
+  if (!url || !key) {
     return { tutors: [], unavailable: true }
   }
   try {
-    const { getSupabaseAdmin } = await import("@/lib/supabase-admin")
-    const supabase = getSupabaseAdmin()
+    const { createClient } = await import("@supabase/supabase-js")
+    const supabase = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
     const { data, error } = await supabase
       .from("tutor_profiles")
       .select(PUBLIC_FIELDS)

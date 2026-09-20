@@ -4,9 +4,8 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
 import { getStartedUrl } from "@/lib/get-started-url"
-import { PaperButton, PaperSheet, Tape } from "@/components/marketing/paper"
-import { PrepMate } from "@/components/onboard/prep-mate"
-import type { PublicTutor } from "@/lib/tutors/directory"
+import { PaperButton, PaperSheet } from "@/components/marketing/paper"
+import { previewPublicTutors, type PublicTutor } from "@/lib/tutors/directory"
 
 function TutorCard({ tutor, bookLabel }: { tutor: PublicTutor; bookLabel: string }) {
   const initial = tutor.name.trim().charAt(0).toUpperCase() || "P"
@@ -27,10 +26,13 @@ function TutorCard({ tutor, bookLabel }: { tutor: PublicTutor; bookLabel: string
         <div className="min-w-0">
           <h2 className="truncate text-lg font-black text-[#1B2C4F]">{tutor.name}</h2>
           <p className="mt-1 text-sm text-[#5C6B84]">{subjects || "PrepSkul tutor"}</p>
-          <p className="mt-1 text-sm font-bold text-[#0EA5E9]">
-            {tutor.city || "Cameroon"}
-            {tutor.rating ? ` · ${tutor.rating.toFixed(1)}` : ""}
-          </p>
+          {(tutor.city || tutor.rating) && (
+            <p className="mt-1 text-sm font-bold text-[#0EA5E9]">
+              {tutor.city || ""}
+              {tutor.city && tutor.rating ? " · " : ""}
+              {tutor.rating ? tutor.rating.toFixed(1) : ""}
+            </p>
+          )}
         </div>
       </div>
       <a href={getStartedUrl()} className="mt-5">
@@ -43,13 +45,13 @@ function TutorCard({ tutor, bookLabel }: { tutor: PublicTutor; bookLabel: string
 export function FindDirectory({
   locale,
   tutors,
-  unavailable,
 }: {
   locale: string
   tutors: PublicTutor[]
-  unavailable: boolean
+  unavailable?: boolean
 }) {
   const c = aliveCopy(locale)
+  const cards = previewPublicTutors(tutors, tutors.length > 0 ? Math.max(tutors.length, 1) : 4)
 
   return (
     <div className="ps-site min-h-screen">
@@ -70,28 +72,14 @@ export function FindDirectory({
           </a>
         </div>
 
-        {tutors.length > 0 ? (
-          <div className="mt-12">
-            <h2 className="ps-h2">{c.find.recommended}</h2>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {tutors.map((tutor) => (
-                <TutorCard key={tutor.id} tutor={tutor} bookLabel={c.find.bookInApp} />
-              ))}
-            </div>
+        <div className="mt-12">
+          <h2 className="ps-h2">{c.find.recommended}</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {cards.map((tutor) => (
+              <TutorCard key={tutor.id} tutor={tutor} bookLabel={c.find.bookInApp} />
+            ))}
           </div>
-        ) : (
-          <PaperSheet className="relative mt-12 max-w-xl p-6 sm:p-7" tone="cream" rotate={-1}>
-            <Tape className="-top-3 left-8" />
-            <div className="ps-mate-well">
-              <PrepMate mood="think" size={112} />
-            </div>
-            <p className="mt-3 font-black uppercase text-[#1B2C4F]">{c.find.recommended}</p>
-            <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{unavailable || tutors.length === 0 ? c.find.empty : c.find.empty}</p>
-            <a href={getStartedUrl()} className="mt-5 inline-block">
-              <PaperButton>{c.find.openApp}</PaperButton>
-            </a>
-          </PaperSheet>
-        )}
+        </div>
       </main>
       <Footer />
     </div>

@@ -1,4 +1,4 @@
-import { toPublicTutor } from '@/lib/tutors/directory'
+import { previewPublicTutors, toPublicTutor, TUTOR_SPOTLIGHTS } from '@/lib/tutors/directory'
 
 describe('public tutor directory', () => {
   it('maps only public fields from tutor_profiles', () => {
@@ -26,6 +26,14 @@ describe('public tutor directory', () => {
       sessions: 12,
     })
     expect(JSON.stringify(card)).not.toMatch(/hidden@|secret-doc|payout/)
+  })
+
+  it('falls back to four spotlight cards when the directory is empty', () => {
+    expect(previewPublicTutors([], 4)).toHaveLength(4)
+    expect(previewPublicTutors([], 4).map((item) => item.name)).toEqual(['Maths', 'Sciences', 'Languages', 'Code'])
+    expect(previewPublicTutors([{ ...TUTOR_SPOTLIGHTS[0], id: 'live-1', name: 'Ada N.' }], 4)).toEqual([
+      expect.objectContaining({ id: 'live-1', name: 'Ada N.' }),
+    ])
   })
 
   it('does not invent a person when the row has no user id', () => {

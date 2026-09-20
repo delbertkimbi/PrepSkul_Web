@@ -12,7 +12,7 @@ import { ScrollReveal } from "@/components/sbc/scroll-reveal"
 import { LiveTicker } from "@/components/marketing/live-ticker"
 import { Laurel, MatePoint } from "@/components/marketing/mate-point"
 import { PrepMate } from "@/components/onboard/prep-mate"
-import type { PublicTutor } from "@/lib/tutors/directory"
+import { previewPublicTutors, type PublicTutor } from "@/lib/tutors/directory"
 import { type Locale } from "@/lib/i18n"
 import { ArrowRight } from "lucide-react"
 
@@ -46,24 +46,26 @@ const MODES = [
 function TutorMiniCard({ tutor, locale }: { tutor: PublicTutor; locale: string }) {
   const initial = tutor.name.trim().charAt(0).toUpperCase() || "P"
   return (
-    <PaperSheet className="flex items-center gap-3 p-3" rotate={-0.5}>
-      {tutor.photoUrl ? (
-        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-[#1B2C4F]/10 bg-[#fffdf7]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={tutor.photoUrl} alt="" className="h-full w-full object-cover" />
+    <Link href={`/${locale}/find`} className="block">
+      <PaperSheet className="flex items-center gap-3 p-3" rotate={-0.5}>
+        {tutor.photoUrl ? (
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-[#1B2C4F]/10 bg-[#fffdf7]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={tutor.photoUrl} alt="" className="h-full w-full object-cover" />
+          </div>
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1B2C4F] text-sm font-black text-white">
+            {initial}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="truncate font-black text-[#1B2C4F]">{tutor.name}</p>
+          <p className="truncate text-xs font-bold text-[#5C6B84]">
+            {tutor.subjects.slice(0, 2).join(" · ") || (locale.startsWith("fr") ? "Tuteur PrepSkul" : "PrepSkul tutor")}
+          </p>
         </div>
-      ) : (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1B2C4F] text-sm font-black text-white">
-          {initial}
-        </div>
-      )}
-      <div className="min-w-0">
-        <p className="truncate font-black text-[#1B2C4F]">{tutor.name}</p>
-        <p className="truncate text-xs font-bold text-[#5C6B84]">
-          {tutor.subjects.slice(0, 2).join(" · ") || (locale.startsWith("fr") ? "Tuteur PrepSkul" : "PrepSkul tutor")}
-        </p>
-      </div>
-    </PaperSheet>
+      </PaperSheet>
+    </Link>
   )
 }
 
@@ -77,7 +79,7 @@ export function AliveHome({
   const c = aliveCopy(locale)
   const loc = (locale.startsWith("fr") ? "fr" : "en") as Locale
   const fr = loc === "fr"
-  const preview = tutors.slice(0, 4)
+  const preview = previewPublicTutors(tutors, 4)
 
   return (
     <div className="ps-site min-h-screen">
@@ -288,14 +290,9 @@ export function AliveHome({
             </div>
           </div>
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {preview.length > 0 ? (
-              preview.map((tutor) => <TutorMiniCard key={tutor.id} tutor={tutor} locale={locale} />)
-            ) : (
-              <PaperSheet className="p-6 sm:col-span-2" tone="blue">
-                <p className="font-black uppercase">{c.find.recommended}</p>
-                <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{c.find.empty}</p>
-              </PaperSheet>
-            )}
+            {preview.map((tutor) => (
+              <TutorMiniCard key={tutor.id} tutor={tutor} locale={locale} />
+            ))}
           </div>
         </div>
       </section>
