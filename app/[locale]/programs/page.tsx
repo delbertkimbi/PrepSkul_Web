@@ -36,11 +36,11 @@ export default function ProgramsPage() {
       <section id="sbc" className="scroll-mt-24 ps-wrap pb-16 lg:pb-20">
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-[#5C6B84]">{sbc?.title}</p>
-            <h2 className="mt-2 max-w-xl text-[1.65rem] font-black uppercase leading-tight text-[#1B2C4F] sm:text-[1.9rem]">
-              {sbc?.body}
+            <h2 className="text-2xl font-black uppercase leading-none text-[#1B2C4F] sm:text-3xl">
+              {sbc?.title}
             </h2>
-            <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#5C6B84]">{c.programs.sbc.done}</p>
+            <p className="ps-lead mt-4 max-w-xl">{sbc?.body}</p>
+            <p className="mt-3 max-w-xl text-[15px] leading-7 text-[#5C6B84]">{c.programs.sbc.done}</p>
             <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
               {c.programs.sbc.stats.map((stat) => (
                 <div key={stat.value}>
@@ -73,11 +73,11 @@ export default function ProgramsPage() {
           <PaperSheet className="overflow-hidden bg-[#1B2C4F] p-6 text-white sm:p-8 lg:p-10" tone="navy">
             <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-12">
               <div>
-                <p className="text-xs font-black uppercase tracking-wide text-white/55">{peap?.title}</p>
-                <h2 className="mt-2 max-w-xl text-[1.65rem] font-black uppercase leading-tight text-white sm:text-[1.9rem]">
-                  {peap?.body}
+                <h2 className="text-2xl font-black uppercase leading-none text-white sm:text-3xl">
+                  {peap?.title}
                 </h2>
-                <p className="mt-4 max-w-xl text-[15px] leading-7 text-white/70">{c.programs.peap.done}</p>
+                <p className="mt-4 max-w-xl text-[17px] leading-7 text-white/80">{peap?.body}</p>
+                <p className="mt-3 max-w-xl text-[15px] leading-7 text-white/65">{c.programs.peap.done}</p>
                 <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
                   {c.programs.peap.stats.map((stat) => (
                     <div key={stat.value}>
