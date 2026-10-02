@@ -4,17 +4,10 @@ import { listAllNotebookPosts } from '@/lib/marketing/notebook'
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://prepskul.com'
   const locales = ['en', 'fr']
-  const pages = ['', 'about', 'programs', 'find', 'mate', 'onboard', 'notebook', 'contact', 'tutors']
+  const pages = ['', 'about', 'programs', 'find', 'mate', 'notebook', 'contact', 'tutors']
   const notes = await listAllNotebookPosts().catch(() => [])
 
-  const sitemap: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 1,
-    },
-  ]
+  const sitemap: MetadataRoute.Sitemap = []
 
   locales.forEach(locale => {
     pages.forEach(page => {

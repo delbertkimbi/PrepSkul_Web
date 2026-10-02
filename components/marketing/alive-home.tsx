@@ -115,7 +115,7 @@ export function AliveHome({
               <div className="relative min-h-[240px] overflow-hidden rounded-[18px] bg-[#fffdf7] sm:min-h-[300px] lg:min-h-[340px]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/african-tutor-teaching-student-at-home-with-books-.jpg"
+                  src="/african-tutor-teaching-student-at-home-with-books-optimized.jpg"
                   alt={fr ? "Un tuteur PrepSkul avec un élève à la maison" : "A PrepSkul tutor teaching a student at home"}
                   className="absolute inset-0 h-full w-full object-cover"
                 />
@@ -200,8 +200,8 @@ export function AliveHome({
         <div className="h-16 sm:h-20" aria-hidden />
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
-            <div className="ps-cutout-navy ps-mate-well">
-              <PrepMate mood="idle" size={280} />
+            <div className="ps-mate-well">
+              <PrepMate mood="idle" size={280} onDarkBackground />
             </div>
           </div>
           <div>
@@ -229,7 +229,7 @@ export function AliveHome({
           <div className="mt-10 grid gap-6 md:grid-cols-3">
             <PaperPhoto src="/african-young-person-learning-coding-on-laptop-wit.jpg" alt="" className="min-h-0" rotate={-1.5} imgClassName="aspect-[4/3] h-auto max-h-56" />
             <PaperPhoto src="/african-student-studying-mathematics-and-science-w.jpg" alt="" className="min-h-0 md:-translate-y-3" rotate={2} imgClassName="aspect-[4/3] h-auto max-h-56" />
-            <PaperPhoto src="/group-class-prepskul.png" alt="" className="min-h-0" rotate={-1} imgClassName="aspect-[4/3] h-auto max-h-56" />
+            <PaperPhoto src="/group-class-prepskul-optimized.jpg" alt="PrepSkul learners taking part in a group lesson" className="min-h-0" rotate={-1} imgClassName="aspect-[4/3] h-auto max-h-56" />
           </div>
         </div>
       </section>
@@ -325,18 +325,16 @@ export function AliveHome({
         </div>
       </section>
 
-      <section className="px-4 py-16 sm:px-6">
+      <section id="programs" className="px-4 py-16 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <h2 className="ps-h2 text-center">{c.programs.hostedTitle}</h2>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {c.programs.hosted.map((program, i) => {
               const card = (
                 <PaperSheet className="h-full overflow-hidden p-3 sm:p-4" tone={program.tone} rotate={i ? 1 : -1}>
-                  <div className="relative overflow-hidden rounded-[18px]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div className="overflow-hidden rounded-[18px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={program.cover} alt="" className="h-40 w-full object-cover sm:h-48" />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={program.logo} alt="" className="absolute left-3 top-3 h-12 w-12 rounded-2xl border border-[#1B2C4F]/10 bg-white object-contain p-1 sm:h-14 sm:w-14" />
                   </div>
                   <div className="p-3 sm:p-4">
                     <h3 className="ps-h2">{program.title}</h3>
@@ -346,13 +344,9 @@ export function AliveHome({
                 </PaperSheet>
               )
               return program.external ? (
-                <a key={program.id} href={program.href}>
-                  {card}
-                </a>
+                <a key={program.id} href={program.href}>{card}</a>
               ) : (
-                <Link key={program.id} href={`/${locale}/programs${program.href}`}>
-                  {card}
-                </Link>
+                <Link key={program.id} href={`/${locale}/programs${program.href}`}>{card}</Link>
               )
             })}
           </div>
@@ -405,8 +399,8 @@ export function AliveHome({
             </div>
           </div>
           <div className="mx-auto flex w-full max-w-[16rem] justify-center overflow-visible">
-            <div className="ps-cutout-navy ps-mate-well">
-              <PrepMate mood="cheer" size={256} />
+            <div className="ps-mate-well">
+              <PrepMate mood="cheer" size={256} onDarkBackground />
             </div>
           </div>
         </div>

@@ -26,8 +26,8 @@ export function MatePoint() {
       <g className="ps-mate-hop">
         <line x1="58" y1="30" x2="62" y2="8" stroke="#1B2C4F" strokeWidth="5" strokeLinecap="round" />
         <circle cx="64" cy="8" r="8" fill="#EAB308" />
-        <ellipse cx="58" cy="82" rx="40" ry="50" fill="#1B6FCF" />
-        <ellipse cx="58" cy="100" rx="26" ry="22" fill="#3DB8C4" />
+        <ellipse cx="58" cy="82" rx="40" ry="50" fill="#4A6FBF" />
+        <ellipse cx="58" cy="100" rx="26" ry="22" fill="#0EA5E9" />
         <g className="ps-mate-blink">
           <ellipse cx="44" cy="70" rx="10" ry="12" fill="#fff" />
           <ellipse cx="72" cy="70" rx="10" ry="12" fill="#fff" />
@@ -36,6 +36,7 @@ export function MatePoint() {
         </g>
         <path d="M46 90c6 8 18 8 24 0" fill="none" stroke="#1B2C4F" strokeWidth="3.2" strokeLinecap="round" />
         <path d="M22 86c-10-4-16-16-10-24" fill="none" stroke="#1B2C4F" strokeWidth="7" strokeLinecap="round" />
+        <circle cx="12" cy="62" r="5.5" fill="#1B2C4F" />
         <g className="ps-mate-arm">
           <path d="M94 86c14-4 26-10 32-12" fill="none" stroke="#1B2C4F" strokeWidth="7" strokeLinecap="round" />
           <circle cx="126" cy="72" r="5.5" fill="#1B2C4F" />

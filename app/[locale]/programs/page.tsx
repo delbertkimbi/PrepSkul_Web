@@ -28,8 +28,7 @@ export default function ProgramsPage() {
       <section id="sbc" className="scroll-mt-24 ps-wrap pb-16 lg:pb-24">
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <p className="text-sm font-medium text-[#5C6B84]">{c.programs.sbc.kicker}</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#1B2C4F] sm:text-3xl">{sbc?.title}</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-[#1B2C4F] sm:text-3xl">{sbc?.title}</h2>
             <p className="ps-lead mt-4 max-w-md">{sbc?.body}</p>
             <p className="mt-4 text-sm leading-6 text-[#5C6B84]">{c.programs.sbc.done}</p>
             <p className="mt-5 text-sm font-medium text-[#1B2C4F]">
@@ -60,8 +59,7 @@ export default function ProgramsPage() {
         <div className="ps-wrap py-16 lg:py-24">
           <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
             <div>
-              <p className="text-sm font-medium text-[#5C6B84]">{c.programs.peap.kicker}</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#1B2C4F] sm:text-3xl">{peap?.title}</h2>
+              <h2 className="text-2xl font-semibold tracking-tight text-[#1B2C4F] sm:text-3xl">{peap?.title}</h2>
               <p className="ps-lead mt-4 max-w-md">{peap?.body}</p>
               <p className="mt-4 text-sm leading-6 text-[#5C6B84]">{c.programs.peap.done}</p>
               <p className="mt-5 text-sm font-medium text-[#1B2C4F]">
@@ -89,12 +87,20 @@ export default function ProgramsPage() {
         <div className="ps-wrap">
           <h2 className="text-sm font-medium text-[#5C6B84]">{c.programs.valuesTitle}</h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[#5C6B84]">{c.programs.valuesLead}</p>
-          <div className="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {c.programs.values.map((value) => (
-              <div key={value.title}>
-                <h3 className="text-sm font-semibold text-[#1B2C4F]">{value.title}</h3>
-                <p className="mt-1.5 text-sm leading-6 text-[#5C6B84]">{value.body}</p>
-              </div>
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {c.programs.values.map((value, index) => (
+              <PaperSheet
+                key={value.title}
+                tone={(["sky", "yellow", "mint", "peach"] as const)[index % 4]}
+                rotate={[-1.2, 0.8, -0.6, 1][index % 4]}
+                className="min-h-[176px] p-5 sm:p-6"
+              >
+                <span className="mb-5 grid h-10 w-10 place-items-center rounded-xl border-2 border-[#1B2C4F]/15 bg-white/80 text-sm font-black text-[#1B2C4F] shadow-[0_3px_0_rgba(27,44,79,0.12)]">
+                  0{index + 1}
+                </span>
+                <h3 className="text-base font-bold text-[#1B2C4F]">{value.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-[#5C6B84]">{value.body}</p>
+              </PaperSheet>
             ))}
           </div>
         </div>

@@ -45,7 +45,7 @@ export function Footer() {
             <a href="https://web.facebook.com/profile.php?id=61581614327200" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook className="h-5 w-5 text-white/70 hover:text-white" /></a>
             <a href="https://www.instagram.com/prep.skul/?utm_source=ig_web_button_share_sheet" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram className="h-5 w-5 text-white/70 hover:text-white" /></a>
             <a href="https://www.tiktok.com/@prepskul?_t=ZM-90NYHgY4n60&_r=1" target="_blank" rel="noreferrer" aria-label="TikTok"><TikTokIcon className="h-5 w-5 text-white/70 hover:text-white" /></a>
-            <a href="https://www.linkedin.com/company/109176407/admin/dashboard/" target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin className="h-5 w-5 text-white/70 hover:text-white" /></a>
+            <a href="https://www.linkedin.com/company/prepskul" target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin className="h-5 w-5 text-white/70 hover:text-white" /></a>
           </div>
         </div>
 
@@ -56,10 +56,10 @@ export function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/google-play-badge.png" alt="Get it on Google Play" width={140} height={42} className="w-[140px]" />
             </a>
-            <a href="https://play.google.com/store/apps/details?id=com.prepskul.prepskul&pcampaignid=web_share" target="_blank" rel="noreferrer">
+            <div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/app-store-badge.png" alt="Download on the App Store" width={140} height={42} className="w-[140px]" />
-            </a>
+              <img src="/app-store-badge.png" alt="Coming soon to the App Store" width={140} height={42} className="w-[140px] opacity-65" />
+            </div>
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
 import { getStartedUrl } from "@/lib/get-started-url"
-import { PaperButton, PaperCutout, PaperSheet, Tape } from "@/components/marketing/paper"
+import { PaperButton, PaperCutout, PaperSheet } from "@/components/marketing/paper"
 import { PrepMate } from "@/components/onboard/prep-mate"
 import { useLocale } from "@/lib/locale-context"
 
@@ -18,12 +18,9 @@ export default function MatePage() {
     <div className="ps-site min-h-screen">
       <Header />
       <main className="ps-wrap grid items-center gap-10 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:py-24">
-        <PaperSheet className="relative mx-auto max-w-sm overflow-visible p-8" tone="cream" rotate={-1.5}>
-          <Tape className="-top-3 left-1/2 -translate-x-1/2" />
-          <div className="ps-mate-well mx-auto">
-            <PrepMate mood="idle" size={224} />
-          </div>
-        </PaperSheet>
+        <div className="ps-mate-well mx-auto">
+          <PrepMate mood="idle" size={224} />
+        </div>
         <div>
           <h1 className="ps-h1 max-w-xl text-[#1B2C4F]">
             <span className="text-[#0EA5E9]">{fr ? "Ton SkulMate." : "Your SkulMate."}</span>{" "}

@@ -110,7 +110,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
     language: mateVoiceText("language", answers.locale) || "",
     who: mateVoiceText("who", answers.locale) || "",
     student: fr ? "C’est moi l’élève" : "I’m the student",
-    parent: fr ? "Je suis parent, et j’apprends aussi" : "I’m a parent, and I’m studying too",
+    parent: fr ? "Je suis parent et j’étudie" : "I’m a parent, and I’m studying",
     name: mateVoiceText("name", answers.locale) || "",
     country: mateVoiceText("country", answers.locale) || "",
     system: mateVoiceText("system", answers.locale) || "",
@@ -275,16 +275,16 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                     voiceOut={answers.voiceOut !== false}
                   >
                     {step === "language" && (
-                      <>
+                      <div className="grid grid-cols-2 gap-2">
                         <Choice glyph="en" label="English" selected={answers.locale === "en"} onClick={() => select({ locale: "en" }, "en")} />
                         <Choice glyph="fr" label="Français" selected={answers.locale === "fr"} onClick={() => select({ locale: "fr" }, "fr")} />
-                      </>
+                      </div>
                     )}
                     {step === "who" && (
-                      <>
+                      <div className="grid grid-cols-2 gap-2">
                         <Choice glyph="student" label={copy.student} selected={answers.role === "learner"} onClick={() => select({ role: "learner" }, "learner")} />
                         <Choice glyph="parent" label={copy.parent} selected={answers.role === "parent"} onClick={() => select({ role: "parent" }, "parent")} />
-                      </>
+                      </div>
                     )}
                     {step === "name" && (
                       <input
@@ -299,33 +299,36 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                       />
                     )}
                     {step === "country" &&
-                      REGION_PACKS.map((p: RegionPack) => (
-                        <Choice
-                          key={p.id}
-                          glyph={p.id === "fr" ? "fr_country" : p.id}
-                          label={t(p.label, answers.locale)}
-                          hint={p.id === "cm" ? (fr ? "Chez nous" : "Home") : undefined}
-                          selected={answers.countryId === p.id}
-                          onClick={() =>
-                            select(
-                              { countryId: p.id, systemId: undefined, levelId: undefined, subjectId: undefined },
-                              p.id,
-                            )
-                          }
-                        />
-                      ))}
+                      <div className="grid grid-cols-2 gap-2">
+                        {REGION_PACKS.map((p: RegionPack) => (
+                          <Choice
+                            key={p.id}
+                            glyph={p.id === "fr" ? "fr_country" : p.id}
+                            label={t(p.label, answers.locale)}
+                            selected={answers.countryId === p.id}
+                            onClick={() =>
+                              select(
+                                { countryId: p.id, systemId: undefined, levelId: undefined, subjectId: undefined },
+                                p.id,
+                              )
+                            }
+                          />
+                        ))}
+                      </div>}
                     {step === "system" &&
-                      pack.systems.map((s) => (
-                        <Choice
-                          key={s.id}
-                          glyph={s.id}
-                          label={t(s.label, answers.locale)}
-                          selected={answers.systemId === s.id}
-                          onClick={() => select({ systemId: s.id, levelId: undefined }, s.id)}
-                        />
-                      ))}
+                      <div className="grid grid-cols-2 gap-2">
+                        {pack.systems.map((s) => (
+                          <Choice
+                            key={s.id}
+                            glyph={s.id}
+                            label={t(s.label, answers.locale)}
+                            selected={answers.systemId === s.id}
+                            onClick={() => select({ systemId: s.id, levelId: undefined }, s.id)}
+                          />
+                        ))}
+                      </div>}
                     {step === "level" && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {system.levels.map((l) => (
                           <Chip
                             key={l.id}
@@ -337,15 +340,17 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                       </div>
                     )}
                     {step === "subject" &&
-                      system.subjects.map((s) => (
-                        <Choice
-                          key={s.id}
-                          glyph={s.id}
-                          label={t(s.label, answers.locale)}
-                          selected={answers.subjectId === s.id}
-                          onClick={() => select({ subjectId: s.id }, s.id)}
-                        />
-                      ))}
+                      <div className="grid grid-cols-2 gap-2">
+                        {system.subjects.map((s) => (
+                          <Choice
+                            key={s.id}
+                            glyph={s.id}
+                            label={t(s.label, answers.locale)}
+                            selected={answers.subjectId === s.id}
+                            onClick={() => select({ subjectId: s.id }, s.id)}
+                          />
+                        ))}
+                      </div>}
                     {step === "ready" && (
                       <div className="mt-1 space-y-3">
                         <div
@@ -391,13 +396,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                   <Primary
                     label={step === "ready" ? copy.start : copy.next}
                     disabled={step !== "ready" && step !== "name" && !canContinue}
-                    onClick={() => {
-                      if (step === "paywall") {
-                        finish("try")
-                        return
-                      }
-                      continueOn()
-                    }}
+                    onClick={continueOn}
                   />
                 </>
               )}
@@ -423,9 +422,13 @@ function Welcome({
   const [typed, setTyped] = useState(false)
   const [armed, setArmed] = useState(!voiceOut)
   const [talking, setTalking] = useState(false)
+  const [welcomeTitleProgress, setWelcomeTitleProgress] = useState<number | undefined>()
+  const [welcomeNoteProgress, setWelcomeNoteProgress] = useState<number | undefined>()
   const playingRef = useRef(false)
 
   useEffect(() => {
+    setWelcomeTitleProgress(undefined)
+    setWelcomeNoteProgress(undefined)
     if (!voiceOut) {
       stopMateVoice()
       setArmed(true)
@@ -438,9 +441,12 @@ function Welcome({
         await speakMateLine("welcome", locale, {
           onStart: () => {
             if (cancelled) return
+            setWelcomeTitleProgress(0)
+            setWelcomeNoteProgress(0)
             setTalking(true)
             setArmed(true)
           },
+          onProgress: setWelcomeTitleProgress,
         })
         if (cancelled) return
         await speakMateLine("welcome_note", locale, {
@@ -449,6 +455,7 @@ function Welcome({
             setTalking(true)
             setArmed(true)
           },
+          onProgress: setWelcomeNoteProgress,
         })
         if (!cancelled) setTalking(false)
       } catch {
@@ -480,7 +487,7 @@ function Welcome({
         >
           <PrepMate mood={mood} size={248} variant="hero" />
         </motion.div>
-        <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} armed={armed} onTyped={() => setTyped(true)} />
+        <Speech className="mt-5 w-full" title={copy.welcome} note={copy.welcomeNote} titleProgress={welcomeTitleProgress} noteProgress={welcomeNoteProgress} armed={armed} onTyped={() => setTyped(true)} />
       </div>
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -515,18 +522,25 @@ function Paywall({
 }) {
   const [typed, setTyped] = useState(false)
   const [armed, setArmed] = useState(!voiceOut)
+  const [progress, setProgress] = useState<number | undefined>()
 
   useEffect(() => {
     if (!voiceOut) {
+      setProgress(undefined)
       setArmed(true)
       return
     }
     let cancelled = false
     setArmed(false)
+    setProgress(undefined)
     void speakMateLine("paywall", locale, {
       onStart: () => {
-        if (!cancelled) setArmed(true)
+        if (!cancelled) {
+          setProgress(0)
+          setArmed(true)
+        }
       },
+      onProgress: setProgress,
     }).finally(() => {
       if (!cancelled) setArmed(true)
     })
@@ -545,7 +559,7 @@ function Paywall({
         >
           <PrepMate mood="cheer" size={196} variant="hero" />
         </motion.div>
-        <Speech className="mt-4 w-full" title={copy.payTitle} note={copy.payNote} armed={armed} onTyped={() => setTyped(true)} />
+        <Speech className="mt-4 w-full" title={copy.payTitle} note={copy.payNote} progress={progress} armed={armed} onTyped={() => setTyped(true)} />
         <div className="mt-4 w-full">
           <Stagger ready={typed}>
             {copy.benefits.map((item) => (
@@ -596,30 +610,39 @@ function Ask({
   const [armed, setArmed] = useState(!voiceOut)
   const [talking, setTalking] = useState(false)
   const [phase, setPhase] = useState<PrepMateMood>(intro ?? "talk")
+  const [progress, setProgress] = useState<number | undefined>()
 
   useEffect(() => {
     setTyped(false)
     setArmed(!voiceOut)
     setTalking(false)
     setPhase(intro ?? "talk")
+    setProgress(undefined)
   }, [title, intro, voiceOut])
 
   useEffect(() => {
     const phrase = voiceId as MateVoicePhrase
     if (!voiceOut) {
+      setProgress(undefined)
       stopMateVoice()
       setArmed(true)
       return
     }
     let cancelled = false
+    setProgress(undefined)
     void speakMateLine(phrase, locale, {
       onStart: () => {
         if (cancelled) return
+        setProgress(0)
         setTalking(true)
         setArmed(true)
       },
+      onProgress: setProgress,
     }).finally(() => {
-      if (!cancelled) setTalking(false)
+      if (!cancelled) {
+        setTalking(false)
+        setArmed(true)
+      }
     })
     return () => {
       cancelled = true
@@ -639,7 +662,7 @@ function Ask({
         >
           <PrepMate mood={mood} size={108} variant="ask" />
         </motion.div>
-        <Speech title={title} note={note} tail armed={armed} onTyped={() => setTyped(true)} />
+        <Speech title={title} note={note} progress={progress} tail armed={armed} onTyped={() => setTyped(true)} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pb-4">
         <Stagger ready={typed}>{children}</Stagger>
@@ -651,6 +674,9 @@ function Ask({
 function Speech({
   title,
   note,
+  progress,
+  titleProgress,
+  noteProgress,
   tail = false,
   armed = true,
   className = "",
@@ -658,6 +684,9 @@ function Speech({
 }: {
   title: string
   note?: string
+  progress?: number
+  titleProgress?: number
+  noteProgress?: number
   tail?: boolean
   armed?: boolean
   className?: string
@@ -665,11 +694,24 @@ function Speech({
 }) {
   const reduce = useReducedMotion()
   const [shown, setShown] = useState(reduce && armed ? title.length : 0)
-  const done = shown >= title.length
+  const combinedLength = title.length + (note?.length ?? 0)
+  const titleShown = titleProgress !== undefined
+    ? Math.floor(titleProgress * title.length)
+    : progress !== undefined
+      ? Math.min(title.length, Math.floor(progress * combinedLength))
+      : shown
+  const noteShown = noteProgress !== undefined
+    ? Math.floor(noteProgress * (note?.length ?? 0))
+    : progress !== undefined && note
+      ? Math.max(0, Math.min(note.length, Math.floor(progress * combinedLength) - title.length))
+      : shown >= title.length ? (note?.length ?? 0) : 0
+  const done = titleShown >= title.length
+  const allDone = done && noteShown >= (note?.length ?? 0)
   const onTypedRef = useRef(onTyped)
   onTypedRef.current = onTyped
 
   useEffect(() => {
+    if (progress !== undefined || titleProgress !== undefined || noteProgress !== undefined) return
     if (!armed) {
       setShown(0)
       return
@@ -702,7 +744,11 @@ function Speech({
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [title, reduce, armed])
+  }, [title, reduce, armed, progress, titleProgress, noteProgress])
+
+  useEffect(() => {
+    if (allDone) onTypedRef.current?.()
+  }, [allDone])
 
   return (
     <motion.div
@@ -733,7 +779,7 @@ function Speech({
         />
       ) : null}
       <p className={`${display.className} text-[22px] font-semibold leading-snug`} style={{ color: NAVY }}>
-        {title.slice(0, shown)}
+        {title.slice(0, titleShown)}
         {!done ? (
           <span
             aria-hidden
@@ -749,7 +795,7 @@ function Speech({
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {note}
+          {note.slice(0, noteShown)}
         </motion.p>
       ) : null}
     </motion.div>
@@ -810,7 +856,7 @@ function Choice({
       type="button"
       onClick={onClick}
       whileTap={{ scale: 0.97, y: 4 }}
-      className="mb-2.5 flex min-h-[68px] w-full items-center gap-3 rounded-[22px] border-[2px] bg-white px-3 py-2.5 text-left"
+      className="flex min-h-[68px] w-full items-center gap-2 rounded-[22px] border-[2px] bg-white px-2 py-2 text-left sm:gap-3 sm:px-3"
       style={{
         borderColor: selected ? SKY : "rgba(27,44,79,0.16)",
         boxShadow: selected ? `0 6px 0 ${NAVY}` : "0 6px 0 rgba(27,44,79,0.18)",
@@ -820,7 +866,7 @@ function Choice({
     >
       <Glyph kind={glyph} selected={selected} />
       <span className="flex-1">
-        <span className={`${display.className} block text-[18px] font-semibold leading-snug`}>{label}</span>
+        <span className={`${display.className} block text-[15px] font-semibold leading-snug sm:text-[16px]`}>{label}</span>
         {hint ? <span className="text-xs font-bold" style={{ color: SKY }}>{hint}</span> : null}
       </span>
     </motion.button>

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
-import { PaperButton, PaperSheet, Tape } from "@/components/marketing/paper"
+import { PaperButton } from "@/components/marketing/paper"
 import { PrepMate } from "@/components/onboard/prep-mate"
 import { LocaleProvider } from "@/lib/locale-context"
 import { type Locale } from "@/lib/i18n"
@@ -17,12 +17,9 @@ export function PaperNotFound({ locale = "en" }: { locale?: string }) {
       <div className="ps-site min-h-screen">
         <Header />
         <main className="ps-wrap flex flex-col items-center py-16 text-center lg:py-24">
-          <PaperSheet className="relative overflow-visible p-8" tone="cream" rotate={-1.5}>
-            <Tape className="-top-3 left-1/2 -translate-x-1/2" />
-            <div className="ps-mate-well">
-              <PrepMate mood="think" size={176} />
-            </div>
-          </PaperSheet>
+          <div className="ps-mate-well">
+            <PrepMate mood="think" size={176} />
+          </div>
           <p className="mt-10 text-sm font-black uppercase tracking-[0.18em] text-[#0EA5E9]">404</p>
           <h1 className="ps-h1 mt-3 max-w-xl">{fr ? "Cette page n’est pas là." : "This page is not here."}</h1>
           <p className="ps-lead mt-4 max-w-lg">

@@ -1,7 +1,7 @@
 import { LearnerOnboard } from "@/components/onboard/learner-onboard"
 
 export async function generateMetadata() {
-  return { title: "Meet Mate" }
+  return { title: "Meet Mate", robots: { index: false, follow: false } }
 }
 
 export default async function OnboardPage({

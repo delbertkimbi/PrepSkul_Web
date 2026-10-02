@@ -39,17 +39,9 @@ export async function generateMetadata({
       telephone: false,
     },
     metadataBase: new URL("https://prepskul.com"),
-    alternates: {
-      canonical: `/${locale}`,
-      languages: {
-        'en': '/en',
-        'fr': '/fr',
-      }
-    },
     openGraph: {
       ...(metadata?.openGraph || {}),
       type: "website",
-      url: `https://prepskul.com/${locale}`,
       locale: locale === 'fr' ? 'fr_CM' : 'en_CM',
       siteName: "PrepSkul",
       title: metadata?.title || "PrepSkul - Expert Tutoring in Cameroon",
@@ -57,8 +49,8 @@ export async function generateMetadata({
       images: [
         {
           url: "https://prepskul.com/logo.jpg",
-          width: 1200,
-          height: 630,
+          width: 1024,
+          height: 1024,
           alt: "PrepSkul - Expert Tutoring in Cameroon",
         },
       ],
@@ -78,9 +70,6 @@ export async function generateMetadata({
         "max-image-preview": "large",
         "max-snippet": -1,
       },
-    },
-    verification: {
-      google: "your-google-verification-code",
     },
   }
 }

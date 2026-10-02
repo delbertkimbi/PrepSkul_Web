@@ -80,7 +80,7 @@ const AFRICA_INTERESTS: RegionOption[] = [
 
 const CAMEROON_FRANCOPHONE: RegionSystem = {
   id: 'cm-francophone',
-  label: { en: 'Francophone (BEPC / Probatoire / Bac)', fr: 'Francophone (BEPC / Probatoire / Bac)' },
+  label: { en: 'French system of education', fr: 'Système éducatif francophone' },
   levels: [
     { id: 'sil', label: { en: 'SIL', fr: 'SIL' }, educationLevel: 'Primary School' },
     { id: 'cp', label: { en: 'CP', fr: 'CP' }, educationLevel: 'Primary School' },
@@ -109,7 +109,7 @@ const CAMEROON_FRANCOPHONE: RegionSystem = {
 
 const CAMEROON_ANGLOPHONE: RegionSystem = {
   id: 'cm-anglophone',
-  label: { en: 'Anglophone (GCE O / A Level)', fr: 'Anglophone (GCE O / A Level)' },
+  label: { en: 'English system of education', fr: 'Système éducatif anglophone' },
   levels: [
     { id: 'class1', label: { en: 'Class 1', fr: 'Class 1' }, educationLevel: 'Primary School' },
     { id: 'class2', label: { en: 'Class 2', fr: 'Class 2' }, educationLevel: 'Primary School' },

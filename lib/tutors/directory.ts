@@ -104,7 +104,7 @@ export const TUTOR_SPOTLIGHTS: PublicTutor[] = [
     subjects: ["Making · design"],
     city: null,
     rating: null,
-    photoUrl: "/young-african-female-tech-student.jpg",
+    photoUrl: "/young-african-female-tech-student-optimized.jpg",
     sessions: null,
   },
 ]

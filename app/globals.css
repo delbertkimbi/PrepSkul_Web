@@ -302,8 +302,7 @@
 
 .ps-neu {
   box-shadow:
-    10px 12px 24px rgba(27, 44, 79, 0.10),
-    -6px -6px 16px rgba(255, 255, 255, 0.88),
+    0 10px 22px rgba(27, 44, 79, 0.12),
     0 2px 4px rgba(27, 44, 79, 0.06);
 }
 

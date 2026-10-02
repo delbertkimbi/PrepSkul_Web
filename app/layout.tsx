@@ -18,9 +18,10 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "PrepSkul: Find Trusted Home and Online Tutors in Cameroon",
+  metadataBase: new URL("https://prepskul.com"),
+  title: "PrepSkul | Learn with Mate, your AI tutor",
   description:
-    "Get connected with verified home and online tutors who don't just teach, but mentor and inspire, offering personalized support for academics, skill development, and exam preparation in Cameroon and beyond.",
+    "Ask SkulMate questions by voice or text, get clear explanations, and practice at your pace. Find a tutor when you want one-to-one help.",
   icons: {
     icon: [
       { url: "/logo.jpg", sizes: "32x32", type: "image/jpeg" },

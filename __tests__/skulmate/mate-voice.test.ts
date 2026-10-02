@@ -7,7 +7,9 @@ describe('SkulMate onboard voice', () => {
     expect(mateVoiceText('welcome', 'en')).toMatch(/I'm Mate/)
     expect(mateVoiceText('welcome', 'en')).not.toMatch(/Hi there/)
     expect(mateVoiceText('welcome_note', 'en')).toMatch(/SkulMate/)
-    expect(mateVoiceText('welcome_note', 'en')).toMatch(/bring one in/)
+    expect(mateVoiceText('welcome_note', 'en')).toBe(
+      "I'm your SkulMate. I'll help you understand your lessons. Need a tutor? I can help you find one.",
+    )
     expect(mateVoiceText('welcome_note', 'en')).not.toMatch(/start with your school/)
     expect(mateVoiceText('welcome', 'fr')).toMatch(/Mate/)
     expect(mateVoiceText('welcome_note', 'fr')).toMatch(/SkulMate/)
@@ -29,6 +31,7 @@ describe('SkulMate onboard voice', () => {
     expect(player).toMatch(/let scene = 0/)
     expect(player).toMatch(/AbortController/)
     expect(player).toMatch(/clipCache/)
+    expect(player).toMatch(/v=\$\{revision\(text\)\}/)
     expect(player).toMatch(/prefetchMateLine/)
     expect(onboard).toMatch(/prefetchMateLine/)
     expect(onboard).toMatch(/armed=\{armed\}/)

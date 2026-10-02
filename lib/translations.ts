@@ -19,7 +19,7 @@ export const translations = {
       hero: {
         title: "Learn at the right level. Find the beauty in getting there.",
         titleWords: ["teaches", "fits", "lasts"],
-        subtitle: "SkulMate, the AI tutor inside PrepSkul, meets them at the right level and stays with the work until it is theirs. When you want a person, browse tutors, then book or request based on your preferences. Live online, or at the table.",
+        subtitle: "SkulMate is PrepSkul’s AI tutor. It explains lessons clearly and helps learners practice. Need a person? Browse tutors or ask us to find one. Learn online or at the table.",
         getStarted: "Get started",
         viewSubjects: "Find a tutor"
       },
@@ -126,7 +126,7 @@ export const translations = {
           role: "Coding Student",
           content: "I never thought I could learn to code, but my tutor made it fun and easy to understand. Now I'm building my own websites!",
           rating: 5,
-          image: "/young-african-female-tech-student.jpg"
+          image: "/young-african-female-tech-student-optimized.jpg"
         }
       ]
     },
@@ -558,53 +558,53 @@ export const translations = {
     // About page
     about: {
       hero: {
-        titleLead: "PrepSkul is tutoring.",
-        titleRest: "At the right level, until it is yours.",
-        subtitle: "SkulMate, the tutor inside the app, starts the week. When you want a person, browse tutors, then book or request. Live online, or at the table. We also host SBC and PEAP."
+        titleLead: "A tutor for every question.",
+        titleRest: "Ready when you are.",
+        subtitle: "SkulMate is the tutor inside the PrepSkul app. Ask a question out loud or type it, follow a clear explanation, and practice until it makes sense. When you want one-to-one help from a person, you can find a tutor too."
       },
       story: {
-        title: "How we tutor",
-        paragraph1: "PrepSkul is the product. Learners and parents both study here. You learn with SkulMate, and with human tutors you find or request.",
-        paragraph2: "Mate stays on the stuck point. A linear equation. Photosynthesis. A BEPC essay. He does not dump the answer. When a human hour is what the week needs, a tutor sits with you on the screen or at the table.",
-        paragraph3: "Everyday tutoring sits beside the programs we host. SBC is Summer Build Camp: a one-week AI and innovation experience for young people aged 9 to 18, from using technology to building it. PEAP is the PrepSkul Exam Accelerator. Same standard: the right level, and the beauty of getting there."
+        title: "Built for everyday learning",
+        paragraph1: "SkulMate is built into the PrepSkul app and ready when a question comes up. It explains ideas clearly, works through examples, and helps learners practice at their own pace.",
+        paragraph2: "Ask Mate to explain something another way, speak naturally, or type when it is quiet time. Mate follows the lesson with you. If you want to learn with a person, you can find a tutor online or nearby.",
+        paragraph3: "Learning goes beyond everyday lessons, too. At Summer Build Camp, young people explore STEM, AI, and innovation by making things and solving real problems. PrepSkul Exam Accelerator gives learners focused revision for O-Level and A-Level exams."
       },
       mission: {
-        title: "The job",
-        description: "Help every learner work at the right level until the idea is theirs. Questions before answers. A person when you want one."
+        title: "Our purpose",
+        description: "Help every learner understand more, practice with confidence, and keep making progress—with a patient AI tutor in the app and a person to learn with when they want one."
       },
       values: {
-        title: "How a lesson is supposed to feel",
-        subtitle: "Not a slogan wall. This is the work.",
+        title: "What learning with Mate feels like",
+        subtitle: "Clear explanations, room to try, and a next step you can see.",
         growth: {
-          title: "Teach",
-          description: "He asks before he answers. SkulMate is built to tutor, not to dump."
+          title: "Understand",
+          description: "Mate guides you through an idea, then checks what makes sense."
         },
         trust: {
-          title: "Stay",
-          description: "The bit that did not land gets the hour. Not the whole chapter again."
+          title: "Practice",
+          description: "Try a question, see where you got stuck, and work through it together."
         },
         accountability: {
-          title: "A person",
-          description: "Browse tutors, or tell us who you are looking for. Live, or at the table."
+          title: "At your pace",
+          description: "Ask for another example, slow things down, or move on when you are ready."
         },
         accessibility: {
-          title: "School-true",
-          description: "SIL to University. BEPC, Bac, GCE, WAEC. The class you are in now."
+          title: "Made for your lessons",
+          description: "Bring the subject and school system you are learning in. Mate meets you at your level."
         },
         community: {
-          title: "Families",
-          description: "Parents who study get their own lessons. The parent seat is not a spy cam."
+          title: "Pick up anytime",
+          description: "Ask by voice or text, at home or wherever you study."
         },
         excellence: {
-          title: "Honest",
-          description: "What is firm, what is still sticky. After the session, you can see it."
+          title: "See your progress",
+          description: "Review what you have practiced and choose what to work on next."
         }
       },
       cta: {
-        title: "Start with Mate, or sit with a person.",
-        subtitle: "Get started in the app, or write to us if you want to teach here.",
+        title: "Start learning with Mate.",
+        subtitle: "Bring a question. Get a clear explanation, practice it, and find a tutor whenever you want one-to-one help.",
         startLearning: "Get started",
-        becomeTutor: "Teach with PrepSkul"
+        explorePrograms: "Explore our programs"
       }
     }
   },
@@ -627,7 +627,7 @@ export const translations = {
       hero: {
         title: "Apprendre au bon niveau. Trouver la beauté du chemin.",
         titleWords: ["enseigne", "tient", "suit"],
-        subtitle: "SkulMate, le tuteur IA dans PrepSkul, les rejoint au bon niveau et reste sur le travail jusqu’à ce que ce soit à eux. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande selon tes préférences. En direct en ligne, ou à table.",
+        subtitle: "SkulMate est le tuteur IA de PrepSkul. Il explique les leçons simplement et aide les élèves à s’entraîner. Besoin d’une personne ? Parcours les tuteurs ou demande-nous d’en trouver un. En ligne ou à table.",
         getStarted: "Commencer",
         viewSubjects: "Trouver un tuteur"
       },
@@ -738,7 +738,7 @@ export const translations = {
           content:
             "Je n'aurais jamais pensé pouvoir apprendre à programmer, mais mon tuteur a rendu cela amusant et facile à comprendre. Maintenant je crée mes propres sites web !",
           rating: 5,
-          image: "/young-african-female-tech-student.jpg"
+          image: "/young-african-female-tech-student-optimized.jpg"
         }
       ]
     },
@@ -1168,53 +1168,53 @@ export const translations = {
     // About page
     about: {
       hero: {
-        titleLead: "PrepSkul, c’est du tutorat.",
-        titleRest: "Au bon niveau, jusqu’à ce que ce soit à toi.",
-        subtitle: "SkulMate, le tuteur dans l’app, commence la semaine. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande. En direct en ligne, ou à table. Nous menons aussi SBC et PEAP."
+        titleLead: "Un tuteur pour chaque question.",
+        titleRest: "Prêt quand tu en as besoin.",
+        subtitle: "SkulMate est le tuteur dans l’application PrepSkul. Pose ta question à voix haute ou écris-la, suis une explication claire et entraîne-toi jusqu’à comprendre. Si tu veux de l’aide individuelle, tu peux aussi trouver un tuteur."
       },
       story: {
-        title: "Comment on enseigne",
-        paragraph1: "PrepSkul est le produit. Les apprenants et les parents étudient ici. Tu apprends avec SkulMate, et avec des tuteurs humains que tu trouves ou que tu demandes.",
-        paragraph2: "Mate reste sur le point qui bloque. Une équation linéaire. La photosynthèse. Un essai BEPC. Il ne jette pas la réponse. Quand une heure humaine est ce qu’il faut, un tuteur s’assoit avec toi à l’écran ou à table.",
-        paragraph3: "Le tutorat de la semaine s’assoit à côté des programmes que nous menons. SBC, c’est Summer Build Camp: une semaine d’IA et d’innovation pour les jeunes de 9 à 18 ans, d’utilisateurs de la techno à bâtisseurs. PEAP est l’accélérateur d’examens PrepSkul. Même exigence: le bon niveau, et la beauté du chemin."
+        title: "Pensé pour apprendre au quotidien",
+        paragraph1: "SkulMate est intégré à l’application PrepSkul et prêt dès qu’une question se présente. Il explique les idées clairement, résout des exemples avec toi et t’aide à t’entraîner à ton rythme.",
+        paragraph2: "Demande à Mate d’expliquer autrement, parle naturellement ou écris quand tu préfères. Mate suit la leçon avec toi. Si tu veux apprendre avec une personne, tu peux trouver un tuteur en ligne ou près de chez toi.",
+        paragraph3: "L’apprentissage va aussi au-delà des leçons du quotidien. Au Summer Build Camp, les jeunes découvrent les STEM, l’IA et l’innovation en construisant et en résolvant de vrais problèmes. PrepSkul Exam Accelerator propose des révisions ciblées pour les examens O-Level et A-Level."
       },
       mission: {
-        title: "Le travail",
-        description: "Aider chaque apprenant à travailler au bon niveau jusqu’à ce que l’idée soit à lui. Des questions avant les réponses. Une personne quand tu en veux une."
+        title: "Notre objectif",
+        description: "Aider chaque apprenant à mieux comprendre, à s’entraîner avec confiance et à progresser, grâce à un tuteur IA patient dans l’application et à une personne quand il le souhaite."
       },
       values: {
-        title: "Ce qu’une leçon doit donner",
-        subtitle: "Pas un mur de slogans. C’est le travail.",
+        title: "Apprendre avec Mate, concrètement",
+        subtitle: "Des explications claires, le droit d’essayer et une prochaine étape visible.",
         growth: {
-          title: "Enseigner",
-          description: "Il pose la question avant la réponse. SkulMate est fait pour enseigner, pas pour jeter la copie."
+          title: "Comprendre",
+          description: "Mate t’accompagne dans une idée, puis vérifie ce que tu as compris."
         },
         trust: {
-          title: "Rester",
-          description: "Le morceau qui n’a pas pris a l’heure. Pas tout le chapitre encore."
+          title: "S’entraîner",
+          description: "Essaie une question, repère ce qui bloque et avance avec Mate."
         },
         accountability: {
-          title: "Une personne",
-          description: "Parcours les tuteurs, ou dis-nous qui tu cherches. En direct, ou à table."
+          title: "À ton rythme",
+          description: "Demande un autre exemple, prends ton temps ou passe à la suite quand tu es prêt."
         },
         accessibility: {
-          title: "Vrai pour l’école",
-          description: "De la SIL à l’université. BEPC, Bac, GCE, WAEC. La classe où tu es."
+          title: "Pour tes cours",
+          description: "Choisis ta matière et ton système scolaire. Mate s’adapte à ton niveau."
         },
         community: {
-          title: "Familles",
-          description: "Les parents qui étudient ont leurs propres leçons. Le siège parent n’est pas une caméra."
+          title: "Reprends quand tu veux",
+          description: "Pose ta question à voix haute ou par écrit, chez toi ou là où tu étudies."
         },
         excellence: {
-          title: "Honnête",
-          description: "Ce qui tient, ce qui reste collant. Après la séance, tu le vois."
+          title: "Vois tes progrès",
+          description: "Retrouve ce que tu as travaillé et choisis la suite."
         }
       },
       cta: {
-        title: "Commence avec Mate, ou assieds-toi avec une personne.",
-        subtitle: "Démarre dans l’app, ou écris-nous si tu veux enseigner ici.",
+        title: "Commence à apprendre avec Mate.",
+        subtitle: "Apporte une question. Reçois une explication claire, entraîne-toi et trouve un tuteur si tu veux un accompagnement individuel.",
         startLearning: "Commencer",
-        becomeTutor: "Enseigner avec PrepSkul"
+        explorePrograms: "Découvrir nos programmes"
       }
     }
   }

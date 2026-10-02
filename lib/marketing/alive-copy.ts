@@ -14,7 +14,7 @@ const EN = {
     titleLead: "Learn at the right level.",
     titleRest: "Find the beauty in getting there.",
     subtitle:
-      "SkulMate, the AI tutor inside PrepSkul, meets them at the right level and stays with the work until it is theirs. When you want a person, browse tutors, then book or request based on your preferences. Live online, or at the table.",
+      "SkulMate is PrepSkul’s AI tutor. It explains lessons clearly and helps learners practice. Need a person? Browse tutors or ask us to find one. Learn online or at the table.",
     primary: "Get started",
     secondary: "Browse tutors",
     sessions: "sessions tutored",
@@ -29,7 +29,7 @@ const EN = {
   },
   toolsTitle: "How a lesson with Mate feels",
   toolsLead:
-    "He listens, draws the idea, and stays on the stuck point. A person joins when you want someone in the room.",
+    "He listens, explains the idea, and helps you practice. A tutor can join when you want a person in the room.",
   tools: [
     {
       id: "talk",
@@ -47,8 +47,8 @@ const EN = {
     },
     {
       id: "practice",
-      title: "Practice the stuck point",
-      body: "You work the bit that did not land. The linear equation. Photosynthesis. A BEPC essay. Not the whole chapter again.",
+      title: "Practice what feels difficult",
+      body: "Work on the part you do not understand yet: a maths question, photosynthesis, or a BEPC essay. Start there instead of repeating the whole chapter.",
       tone: "yellow" as const,
       tile: "/onboard/art/tile-maths.png",
     },
@@ -81,7 +81,7 @@ const EN = {
     siteItems: [
       { title: "Already listening", body: "Say it out loud. Interrupt. Type if the room is shared." },
       { title: "The idea on the board", body: "He draws as you talk. A picture, a check, the next step." },
-      { title: "The bit that did not land", body: "He stays on the stuck point until it is yours." },
+      { title: "Need help with something?", body: "He explains it in another way and practices it with you." },
     ],
     appTitle: "With a person",
     appItems: [
@@ -244,21 +244,21 @@ const EN = {
   },
   programs: {
     title: "Programs we host.",
-    lead: "Two PrepSkul programs besides the weekly lesson. Same standard: the right level, and the beauty of getting there.",
-    hostedTitle: "Programs we host",
+    lead: "Meet two special learning programs: a hands-on STEM camp and free exam revision for O-Level and A-Level.",
+    hostedTitle: "Programs",
     valuesTitle: "How a program is run",
     valuesLead: "The bar every PrepSkul program has to meet.",
     values: [
-      { title: "Teach", body: "Questions before answers." },
-      { title: "Stay", body: "The part that did not land gets the hour." },
-      { title: "A person", body: "Mate for the week. A tutor when you want one." },
-      { title: "Ship", body: "Each program has a date. We ran the camp. We ran the exam accelerator." },
+      { title: "Ask", body: "There is time to ask questions." },
+      { title: "Practice", body: "We work through each topic step by step." },
+      { title: "Learn together", body: "Learners build and study with other people." },
+      { title: "Share", body: "Learners show what they have learned or made." },
     ],
     hosted: [
       {
         id: "sbc",
-        title: "SBC",
-        body: "A one-week AI and innovation experience for young people aged 9 to 18. They go beyond using technology. They build things that matter, and solve real problems.",
+        title: "Summer Build Camp",
+        body: "SBC is a one-week STEM, AI, and innovation camp for young people aged 9 to 18. They make things, test ideas, and solve real problems.",
         href: "https://sbc.prepskul.com",
         external: true,
         cta: "See SBC",
@@ -268,8 +268,8 @@ const EN = {
       },
       {
         id: "peap",
-        title: "PEAP",
-        body: "The PrepSkul Exam Accelerator. Two weeks of free, focused revision for O-Level and A-Level.",
+        title: "PrepSkul Exam Accelerator",
+        body: "PEAP offers two weeks of free, focused revision for O-Level and A-Level.",
         href: "#peap",
         external: false,
         cta: "See PEAP",
@@ -302,8 +302,8 @@ const EN = {
       quoteName: "Fongoh Raissa, Upper Sixth, Buea",
       cta: "Get started",
     },
-    closeTitle: "Everyday learning is still a tutor.",
-    closeBody: "SBC and PEAP are intensives. The rest of the year is Mate, and a person when you want one.",
+    closeTitle: "Learning continues after the program.",
+    closeBody: "Keep learning with SkulMate, or find a tutor for one-to-one help.",
     schoolTitle: "School and exams",
     schoolBody: "Maths, sciences, Français, English, hist-geo, philo. The class you are in now, through BEPC, Bac, GCE, and WAEC.",
     beyondTitle: "Beyond the syllabus",
@@ -317,7 +317,7 @@ const EN = {
     ],
     howTitle: "How a week looks",
     how: [
-      { title: "Talk with Mate", body: "Say it out loud. He stays on the stuck point." },
+      { title: "Talk with Mate", body: "Say it out loud. He helps you understand it step by step." },
       { title: "Find or request a person", body: "Browse tutors, or tell us who you are looking for." },
       { title: "Live, or at the table", body: "A class on the screen, or someone who sits with you." },
     ],
@@ -340,7 +340,7 @@ const FR: typeof EN = {
     titleLead: "Apprendre au bon niveau.",
     titleRest: "Trouver la beauté du chemin.",
     subtitle:
-      "SkulMate, le tuteur IA dans PrepSkul, les rejoint au bon niveau et reste sur le travail jusqu’à ce que ce soit à eux. Pour une personne, parcours les tuteurs, puis réserve ou fais une demande selon tes préférences. En direct en ligne, ou à table.",
+      "SkulMate est le tuteur IA de PrepSkul. Il explique les leçons simplement et aide les élèves à s’entraîner. Besoin d’une personne ? Parcours les tuteurs ou demande-nous d’en trouver un. En ligne ou à table.",
     primary: "Commencer",
     secondary: "Voir les tuteurs",
     sessions: "séances données",
@@ -355,7 +355,7 @@ const FR: typeof EN = {
   },
   toolsTitle: "Une leçon avec Mate, comme ça",
   toolsLead:
-    "Il écoute, dessine l’idée, et reste sur le point qui bloque. Une personne rejoint quand tu en veux une dans la pièce.",
+    "Il écoute, explique l’idée et t’aide à t’entraîner. Un tuteur peut te rejoindre quand tu veux apprendre avec une personne.",
   tools: [
     {
       id: "talk",
@@ -373,8 +373,8 @@ const FR: typeof EN = {
     },
     {
       id: "practice",
-      title: "Travailler le point qui bloque",
-      body: "On retravaille le morceau qui n’a pas pris. L’équation linéaire. La photosynthèse. Un essai BEPC. Pas tout le chapitre encore une fois.",
+      title: "Revoir ce qui semble difficile",
+      body: "Reprends ce que tu ne comprends pas encore : un exercice de maths, la photosynthèse ou une rédaction du BEPC. Pas besoin de revoir tout le chapitre.",
       tone: "yellow",
       tile: "/onboard/art/tile-maths.png",
     },
@@ -407,7 +407,7 @@ const FR: typeof EN = {
     siteItems: [
       { title: "Déjà à l’écoute", body: "Dis-le à voix haute. Coupe-le. Tape si la pièce est partagée." },
       { title: "L’idée au tableau", body: "Il dessine pendant que tu parles. Une image, un check, l’étape suivante." },
-      { title: "Le morceau qui n’a pas pris", body: "Il reste sur le point qui bloque jusqu’à ce que ce soit à toi." },
+      { title: "Besoin d’aide ?", body: "Il explique autrement et s’entraîne avec toi." },
     ],
     appTitle: "Avec une personne",
     appItems: [
@@ -570,21 +570,21 @@ const FR: typeof EN = {
   },
   programs: {
     title: "Les programmes que nous menons.",
-    lead: "Deux programmes PrepSkul hors de la leçon de la semaine. Même exigence: le bon niveau, et la beauté du chemin.",
-    hostedTitle: "Les programmes que nous menons",
+    lead: "Découvre deux programmes : un camp STEM pratique et des révisions gratuites pour les examens O-Level et A-Level.",
+    hostedTitle: "Nos programmes",
     valuesTitle: "Comment un programme est mené",
     valuesLead: "L’exigence de chaque programme PrepSkul.",
     values: [
-      { title: "Enseigner", body: "Des questions avant les réponses." },
-      { title: "Rester", body: "Le morceau qui n’a pas pris a l’heure." },
-      { title: "Une personne", body: "Mate pour la semaine. Un tuteur quand tu en veux un." },
-      { title: "Livrer", body: "Chaque programme a une date. On a mené le camp. On a mené l’accélérateur d’examens." },
+      { title: "Poser des questions", body: "Chacun a le temps de poser ses questions." },
+      { title: "S’entraîner", body: "On reprend chaque sujet étape par étape." },
+      { title: "Apprendre ensemble", body: "Les élèves construisent et étudient avec les autres." },
+      { title: "Partager", body: "Chacun présente ce qu’il a appris ou créé." },
     ],
     hosted: [
       {
         id: "sbc",
-        title: "SBC",
-        body: "Une expérience d’une semaine en IA et innovation pour les jeunes de 9 à 18 ans. Ils ne restent pas utilisateurs. Ils construisent des technologies qui comptent, et résolvent de vrais problèmes.",
+        title: "Summer Build Camp",
+        body: "SBC est une semaine de STEM (sciences, technologie, ingénierie et maths), d’IA et d’innovation pour les jeunes de 9 à 18 ans. On imagine, on construit et on résout de vrais problèmes.",
         href: "https://sbc.prepskul.com",
         external: true,
         cta: "Voir SBC",
@@ -594,8 +594,8 @@ const FR: typeof EN = {
       },
       {
         id: "peap",
-        title: "PEAP",
-        body: "L’accélérateur d’examens PrepSkul. Deux semaines de révision ciblée, gratuites, O-Level et A-Level.",
+        title: "PrepSkul Exam Accelerator",
+        body: "PEAP propose deux semaines gratuites de révision ciblée pour les examens O-Level et A-Level.",
         href: "#peap",
         external: false,
         cta: "Voir PEAP",
@@ -628,22 +628,22 @@ const FR: typeof EN = {
       quoteName: "Fongoh Raissa, Upper Sixth, Buea",
       cta: "Commencer",
     },
-    closeTitle: "Au quotidien, il faut encore un tuteur.",
-    closeBody: "SBC et PEAP sont des intensifs. Le reste de l’année, c’est Mate, et une personne quand tu en veux une.",
+    closeTitle: "L’apprentissage continue après le programme.",
+    closeBody: "Continue avec SkulMate ou trouve un tuteur pour un accompagnement individuel.",
     schoolTitle: "École et examens",
     schoolBody: "Maths, sciences, Français, English, hist-géo, philo. La classe où tu es, jusqu’au BEPC, Bac, GCE, et WAEC.",
     beyondTitle: "Au-delà du programme",
     beyondBody: "Code, design, prise de parole. Le même Mate. Les mêmes tuteurs. Quand la semaine en a besoin.",
     subjectsTitle: "Ce que tu peux apporter",
     subjects: [
-      { title: "Maths", body: "L’équation linéaire. Le morceau qui n’a pas pris.", tile: "/onboard/art/tile-maths.png", tone: "yellow" as const },
+      { title: "Maths", body: "L’équation linéaire. L’étape difficile. On la reprend avec un exemple.", tile: "/onboard/art/tile-maths.png", tone: "yellow" as const },
       { title: "Sciences", body: "La photosynthèse. Un TP. Le schéma que tu ne vois pas encore.", tile: "/onboard/art/tile-flask.png", tone: "mint" as const },
       { title: "Langues", body: "Français, English, un essai, un oral.", tile: "/onboard/art/tile-book.png", tone: "blue" as const },
       { title: "Code et faire", body: "Un premier programme, une affiche, un oral devant la classe.", tile: "/onboard/art/tile-laptop.png", tone: "sky" as const },
     ],
     howTitle: "Une semaine, comme ça",
     how: [
-      { title: "Parler avec Mate", body: "Dis-le à voix haute. Il reste sur le point qui bloque." },
+      { title: "Parler avec Mate", body: "Dis-le à voix haute. Il t’aide à comprendre étape par étape." },
       { title: "Trouver ou demander une personne", body: "Parcours les tuteurs, ou dis-nous qui tu cherches." },
       { title: "En direct, ou à table", body: "Un cours à l’écran, ou quelqu’un qui s’assoit avec toi." },
     ],

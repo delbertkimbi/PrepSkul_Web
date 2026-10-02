@@ -30,10 +30,12 @@ export function PrepMate({
   mood = "idle",
   size = 168,
   variant = "hero",
+  onDarkBackground = false,
 }: {
   mood?: PrepMateMood
   size?: number
   variant?: "hero" | "ask"
+  onDarkBackground?: boolean
 }) {
   const reduce = useReducedMotion()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -58,7 +60,7 @@ export function PrepMate({
       last = now
       state.mood = moodRef.current
       if (!reduce) state.tick(dt)
-      paint(canvas, state, size, Boolean(reduce))
+      paint(canvas, state, size, Boolean(reduce), onDarkBackground)
       raf = requestAnimationFrame(draw)
     }
 
@@ -68,7 +70,7 @@ export function PrepMate({
       state.trigger(next)
     }
     if (!reduce) state.tick(0)
-    paint(canvas, state, size, Boolean(reduce))
+    paint(canvas, state, size, Boolean(reduce), onDarkBackground)
     raf = requestAnimationFrame(draw)
 
     const observer = new MutationObserver(onMood)
@@ -79,7 +81,7 @@ export function PrepMate({
       cancelAnimationFrame(raf)
       observer.disconnect()
     }
-  }, [size, reduce])
+  }, [size, reduce, onDarkBackground])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -183,7 +185,7 @@ class MateSim {
   }
 }
 
-function paint(canvas: HTMLCanvasElement, sim: MateSim, cssSize: number, frozen: boolean) {
+function paint(canvas: HTMLCanvasElement, sim: MateSim, cssSize: number, frozen: boolean, onDarkBackground: boolean) {
   const dpr = Math.min(2.5, window.devicePixelRatio || 1)
   const px = Math.round(cssSize * dpr)
   if (canvas.width !== px || canvas.height !== px) {
@@ -209,9 +211,10 @@ function paint(canvas: HTMLCanvasElement, sim: MateSim, cssSize: number, frozen:
   ctx.translate(-50, -52)
 
   const elated = sim.mood === "cheer"
+  const limbColor = onDarkBackground ? BLUE : NAVY
   drawSparks(ctx, sim, elated)
-  drawArms(ctx, sim, elated)
-  drawFeet(ctx)
+  drawArms(ctx, sim, elated, limbColor)
+  drawFeet(ctx, limbColor)
   drawBody(ctx)
   drawAntenna(ctx, sim)
   drawFace(ctx, sim, elated)
@@ -257,8 +260,8 @@ function drawBody(ctx: CanvasRenderingContext2D) {
   ctx.stroke()
 }
 
-function drawFeet(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = NAVY
+function drawFeet(ctx: CanvasRenderingContext2D, limbColor: string) {
+  ctx.fillStyle = limbColor
   for (const dx of [-13, 13]) {
     ctx.beginPath()
     ctx.ellipse(50 + dx, 86, 8.5, 4.5, 0, 0, Math.PI * 2)
@@ -298,7 +301,7 @@ function drawAntenna(ctx: CanvasRenderingContext2D, sim: MateSim) {
   ctx.stroke()
 }
 
-function drawArms(ctx: CanvasRenderingContext2D, sim: MateSim, elated: boolean) {
+function drawArms(ctx: CanvasRenderingContext2D, sim: MateSim, elated: boolean, limbColor: string) {
   const waving = sim.mood === "wave"
   const talking = sim.mood === "talk"
   const thumb = sim.mood === "encourage"
@@ -311,19 +314,16 @@ function drawArms(ctx: CanvasRenderingContext2D, sim: MateSim, elated: boolean) 
         ? Math.sin(sim.breath * 2.2) * 1.4
         : 0
 
-  ctx.strokeStyle = NAVY
-  ctx.fillStyle = NAVY
+  ctx.strokeStyle = limbColor
+  ctx.fillStyle = limbColor
   ctx.lineWidth = 3.4
   ctx.lineCap = "round"
 
   for (const side of [-1, 1]) {
-    const thinkArm = sim.mood === "think" && side < 0
     const waveArm = waving && side > 0
     const thumbArm = thumb && side < 0
     const shoulder = { x: 50 + side * 30, y: 56 }
-    const hand = thinkArm
-      ? { x: 42, y: 58 }
-      : waveArm
+    const hand = waveArm
         ? {
             x: 74 + Math.sin(sim.breath * 8) * 7,
             y: 22 + Math.cos(sim.breath * 8) * 4,
