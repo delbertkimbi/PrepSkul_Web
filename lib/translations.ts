@@ -11,17 +11,17 @@ export const translations = {
       howItWorks: "How It Works",
       testimonials: "Testimonials",
       contact: "Contact",
-      getStarted: "Get Started"
+      getStarted: "Get started"
     },
     
     // Homepage
     home: {
       hero: {
-        title: "Connect & Learn at the Right",
-        titleWords: ["Level", "Pace", "Stride"],
-        subtitle: "Find experienced, qualified tutors across Africa for personalized learning. Whether online or at home, one-on-one or in groups, we help you achieve academic excellence.",
-        getStarted: "Get Started",
-        viewSubjects: "View Programs"
+        title: "Learn at the right level. Find the beauty in getting there.",
+        titleWords: ["teaches", "fits", "lasts"],
+        subtitle: "SkulMate is PrepSkul’s AI tutor. It explains lessons clearly and helps learners practice. Need a person? Browse tutors or ask us to find one. Learn online or at the table.",
+        getStarted: "Get started",
+        viewSubjects: "Find a tutor"
       },
       stats: {
         learnersGuided: "Learners Reached",
@@ -68,9 +68,9 @@ export const translations = {
         }
       },
       cta: {
-        title: "Ready to Excel in Your Studies?",
-        subtitle: "Join hundreds of students across Cameroon who are achieving their academic dreams with personalized tutoring from PrepSkul. Start your journey to success today.",
-        button: "Start Learning"
+        title: "Ready to learn with PrepSkul?",
+        subtitle: "Start with Mate, or sit with a person. Live online, or at the table.",
+        button: "Get started"
       },
       examAccelerator: {
         badge: "National Impact Initiative",
@@ -126,7 +126,7 @@ export const translations = {
           role: "Coding Student",
           content: "I never thought I could learn to code, but my tutor made it fun and easy to understand. Now I'm building my own websites!",
           rating: 5,
-          image: "/young-african-female-tech-student.jpg"
+          image: "/young-african-female-tech-student-optimized.jpg"
         }
       ]
     },
@@ -282,7 +282,7 @@ export const translations = {
       }
     },
     footer: {
-      description: "Guiding every learner to their full potential across Cameroon and Africa.",
+      description: "SkulMate in the app. A person when you want one. Live online, or at the table.",
       quickLinks: "Quick Links",
       contactUs: "Contact Us",
       downloadApp: "Download App",
@@ -558,55 +558,53 @@ export const translations = {
     // About page
     about: {
       hero: {
-        title: "We Believe",
-        titleAccent: "Guidance",
-        titlePrimary: "Builds",
-        titlePrimaryEnd: "Greatness",
-        subtitle: "PrepSkul is more than a tutoring platform. We're a movement dedicated to unlocking the potential of every learner across Cameroon and Africa."
+        titleLead: "A tutor for every question.",
+        titleRest: "Ready when you are.",
+        subtitle: "SkulMate is the tutor inside the PrepSkul app. Ask a question out loud or type it, follow a clear explanation, and practice until it makes sense. When you want one-to-one help from a person, you can find a tutor too."
       },
       story: {
-        title: "Our Story",
-        paragraph1: "PrepSkul was born from a simple observation: every learner has unique potential waiting to be discovered. But too often, traditional education systems fail to provide the personalized guidance needed to unlock that potential.",
-        paragraph2: "We created PrepSkul to bridge this gap. By connecting learners with qualified tutors and mentors who truly care, we're building a community where every student can thrive academically and personally.",
-        paragraph3: "Our platform goes beyond just academic tutoring. We focus on mentorship, mindset building, and personal growth, helping learners not only perform better in school but also discover who they can become."
+        title: "Built for everyday learning",
+        paragraph1: "SkulMate is built into the PrepSkul app and ready when a question comes up. It explains ideas clearly, works through examples, and helps learners practice at their own pace.",
+        paragraph2: "Ask Mate to explain something another way, speak naturally, or type when it is quiet time. Mate follows the lesson with you. If you want to learn with a person, you can find a tutor online or nearby.",
+        paragraph3: "Learning goes beyond everyday lessons, too. At Summer Build Camp, young people explore STEM, AI, and innovation by making things and solving real problems. PrepSkul Exam Accelerator gives learners focused revision for O-Level and A-Level exams."
       },
       mission: {
-        title: "Our Mission",
-        description: "To be part of the world's revolution in learning by helping every learner discover their potential through mentorship, guidance, and skill development."
+        title: "Our purpose",
+        description: "Help every learner understand more, practice with confidence, and keep making progress—with a patient AI tutor in the app and a person to learn with when they want one."
       },
       values: {
-        title: "Our Core Values",
-        subtitle: "These principles guide everything we do at PrepSkul",
+        title: "What learning with Mate feels like",
+        subtitle: "Clear explanations, room to try, and a next step you can see.",
         growth: {
-          title: "Growth",
-          description: "We believe in continuous improvement and helping every learner reach new heights through dedicated support and encouragement."
+          title: "Understand",
+          description: "Mate guides you through an idea, then checks what makes sense."
         },
         trust: {
-          title: "Trust",
-          description: "We build lasting relationships based on trust, transparency, and genuine care for each learner's success and well-being."
+          title: "Practice",
+          description: "Try a question, see where you got stuck, and work through it together."
         },
         accountability: {
-          title: "Accountability",
-          description: "We hold ourselves and our tutors to the highest standards, ensuring quality education and measurable results."
+          title: "At your pace",
+          description: "Ask for another example, slow things down, or move on when you are ready."
         },
         accessibility: {
-          title: "Accessibility",
-          description: "Quality education should be available to everyone. We make learning affordable and accessible across Cameroon and Africa."
+          title: "Made for your lessons",
+          description: "Bring the subject and school system you are learning in. Mate meets you at your level."
         },
         community: {
-          title: "Community",
-          description: "We're building a supportive learning community where students, tutors, and families grow together."
+          title: "Pick up anytime",
+          description: "Ask by voice or text, at home or wherever you study."
         },
         excellence: {
-          title: "Excellence",
-          description: "We strive for excellence in everything we do, from tutor selection to learning experiences and student outcomes."
+          title: "See your progress",
+          description: "Review what you have practiced and choose what to work on next."
         }
       },
       cta: {
-        title: "Join Our Growing Community",
-        subtitle: "Whether you're a learner seeking guidance or a tutor ready to make an impact, there's a place for you at PrepSkul",
-        startLearning: "Start Learning",
-        becomeTutor: "Become a Tutor"
+        title: "Start learning with Mate.",
+        subtitle: "Bring a question. Get a clear explanation, practice it, and find a tutor whenever you want one-to-one help.",
+        startLearning: "Get started",
+        explorePrograms: "Explore our programs"
       }
     }
   },
@@ -627,11 +625,11 @@ export const translations = {
     // Homepage
     home: {
       hero: {
-        title: "Trouvez Votre",
-        titleWords: ["Tuteur", "Mentor", "Guide"],
-        subtitle: "Connectez-vous avec des tuteurs expérimentés et qualifiés à travers le Cameroun pour un apprentissage personnalisé. Que ce soit en ligne ou à domicile, en tête-à-tête ou en groupes, nous vous aidons à atteindre l'excellence académique.",
+        title: "Apprendre au bon niveau. Trouver la beauté du chemin.",
+        titleWords: ["enseigne", "tient", "suit"],
+        subtitle: "SkulMate est le tuteur IA de PrepSkul. Il explique les leçons simplement et aide les élèves à s’entraîner. Besoin d’une personne ? Parcours les tuteurs ou demande-nous d’en trouver un. En ligne ou à table.",
         getStarted: "Commencer",
-        viewSubjects: "Voir les Matières"
+        viewSubjects: "Trouver un tuteur"
       },
       stats: {
         learnersGuided: "Apprenants Guidés",
@@ -678,9 +676,9 @@ export const translations = {
         }
       },
       cta: {
-        title: "Prêt à Exceller dans Vos Études ?",
-        subtitle: "Rejoignez des centaines d'étudiants à travers le Cameroun qui réalisent leurs rêves académiques avec le tutorat personnalisé de PrepSkul. Commencez votre parcours vers le succès dès aujourd'hui.",
-        button: "Commencer à Apprendre"
+        title: "Prêt à apprendre avec PrepSkul ?",
+        subtitle: "Commence avec Mate, ou assieds-toi avec une personne. En direct en ligne, ou à table.",
+        button: "Commencer"
       },
       examAccelerator: {
         badge: "Initiative d'impact national",
@@ -740,7 +738,7 @@ export const translations = {
           content:
             "Je n'aurais jamais pensé pouvoir apprendre à programmer, mais mon tuteur a rendu cela amusant et facile à comprendre. Maintenant je crée mes propres sites web !",
           rating: 5,
-          image: "/young-african-female-tech-student.jpg"
+          image: "/young-african-female-tech-student-optimized.jpg"
         }
       ]
     },
@@ -894,7 +892,7 @@ export const translations = {
       }
     },
     footer: {
-      description: "Guider chaque apprenant vers son plein potentiel à travers le Cameroun et l'Afrique.",
+      description: "SkulMate dans l’app. Une personne quand tu en veux une. En direct en ligne, ou à table.",
       quickLinks: "Liens Rapides",
       contactUs: "Nous Contacter",
       downloadApp: "Télécharger l'App",
@@ -1170,55 +1168,53 @@ export const translations = {
     // About page
     about: {
       hero: {
-        title: "Nous Croyons que",
-        titleAccent: "l'Orientation",
-        titlePrimary: "Construit la",
-        titlePrimaryEnd: "Grandeur",
-        subtitle: "PrepSkul est plus qu'une plateforme de tutorat. Nous sommes un mouvement dédié à libérer le potentiel de chaque apprenant à travers le Cameroun et l'Afrique."
+        titleLead: "Un tuteur pour chaque question.",
+        titleRest: "Prêt quand tu en as besoin.",
+        subtitle: "SkulMate est le tuteur dans l’application PrepSkul. Pose ta question à voix haute ou écris-la, suis une explication claire et entraîne-toi jusqu’à comprendre. Si tu veux de l’aide individuelle, tu peux aussi trouver un tuteur."
       },
       story: {
-        title: "Notre Histoire",
-        paragraph1: "PrepSkul est né d'une simple observation : chaque apprenant a un potentiel unique qui attend d'être découvert. Mais trop souvent, les systèmes éducatifs traditionnels ne parviennent pas à fournir l'orientation personnalisée nécessaire pour libérer ce potentiel.",
-        paragraph2: "Nous avons créé PrepSkul pour combler cette lacune. En connectant les apprenants avec des tuteurs et mentors qualifiés qui se soucient vraiment, nous construisons une communauté où chaque étudiant peut s'épanouir académiquement et personnellement.",
-        paragraph3: "Notre plateforme va au-delà du simple tutorat académique. Nous nous concentrons sur le mentorat, le développement de l'état d'esprit et la croissance personnelle, aidant les apprenants non seulement à mieux performer à l'école mais aussi à découvrir qui ils peuvent devenir."
+        title: "Pensé pour apprendre au quotidien",
+        paragraph1: "SkulMate est intégré à l’application PrepSkul et prêt dès qu’une question se présente. Il explique les idées clairement, résout des exemples avec toi et t’aide à t’entraîner à ton rythme.",
+        paragraph2: "Demande à Mate d’expliquer autrement, parle naturellement ou écris quand tu préfères. Mate suit la leçon avec toi. Si tu veux apprendre avec une personne, tu peux trouver un tuteur en ligne ou près de chez toi.",
+        paragraph3: "L’apprentissage va aussi au-delà des leçons du quotidien. Au Summer Build Camp, les jeunes découvrent les STEM, l’IA et l’innovation en construisant et en résolvant de vrais problèmes. PrepSkul Exam Accelerator propose des révisions ciblées pour les examens O-Level et A-Level."
       },
       mission: {
-        title: "Notre Mission",
-        description: "Faire partie de la révolution mondiale de l'apprentissage en aidant chaque apprenant à découvrir son potentiel à travers le mentorat, l'orientation et le développement de compétences."
+        title: "Notre objectif",
+        description: "Aider chaque apprenant à mieux comprendre, à s’entraîner avec confiance et à progresser, grâce à un tuteur IA patient dans l’application et à une personne quand il le souhaite."
       },
       values: {
-        title: "Nos Valeurs Fondamentales",
-        subtitle: "Ces principes guident tout ce que nous faisons chez PrepSkul",
+        title: "Apprendre avec Mate, concrètement",
+        subtitle: "Des explications claires, le droit d’essayer et une prochaine étape visible.",
         growth: {
-          title: "Croissance",
-          description: "Nous croyons en l'amélioration continue et en aidant chaque apprenant à atteindre de nouveaux sommets grâce à un soutien et des encouragements dédiés."
+          title: "Comprendre",
+          description: "Mate t’accompagne dans une idée, puis vérifie ce que tu as compris."
         },
         trust: {
-          title: "Confiance",
-          description: "Nous construisons des relations durables basées sur la confiance, la transparence et l'attention sincère portée au succès et au bien-être de chaque apprenant."
+          title: "S’entraîner",
+          description: "Essaie une question, repère ce qui bloque et avance avec Mate."
         },
         accountability: {
-          title: "Responsabilité",
-          description: "Nous nous tenons, ainsi que nos tuteurs, aux normes les plus élevées, garantissant une éducation de qualité et des résultats mesurables."
+          title: "À ton rythme",
+          description: "Demande un autre exemple, prends ton temps ou passe à la suite quand tu es prêt."
         },
         accessibility: {
-          title: "Accessibilité",
-          description: "Une éducation de qualité devrait être accessible à tous. Nous rendons l'apprentissage abordable et accessible à travers le Cameroun et l'Afrique."
+          title: "Pour tes cours",
+          description: "Choisis ta matière et ton système scolaire. Mate s’adapte à ton niveau."
         },
         community: {
-          title: "Communauté",
-          description: "Nous construisons une communauté d'apprentissage solidaire où les étudiants, les tuteurs et les familles grandissent ensemble."
+          title: "Reprends quand tu veux",
+          description: "Pose ta question à voix haute ou par écrit, chez toi ou là où tu étudies."
         },
         excellence: {
-          title: "Excellence",
-          description: "Nous visons l'excellence dans tout ce que nous faisons, de la sélection des tuteurs aux expériences d'apprentissage et aux résultats des étudiants."
+          title: "Vois tes progrès",
+          description: "Retrouve ce que tu as travaillé et choisis la suite."
         }
       },
       cta: {
-        title: "Rejoignez Notre Communauté Grandissante",
-        subtitle: "Que vous soyez un apprenant en quête d'orientation ou un tuteur prêt à avoir un impact, il y a une place pour vous chez PrepSkul",
-        startLearning: "Commencer à Apprendre",
-        becomeTutor: "Devenir Tuteur"
+        title: "Commence à apprendre avec Mate.",
+        subtitle: "Apporte une question. Reçois une explication claire, entraîne-toi et trouve un tuteur si tu veux un accompagnement individuel.",
+        startLearning: "Commencer",
+        explorePrograms: "Découvrir nos programmes"
       }
     }
   }

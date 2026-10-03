@@ -31,6 +31,7 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    ".next-dev/types/**/*.ts",
     ".next/types/**/*.ts",
     ".next_build/types/**/*.ts",
     "C:/temp/prepskul_build/types/**/*.ts",

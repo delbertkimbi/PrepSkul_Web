@@ -39,11 +39,11 @@ const SLIDE_IMAGES = [
   { src: '/images/hero-tutoring.png', alt: 'Student receiving tutoring support' },
   { src: '/images/hero-tutoring-nobg.png', alt: 'Confident student with learning tools' },
   { src: '/images/prepskul-student-confident.png', alt: 'Confident PrepSkul student' },
-  { src: '/images/prepskul-student-presenting.png', alt: 'Student presenting in class' },
+  { src: '/images/prepskul-student-presenting-optimized.png', alt: 'PrepSkul learners presenting their work' },
   { src: '/images/pexels-cottonbro-5082579.jpg', alt: 'Students learning together' },
-  { src: '/images/pexels-cottonbro-5083407.jpg', alt: 'Learner focused on online class' },
+  { src: '/images/pexels-cottonbro-5083407-optimized.jpg', alt: 'Learner focused on an online class' },
   { src: '/images/pexels-picjumbo-com-55570-196655.jpg', alt: 'Classroom with teacher and students' },
-  { src: '/images/pexels-rdne-6129042.jpg', alt: 'Teacher supporting student learning' },
+  { src: '/images/pexels-rdne-6129042-optimized.jpg', alt: 'Teacher supporting a learner during a lesson' },
 ]
 
 // Design Presets

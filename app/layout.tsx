@@ -1,18 +1,27 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Manrope } from "next/font/google"
+import { Fredoka, Poppins } from "next/font/google"
 import "./globals.css"
 
-const manrope = Manrope({
+const fredoka = Fredoka({
   subsets: ["latin"],
-  variable: "--font-manrope",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-fredoka",
+  display: "swap",
+})
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-poppins",
   display: "swap",
 })
 
 export const metadata: Metadata = {
-  title: "PrepSkul | From Teaching to Understanding",
+  metadataBase: new URL("https://prepskul.com"),
+  title: "PrepSkul | Learn with Mate, your AI tutor",
   description:
-    "PrepSkul bridges classroom teaching and individual understanding through trusted tutors, practical learning programs, and SkulMate.",
+    "Ask SkulMate questions by voice or text, get clear explanations, and practice at your pace. Find a tutor when you want one-to-one help.",
   icons: {
     icon: [
       { url: "/logo.jpg", sizes: "32x32", type: "image/jpeg" },
@@ -31,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${manrope.variable} antialiased`}>
+      <body className={`${fredoka.variable} ${poppins.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>

@@ -1,68 +1,79 @@
 "use client"
 
-import Image from "next/image"
-import Link from "next/link"
-import { Globe, Heart, Shield, TrendingUp, Users } from "lucide-react"
-import { Footer } from "@/components/footer"
 import { Header } from "@/components/header"
+import { Footer } from "@/components/footer"
+import Link from "next/link"
 import { useLocale } from "@/lib/locale-context"
 import { getTranslations } from "@/lib/translations"
+import { PaperButton, PaperPhoto, PaperSheet } from "@/components/marketing/paper"
 
 export default function AboutPage() {
   const { locale } = useLocale()
   const t = getTranslations(locale)
   const values = [
-    [TrendingUp, t.about.values.growth],
-    [Heart, t.about.values.trust],
-    [Shield, t.about.values.accountability],
-    [Globe, t.about.values.accessibility],
-    [Users, t.about.values.community],
-    [Heart, t.about.values.excellence],
-  ] as const
+    t.about.values.growth,
+    t.about.values.trust,
+    t.about.values.accountability,
+    t.about.values.accessibility,
+    t.about.values.community,
+    t.about.values.excellence,
+  ]
 
   return (
-    <div className="min-h-screen bg-white text-[#17213a]">
+    <div className="ps-site min-h-screen">
       <Header />
-      <main>
-        <section className="border-b border-[#17213a]/10 bg-[#f7f9fd]">
-          <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1fr_.82fr] lg:px-12 lg:py-28 xl:px-20">
-            <div className="self-center">
-              <h1 className="max-w-3xl text-5xl font-extrabold leading-[.98] tracking-[-.06em] sm:text-6xl lg:text-7xl">
-                {t.about.hero.title} <span className="text-[#3156a6]">{t.about.hero.titleAccent}</span> {t.about.hero.titlePrimary} {t.about.hero.titlePrimaryEnd}
-              </h1>
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-[#5f6b85]">{t.about.hero.subtitle}</p>
-            </div>
-            <div className="relative min-h-[380px] overflow-hidden rounded-[22px] border border-[#17213a]/10 bg-white sm:min-h-[470px]">
-              <Image src="/images/prepskul-student-presenting.png" alt="PrepSkul learner" fill sizes="(max-width:1024px) 100vw, 40vw" className="object-cover" />
-            </div>
+      <section className="ps-wrap py-16 lg:py-20">
+        <h1 className="ps-h1 max-w-3xl">
+          <span className="text-[#0EA5E9]">{t.about.hero.titleLead}</span> {t.about.hero.titleRest}
+        </h1>
+        <p className="ps-lead mt-5 max-w-2xl">{t.about.hero.subtitle}</p>
+      </section>
+
+      <section className="ps-wrap grid items-center gap-10 pb-16 lg:grid-cols-2">
+        <div>
+          <h2 className="ps-h2">{t.about.story.title}</h2>
+          <div className="mt-5 space-y-4 text-[15px] leading-relaxed text-[#5C6B84]">
+            <p>{t.about.story.paragraph1}</p>
+            <p>{t.about.story.paragraph2}</p>
+            <p>{t.about.story.paragraph3}</p>
+          </div>
+        </div>
+        <PaperPhoto src="/images/prepskul-student-presenting-optimized.png" alt="PrepSkul learners presenting their work" rotate={2} imgClassName="h-72 sm:h-80" />
+      </section>
+
+      <section className="bg-[#1B2C4F] py-16 text-white">
+        <div className="ps-wrap max-w-3xl">
+          <h2 className="ps-h2 text-white">{t.about.mission.title}</h2>
+          <p className="mt-4 text-lg leading-relaxed text-white/75">{t.about.mission.description}</p>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="ps-wrap">
+          <h2 className="ps-h2">{t.about.values.title}</h2>
+          <p className="ps-lead mt-3 max-w-xl">{t.about.values.subtitle}</p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {values.map((value, i) => (
+              <PaperSheet key={value.title} className="p-6" rotate={i % 2 ? 1 : -1} tone={i % 3 === 1 ? "yellow" : i % 3 === 2 ? "blue" : "cream"}>
+                <h3 className="text-lg font-black uppercase">{value.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#5C6B84]">{value.description}</p>
+              </PaperSheet>
+            ))}
           </div>
         </section>
 
-        <section className="mx-auto grid max-w-[1440px] gap-10 px-5 py-20 sm:px-8 lg:grid-cols-[.8fr_1.2fr] lg:gap-20 lg:px-12 lg:py-28 xl:px-20">
-          <h2 className="text-4xl font-extrabold leading-[1] tracking-[-.05em] sm:text-5xl">{t.about.story.title}</h2>
-          <div className="max-w-2xl space-y-5 text-lg leading-8 text-[#5f6b85]">
-            <p>{t.about.story.paragraph1}</p><p>{t.about.story.paragraph2}</p><p>{t.about.story.paragraph3}</p>
-          </div>
-        </section>
-
-        <section className="bg-[#17213a] text-white">
-          <div className="mx-auto max-w-[1440px] px-5 py-20 text-center sm:px-8 lg:px-12 lg:py-24 xl:px-20">
-            <h2 className="text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">{t.about.mission.title}</h2>
-            <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-white/75">{t.about.mission.description}</p>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1440px] px-5 py-20 sm:px-8 lg:px-12 lg:py-28 xl:px-20">
-          <div className="max-w-2xl"><h2 className="text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">{t.about.values.title}</h2><p className="mt-4 text-lg leading-8 text-[#5f6b85]">{t.about.values.subtitle}</p></div>
-          <div className="mt-12 grid border-l border-t border-[#17213a]/12 sm:grid-cols-2 lg:grid-cols-3">
-            {values.map(([Icon, value]) => <article key={value.title} className="min-h-[220px] border-b border-r border-[#17213a]/12 p-7 transition-colors hover:bg-[#f4f7ff] sm:p-8"><Icon className="h-6 w-6 text-[#3156a6]" /><h3 className="mt-12 text-2xl font-extrabold tracking-[-.04em]">{value.title}</h3><p className="mt-4 text-[15px] leading-7 text-[#69758c]">{value.description}</p></article>)}
-          </div>
-        </section>
-
-        <section className="border-t border-[#17213a]/10 bg-[#f7f9fd]">
-          <div className="mx-auto max-w-[1440px] px-5 py-20 text-center sm:px-8 lg:px-12 xl:px-20"><h2 className="text-4xl font-extrabold tracking-[-.05em] sm:text-5xl">{t.about.cta.title}</h2><p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-[#5f6b85]">{t.about.cta.subtitle}</p><div className="mt-9 flex flex-col justify-center gap-4 sm:flex-row"><Link href={`/${locale}/contact`} className="glass-primary">{t.about.cta.startLearning}</Link><Link href={`/${locale}/tutors`} className="glass-secondary">{t.about.cta.becomeTutor}</Link></div></div>
-        </section>
-      </main>
+      <section className="ps-wrap pb-20 text-center">
+        <h2 className="ps-h2">{t.about.cta.title}</h2>
+        <p className="ps-lead mx-auto mt-3 max-w-xl">{t.about.cta.subtitle}</p>
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href={`/${locale}/onboard`}>
+            <PaperButton>{t.about.cta.startLearning}</PaperButton>
+          </Link>
+          <Link href={`/${locale}/programs`} className="inline-flex items-center justify-center rounded-2xl border-2 border-[#1B2C4F] bg-[#fffdf7] px-6 py-3.5 font-black text-[#1B2C4F] shadow-[0_5px_0_rgba(27,44,79,.18)]">
+            {t.about.cta.explorePrograms}
+          </Link>
+        </div>
+      </section>
       <Footer />
     </div>
   )

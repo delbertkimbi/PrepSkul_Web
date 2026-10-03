@@ -16,8 +16,8 @@ export const localeFlags = {
 // Language-specific metadata
 export const localeMetadata = {
   en: {
-    title: "PrepSkul | From Teaching to Understanding",
-    description: "PrepSkul bridges classroom teaching and individual understanding through trusted tutors, practical learning programs, and SkulMate.",
+    title: "PrepSkul | Learn with Mate, your AI tutor",
+    description: "Ask SkulMate questions by voice or text, get clear explanations, and practice at your pace. Find a tutor when you want one-to-one help.",
     keywords: [
       "online tutor Cameroon",
       "home tutor Cameroon", 
@@ -50,14 +50,13 @@ export const localeMetadata = {
     openGraph: {
       type: "website",
       locale: "en_CM",
-      url: "https://prepskul.com",
       siteName: "PrepSkul",
       images: [
         {
-          url: "https://prepskul.com/images/hero-tutoring.png",
-          width: 1200,
-          height: 630,
-          alt: "A PrepSkul tutor guiding a learner from teaching to understanding"
+          url: "https://prepskul.com/logo.jpg",
+          width: 1024,
+          height: 1024,
+          alt: "PrepSkul - Expert Tutoring in Cameroon"
         }
       ] as any
     },
@@ -68,8 +67,8 @@ export const localeMetadata = {
     }
   },
   fr: {
-    title: "PrepSkul | De l’enseignement à la compréhension",
-    description: "PrepSkul relie l’enseignement en classe à la compréhension individuelle grâce aux tuteurs, aux programmes pratiques et à SkulMate.",
+    title: "PrepSkul | Apprends avec Mate, ton tuteur IA",
+    description: "Pose tes questions à SkulMate à voix haute ou par écrit, reçois des explications claires et entraîne-toi à ton rythme. Trouve un tuteur si tu veux un accompagnement individuel.",
     keywords: [
       "tuteur en ligne Cameroun",
       "cours particuliers Cameroun",
@@ -102,14 +101,13 @@ export const localeMetadata = {
     openGraph: {
       type: "website",
       locale: "fr_CM",
-      url: "https://prepskul.com",
       siteName: "PrepSkul",
       images: [
         {
-          url: "https://prepskul.com/images/hero-tutoring.png",
-          width: 1200,
-          height: 630,
-          alt: "Un tuteur PrepSkul guide un apprenant vers la compréhension"
+          url: "https://prepskul.com/logo.jpg",
+          width: 1024,
+          height: 1024,
+          alt: "PrepSkul - Cours Particuliers au Cameroun"
         }
       ] as any
     },

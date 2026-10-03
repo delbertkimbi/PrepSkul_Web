@@ -42,17 +42,16 @@ export async function generateMetadata({
     openGraph: {
       ...(metadata?.openGraph || {}),
       type: "website",
-      url: `https://prepskul.com/${locale}`,
       locale: locale === 'fr' ? 'fr_CM' : 'en_CM',
       siteName: "PrepSkul",
       title: metadata?.title || "PrepSkul | Guided Learning",
       description: metadata?.description || "Trusted tutors, personalized learning tools, and practical programs that help learners understand and progress.",
       images: [
         {
-          url: "https://prepskul.com/images/hero-tutoring.png",
-          width: 1200,
-          height: 630,
-          alt: "A PrepSkul tutor guiding a learner from teaching to understanding",
+          url: "https://prepskul.com/logo.jpg",
+          width: 1024,
+          height: 1024,
+          alt: "PrepSkul - Expert Tutoring in Cameroon",
         },
       ],
     },
@@ -85,13 +84,13 @@ export default async function LocaleLayout({
   const { locale } = await params
 
   return (
-    <>
+    <div lang={locale} className="ps-site min-h-screen">
       <PerformanceOptimizer />
       <LocaleProvider locale={locale}>
         <Suspense fallback={null}>{children}</Suspense>
       </LocaleProvider>
       <AndroidAppPrompt />
       <Analytics />
-    </>
+    </div>
   )
 }

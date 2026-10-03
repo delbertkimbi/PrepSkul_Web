@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Keep development output separate from production builds. Sharing one
-  // directory between `next dev` and `next build` can delete vendor chunks
-  // from a running server and cause intermittent MODULE_NOT_FOUND errors.
-  distDir: process.env.NEXT_DIST_DIR || (process.env.NODE_ENV === 'development' ? '.next-dev' : '.next'),
+  // Only use custom distDir locally to avoid OneDrive sync issues
+  // On Vercel, use default .next directory
+  ...(process.env.VERCEL ? {} : {
+    distDir: process.env.NEXT_DIST_DIR || '.next',
+  }),
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -13,6 +14,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
   webpack: (config, { isServer }) => {
     // Exclude canvas from client-side bundles (it's a Node.js native module)
     if (!isServer) {

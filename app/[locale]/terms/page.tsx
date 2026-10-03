@@ -1,5 +1,5 @@
 import React from 'react';
-import Image from 'next/image';
+import { PaperDoc } from "@/components/marketing/paper-doc"
 
 export const metadata = {
   title: 'Terms of Service | PrepSkul',
@@ -8,41 +8,12 @@ export const metadata = {
 
 export default function TermsPage({ params }: { params: { locale: string } }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200 relative overflow-hidden">
-        <div className="container mx-auto px-4 py-16 max-w-4xl relative z-10">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
-            <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Terms of Service</h1>
-              <p className="text-lg text-gray-600">
-                Please read these terms carefully before using our services.
-              </p>
-              <div className="mt-6 inline-flex items-center px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                Last Updated: November 22, 2025
-              </div>
-            </div>
-            
-            {/* PrepSkul Logo */}
-            <div className="flex flex-col items-center justify-center mt-4 md:mt-0 shrink-0 md:mr-8">
-              <div className="relative w-16 h-16 md:w-20 md:h-20">
-                <Image 
-                  src="/app_logo(blue).png" 
-                  alt="PrepSkul Logo" 
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              <span className="text-primary font-bold text-xl md:text-2xl mt-2 tracking-tight">PrepSkul</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Section */}
-      <div className="container mx-auto px-4 py-12 max-w-4xl">
-        <div className="bg-white rounded-2xl shadow-sm p-8 md:p-12 space-y-12">
+    <PaperDoc
+      title="Terms of Service"
+      lead="Please read these terms carefully before using our services."
+      updated="Last updated: November 22, 2025"
+    >
+        <div className="space-y-12">
           
           {/* Section 1 */}
           <section>
@@ -202,7 +173,6 @@ export default function TermsPage({ params }: { params: { locale: string } }) {
           </section>
 
         </div>
-      </div>
-    </div>
+    </PaperDoc>
   );
 }

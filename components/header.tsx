@@ -1,86 +1,109 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
+import { Menu, X } from "lucide-react"
 import { useState } from "react"
 import { ArrowRight, Menu, X } from "lucide-react"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLocale } from "@/lib/locale-context"
-import { getSiteContent } from "@/lib/site-content"
+import { getTranslations } from "@/lib/translations"
+import { locales, type Locale } from "@/lib/i18n"
+import { usePathname, useRouter } from "next/navigation"
+import { PaperButton } from "@/components/marketing/paper"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { locale } = useLocale()
-  const copy = getSiteContent(locale)
+  const t = getTranslations(locale)
+  const router = useRouter()
+  const pathname = usePathname()
 
-  const navItems = [
-    { label: copy.nav.learn, href: `/${locale}#guidance` },
-    { label: copy.nav.programs, href: `/${locale}#programs` },
-    { label: copy.nav.skulmate, href: `/${locale}#skulmate` },
-    { label: copy.nav.schools, href: `/${locale}/schools` },
+  const links = [
+    { href: `/${locale}/mate`, label: "SkulMate" },
+    { href: `/${locale}/find`, label: t.nav.tutors },
+    { href: `/${locale}/programs`, label: t.nav.programs },
+    { href: `/${locale}/about`, label: t.nav.about },
+    { href: `/${locale}#faq`, label: "FAQ" },
   ]
 
-  const closeMenu = () => setMobileMenuOpen(false)
+  function switchLocale(next: Locale) {
+    const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, "") || "/"
+    router.push(`/${next}${pathWithoutLocale}`)
+  }
+
+  const languageToggle = (mobile = false) => (
+    <div
+      className={`flex items-center gap-1 rounded-xl border border-[#1B2C4F]/15 bg-white p-1 ${mobile ? "mt-3 justify-center" : ""}`}
+      aria-label="Language"
+    >
+      {locales.map((code) => (
+        <button
+          key={code}
+          type="button"
+          onClick={() => switchLocale(code)}
+          aria-pressed={locale === code}
+          className={`rounded-lg px-2 py-1 text-xs font-black transition ${
+            locale === code ? "bg-[#1B2C4F] text-white" : "text-[#1B2C4F] hover:bg-[#dfeeff]"
+          }`}
+        >
+          {code.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  )
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#182544]/10 bg-white/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center px-5 sm:px-8 lg:px-12 xl:px-20">
-        <Link href={`/${locale}`} className="flex shrink-0 items-center gap-2.5" onClick={closeMenu}>
-          <Image src="/app_logo(blue).png" alt="PrepSkul" width={34} height={34} className="h-7 w-7 object-contain" priority />
-          <span className="text-[1.2rem] font-extrabold tracking-[-0.055em] text-[#14213d]">PrepSkul</span>
+    <header className="ps-header">
+      <div className="ps-wrap flex h-[4.25rem] items-center justify-between">
+        <Link href={`/${locale}`} className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/app_logo(blue).png"
+            alt=""
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain"
+            suppressHydrationWarning
+          />
+          <span className="ps-wordmark text-[1.45rem] text-[#1B2C4F]">PrepSkul</span>
         </Link>
 
-        <nav className="ml-14 hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="text-[13px] font-bold text-[#34405a] transition-colors hover:text-[#2859c5]">
+        <nav className="hidden items-center gap-6 md:flex">
+          {links.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="text-sm font-bold text-[#1B2C4F]/75 transition hover:-rotate-1 hover:text-[#0EA5E9]"
+            >
               {item.label}
             </Link>
           ))}
+          {languageToggle()}
+          <Link href={`/${locale}/onboard`}>
+            <PaperButton className="px-5 py-2.5 text-sm shadow-[0_5px_0_#0f1a2e]">{t.nav.getStarted}</PaperButton>
+          </Link>
         </nav>
 
-        <div className="ml-auto hidden items-center gap-1 lg:flex">
-          <LanguageSwitcher currentLocale={locale} />
-          <Link href={`/${locale}/tutors`} className="px-4 py-3 text-[13px] font-bold text-[#34405a] transition-colors hover:text-[#2859c5]">
-            {copy.nav.tutor}
-          </Link>
-          <Link href="https://app.prepskul.com" className="ml-2 inline-flex h-10 items-center gap-2 rounded-md bg-[#182544] px-5 text-[13px] font-extrabold text-white transition-colors hover:bg-[#2859c5]">
-            {copy.nav.cta}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          className="ml-auto inline-flex h-10 w-10 items-center justify-center border border-[#14213d]/20 text-[#14213d] lg:hidden"
-          onClick={() => setMobileMenuOpen((open) => !open)}
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileMenuOpen}
-          aria-controls="mobile-navigation"
-        >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        <button className="rounded-xl border border-[#1B2C4F]/15 bg-white p-2 md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle menu">
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {mobileMenuOpen && (
-        <div id="mobile-navigation" className="border-t border-[#17213a]/10 bg-white px-4 py-5 lg:hidden">
-          <nav className="mx-auto flex max-w-[1440px] flex-col" aria-label="Mobile navigation">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href} onClick={closeMenu} className="border-b border-[#17213a]/10 py-4 text-base font-bold text-[#17213a]">
+      {mobileMenuOpen ? (
+        <nav className="border-t border-[#1B2C4F]/10 md:hidden">
+          <div className="ps-wrap flex flex-col gap-1 py-4">
+            {links.map((item) => (
+              <Link key={item.href} href={item.href} className="rounded-xl px-3 py-3 font-bold" onClick={() => setMobileMenuOpen(false)}>
                 {item.label}
               </Link>
             ))}
-            <Link href={`/${locale}/tutors`} onClick={closeMenu} className="border-b border-[#17213a]/10 py-4 text-base font-bold text-[#17213a]">
-              {copy.nav.tutor}
+            {languageToggle(true)}
+            <Link href={`/${locale}/onboard`} className="mt-3" onClick={() => setMobileMenuOpen(false)}>
+              <PaperButton className="w-full">{t.nav.getStarted}</PaperButton>
             </Link>
-            <div className="mt-5 flex items-center gap-3">
-              <LanguageSwitcher currentLocale={locale} />
-              <Link href="https://app.prepskul.com" onClick={closeMenu} className="ml-auto inline-flex h-11 items-center gap-2 rounded-md bg-[#17213a] px-5 text-sm font-extrabold text-white">
-                {copy.nav.cta}<ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </nav>
-        </div>
-      )}
+          </div>
+        </nav>
+      ) : null}
     </header>
   )
 }

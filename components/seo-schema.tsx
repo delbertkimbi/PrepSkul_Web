@@ -287,3 +287,43 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   )
 }
 
+export function ArticleSchema({
+  title,
+  description,
+  url,
+  datePublished,
+  dateModified,
+}: {
+  title: string
+  description: string
+  url: string
+  datePublished: string
+  dateModified: string
+}) {
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    datePublished,
+    dateModified,
+    url,
+    inLanguage: url.includes("/fr/") ? "fr" : "en",
+    author: { "@type": "Organization", name: "PrepSkul" },
+    publisher: {
+      "@type": "Organization",
+      name: "PrepSkul",
+      logo: { "@type": "ImageObject", url: "https://prepskul.com/logo.jpg" },
+    },
+    about: ["PrepSkul", "SkulMate", "tutoring", "Cameroon"],
+  }
+
+  return (
+    <Script
+      id="article-schema"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
+    />
+  )
+}
+
