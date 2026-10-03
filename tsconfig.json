@@ -36,7 +36,8 @@
     ".next_build/types/**/*.ts",
     "C:/temp/prepskul_build/types/**/*.ts",
     "next-env.d.ts",
-    "../../../prepskul_build/types/**/*.ts"
+    "../../../prepskul_build/types/**/*.ts",
+    ".next-dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

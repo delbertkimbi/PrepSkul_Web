@@ -5,7 +5,9 @@ import { useSbcLanguage } from "@/lib/sbc/i18n"
 
 function translateNode(node: React.ReactNode, t: (text: string) => string): React.ReactNode {
   if (typeof node === "string") return t(node)
-  if (Array.isArray(node)) return node.map((child) => translateNode(child, t))
+  // React.Children.map preserves React's generated keys while this wrapper
+  // recursively translates sibling nodes such as Header, main and Footer.
+  if (Array.isArray(node)) return Children.map(node, (child) => translateNode(child, t))
   if (!isValidElement(node)) return node
 
   const props = node.props as Record<string, unknown>

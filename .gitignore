@@ -5,6 +5,9 @@
 
 # next.js
 /.next/
+/.next-dev/
+/.next-codex/
+/.prepskul-dev.lock
 /out/
 
 # production

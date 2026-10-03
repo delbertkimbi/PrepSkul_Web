@@ -5,7 +5,7 @@
   "packageManager": "pnpm@10.22.0",
   "scripts": {
     "build": "next build",
-    "dev": "next dev",
+    "dev": "node scripts/dev-server.mjs",
     "lint": "next lint",
     "start": "next start",
     "test": "jest",
