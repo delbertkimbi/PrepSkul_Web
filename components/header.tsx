@@ -3,8 +3,6 @@
 import Link from "next/link"
 import { Menu, X } from "lucide-react"
 import { useState } from "react"
-import { ArrowRight, Menu, X } from "lucide-react"
-import { LanguageSwitcher } from "@/components/language-switcher"
 import { useLocale } from "@/lib/locale-context"
 import { getTranslations } from "@/lib/translations"
 import { locales, type Locale } from "@/lib/i18n"
