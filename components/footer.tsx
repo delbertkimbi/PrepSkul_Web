@@ -4,7 +4,7 @@ import Link from "next/link"
 import { Facebook, Instagram, Linkedin, Mail, Phone, MapPin } from "lucide-react"
 import { TikTokIcon } from "./tiktok-icon"
 import { useLocale } from "@/lib/locale-context"
-import { getSiteContent } from "@/lib/site-content"
+import { getTranslations } from "@/lib/translations"
 
 export function Footer() {
   const { locale } = useLocale()
@@ -61,14 +61,7 @@ export function Footer() {
               <img src="/app-store-badge.png" alt="Coming soon to the App Store" width={140} height={42} className="w-[140px] opacity-65" />
             </div>
           </div>
-          <a href="https://play.google.com/store/apps/details?id=com.prepskul.prepskul" target="_blank" rel="noopener noreferrer" className="w-fit border border-white/15 p-2 transition-opacity hover:opacity-80">
-            <Image src="/google-play-badge.png" alt="Get PrepSkul on Google Play" width={135} height={40} className="h-auto w-[128px]" />
-          </a>
-        </div>
 
-        <div className="flex flex-col gap-3 border-t border-white/15 pt-6 text-[11px] font-semibold text-[#667085] sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} PrepSkul. {copy.footer.rights}</p>
-          <p>{locale === "fr" ? "Au service des apprenants partout au Cameroun." : "Serving learners across Cameroon."}</p>
         </div>
       </div>
       <div className="border-t border-white/10">

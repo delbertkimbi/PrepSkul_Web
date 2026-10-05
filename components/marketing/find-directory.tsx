@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { aliveCopy } from "@/lib/marketing/alive-copy"
@@ -45,13 +46,14 @@ function TutorCard({ tutor, bookLabel }: { tutor: PublicTutor; bookLabel: string
 export function FindDirectory({
   locale,
   tutors,
+  unavailable = false,
 }: {
   locale: string
   tutors: PublicTutor[]
   unavailable?: boolean
 }) {
   const c = aliveCopy(locale)
-  const cards = previewPublicTutors(tutors, tutors.length > 0 ? Math.max(tutors.length, 1) : 4)
+  const cards = tutors.length > 0 ? previewPublicTutors(tutors, 24) : []
 
   return (
     <div className="ps-site min-h-screen">
@@ -70,15 +72,36 @@ export function FindDirectory({
           >
             {c.find.request}
           </a>
+          <Link
+            href={`/${locale.startsWith("fr") ? "fr" : "en"}/tutors`}
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border-2 border-[#1B2C4F]/20 bg-white px-6 py-3.5 font-black text-[#1B2C4F] transition hover:border-[#0EA5E9] hover:bg-[#E0F2FE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0EA5E9] sm:w-auto"
+          >
+            {locale.startsWith("fr") ? "Devenir tuteur" : "Become a tutor"}
+          </Link>
         </div>
 
         <div className="mt-12">
           <h2 className="ps-h2">{c.find.recommended}</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cards.map((tutor) => (
-              <TutorCard key={tutor.id} tutor={tutor} bookLabel={c.find.bookInApp} />
-            ))}
-          </div>
+          {cards.length > 0 ? (
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {cards.map((tutor) => (
+                <TutorCard key={tutor.id} tutor={tutor} bookLabel={c.find.bookInApp} />
+              ))}
+            </div>
+          ) : (
+            <PaperSheet className="mt-6 max-w-3xl p-6 sm:p-8">
+              <h3 className="text-xl font-black text-[#1B2C4F]">
+                {locale.startsWith("fr") ? "Tu cherches un tuteur ?" : "Looking for a tutor?"}
+              </h3>
+              <p className="mt-2 leading-7 text-[#5C6B84]">
+                {unavailable
+                  ? locale.startsWith("fr")
+                    ? "Les profils ne se chargent pas pour le moment. Réessaie plus tard ou demande-nous de chercher un tuteur pour toi."
+                    : "Tutor profiles aren’t loading right now. Try again later or ask us to find a tutor for you."
+                  : c.find.empty}
+              </p>
+            </PaperSheet>
+          )}
         </div>
       </main>
       <Footer />

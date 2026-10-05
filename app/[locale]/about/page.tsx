@@ -60,7 +60,8 @@ export default function AboutPage() {
               </PaperSheet>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
       <section className="ps-wrap pb-20 text-center">
         <h2 className="ps-h2">{t.about.cta.title}</h2>
