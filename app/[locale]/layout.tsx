@@ -44,8 +44,8 @@ export async function generateMetadata({
       type: "website",
       locale: locale === 'fr' ? 'fr_CM' : 'en_CM',
       siteName: "PrepSkul",
-      title: metadata?.title || "PrepSkul - Expert Tutoring in Cameroon",
-      description: metadata?.description || "Find the best online and home tutors in Cameroon. Expert tutoring for GCE, BEPC, Baccalauréat, Math, English, Science.",
+      title: metadata?.title || "PrepSkul | Guided Learning",
+      description: metadata?.description || "Trusted tutors, personalized learning tools, and practical programs that help learners understand and progress.",
       images: [
         {
           url: "https://prepskul.com/logo.jpg",
