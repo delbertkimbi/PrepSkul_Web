@@ -200,3 +200,25 @@ export async function speakMateLine(
   onProgress?.(0)
   await speakBrowser(text, tag, onProgress)
 }
+
+/** Speak a personalized line that cannot use a shared, pre-generated clip. */
+export async function speakMateText(
+  text: string,
+  locale: string,
+  opts: SpeakMateOpts = {},
+) {
+  if (!text.trim() || !voiceEnabled()) return
+  const mine = ++scene
+  fetchAbort?.abort()
+  fetchAbort = null
+  killPlayback()
+  const tag = locale.startsWith("fr") ? "fr" : "en"
+  opts.onStart?.()
+  opts.onProgress?.(0)
+  try {
+    await speakBrowser(text, tag, opts.onProgress)
+    if (mine === scene) opts.onProgress?.(1)
+  } finally {
+    if (mine === scene) utterance = null
+  }
+}

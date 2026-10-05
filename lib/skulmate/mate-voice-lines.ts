@@ -12,7 +12,11 @@ export const MATE_VOICE_LINES = {
     system: "Which system of education do you follow?",
     level: "What class are you in?",
     subject: "What do you need the most help with right now?",
-    ready: "I tutor you out loud. Need a person? I can find you a tutor, live or at the table. A hundred subjects. BEPC, Bac, GCE.",
+    goal: "What kind of help would feel useful?",
+    exam: "Which exam are you working toward?",
+    mode: "How would you like to learn?",
+    city: "Which town should I look in?",
+    ready: "I’ve got a good picture of what will help you.",
     paywall: "Try Super. Seven days free, then two thousand five hundred CFA a month.",
   },
   fr: {
@@ -26,8 +30,11 @@ export const MATE_VOICE_LINES = {
     system: "Quel système éducatif suis-tu ?",
     level: "Tu es en quelle classe ?",
     subject: "De quoi tu as le plus besoin maintenant ?",
-    ready:
-      "Je t’accompagne à voix haute. Besoin d’un tuteur ? Je peux en trouver un, en ligne ou près de chez toi. Plus de cent matières : BEPC, Bac, GCE.",
+    goal: "Quel type d’aide te serait utile ?",
+    exam: "Quel examen prépares-tu ?",
+    mode: "Comment préfères-tu apprendre ?",
+    city: "Dans quelle ville dois-je chercher ?",
+    ready: "J’ai une bonne idée de ce qui t’aidera.",
     paywall: "Essaie Super. Sept jours offerts, puis deux mille cinq cents francs CFA par mois.",
   },
 } as const

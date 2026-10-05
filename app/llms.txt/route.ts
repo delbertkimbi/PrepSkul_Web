@@ -11,7 +11,7 @@ export async function GET() {
     "> PrepSkul is a tutoring product for learners and parents. SkulMate (Mate) is the tutor inside the PrepSkul app.",
     "",
     "## Product",
-    "PrepSkul teaches with SkulMate and with human tutors. Classes are live online or at the table. Browse approved tutors. Start a lesson, book a person, or ask us to match you.",
+    "PrepSkul teaches with SkulMate and with human tutors. Classes are live online or at the table. Explore current tutor profiles, or ask us to find a match if you do not see what you need.",
     "",
     "## SkulMate",
     "Mate listens without a tap, asks a focusing question before giving an answer, draws unique pictures, and remembers the last miss. He is a feature of PrepSkul, not a second brand.",
