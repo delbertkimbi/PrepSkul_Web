@@ -865,14 +865,14 @@ function Ask({
   const [typed, setTyped] = useState(false)
   const [armed, setArmed] = useState(!voiceOut)
   const [talking, setTalking] = useState(false)
-  const [phase, setPhase] = useState<PrepMateMood>(intro ?? "talk")
+  const [phase, setPhase] = useState<PrepMateMood>(intro ?? "idle")
   const [progress, setProgress] = useState<number | undefined>()
 
   useEffect(() => {
     setTyped(false)
     setArmed(!voiceOut)
     setTalking(false)
-    setPhase(intro ?? "talk")
+    setPhase(intro ?? "idle")
     setProgress(undefined)
   }, [title, intro, voiceOut])
 
