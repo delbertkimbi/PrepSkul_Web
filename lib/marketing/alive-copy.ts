@@ -14,7 +14,7 @@ const EN = {
     titleLead: "Learn at the right level.",
     titleRest: "Find the beauty in getting there.",
     subtitle:
-      "Start with the question in front of you. We help you understand it, try it, and take the next step. When you want a person beside you, find a trusted tutor online or at the table.",
+      "Bring the question, homework, or idea that will not click yet. We will work through it with you, at your pace. When you want a person beside you, we will help you find the right tutor.",
     primary: "Get started",
     secondary: "Browse tutors",
     sessions: "sessions tutored",
