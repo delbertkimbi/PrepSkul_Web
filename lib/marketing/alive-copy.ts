@@ -14,7 +14,7 @@ const EN = {
     titleLead: "Learn at the right level.",
     titleRest: "Find the beauty in getting there.",
     subtitle:
-      "Bring the question, homework, or idea that will not click yet. We will work through it with you, at your pace. When you want a person beside you, we will help you find the right tutor.",
+      "Every learner gets stuck sometimes. Bring the question, lesson, or idea you want to understand. PrepSkul helps you make sense of it, practise with confidence, and find the right tutor when you need one.",
     primary: "Get started",
     secondary: "Browse tutors",
     sessions: "sessions tutored",
