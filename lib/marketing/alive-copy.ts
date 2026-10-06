@@ -14,7 +14,7 @@ const EN = {
     titleLead: "Learn at the right level.",
     titleRest: "Find the beauty in getting there.",
     subtitle:
-      "SkulMate is PrepSkul’s AI tutor. It explains lessons clearly and helps learners practice. Need a person? Browse tutors or ask us to find one. Learn online or at the table.",
+      "Start with the question in front of you. We help you understand it, try it, and take the next step. When you want a person beside you, find a trusted tutor online or at the table.",
     primary: "Get started",
     secondary: "Browse tutors",
     sessions: "sessions tutored",
