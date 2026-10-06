@@ -3,27 +3,19 @@ import { MATE_VOICE_LINES, mateVoiceText } from "@/lib/skulmate/mate-voice-lines
 
 export const runtime = "nodejs"
 
-const MODEL = process.env.SKULMATE_TTS_MODEL || process.env.PRIMAR_TTS_MODEL || "microsoft/mai-voice-2"
+// OpenRouter is the primary provider. Keep the model configurable because
+// voice names are model-specific and OpenRouter's catalog changes over time.
+const MODEL = process.env.SKULMATE_TTS_MODEL || process.env.PRIMAR_TTS_MODEL || "google/gemini-3.1-flash-tts-preview"
 const ELEVEN_MODEL = process.env.SKULMATE_ELEVEN_MODEL || "eleven_multilingual_v2"
 
 /**
- * Keep Abeo's West African accent. The grown-man read comes from a flat
- * adult delivery, not the locale. Soften it: slightly lifted speed, a
- * friendly Azure style, and a cache-busting tone so old clips do not stick.
- * Francophone stays on Henri with the same delivery.
+ * Voice IDs are supplied by the selected OpenRouter model. These defaults are
+ * valid for Gemini TTS; set the env vars when selecting another model.
  */
 const VOICES: Record<string, string> = {
-  en: process.env.SKULMATE_TTS_VOICE_EN || "en-NG-AbeoNeural",
-  fr: process.env.SKULMATE_TTS_VOICE_FR || "fr-FR-HenriNeural",
+  en: process.env.SKULMATE_TTS_VOICE_EN || "Kore",
+  fr: process.env.SKULMATE_TTS_VOICE_FR || "Aoede",
 }
-
-const ALLOWED_VOICES = new Set([
-  "en-NG-AbeoNeural",
-  "en-NG-EzinneNeural",
-  "en-KE-ChilembaNeural",
-  "fr-FR-HenriNeural",
-  "fr-FR-DeniseNeural",
-])
 
 /** Younger, softer than a straight adult read. Keep the same speaker. */
 const SOFT_SPEED = 1.04
@@ -58,7 +50,7 @@ async function elevenLabsSpeech(text: string, locale: string) {
 
 function pickVoice(params: URLSearchParams, locale: string) {
   const asked = params.get("voice")
-  if (asked && ALLOWED_VOICES.has(asked)) return asked
+  if (asked && /^[a-zA-Z0-9._-]{1,80}$/.test(asked)) return asked
   return VOICES[locale]
 }
 
@@ -75,37 +67,22 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const eleven = await elevenLabsSpeech(text, locale).catch(() => null)
-  if (eleven) {
-    const audio = await eleven.arrayBuffer()
-    return new NextResponse(audio, {
-      status: 200,
-      headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Content-Length": String(audio.byteLength),
-      },
-    })
-  }
-
   const apiKey = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
   if (!apiKey) return NextResponse.json({ error: "Voice synthesis not configured", text }, { status: 503 })
 
   const voice = pickVoice(params, locale)
-  const payload = {
+  const payload: Record<string, unknown> = {
     model: MODEL,
     input: text,
     voice,
     response_format: "mp3",
     speed: SOFT_SPEED,
-    provider: {
-      options: {
-        azure: {
-          style: SOFT_STYLE,
-          styledegree: SOFT_STYLE_DEGREE,
-        },
-      },
-    },
+  }
+
+  // Azure style controls are not understood by Gemini and can cause a
+  // request to fail. Only send them for Azure-backed models.
+  if (MODEL.toLowerCase().includes("azure") || MODEL.toLowerCase().includes("mai-voice")) {
+    payload.provider = { options: { azure: { style: SOFT_STYLE, styledegree: SOFT_STYLE_DEGREE } } }
   }
 
   try {
@@ -137,6 +114,13 @@ export async function GET(request: NextRequest) {
     }
 
     if (!upstream.ok) {
+      const eleven = process.env.SKULMATE_PREFER_ELEVENLABS === "true"
+        ? await elevenLabsSpeech(text, locale).catch(() => null)
+        : null
+      if (eleven) {
+        const audio = await eleven.arrayBuffer()
+        return new NextResponse(audio, { status: 200, headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=31536000, immutable", "Content-Length": String(audio.byteLength) } })
+      }
       const detail = await upstream.text().catch(() => "")
       console.error("[skulmate/voice] upstream failed", upstream.status, detail.slice(0, 300))
       return NextResponse.json({ error: "Synthesis failed", text }, { status: 502 })
