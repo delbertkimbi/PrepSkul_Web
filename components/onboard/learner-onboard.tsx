@@ -322,6 +322,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   const restMood: PrepMateMood =
     step === "paywall" || step === "ready" ? "cheer" : step === "subject" || step === "level" ? "think" : "idle"
   const canContinue =
+    step === "meet" ||
     step === "ready" ||
     step === "paywall" ||
     (step === "name" && !!answers.name.trim()) ||
