@@ -57,7 +57,7 @@ export function Header() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/app_logo(blue).png"
-            alt=""
+            alt="PrepSkul"
             width={32}
             height={32}
             className="h-8 w-8 object-contain"

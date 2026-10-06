@@ -19,12 +19,31 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://prepskul.com"),
-  title: "PrepSkul | Learn with Mate, your AI tutor",
+  title: {
+    default: "PrepSkul | Learn with Mate and trusted tutors",
+    template: "%s | PrepSkul",
+  },
   description:
-    "Ask SkulMate questions by voice or text, get clear explanations, and practice at your pace. Find a tutor when you want one-to-one help.",
+    "Learn at your pace with SkulMate, PrepSkul's patient AI tutor, and trusted tutors for online and in-person lessons across Cameroon.",
+  keywords: ["online tutoring Cameroon", "AI tutor", "math tutor", "French tutor", "PrepSkul", "SkulMate"],
+  alternates: { canonical: "https://prepskul.com" },
+  openGraph: {
+    type: "website",
+    siteName: "PrepSkul",
+    title: "PrepSkul | Learn with Mate and trusted tutors",
+    description: "Clear explanations, guided practice, and trusted tutors when you want one-to-one help.",
+    url: "https://prepskul.com",
+    images: [{ url: "/logo.jpg", width: 512, height: 512, alt: "PrepSkul" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PrepSkul | Learn with Mate and trusted tutors",
+    description: "Clear explanations, guided practice, and trusted tutors when you want one-to-one help.",
+    images: ["/logo.jpg"],
+  },
   icons: {
     icon: [
-      { url: "/logo.jpg", sizes: "32x32", type: "image/jpeg" },
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/logo.jpg", sizes: "192x192", type: "image/jpeg" },
       { url: "/logo.jpg", sizes: "512x512", type: "image/jpeg" },
     ],
