@@ -55,7 +55,7 @@ const EN = {
     {
       id: "subjects",
       title: "Your school subjects",
-      body: "From SIL to University. Maths, languages, sciences, hist-geo, philo, CS, and whatever you walk in with.",
+      body: "From primary school to university: maths, languages, sciences, humanities, computer science, and the subject you bring with you.",
       tone: "mint" as const,
       tile: "/onboard/art/tile-book.png",
     },
@@ -141,13 +141,13 @@ const EN = {
     },
   ],
   science: {
-    title: "Your SkulMate, who already gets you.",
-    body: "He listens how you think, remembers where you stuck, and explains it your way. Focusing questions, unique pictures, a lesson that stays with you.",
+    title: "Learning that remembers your next step.",
+    body: "Mate pays attention to what you understand, where you need another example, and how you like to learn. Each session gives you a clear next step.",
     cta: "Meet SkulMate",
   },
   cheat: {
-    title: "Not a cheatbot.",
-    body: "A chatbot feeds the answer. SkulMate does not. He is the PrepSkul tutor designed so the learner reasons through it.",
+    title: "Help that builds understanding.",
+    body: "SkulMate does more than hand over an answer. It asks useful questions, explains the idea, and gives you a chance to work it out.",
     cta: "See how a session works",
   },
   quotesTitle: "What families say",
