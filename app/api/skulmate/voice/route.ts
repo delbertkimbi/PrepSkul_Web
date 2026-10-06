@@ -4,6 +4,7 @@ import { MATE_VOICE_LINES, mateVoiceText } from "@/lib/skulmate/mate-voice-lines
 export const runtime = "nodejs"
 
 const MODEL = process.env.SKULMATE_TTS_MODEL || process.env.PRIMAR_TTS_MODEL || "microsoft/mai-voice-2"
+const ELEVEN_MODEL = process.env.SKULMATE_ELEVEN_MODEL || "eleven_multilingual_v2"
 
 /**
  * Keep Abeo's West African accent. The grown-man read comes from a flat
@@ -29,6 +30,32 @@ const SOFT_SPEED = 1.04
 const SOFT_STYLE = "friendly"
 const SOFT_STYLE_DEGREE = 0.85
 
+async function elevenLabsSpeech(text: string, locale: string) {
+  const apiKey = process.env.ELEVENLABS_API_KEY
+  const voice = locale === "fr"
+    ? process.env.SKULMATE_ELEVEN_VOICE_FR
+    : process.env.SKULMATE_ELEVEN_VOICE_EN
+  if (!apiKey || !voice) return null
+
+  const response = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_128`,
+    {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        model_id: ELEVEN_MODEL,
+        voice_settings: { stability: 0.55, similarity_boost: 0.8, speed: 0.98 },
+      }),
+    },
+  )
+  if (!response.ok) return null
+  return response
+}
+
 function pickVoice(params: URLSearchParams, locale: string) {
   const asked = params.get("voice")
   if (asked && ALLOWED_VOICES.has(asked)) return asked
@@ -48,10 +75,21 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const apiKey = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
-  if (!apiKey) {
-    return NextResponse.json({ error: "Voice synthesis not configured", text }, { status: 503 })
+  const eleven = await elevenLabsSpeech(text, locale).catch(() => null)
+  if (eleven) {
+    const audio = await eleven.arrayBuffer()
+    return new NextResponse(audio, {
+      status: 200,
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Length": String(audio.byteLength),
+      },
+    })
   }
+
+  const apiKey = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
+  if (!apiKey) return NextResponse.json({ error: "Voice synthesis not configured", text }, { status: 503 })
 
   const voice = pickVoice(params, locale)
   const payload = {
