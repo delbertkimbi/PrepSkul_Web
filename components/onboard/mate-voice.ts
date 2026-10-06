@@ -121,7 +121,16 @@ function speakBrowser(text: string, locale: string, onProgress?: (progress: numb
       onProgress?.(1)
       resolve()
     }
-    line.onerror = (event) => reject(event.error)
+    line.onerror = (event) => {
+      // Browser speech can be blocked until a user gesture. Voice is
+      // optional, so never turn that permission state into a Next.js error.
+      if (event.error === "not-allowed" || event.error === "audio-busy") {
+        onProgress?.(1)
+        resolve()
+        return
+      }
+      reject(event.error)
+    }
     window.speechSynthesis.speak(line)
     window.setTimeout(() => window.speechSynthesis.getVoices(), 0)
   })
@@ -198,7 +207,7 @@ export async function speakMateLine(
   if (stale()) return
   onStart?.()
   onProgress?.(0)
-  await speakBrowser(text, tag, onProgress)
+  await speakBrowser(text, tag, onProgress).catch(() => undefined)
 }
 
 /** Speak a personalized line that cannot use a shared, pre-generated clip. */
@@ -216,7 +225,7 @@ export async function speakMateText(
   opts.onStart?.()
   opts.onProgress?.(0)
   try {
-    await speakBrowser(text, tag, opts.onProgress)
+    await speakBrowser(text, tag, opts.onProgress).catch(() => undefined)
     if (mine === scene) opts.onProgress?.(1)
   } finally {
     if (mine === scene) utterance = null
