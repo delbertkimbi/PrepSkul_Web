@@ -19,7 +19,7 @@ export default function MatePage() {
       <Header />
       <main className="ps-wrap grid items-center gap-10 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:py-24">
         <div className="ps-mate-well mx-auto">
-          <PrepMate mood="idle" size={224} />
+          <PrepMate state="teaching" size={224} />
         </div>
         <div>
           <h1 className="ps-h1 max-w-xl text-[#1B2C4F]">

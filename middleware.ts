@@ -201,5 +201,5 @@ export function middleware(request: NextRequest) {
 export const config = {
   // Matcher ignoring `/_next/`, `/api/`, and static assets
   // Note: We handle /admin separately in the middleware logic above
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|llms\\.txt|.*\\.(?:jpg|jpeg|png|gif|svg|ico|webp|pdf|css|js|xml)$).*)']
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|robots\\.txt|sitemap\\.xml|llms\\.txt|.*\\.(?:jpg|jpeg|png|gif|svg|ico|webp|pdf|css|js|xml|glb|gltf|bin|hdr|ktx2|blend)$).*)']
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { MATE_VOICE_LINES, mateVoiceText } from "@/lib/skulmate/mate-voice-lines"
 
+import { pcmToWav } from "@/lib/skulmate/pcm-audio"
+
 export const runtime = "nodejs"
 
 // OpenRouter is the primary provider. Keep the model configurable because
@@ -58,7 +60,8 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams
   const locale = params.get("locale") === "fr" ? "fr" : "en"
   const phrase = params.get("phrase") || ""
-  const text = mateVoiceText(phrase, locale)
+  const customText = params.get("text") || ""
+  const text = customText.trim().slice(0, 600) || mateVoiceText(phrase, locale)
 
   if (!text) {
     return NextResponse.json(
@@ -70,12 +73,13 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.SKULMATE_OPENROUTER_API_KEY || process.env.OPENROUTER_API_KEY
   if (!apiKey) return NextResponse.json({ error: "Voice synthesis not configured", text }, { status: 503 })
 
+  const format = MODEL.toLowerCase().includes("gemini") ? "pcm" : "mp3"
   const voice = pickVoice(params, locale)
   const payload: Record<string, unknown> = {
     model: MODEL,
     input: text,
     voice,
-    response_format: "mp3",
+    response_format: format,
     speed: SOFT_SPEED,
   }
 
@@ -95,12 +99,12 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify(payload),
     })
 
-    if (!upstream.ok) {
+    if (!upstream.ok && payload.provider && upstream.status === 400) {
       const plain = {
         model: MODEL,
         input: text,
         voice,
-        response_format: "mp3",
+        response_format: format,
         speed: SOFT_SPEED,
       }
       upstream = await fetch("https://openrouter.ai/api/v1/audio/speech", {
@@ -126,12 +130,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Synthesis failed", text }, { status: 502 })
     }
 
-    const audio = await upstream.arrayBuffer()
+    const raw = await upstream.arrayBuffer()
+    const audio = format === "pcm" ? pcmToWav(raw, upstream.headers.get("content-type")) : raw
     return new NextResponse(audio, {
       status: 200,
       headers: {
-        "Content-Type": "audio/mpeg",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Type": format === "pcm" ? "audio/wav" : "audio/mpeg",
+        "Cache-Control": "public, max-age=3600",
         "Content-Length": String(audio.byteLength),
       },
     })

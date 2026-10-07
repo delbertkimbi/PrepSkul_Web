@@ -42,3 +42,7 @@ secrets.txt
 .next-dev/
 .prepskul-dev.lock
 *.log
+
+# Isolated local preview and production verification
+.next-preview/
+.next-release/

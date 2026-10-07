@@ -66,12 +66,6 @@ export function FindDirectory({
           <a href={getStartedUrl()} className="sm:w-auto">
             <PaperButton className="w-full sm:w-auto">{c.find.openApp}</PaperButton>
           </a>
-          <a
-            href={getStartedUrl()}
-            className="inline-flex w-full items-center justify-center rounded-2xl border-2 border-[#1B2C4F] bg-[#fffdf7] px-6 py-3.5 font-black text-[#1B2C4F] shadow-[0_5px_0_rgba(27,44,79,.18)] sm:w-auto"
-          >
-            {c.find.request}
-          </a>
           <Link
             href={`/${locale.startsWith("fr") ? "fr" : "en"}/tutors`}
             className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border-2 border-[#1B2C4F]/20 bg-white px-6 py-3.5 font-black text-[#1B2C4F] transition hover:border-[#0EA5E9] hover:bg-[#E0F2FE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0EA5E9] sm:w-auto"
