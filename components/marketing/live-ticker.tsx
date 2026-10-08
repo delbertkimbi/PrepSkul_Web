@@ -15,29 +15,6 @@ function formatValue(value: number, locale: string, decimals: number) {
   return new Intl.NumberFormat(tag).format(Math.round(value))
 }
 
-function randomBump() {
-  const roll = Math.random()
-  if (roll < 0.88) return 1
-  if (roll < 0.97) return 2
-  return 10
-}
-
-function randomWait(minMs: number, maxMs: number) {
-  return minMs + Math.random() * Math.max(0, maxMs - minMs)
-}
-
-const TICK_GAP_MS = 5200
-const LAST_TICK_KEY = "__psLiveTickAt"
-
-function lastTickAt() {
-  if (typeof window === "undefined") return 0
-  return Number((window as Record<string, unknown>)[LAST_TICK_KEY] || 0)
-}
-
-function stampTick() {
-  ;(window as Record<string, unknown>)[LAST_TICK_KEY] = Date.now()
-}
-
 export function LiveTicker({
   start,
   intervalMs = 0,
@@ -62,19 +39,20 @@ export function LiveTicker({
   className?: string
 }) {
   const reduce = useReducedMotion()
-  const [value, setValue] = useState(start)
-  const initial = formatValue(start, locale, decimals)
+  const initialValue = decimals > 0 ? start : Math.max(0, start - 3)
+  const [value, setValue] = useState(initialValue)
+  const initial = formatValue(initialValue, locale, decimals)
   const [shown, setShown] = useState(initial)
   const [leaving, setLeaving] = useState<string | null>(null)
   const shownRef = useRef(initial)
 
   useEffect(() => {
-    const next = formatValue(start, locale, decimals)
-    setValue(start)
+    const next = formatValue(initialValue, locale, decimals)
+    setValue(initialValue)
     setShown(next)
     setLeaving(null)
     shownRef.current = next
-  }, [start, locale, decimals])
+  }, [initialValue, locale, decimals])
 
   useEffect(() => {
     const next = formatValue(value, locale, decimals)
@@ -85,34 +63,36 @@ export function LiveTicker({
   }, [value, locale, decimals])
 
   useEffect(() => {
-    const lo = minMs ?? (intervalMs ? Math.round(intervalMs * 0.45) : 0)
-    const hi = maxMs ?? (intervalMs ? Math.round(intervalMs * 2.4) : 0)
-    if (!lo || reduce || typeof window === "undefined") return
-    let timer = 0
-    let lastOwn = 0
-    const schedule = (first: boolean) => {
-      const wait = first ? staggerMs + randomWait(lo, hi) : randomWait(lo, hi)
-      timer = window.setTimeout(fire, wait)
+    if (reduce || decimals > 0) { setValue(start); return }
+    let next = Math.max(0, Math.round(start) - 3)
+    setValue(next)
+    const timer = window.setInterval(() => {
+      next = Math.min(start, next + 1)
+      setValue(next)
+      if (next >= start) window.clearInterval(timer)
+    }, intervalMs > 20000 ? 2100 : 1300)
+    return () => window.clearInterval(timer)
+  }, [start, reduce, decimals, intervalMs])
+
+  useEffect(() => {
+    if (reduce || decimals > 0 || typeof window === "undefined") return
+    const base = intervalMs || minMs || maxMs
+    if (!base) return
+    let timer: number | undefined
+    const schedule = () => {
+      const floor = minMs || base
+      const ceiling = maxMs || base
+      const delay = floor + Math.random() * Math.max(0, ceiling - floor)
+      timer = window.setTimeout(() => {
+        setValue((current) => current + step)
+        schedule()
+      }, delay)
     }
-    const fire = () => {
-      const now = Date.now()
-      if (now - lastOwn < lo) {
-        timer = window.setTimeout(fire, lo - (now - lastOwn) + randomWait(400, 1200))
-        return
-      }
-      const since = now - lastTickAt()
-      if (since < TICK_GAP_MS) {
-        timer = window.setTimeout(fire, TICK_GAP_MS - since + randomWait(900, 2800))
-        return
-      }
-      lastOwn = now
-      stampTick()
-      setValue((current) => current + (step > 1 ? step : randomBump()))
-      schedule(false)
+    timer = window.setTimeout(schedule, 6500 + staggerMs)
+    return () => {
+      if (timer) window.clearTimeout(timer)
     }
-    schedule(true)
-    return () => window.clearTimeout(timer)
-  }, [intervalMs, minMs, maxMs, staggerMs, step, reduce])
+  }, [intervalMs, minMs, maxMs, step, reduce, decimals, staggerMs])
 
   useEffect(() => {
     if (!leaving || typeof window === "undefined") return

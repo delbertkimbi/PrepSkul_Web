@@ -10,7 +10,7 @@ import { PaperButton, PaperCutout, PaperPhoto, PaperSheet, Tape, TornDivider } f
 import { ScrollFill } from "@/components/marketing/scroll-fill"
 import { ScrollReveal } from "@/components/sbc/scroll-reveal"
 import { LiveTicker } from "@/components/marketing/live-ticker"
-import { Laurel, MatePoint } from "@/components/marketing/mate-point"
+import { Laurel } from "@/components/marketing/mate-point"
 import { PrepMate } from "@/components/onboard/prep-mate"
 import { previewPublicTutors, type PublicTutor } from "@/lib/tutors/directory"
 import { type Locale } from "@/lib/i18n"
@@ -87,9 +87,9 @@ export function AliveHome({
       <Header />
 
       <section className="relative px-4 pb-4 pt-10 sm:px-6 lg:pb-16 lg:pt-24 xl:pb-20 xl:pt-28">
-        <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.95fr_1.15fr] xl:gap-12">
           <div className="relative z-10 text-center lg:text-left">
-            <h1 className="ps-h1 text-[#1B2C4F]">
+            <h1 className="ps-h1 text-[#1B2C4F] lg:!text-[clamp(2.8rem,4.2vw,4.3rem)] lg:!leading-[1.06]">
               <span className="text-[#0EA5E9]">{c.hero.titleLead}</span>{" "}
               {c.hero.titleRest}
             </h1>
@@ -109,15 +109,18 @@ export function AliveHome({
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-xl">
+          <div className="relative mx-auto w-full max-w-2xl" >
             <PaperSheet className="overflow-hidden p-3 sm:p-3.5" rotate={1.5} tone="cream">
               <Tape color="yellow" className="-top-4 left-1/2 -translate-x-1/2" />
-              <div className="relative min-h-[240px] overflow-hidden rounded-[18px] bg-[#fffdf7] sm:min-h-[300px] lg:min-h-[340px]">
+              <div className="relative aspect-[3/2] overflow-hidden rounded-[18px] bg-[#fffdf7]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/african-tutor-teaching-student-at-home-with-books-optimized.jpg"
+                  src="/images/prepskul-learning-hero.webp"
                   alt={fr ? "Un tuteur PrepSkul avec un élève à la maison" : "A PrepSkul tutor teaching a student at home"}
-                  className="absolute inset-0 h-full w-full object-cover"
+                  width={1440}
+                  height={960}
+                  fetchPriority="high"
+                  className="h-full w-full object-cover object-center"
                 />
               </div>
             </PaperSheet>
@@ -127,7 +130,7 @@ export function AliveHome({
 
       <section className="ps-live-stats mb-[3px] px-4 pb-0 pt-2 sm:px-6 sm:pb-4 sm:pt-4 lg:pb-5 lg:pt-14 xl:pt-16" aria-label={c.hero.statLine}>
         <div className="ps-live-stats-row">
-          <MatePoint />
+          <PrepMate mood="wave" size={104} />
           <div className="ps-live-stats-grid">
             {c.hero.stats.map((stat, index) => {
               const rating = stat.decimals > 0
@@ -162,6 +165,7 @@ export function AliveHome({
       </section>
 
       <TornDivider />
+
 
       <section className="bg-[#fffdf7] px-4 pb-20 pt-4 sm:px-6 sm:pt-10 lg:pb-28 lg:pt-12">
         <div className="mx-auto max-w-6xl">
@@ -201,7 +205,7 @@ export function AliveHome({
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
             <div className="ps-mate-well">
-              <PrepMate mood="idle" size={280} onDarkBackground />
+              <PrepMate state="reading" size={280} onDarkBackground />
             </div>
           </div>
           <div>

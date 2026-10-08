@@ -1,5 +1,7 @@
 "use client"
 
+import { type MascotState } from "@/lib/mascot-states"
+import { SkulMate3D } from "@/components/onboard/skulmate-3d"
 import { useEffect, useRef } from "react"
 import { useReducedMotion } from "framer-motion"
 
@@ -26,7 +28,7 @@ const YELLOW = "#EAB308"
  *   encourage hop + thumbs up after a pick
  *   cheer     both arms up, stars, open laugh (ready + Super)
  */
-export function PrepMate({
+function VectorPrepMate({
   mood = "idle",
   size = 168,
   variant = "hero",
@@ -529,4 +531,22 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.max(lo, Math.min(hi, n))
+}
+
+/** Shared 3D illustration set, also bundled in the Flutter app. */
+export function PrepMate({
+  mood = "idle", size = 168, state,
+}: {
+  mood?: PrepMateMood
+  state?: MascotState
+  size?: number
+  variant?: "hero" | "ask"
+  onDarkBackground?: boolean
+}) {
+  const pose: MascotState = state ?? (mood === "think" ? "thinking" : mood === "cheer" ? "celebrate" : mood === "talk" ? "teaching" : mood)
+  return (
+    <span className={`ps-mate-3d ps-mate-3d--${mood}`} style={{ width: size, height: size }} aria-hidden>
+      <SkulMate3D state={mood === "talk" ? "talk" : pose} size={size} />
+    </span>
+  )
 }

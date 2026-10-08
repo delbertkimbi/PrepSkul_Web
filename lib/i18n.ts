@@ -16,7 +16,7 @@ export const localeFlags = {
 // Language-specific metadata
 export const localeMetadata = {
   en: {
-    title: "PrepSkul | Learn with Mate, your AI tutor",
+    title: "PrepSkul | Learn at your level. Grow with confidence.",
     description: "Ask SkulMate questions by voice or text, get clear explanations, and practice at your pace. Find a tutor when you want one-to-one help.",
     keywords: [
       "online tutor Cameroon",
@@ -67,7 +67,7 @@ export const localeMetadata = {
     }
   },
   fr: {
-    title: "PrepSkul | Apprends avec Mate, ton tuteur IA",
+    title: "PrepSkul | Apprends à ton niveau. Avance avec confiance.",
     description: "Pose tes questions à SkulMate à voix haute ou par écrit, reçois des explications claires et entraîne-toi à ton rythme. Trouve un tuteur si tu veux un accompagnement individuel.",
     keywords: [
       "tuteur en ligne Cameroun",

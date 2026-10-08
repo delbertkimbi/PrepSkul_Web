@@ -4,7 +4,7 @@ export const MATE_VOICE_LINES = {
   en: {
     welcome: "Hi. I'm Mate.",
     welcome_note:
-      "I'm your SkulMate. I'll help you understand your lessons. Need a tutor? I can help you find one.",
+      "I'm here to help you understand your lessons, one step at a time. We'll start with what matters to you.",
     language: "What language should I use with you?",
     who: "Who is learning here?",
     name: "What should I call you?",
@@ -22,7 +22,7 @@ export const MATE_VOICE_LINES = {
   fr: {
     welcome: "Salut. Moi c’est Mate.",
     welcome_note:
-      "Je suis ton SkulMate. Je t’aide à comprendre tes leçons. Besoin d’un tuteur ? Je peux t’en trouver un.",
+      "Je suis là pour t’aider à comprendre tes leçons, une étape à la fois. On commence par ce qui compte pour toi.",
     language: "On se parle en quelle langue ?",
     who: "Qui apprend ici ?",
     name: "Comment je t’appelle ?",

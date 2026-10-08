@@ -31,13 +31,15 @@
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "../../../prepskul_build/types/**/*.ts",
     ".next-dev/types/**/*.ts",
+    ".next-preview/types/**/*.ts",
+    ".next-release/types/**/*.ts",
     ".next/types/**/*.ts",
     ".next_build/types/**/*.ts",
     "C:/temp/prepskul_build/types/**/*.ts",
     "next-env.d.ts",
-    "../../../prepskul_build/types/**/*.ts",
-    ".next-dev/types/**/*.ts"
+    ".next-oct8/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

@@ -3,11 +3,11 @@ import type { Metadata } from "next"
 const pages = {
   home: {
     en: {
-      title: "PrepSkul | Learn with Mate, your AI tutor",
-      description: "Ask SkulMate questions by voice or text, get clear explanations, and practice at your pace. Find a tutor when you want one-to-one help.",
+      title: "PrepSkul | Learn at your level. Grow with confidence.",
+      description: "Bring the question, lesson, or idea you want to understand. Learn with Mate, practise at your pace, and find a tutor when you need one.",
     },
     fr: {
-      title: "PrepSkul | Apprends avec Mate, ton tuteur IA",
+      title: "PrepSkul | Apprends à ton niveau. Avance avec confiance.",
       description: "Pose tes questions à SkulMate à voix haute ou par écrit, reçois des explications claires et entraîne-toi à ton rythme. Trouve un tuteur si tu veux un accompagnement individuel.",
     },
   },
@@ -102,7 +102,7 @@ export function marketingMetadata(locale: string, page: MarketingSeoPage): Metad
   const copy = pages[page][language]
 
   return {
-    title: copy.title,
+    title: { absolute: copy.title },
     description: copy.description,
     alternates: {
       canonical,

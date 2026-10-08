@@ -19,7 +19,7 @@ export const translations = {
       hero: {
         title: "Learn at the right level. Find the beauty in getting there.",
         titleWords: ["teaches", "fits", "lasts"],
-        subtitle: "SkulMate is PrepSkul’s AI tutor. It explains lessons clearly and helps learners practice. Need a person? Browse tutors or ask us to find one. Learn online or at the table.",
+        subtitle: "Start with the question in front of you. SkulMate helps you understand it, try it, and take the next step. When you want a person beside you, find a trusted tutor online or at the table.",
         getStarted: "Get started",
         viewSubjects: "Find a tutor"
       },

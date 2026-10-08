@@ -14,7 +14,7 @@ export type SpeakMateOpts = {
   onProgress?: (progress: number) => void
 }
 
-const CLIP_TONE = "soft"
+const CLIP_TONE = "algieba-v3"
 
 function revision(text: string) {
   let hash = 2166136261
@@ -29,8 +29,9 @@ function clipKey(phrase: string, locale: string, text: string) {
   return `${locale.startsWith("fr") ? "fr" : "en"}:${phrase}:${CLIP_TONE}:${revision(text)}`
 }
 
-function voiceUrl(phrase: string, tag: string, text: string) {
-  return `/api/skulmate/voice?phrase=${encodeURIComponent(phrase)}&locale=${tag}&tone=${CLIP_TONE}&v=${revision(text)}`
+function voiceUrl(phrase: string, tag: string, text: string, custom = false) {
+  const prompt = custom ? `text=${encodeURIComponent(text)}` : `phrase=${encodeURIComponent(phrase)}`
+  return `/api/skulmate/voice?${prompt}&locale=${tag}&tone=${CLIP_TONE}&v=${revision(text)}`
 }
 
 function killPlayback() {
@@ -73,10 +74,9 @@ function pickBrowserVoice(locale: string) {
     .map((voice) => {
       const name = voice.name.toLowerCase()
       let score = 0
-      if (/abeo|henri/.test(name)) score += 6
-      if (/boy|young|child|kid/.test(name)) score += 4
-      if (/jason|ryan/.test(name)) score += 1
-      if (/david|george|guy|thomas/.test(name)) score -= 3
+      if (/daniel|thomas|henri|ryan|guy|jason|aaron|evan/.test(name)) score += 10
+      if (/neural|natural|premium|enhanced/.test(name)) score += 2
+      if (/samantha|karen|moira|victoria|amelie|amélie|siri.*female/.test(name)) score -= 10
       if (voice.localService) score += 1
       return { voice, score }
     })
@@ -84,8 +84,9 @@ function pickBrowserVoice(locale: string) {
   return scored[0]?.voice
 }
 
-function playElement(el: HTMLAudioElement, onProgress?: (progress: number) => void) {
+function playElement(el: HTMLAudioElement, onProgress?: (progress: number) => void, onStart?: () => void) {
   return new Promise<void>((resolve, reject) => {
+    el.onplaying = () => onStart?.()
     el.ontimeupdate = () => {
       if (Number.isFinite(el.duration) && el.duration > 0) {
         onProgress?.(Math.min(1, el.currentTime / el.duration))
@@ -100,18 +101,19 @@ function playElement(el: HTMLAudioElement, onProgress?: (progress: number) => vo
   })
 }
 
-function speakBrowser(text: string, locale: string, onProgress?: (progress: number) => void) {
+function speakBrowser(text: string, locale: string, onProgress?: (progress: number) => void, onStart?: () => void) {
   if (!window.speechSynthesis) return Promise.reject(new Error("no speech"))
   window.speechSynthesis.cancel()
   const line = new SpeechSynthesisUtterance(text)
   line.lang = locale.startsWith("fr") ? "fr-FR" : "en-GB"
   line.rate = 0.98
-  line.pitch = 1.28
+  line.pitch = 1.03
   line.volume = 1
   const chosen = pickBrowserVoice(locale)
   if (chosen) line.voice = chosen
   utterance = line
   return new Promise<void>((resolve, reject) => {
+    line.onstart = () => onStart?.()
     line.onboundary = (event) => {
       if (event.charIndex !== undefined) {
         onProgress?.(Math.min(1, (event.charIndex + (event.charLength || 1)) / text.length))
@@ -121,7 +123,16 @@ function speakBrowser(text: string, locale: string, onProgress?: (progress: numb
       onProgress?.(1)
       resolve()
     }
-    line.onerror = (event) => reject(event.error)
+    line.onerror = (event) => {
+      // Browser speech can be blocked until a user gesture. Voice is
+      // optional, so never turn that permission state into a Next.js error.
+      if (event.error === "not-allowed" || event.error === "audio-busy") {
+        onProgress?.(1)
+        resolve()
+        return
+      }
+      reject(event.error)
+    }
     window.speechSynthesis.speak(line)
     window.setTimeout(() => window.speechSynthesis.getVoices(), 0)
   })
@@ -186,9 +197,8 @@ export async function speakMateLine(
       audio.muted = false
       audio.volume = 1
       audio.preload = "auto"
-      onStart?.()
       onProgress?.(0)
-      await playElement(audio, onProgress)
+      await playElement(audio, onProgress, onStart)
       return
     }
   } catch {
@@ -196,9 +206,9 @@ export async function speakMateLine(
   }
 
   if (stale()) return
-  onStart?.()
   onProgress?.(0)
-  await speakBrowser(text, tag, onProgress)
+  await speakBrowser(text, tag, onProgress, onStart).catch(() => undefined)
+  if (!stale()) onProgress?.(1)
 }
 
 /** Speak a personalized line that cannot use a shared, pre-generated clip. */
@@ -210,13 +220,27 @@ export async function speakMateText(
   if (!text.trim() || !voiceEnabled()) return
   const mine = ++scene
   fetchAbort?.abort()
-  fetchAbort = null
+  fetchAbort = new AbortController()
   killPlayback()
   const tag = locale.startsWith("fr") ? "fr" : "en"
-  opts.onStart?.()
+  const customUrl = voiceUrl("custom", tag, text, true)
   opts.onProgress?.(0)
   try {
-    await speakBrowser(text, tag, opts.onProgress)
+    const res = await fetch(customUrl, { signal: fetchAbort?.signal })
+    if (res.ok) {
+      const blob = await res.blob()
+      if (mine !== scene) return
+      objectUrl = URL.createObjectURL(blob)
+      audio = new Audio(objectUrl)
+      audio.muted = false
+      audio.volume = 1
+      audio.preload = "auto"
+      await playElement(audio, opts.onProgress, opts.onStart)
+    } else if (mine === scene) {
+      await speakBrowser(text, tag, opts.onProgress, opts.onStart).catch(() => undefined)
+    }
+    if (mine === scene) opts.onProgress?.(1)
+  } catch {
     if (mine === scene) opts.onProgress?.(1)
   } finally {
     if (mine === scene) utterance = null

@@ -135,6 +135,7 @@ export async function listPublicTutors(limit = 24): Promise<{ tutors: PublicTuto
       .eq("status", "approved")
       .or("is_hidden.is.null,is_hidden.eq.false")
       .limit(Math.min(Math.max(limit, 1), 60))
+      .abortSignal(AbortSignal.timeout(3000))
 
     if (error) {
       console.error("[tutors/directory] query failed", error.message)

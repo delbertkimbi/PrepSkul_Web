@@ -306,6 +306,10 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
       window.localStorage.setItem("skulmate.webOnboard.draft", JSON.stringify({ answers: next, index }))
       window.localStorage.setItem("skulmate.super", choice)
       window.localStorage.setItem("skulmate.voiceOut", next.voiceOut === false ? "off" : "on")
+    } catch {
+      // Storage may be unavailable; the URL still carries the answers.
+    }
+    {
       const appUrl = new URL(APP_ORIGIN)
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(appDraft))))
         .replace(/\+/g, "-")
@@ -313,8 +317,6 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
         .replace(/=+$/g, "")
       appUrl.hash = `ps-onboarding=${encoded}`
       window.location.href = appUrl.toString()
-    } catch {
-      window.location.href = APP_ORIGIN
     }
   }
 
@@ -322,6 +324,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   const restMood: PrepMateMood =
     step === "paywall" || step === "ready" ? "cheer" : step === "subject" || step === "level" ? "think" : "idle"
   const canContinue =
+    step === "meet" ||
     step === "ready" ||
     step === "paywall" ||
     (step === "name" && !!answers.name.trim()) ||
@@ -378,7 +381,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
         <div className="relative flex-1">
           <AnimatePresence mode="wait" custom={forward} initial={false}>
             <motion.div
-              key={step}
+              key={step === "welcome" || step === "paywall" ? step : "questions"}
               className="flex h-full flex-col"
               initial={{ opacity: 0, x: forward ? 28 : -28 }}
               animate={{ opacity: 1, x: 0 }}
@@ -573,7 +576,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                               style={{ background: SKY, animation: "listen-pulse 1.6s ease-out infinite" }}
                             />
                             <span className="text-[11px] font-extrabold uppercase tracking-wide" style={{ color: SKY }}>
-                              {fr ? "Mate écoute. Parle." : "Mate is listening. Just talk."}
+                              {fr ? "Apprends en parlant ou en écrivant." : "Learn by talking or typing."}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-2 p-3">
@@ -639,6 +642,7 @@ function Welcome({
   useEffect(() => {
     setWelcomeTitleProgress(undefined)
     setWelcomeNoteProgress(undefined)
+    setArmed(true)
     if (!voiceOut) {
       stopMateVoice()
       setArmed(true)
@@ -701,15 +705,14 @@ function Welcome({
           className="mt-5 w-full"
           title={copy.welcome}
           note={copy.welcomeNote}
-          titleProgress={welcomeTitleProgress}
-          noteProgress={welcomeNoteProgress}
           armed={armed}
           onReplay={() => {
             stopMateVoice()
-            setArmed(false)
-            setTalking(true)
+            setArmed(true)
+            setTalking(false)
             void speakMateLine("welcome", locale, {
               onStart: () => {
+                setTalking(true)
                 setWelcomeTitleProgress(0)
                 setWelcomeNoteProgress(0)
                 setArmed(true)
@@ -758,7 +761,8 @@ function Paywall({
   onSkip: () => void
 }) {
   const [typed, setTyped] = useState(false)
-  const [armed, setArmed] = useState(!voiceOut)
+  const [talking, setTalking] = useState(false)
+  const [armed, setArmed] = useState(true)
   const [progress, setProgress] = useState<number | undefined>()
 
   useEffect(() => {
@@ -768,18 +772,19 @@ function Paywall({
       return
     }
     let cancelled = false
-    setArmed(false)
+    setArmed(true)
     setProgress(undefined)
     void speakMateText(`${copy.payTitle}. ${copy.payNote}`, locale, {
       onStart: () => {
         if (!cancelled) {
           setProgress(0)
+          setTalking(true)
           setArmed(true)
         }
       },
       onProgress: setProgress,
     }).finally(() => {
-      if (!cancelled) setArmed(true)
+      if (!cancelled) { setArmed(true); setTalking(false) }
     })
     return () => {
       cancelled = true
@@ -794,21 +799,20 @@ function Paywall({
           animate={{ scale: 1, y: 0 }}
           transition={{ type: "spring", stiffness: 280, damping: 16 }}
         >
-          <PrepMate mood="cheer" size={196} variant="hero" />
+          <PrepMate mood={talking ? "talk" : "encourage"} size={196} variant="hero" />
         </motion.div>
         <Speech
           className="mt-4 w-full"
           title={copy.payTitle}
           note={copy.payNote}
-          progress={progress}
           armed={armed}
           onReplay={() => {
             setProgress(0)
-            setArmed(false)
+            setArmed(true)
             void speakMateText(`${copy.payTitle}. ${copy.payNote}`, locale, {
-              onStart: () => setArmed(true),
+              onStart: () => { setArmed(true); setTalking(true) },
               onProgress: setProgress,
-            }).finally(() => setArmed(true))
+            }).finally(() => { setArmed(true); setTalking(false) })
           }}
           replayLabel={locale === "fr" ? "Écouter" : "Listen"}
           onTyped={() => setTyped(true)}
@@ -864,14 +868,14 @@ function Ask({
   const [typed, setTyped] = useState(false)
   const [armed, setArmed] = useState(!voiceOut)
   const [talking, setTalking] = useState(false)
-  const [phase, setPhase] = useState<PrepMateMood>(intro ?? "talk")
+  const [phase, setPhase] = useState<PrepMateMood>(intro ?? "idle")
   const [progress, setProgress] = useState<number | undefined>()
 
   useEffect(() => {
     setTyped(false)
-    setArmed(!voiceOut)
+    setArmed(true)
     setTalking(false)
-    setPhase(intro ?? "talk")
+    setPhase(intro ?? "idle")
     setProgress(undefined)
   }, [title, intro, voiceOut])
 
@@ -932,7 +936,14 @@ function Ask({
     void speech.finally(() => setTalking(false))
   }
 
-  const mood = talking ? "talk" : typed ? restMood : phase
+  const mood = talking ? "talk" : restMood
+  const questionPose = voiceId === "name" || voiceId === "who" ? "wave"
+    : voiceId === "meet" ? "happy"
+    : voiceId === "level" ? "thinking"
+    : voiceId === "subject" || voiceId === "exam" ? "thinking"
+    : voiceId === "goal" ? "idea"
+    : voiceId === "country" || voiceId === "city" || voiceId === "mode" ? "idle"
+    : voiceId === "ready" ? "celebrate" : "encourage"
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -942,9 +953,9 @@ function Ask({
           animate={{ scale: 1, rotate: 0, y: 0 }}
           transition={{ type: "spring", stiffness: 280, damping: 16 }}
         >
-          <PrepMate mood={mood} size={108} variant="ask" />
+          <PrepMate mood={mood} state={talking ? undefined : restMood === "encourage" ? "success" : questionPose} size={108} variant="ask" />
         </motion.div>
-        <Speech title={title} note={note} progress={progress} tail armed={armed} onReplay={replay} replayLabel={locale === "fr" ? "Écouter" : "Listen"} onTyped={() => setTyped(true)} />
+        <Speech title={title} note={note} tail armed={armed} onReplay={replay} replayLabel={locale === "fr" ? "Écouter" : "Listen"} onTyped={() => setTyped(true)} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto pb-4">
         <Stagger ready={typed}>{children}</Stagger>
