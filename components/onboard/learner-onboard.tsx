@@ -576,7 +576,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                               style={{ background: SKY, animation: "listen-pulse 1.6s ease-out infinite" }}
                             />
                             <span className="text-[11px] font-extrabold uppercase tracking-wide" style={{ color: SKY }}>
-                              {fr ? "Mate écoute. Parle." : "Mate is listening. Just talk."}
+                              {fr ? "Apprends en parlant ou en écrivant." : "Learn by talking or typing."}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 gap-2 p-3">
@@ -939,10 +939,10 @@ function Ask({
   const mood = talking ? "talk" : restMood
   const questionPose = voiceId === "name" || voiceId === "who" ? "wave"
     : voiceId === "meet" ? "happy"
-    : voiceId === "level" ? "studying"
+    : voiceId === "level" ? "thinking"
     : voiceId === "subject" || voiceId === "exam" ? "thinking"
     : voiceId === "goal" ? "idea"
-    : voiceId === "country" || voiceId === "city" || voiceId === "mode" ? "pointing"
+    : voiceId === "country" || voiceId === "city" || voiceId === "mode" ? "idle"
     : voiceId === "ready" ? "celebrate" : "encourage"
 
   return (

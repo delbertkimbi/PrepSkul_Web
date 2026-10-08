@@ -14,7 +14,7 @@ export type SpeakMateOpts = {
   onProgress?: (progress: number) => void
 }
 
-const CLIP_TONE = "pcm-v2"
+const CLIP_TONE = "algieba-v3"
 
 function revision(text: string) {
   let hash = 2166136261
@@ -74,10 +74,9 @@ function pickBrowserVoice(locale: string) {
     .map((voice) => {
       const name = voice.name.toLowerCase()
       let score = 0
-      if (/abeo|henri/.test(name)) score += 6
-      if (/boy|young|child|kid/.test(name)) score += 4
-      if (/jason|ryan/.test(name)) score += 1
-      if (/david|george|guy|thomas/.test(name)) score -= 3
+      if (/daniel|thomas|henri|ryan|guy|jason|aaron|evan/.test(name)) score += 10
+      if (/neural|natural|premium|enhanced/.test(name)) score += 2
+      if (/samantha|karen|moira|victoria|amelie|amélie|siri.*female/.test(name)) score -= 10
       if (voice.localService) score += 1
       return { voice, score }
     })
@@ -108,7 +107,7 @@ function speakBrowser(text: string, locale: string, onProgress?: (progress: numb
   const line = new SpeechSynthesisUtterance(text)
   line.lang = locale.startsWith("fr") ? "fr-FR" : "en-GB"
   line.rate = 0.98
-  line.pitch = 1.28
+  line.pitch = 1.03
   line.volume = 1
   const chosen = pickBrowserVoice(locale)
   if (chosen) line.voice = chosen

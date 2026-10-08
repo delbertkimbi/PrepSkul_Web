@@ -15,12 +15,12 @@ const ELEVEN_MODEL = process.env.SKULMATE_ELEVEN_MODEL || "eleven_multilingual_v
  * valid for Gemini TTS; set the env vars when selecting another model.
  */
 const VOICES: Record<string, string> = {
-  en: process.env.SKULMATE_TTS_VOICE_EN || "Kore",
-  fr: process.env.SKULMATE_TTS_VOICE_FR || "Aoede",
+  en: process.env.SKULMATE_TTS_VOICE_EN || "Algieba",
+  fr: process.env.SKULMATE_TTS_VOICE_FR || "Algieba",
 }
 
 /** Younger, softer than a straight adult read. Keep the same speaker. */
-const SOFT_SPEED = 1.04
+const SOFT_SPEED = 1.0
 const SOFT_STYLE = "friendly"
 const SOFT_STYLE_DEGREE = 0.85
 

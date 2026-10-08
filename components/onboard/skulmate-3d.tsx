@@ -6,8 +6,15 @@ import type { MascotState } from "@/lib/mascot-states"
 type Viewer = HTMLElement & {
   availableAnimations: string[]; animationName: string; currentTime: number
   timeScale: number; play: () => void; pause: () => void; loaded: boolean
+  updateComplete: Promise<boolean>
 }
 let loader: Promise<void> | null = null
+function speedFor(state: string) {
+  if (state === "wave" || state === "celebrate" || state === "success") return 1.55
+  if (state === "talk" || state === "running") return 1.3
+  if (state === "sleeping" || state === "calm") return .8
+  return 1
+}
 function loadViewer() {
   if (customElements.get("model-viewer")) return Promise.resolve()
   if (!loader) loader = new Promise<void>((resolve, reject) => {
@@ -39,15 +46,17 @@ export function SkulMate3D({ state = "idle", size = 168, className = "" }: {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)")
     const playback = () => {
       if (!viewer.loaded) return
-      viewer.timeScale = desired.current === "talk" ? 1.35 : desired.current === "idle" ? 0.82 : 1.12
+      viewer.timeScale = speedFor(desired.current)
       if (visible && !document.hidden && !reduced.matches) viewer.play()
       else viewer.pause()
       viewer.dataset.playing = String(visible && !document.hidden && !reduced.matches)
     }
-    const onLoad = () => {
+    const onLoad = async () => {
       const name = desired.current === "teaching" ? "explaining" : desired.current === "calm" ? "meditation" : desired.current
       viewer.animationName = viewer.availableAnimations.find(clip => clip.replace(/^\d+_/, "") === name) ?? viewer.availableAnimations[0]
-      viewer.currentTime = 0
+      await viewer.updateComplete
+      if (!alive) return
+      viewer.currentTime = .001
       viewer.dataset.clip = viewer.animationName
       viewer.dataset.ready = "true"
       requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -77,14 +86,23 @@ export function SkulMate3D({ state = "idle", size = 168, className = "" }: {
     const viewer = host.current
     if (!loaded || !viewer) return
     const name = state === "teaching" ? "explaining" : state === "calm" ? "meditation" : state
-    viewer.timeScale = state === "talk" ? 1.35 : state === "idle" ? 0.82 : 1.12
+    viewer.timeScale = speedFor(state)
     const clip = viewer.availableAnimations.find(item => item.replace(/^\d+_/, "") === name)
-    if (clip && viewer.animationName !== clip) { viewer.animationName = clip; viewer.currentTime = 0; viewer.dataset.clip = clip }
+    let current = true
+    if (clip && viewer.animationName !== clip) {
+      viewer.animationName = clip
+      void viewer.updateComplete.then(() => {
+        if (!current) return
+        viewer.currentTime = .001
+        viewer.dataset.clip = clip
+      })
+    }
+    return () => { current = false }
   }, [state, loaded])
   return <span className={className} style={{ display: "inline-block", position: "relative", width: size, height: size }}>
     {createElement("model-viewer", {
-      key: attempt, ref: host, src: "/3d/skulmate.glb?v=satin-3", alt: "Mate, your learning companion", loading: "lazy",
-      "camera-orbit": "0deg 85deg 7m", "camera-target": "0m 1.7m 0m", "field-of-view": "30deg",
+      key: attempt, ref: host, src: "/3d/skulmate.glb?v=soft-limbs-5", alt: "Mate, your learning companion", loading: "lazy",
+      "camera-orbit": "0deg 85deg 7m", "camera-target": state === "teaching" ? "0.25m 1.7m 0m" : "0m 1.7m 0m", "field-of-view": "30deg",
       "interaction-prompt": "none", "shadow-intensity": size < 128 ? "0" : "0.35", exposure: "1",
       "animation-crossfade-duration": state === "talk" || state === "idle" ? "80" : "220",
       className: "ps-mate-viewer",

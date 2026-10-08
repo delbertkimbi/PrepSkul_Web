@@ -88,6 +88,15 @@ export default function MatePage() {
           </a>
         </PaperSheet>
       </section>
+      <section className="ps-wrap pb-16">
+        <PaperSheet tone="cream" className="p-6 sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-wider text-[#5C6B84]">{fr ? "En préparation · option payante" : "Planned · paid option"}</p>
+          <h2 className="ps-h2 mt-3">{fr ? "Une voix et une langue que tu comprends." : "A voice and language you understand."}</h2>
+          <p className="ps-lead mt-4 max-w-3xl">{fr
+            ? "Nous préparons des voix personnelles : celle d’un parent ou d’un tuteur, avec son accord explicite. Chaque voix devra être autorisée avant son utilisation, et son propriétaire pourra retirer son accord. Cette fonctionnalité n’est pas encore disponible."
+            : "We’re exploring personal voices—from a parent or a tutor who has explicitly agreed. Each voice will require permission before use, and its owner will be able to withdraw that permission. This feature is not available yet."}</p>
+        </PaperSheet>
+      </section>
       <Footer />
     </div>
   )
