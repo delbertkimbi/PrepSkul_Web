@@ -3,7 +3,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import {
   assertImageBundleWithinLimit,
   parseImageBundleLimits,
@@ -24,7 +24,7 @@ function getServiceSupabaseAdmin() {
   return createClient(url, key)
 }
 
-async function getUserCreditsBalance(admin: ReturnType<typeof createClient>, userId: string) {
+async function getUserCreditsBalance(admin: SupabaseClient, userId: string) {
   const { data } = await admin
     .from('user_credits')
     .select('balance')

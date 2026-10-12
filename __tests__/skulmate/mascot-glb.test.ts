@@ -26,6 +26,9 @@ describe('shipped Mate character', () => {
 
   it('does not ship the detached finger objects', () => {
     expect(document.nodes.some((n: {name?: string}) => n.name?.startsWith('Finger.'))).toBe(false)
-    expect(document.nodes.filter((n: {name?: string}) => /^Hand\.[LR]$/.test(n.name ?? ''))).toHaveLength(2)
+    expect(document.nodes.filter((n: {name?: string}) => /^hand\.[LR]$/.test(n.name ?? ''))).toHaveLength(2)
+    expect(document.meshes).toHaveLength(1)
+    expect(document.meshes[0].primitives.length).toBeLessThanOrEqual(12)
+    expect(bytes.length).toBeLessThan(2_500_000)
   })
 })

@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
-import { Fredoka } from "next/font/google"
+import localFont from "next/font/local"
 import { SbcLanguageProvider } from "@/lib/sbc/i18n"
 import "./sbc.css"
 
-const fredoka = Fredoka({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const fredoka = localFont({
+  src: "../../public/fonts/Fredoka.ttf",
+  weight: "300 700",
   variable: "--font-fredoka",
   display: "swap",
 })

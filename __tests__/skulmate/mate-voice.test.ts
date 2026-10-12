@@ -6,13 +6,13 @@ describe('SkulMate onboard voice', () => {
   it('keeps a closed catalogue of welcome lines', () => {
     expect(mateVoiceText('welcome', 'en')).toMatch(/I'm Mate/)
     expect(mateVoiceText('welcome', 'en')).not.toMatch(/Hi there/)
-    expect(mateVoiceText('welcome_note', 'en')).toMatch(/SkulMate/)
+    expect(mateVoiceText('welcome_note', 'en')).toMatch(/understand your lessons/)
     expect(mateVoiceText('welcome_note', 'en')).toBe(
-      "I'm your SkulMate. I'll help you understand your lessons. Need a tutor? I can help you find one.",
+      "I'm here to help you understand your lessons, one step at a time. We'll start with what matters to you.",
     )
     expect(mateVoiceText('welcome_note', 'en')).not.toMatch(/start with your school/)
     expect(mateVoiceText('welcome', 'fr')).toMatch(/Mate/)
-    expect(mateVoiceText('welcome_note', 'fr')).toMatch(/SkulMate/)
+    expect(mateVoiceText('welcome_note', 'fr')).toMatch(/comprendre tes leçons/)
     expect(mateVoiceText('unknown', 'en')).toBeUndefined()
     expect(Object.keys(MATE_VOICE_LINES.en)).toEqual(Object.keys(MATE_VOICE_LINES.fr))
   })
@@ -36,11 +36,12 @@ describe('SkulMate onboard voice', () => {
     expect(onboard).toMatch(/prefetchMateLine/)
     expect(onboard).toMatch(/armed=\{armed\}/)
     expect(onboard).not.toMatch(/onPointerDown=\{\(\) => void hearMate\(\)\}/)
-    expect(route).toMatch(/en-NG-AbeoNeural/)
-    expect(route).toMatch(/fr-FR-HenriNeural/)
+    expect(route).toMatch(/SKULMATE_TTS_VOICE_EN/)
+    expect(route).toMatch(/SKULMATE_TTS_VOICE_FR/)
+    expect(route).toMatch(/Algieba/)
     expect(route).toMatch(/SOFT_SPEED/)
     expect(route).toMatch(/friendly/)
-    expect(player).toMatch(/CLIP_TONE = "soft"/)
-    expect(player).toMatch(/pitch = 1.28/)
+    expect(player).toMatch(/CLIP_TONE = "algieba-v3"/)
+    expect(player).toMatch(/pitch = 1.03/)
   })
 })

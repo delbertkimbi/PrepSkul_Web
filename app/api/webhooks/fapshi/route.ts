@@ -1,6 +1,8 @@
+import { guardApi } from '@/lib/skulmate/api-input';
+import { verifiedTransaction } from '@/lib/payments/fapshi';
+import { getServiceSupabaseAdmin } from '@/lib/skulmate/billing';
 import { allocateTutorEarningsForPaymentRequest } from '@/lib/services/tutor-earnings-allocation';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase-server';
 import { generateTrialMeetLink } from '@/lib/services/meet-service';
 import { createPaymentNotification } from '@/lib/services/webhook-notifications';
 
@@ -16,10 +18,14 @@ import { createPaymentNotification } from '@/lib/services/webhook-notifications'
  * Webhook URL: https://www.prepskul.com/api/webhooks/fapshi
  * Configure this URL in Fapshi dashboard
  */
-export async function POST(request: NextRequest) {
+async function handlePOST(request: NextRequest) {
+  let leaseToken: string | null = null;
+  let transactionId: string | null = null;
   try {
     // Parse webhook payload
-    const body = await request.json();
+    const incoming = await request.json();
+    if (typeof incoming.transId !== 'string') return NextResponse.json({error:'Invalid transaction'}, {status:400});
+    const { provider: body } = await verifiedTransaction(incoming.transId);
     
     // Extract webhook data
     const {
@@ -47,7 +53,13 @@ export async function POST(request: NextRequest) {
     const normalizedStatus = normalizeStatus(status);
 
     // Get Supabase client
-    const supabase = await createServerSupabaseClient();
+    const supabase = getServiceSupabaseAdmin();
+    if (!supabase) throw new Error('Payment store unavailable');
+    transactionId = transId;
+    const { data: lease, error: leaseError } = await supabase.rpc('claim_payment_webhook', {p_trans_id: transId, p_status: normalizedStatus});
+    if (leaseError) throw new Error('Payment store unavailable');
+    if (!lease) return NextResponse.json({success:true, message:'Already received'});
+    leaseToken = lease;
 
     // Route to appropriate handler based on externalId pattern
     if (externalId.startsWith('trial_')) {
@@ -85,7 +97,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log(`✅ Webhook processed successfully: ${transId}`);
+    const {error: completionError} = await supabase.from('secure_webhook_jobs').update({
+      lease_until: new Date(0).toISOString(), finished_status: normalizedStatus, successful: normalizedStatus === 'SUCCESS'
+    }).eq('transaction_id',transId).eq('lease_token',leaseToken);
+    if (completionError) throw new Error('Payment completion could not be recorded');
     
     // Return success response
     return NextResponse.json({ 
@@ -94,13 +109,15 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error processing Fapshi webhook:', error);
+    if (leaseToken && transactionId) await getServiceSupabaseAdmin()?.from('secure_webhook_jobs')
+      .update({lease_until:new Date(0).toISOString()}).eq('transaction_id',transactionId).eq('lease_token',leaseToken);
+    console.error('Payment webhook could not be verified or processed');
     
     // Return error but don't fail the webhook (Fapshi will retry)
     return NextResponse.json(
       { 
         success: false, 
-        error: error.message || 'Internal server error' 
+        error: 'Payment verification or processing failed'
       },
       { status: 500 }
     );
@@ -151,7 +168,9 @@ async function handleTrialSessionPayment({
   failureReason?: string;
 }) {
   try {
-    console.log(`📝 Processing trial session payment: ${trialSessionId}`);
+    const {data: current, error: currentError} = await supabase.from('trial_sessions').select('payment_status').eq('id',trialSessionId).maybeSingle();
+    if (currentError || !current) throw new Error('Trial not found');
+    if (current.payment_status === 'paid') return;
 
     if (status === 'SUCCESS') {
       // Payment successful - update trial session
@@ -665,3 +684,5 @@ async function handleByTransactionId({
 
 
 
+
+export const POST = guardApi(handlePOST);

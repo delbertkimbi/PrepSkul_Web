@@ -1,11 +1,7 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
-import { Geist } from "next/font/google"
+import { GeistSans as geist } from "geist/font/sans"
 
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist-sans",
-})
 
 export const metadata: Metadata = {
   title: "Tichar AI - Turn Docs into Presentations | AI-Powered Presentation Tool",

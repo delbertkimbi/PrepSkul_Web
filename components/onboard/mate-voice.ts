@@ -1,16 +1,21 @@
 "use client"
 
+import { emitMateSpeechFrame } from "@/lib/mate-speech-motion"
 import { mateVoiceText } from "@/lib/skulmate/mate-voice-lines"
 
+let speechAudioContext: AudioContext | null = null
 let audio: HTMLAudioElement | null = null
 let objectUrl: string | null = null
 let utterance: SpeechSynthesisUtterance | null = null
 let scene = 0
-let fetchAbort: AbortController | null = null
+let settlePlayback: (() => void) | null = null
+let interactionUnlocked = false
+const pendingClips = new Map<string, Promise<Blob | undefined>>()
 const clipCache = new Map<string, Blob>()
 
 export type SpeakMateOpts = {
   onStart?: () => void
+  onPause?: () => void
   onProgress?: (progress: number) => void
 }
 
@@ -35,6 +40,8 @@ function voiceUrl(phrase: string, tag: string, text: string, custom = false) {
 }
 
 function killPlayback() {
+  settlePlayback?.()
+  settlePlayback = null
   if (audio) {
     audio.pause()
     audio.src = ""
@@ -52,8 +59,6 @@ function killPlayback() {
 
 export function stopMateVoice() {
   scene += 1
-  fetchAbort?.abort()
-  fetchAbort = null
   killPlayback()
 }
 
@@ -63,6 +68,18 @@ function voiceEnabled() {
     return window.localStorage.getItem("skulmate.voiceOut") !== "off"
   } catch {
     return true
+  }
+}
+
+/** Browsers block unprompted sound. A Listen tap unlocks Mate for this flow. */
+export async function unlockMateVoice() {
+  interactionUnlocked = true
+  if (typeof window === "undefined" || !window.AudioContext) return
+  try {
+    speechAudioContext ??= new AudioContext()
+    await speechAudioContext.resume()
+  } catch {
+    // Browser speech synthesis remains a useful fallback.
   }
 }
 
@@ -84,24 +101,72 @@ function pickBrowserVoice(locale: string) {
   return scored[0]?.voice
 }
 
-function playElement(el: HTMLAudioElement, onProgress?: (progress: number) => void, onStart?: () => void) {
+function playElement(el: HTMLAudioElement, opts: SpeakMateOpts) {
   return new Promise<void>((resolve, reject) => {
-    el.onplaying = () => onStart?.()
-    el.ontimeupdate = () => {
+    let frame = 0
+    let finished = false
+    let lastProgress = -1
+    let analyser: AnalyserNode | null = null
+    let source: MediaElementAudioSourceNode | null = null
+    let samples: Uint8Array<ArrayBuffer> | null = null
+    let mouth = 0
+    // Keep audio on its native path unless a running context is available.
+    const connectMeter = async () => {
+      if (!window.AudioContext) return
+      try {
+        speechAudioContext ??= new AudioContext()
+        await speechAudioContext.resume()
+        if (finished || speechAudioContext.state !== "running") return
+        analyser = speechAudioContext.createAnalyser()
+        analyser.fftSize = 256
+        samples = new Uint8Array(analyser.fftSize)
+        source = speechAudioContext.createMediaElementSource(el)
+        source.connect(analyser); analyser.connect(speechAudioContext.destination)
+      } catch { /* Mouth still uses the normal talking clip when metering is unavailable. */ }
+    }
+    void connectMeter()
+    const watchdog = window.setTimeout(() => finish(new Error("audio timeout")), 60000)
+    const finish = (error?: Error) => {
+      if (finished) return
+      finished = true
+      cancelAnimationFrame(frame)
+      window.clearTimeout(watchdog)
+      el.onplaying = el.onpause = el.onwaiting = el.onended = el.onerror = null
+      if (settlePlayback === cancel) settlePlayback = null
+      source?.disconnect(); analyser?.disconnect()
+      emitMateSpeechFrame(null)
+      opts.onPause?.()
+      if (error) reject(error)
+      else resolve()
+    }
+    const cancel = () => finish()
+    settlePlayback = cancel
+    const tick = () => {
+      if (finished) return
       if (Number.isFinite(el.duration) && el.duration > 0) {
-        onProgress?.(Math.min(1, el.currentTime / el.duration))
+        const progress = Math.min(1, el.currentTime / el.duration)
+        // Use the media clock, including pauses, rather than a typing timer.
+        if (progress !== lastProgress) { opts.onProgress?.(progress); lastProgress = progress }
       }
+      if (analyser && samples) {
+        analyser.getByteTimeDomainData(samples)
+        let energy = 0
+        for (const value of samples) energy += ((value - 128) / 128) ** 2
+        const target = Math.min(1, Math.max(0, (Math.sqrt(energy / samples.length) - .012) * 7))
+        mouth += (target - mouth) * (target > mouth ? .8 : .45)
+        emitMateSpeechFrame(mouth)
+      }
+      frame = requestAnimationFrame(tick)
     }
-    el.onended = () => {
-      onProgress?.(1)
-      resolve()
-    }
-    el.onerror = () => reject(new Error("audio"))
-    el.play().then(() => undefined).catch(reject)
+    el.onplaying = () => { opts.onStart?.(); cancelAnimationFrame(frame); tick() }
+    el.onpause = el.onwaiting = () => { cancelAnimationFrame(frame); emitMateSpeechFrame(0); opts.onPause?.() }
+    el.onended = () => { opts.onProgress?.(1); finish() }
+    el.onerror = () => finish(new Error("audio"))
+    el.play().catch(error => finish(error))
   })
 }
 
-function speakBrowser(text: string, locale: string, onProgress?: (progress: number) => void, onStart?: () => void) {
+function speakBrowser(text: string, locale: string, opts: SpeakMateOpts) {
   if (!window.speechSynthesis) return Promise.reject(new Error("no speech"))
   window.speechSynthesis.cancel()
   const line = new SpeechSynthesisUtterance(text)
@@ -112,137 +177,115 @@ function speakBrowser(text: string, locale: string, onProgress?: (progress: numb
   const chosen = pickBrowserVoice(locale)
   if (chosen) line.voice = chosen
   utterance = line
-  return new Promise<void>((resolve, reject) => {
-    line.onstart = () => onStart?.()
-    line.onboundary = (event) => {
-      if (event.charIndex !== undefined) {
-        onProgress?.(Math.min(1, (event.charIndex + (event.charLength || 1)) / text.length))
-      }
-    }
-    line.onend = () => {
-      onProgress?.(1)
+  return new Promise<void>((resolve) => {
+    let finished = false
+    let startTimer = 0
+    let endTimer = 0
+    const finish = () => {
+      if (finished) return
+      finished = true
+      window.clearTimeout(startTimer); window.clearTimeout(endTimer)
+      line.onstart = line.onend = line.onerror = line.onboundary = null
+      if (settlePlayback === cancel) settlePlayback = null
+      opts.onPause?.()
+      opts.onProgress?.(1)
       resolve()
     }
-    line.onerror = (event) => {
-      // Browser speech can be blocked until a user gesture. Voice is
-      // optional, so never turn that permission state into a Next.js error.
-      if (event.error === "not-allowed" || event.error === "audio-busy") {
-        onProgress?.(1)
-        resolve()
-        return
-      }
-      reject(event.error)
+    const cancel = () => finish()
+    settlePlayback = cancel
+    startTimer = window.setTimeout(() => { window.speechSynthesis.cancel(); finish() }, 2500)
+    line.onstart = () => {
+      window.clearTimeout(startTimer)
+      endTimer = window.setTimeout(() => { window.speechSynthesis.cancel(); finish() }, 60000)
+      opts.onStart?.()
     }
+    line.onboundary = event => {
+      if (event.charIndex !== undefined) {
+        opts.onProgress?.(Math.min(1, (event.charIndex + (event.charLength || 1)) / text.length))
+      }
+    }
+    line.onend = line.onerror = finish
     window.speechSynthesis.speak(line)
-    window.setTimeout(() => window.speechSynthesis.getVoices(), 0)
   })
 }
 
-function parseOpts(enabledOrOpts: boolean | SpeakMateOpts = true) {
-  if (enabledOrOpts === false) return { enabled: false as const, onStart: undefined, onProgress: undefined }
-  if (enabledOrOpts === true) return { enabled: true as const, onStart: undefined, onProgress: undefined }
-  return { enabled: true as const, onStart: enabledOrOpts.onStart, onProgress: enabledOrOpts.onProgress }
+// Share prefetch with playback so onboarding never synthesizes a line twice.
+async function loadClip(key: string, url: string): Promise<Blob | undefined> {
+  const cached = clipCache.get(key)
+  if (cached) return cached
+  const pending = pendingClips.get(key)
+  if (pending) return pending
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 4500)
+  const request = (async () => {
+    try {
+      const res = await fetch(url, { signal: controller.signal })
+      if (!res.ok) return undefined
+      const blob = await res.blob()
+      if (!blob.size || !blob.type.startsWith("audio/")) return undefined
+      if (clipCache.size >= 40) clipCache.delete(clipCache.keys().next().value!)
+      clipCache.set(key, blob)
+      return blob
+    } catch { return undefined }
+    finally { window.clearTimeout(timeout); pendingClips.delete(key) }
+  })()
+  pendingClips.set(key, request)
+  return request
 }
 
 export async function prefetchMateLine(phrase: string, locale: string) {
+  if (!voiceEnabled()) return
   const text = mateVoiceText(phrase, locale)
   if (!text) return
   const tag = locale.startsWith("fr") ? "fr" : "en"
-  const key = clipKey(phrase, tag, text)
-  if (clipCache.has(key)) return
-  try {
-    const res = await fetch(voiceUrl(phrase, tag, text))
-    if (!res.ok) return
-    const blob = await res.blob()
-    if (!clipCache.has(key)) clipCache.set(key, blob)
-  } catch {
-    /* next speak will retry */
-  }
+  await loadClip(clipKey(phrase, tag, text), voiceUrl(phrase, tag, text))
 }
 
-export async function speakMateLine(
-  phrase: string,
-  locale: string,
-  enabledOrOpts: boolean | SpeakMateOpts = true,
-) {
-  const { enabled, onStart, onProgress } = parseOpts(enabledOrOpts)
-  if (!enabled || !voiceEnabled()) return
-  const text = mateVoiceText(phrase, locale)
-  if (!text) return
-
-  const mine = ++scene
-  fetchAbort?.abort()
-  killPlayback()
-  fetchAbort = new AbortController()
-  const stale = () => mine !== scene
+async function speak(text: string, phrase: string, locale: string, opts: SpeakMateOpts, custom: boolean) {
+  stopMateVoice()
+  const mine = scene
+  // Every callback is scoped to this utterance, including late browser events.
+  const current: SpeakMateOpts = {
+    onStart: () => { if (mine === scene) opts.onStart?.() },
+    onPause: () => { if (mine === scene) opts.onPause?.() },
+    onProgress: progress => { if (mine === scene) opts.onProgress?.(progress) },
+  }
+  if (!text.trim() || !voiceEnabled()) { current.onProgress?.(1); return }
+  // Keep the written prompt responsive until the browser has a user gesture.
+  // The persistent Listen button then starts sound reliably instead of silently
+  // failing through autoplay policy.
+  if (!interactionUnlocked) { current.onProgress?.(1); return }
   const tag = locale.startsWith("fr") ? "fr" : "en"
-  const key = clipKey(phrase, tag, text)
-
+  current.onProgress?.(0)
+  const blob = await loadClip(clipKey(phrase, tag, text), voiceUrl(phrase, tag, text, custom))
+  if (mine !== scene) return false
   try {
-    let blob = clipCache.get(key)
-    if (!blob) {
-      const res = await fetch(voiceUrl(phrase, tag, text), {
-        signal: fetchAbort.signal,
-      })
-      if (stale()) return
-      if (res.ok) {
-        blob = await res.blob()
-        if (stale()) return
-        clipCache.set(key, blob)
-      }
-    }
-    if (blob && !stale()) {
+    if (blob) {
       objectUrl = URL.createObjectURL(blob)
       audio = new Audio(objectUrl)
       audio.muted = false
       audio.volume = 1
       audio.preload = "auto"
-      onProgress?.(0)
-      await playElement(audio, onProgress, onStart)
-      return
+      await playElement(audio, current)
+      return mine === scene
     }
   } catch {
-    if (stale()) return
+    if (mine !== scene) return false
+    killPlayback()
   }
-
-  if (stale()) return
-  onProgress?.(0)
-  await speakBrowser(text, tag, onProgress, onStart).catch(() => undefined)
-  if (!stale()) onProgress?.(1)
+  if (mine !== scene) return false
+  await speakBrowser(text, tag, current).catch(() => undefined)
+  if (mine === scene) { current.onPause?.(); current.onProgress?.(1) }
+  return mine === scene
 }
 
-/** Speak a personalized line that cannot use a shared, pre-generated clip. */
-export async function speakMateText(
-  text: string,
-  locale: string,
-  opts: SpeakMateOpts = {},
-) {
-  if (!text.trim() || !voiceEnabled()) return
-  const mine = ++scene
-  fetchAbort?.abort()
-  fetchAbort = new AbortController()
-  killPlayback()
-  const tag = locale.startsWith("fr") ? "fr" : "en"
-  const customUrl = voiceUrl("custom", tag, text, true)
-  opts.onProgress?.(0)
-  try {
-    const res = await fetch(customUrl, { signal: fetchAbort?.signal })
-    if (res.ok) {
-      const blob = await res.blob()
-      if (mine !== scene) return
-      objectUrl = URL.createObjectURL(blob)
-      audio = new Audio(objectUrl)
-      audio.muted = false
-      audio.volume = 1
-      audio.preload = "auto"
-      await playElement(audio, opts.onProgress, opts.onStart)
-    } else if (mine === scene) {
-      await speakBrowser(text, tag, opts.onProgress, opts.onStart).catch(() => undefined)
-    }
-    if (mine === scene) opts.onProgress?.(1)
-  } catch {
-    if (mine === scene) opts.onProgress?.(1)
-  } finally {
-    if (mine === scene) utterance = null
-  }
+export async function speakMateLine(phrase: string, locale: string, enabledOrOpts: boolean | SpeakMateOpts = true) {
+  if (enabledOrOpts === false) { stopMateVoice(); return }
+  const opts = typeof enabledOrOpts === "boolean" ? {} : enabledOrOpts
+  return await speak(mateVoiceText(phrase, locale) || "", phrase, locale, opts, false)
+}
+
+/** Speak a personalized line using the same cancellation and playback clock. */
+export async function speakMateText(text: string, locale: string, opts: SpeakMateOpts = {}) {
+  return await speak(text, "custom", locale, opts, true)
 }

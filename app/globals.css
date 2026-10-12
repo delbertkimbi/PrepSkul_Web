@@ -1,4 +1,5 @@
-@import "tailwindcss";
+/* Scan application sources only, not local build archives or design exports. */
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 
 @source "./**/*.{js,ts,jsx,tsx,mdx}";
@@ -1085,3 +1086,17 @@
 @keyframes mate-celebrate { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-12px) rotate(4deg); } 70% { transform: translateY(-3px) rotate(-2deg); } }
 @keyframes mate-speaking { from { transform: translateY(0); } to { transform: translateY(-2px) rotate(1deg); } }
 @media (prefers-reduced-motion: reduce) { .ps-mate-3d { animation: none !important; } }
+
+/* A quiet orbital stage keeps Mate's paper-world palette and 3D silhouette. */
+.ps-landing-mate { position: relative; display: inline-grid; place-items: center; flex-shrink: 0; border: 0; padding: 0; background: transparent; border-radius: 24px; cursor: pointer; isolation: isolate; }
+.ps-landing-mate:focus-visible { outline: 3px solid #FFBE08; outline-offset: 6px; }
+.ps-landing-mate > .ps-mate-3d { position: relative; z-index: 1; transition: transform 280ms ease-out; }
+@media (hover: hover) { .ps-landing-mate:hover > .ps-mate-3d { transform: translateY(-4px); } }
+.ps-mate-orbit { position: absolute; inset: 14% 4%; border-radius: 50%; border: 1px solid rgb(14 165 233 / .22); transform: rotate(-24deg); box-shadow: 0 0 32px rgb(14 165 233 / .08), inset 0 0 26px rgb(14 165 233 / .06); animation: ps-mate-orbit 18s linear infinite; animation-play-state: paused; }
+.ps-mate-orbit::after { content: ""; position: absolute; inset: 9%; border: 1px dashed rgb(255 255 255 / .12); border-radius: 50%; }
+.ps-mate-orbit i { position: absolute; width: 7px; height: 7px; border-radius: 50%; background: #0EA5E9; left: 12%; top: 14%; box-shadow: 0 0 12px rgb(14 165 233 / .5); }
+.ps-mate-orbit i:nth-child(2) { left: auto; right: 5%; top: 70%; background: #FFBE08; }
+.ps-mate-orbit i:nth-child(3) { left: 28%; top: auto; bottom: 1%; width: 4px; height: 4px; background: #fffdf7; }
+.ps-landing-mate[data-running="true"] .ps-mate-orbit { animation-play-state: running; }
+@keyframes ps-mate-orbit { to { transform: rotate(336deg); } }
+@media (prefers-reduced-motion: reduce) { .ps-mate-orbit { animation: none; } .ps-landing-mate > .ps-mate-3d { transition: none; transform: none !important; } }

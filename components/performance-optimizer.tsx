@@ -4,23 +4,6 @@ import { useEffect } from "react"
 
 export function PerformanceOptimizer() {
   useEffect(() => {
-    // Preload critical resources
-    const preloadCriticalResources = () => {
-      // Preload hero image
-      const heroImage = document.createElement('link')
-      heroImage.rel = 'preload'
-      heroImage.href = '/images/hero-tutoring.png'
-      heroImage.as = 'image'
-      document.head.appendChild(heroImage)
-
-      // Preload fonts
-      const fontPreload = document.createElement('link')
-      fontPreload.rel = 'preload'
-      fontPreload.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap'
-      fontPreload.as = 'style'
-      document.head.appendChild(fontPreload)
-    }
-
     // Optimize images for better LCP
     const optimizeImages = () => {
       const images = document.querySelectorAll('img')
@@ -48,7 +31,6 @@ export function PerformanceOptimizer() {
     }
 
     // Initialize optimizations
-    preloadCriticalResources()
     optimizeImages()
     preventLayoutShift()
 

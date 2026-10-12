@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Link from "next/link"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -11,7 +12,7 @@ import { ScrollFill } from "@/components/marketing/scroll-fill"
 import { ScrollReveal } from "@/components/sbc/scroll-reveal"
 import { LiveTicker } from "@/components/marketing/live-ticker"
 import { Laurel } from "@/components/marketing/mate-point"
-import { PrepMate } from "@/components/onboard/prep-mate"
+import { LandingMate } from "@/components/marketing/landing-mate"
 import { previewPublicTutors, type PublicTutor } from "@/lib/tutors/directory"
 import { type Locale } from "@/lib/i18n"
 import { ArrowRight } from "lucide-react"
@@ -43,7 +44,7 @@ const MODES = [
   },
 ]
 
-function TutorMiniCard({ tutor, locale }: { tutor: PublicTutor; locale: string }) {
+export function TutorMiniCard({ tutor, locale }: { tutor: PublicTutor; locale: string }) {
   const initial = tutor.name.trim().charAt(0).toUpperCase() || "P"
   return (
     <Link href={`/${locale}/find`} className="block">
@@ -51,7 +52,7 @@ function TutorMiniCard({ tutor, locale }: { tutor: PublicTutor; locale: string }
         {tutor.photoUrl ? (
           <div className="h-12 w-12 shrink-0 overflow-hidden rounded-2xl border border-[#1B2C4F]/10 bg-[#fffdf7]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={tutor.photoUrl} alt="" className="h-full w-full object-cover" />
+            <img src={tutor.photoUrl} alt="" loading="lazy" decoding="async" width={48} height={48} className="h-full w-full object-cover" />
           </div>
         ) : (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#1B2C4F] text-sm font-black text-white">
@@ -72,9 +73,11 @@ function TutorMiniCard({ tutor, locale }: { tutor: PublicTutor; locale: string }
 export function AliveHome({
   locale,
   tutors = [],
+  tutorCards,
 }: {
   locale: string
   tutors?: PublicTutor[]
+  tutorCards?: ReactNode
 }) {
   const c = aliveCopy(locale)
   const loc = (locale.startsWith("fr") ? "fr" : "en") as Locale
@@ -130,7 +133,7 @@ export function AliveHome({
 
       <section className="ps-live-stats mb-[3px] px-4 pb-0 pt-2 sm:px-6 sm:pb-4 sm:pt-4 lg:pb-5 lg:pt-14 xl:pt-16" aria-label={c.hero.statLine}>
         <div className="ps-live-stats-row">
-          <PrepMate mood="wave" size={104} />
+          <LandingMate scene="welcome" size={104} locale={locale} priority />
           <div className="ps-live-stats-grid">
             {c.hero.stats.map((stat, index) => {
               const rating = stat.decimals > 0
@@ -205,7 +208,7 @@ export function AliveHome({
         <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-2">
           <div className="mx-auto flex w-full max-w-[20rem] justify-center overflow-visible sm:max-w-[22rem]">
             <div className="ps-mate-well">
-              <PrepMate state="reading" size={280} onDarkBackground />
+              <LandingMate scene="learn" size={280} locale={locale} />
             </div>
           </div>
           <div>
@@ -294,7 +297,7 @@ export function AliveHome({
             </div>
           </div>
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {preview.map((tutor) => (
+            {tutorCards ?? preview.map((tutor) => (
               <TutorMiniCard key={tutor.id} tutor={tutor} locale={locale} />
             ))}
           </div>
@@ -309,7 +312,7 @@ export function AliveHome({
               <PaperSheet key={aud.id} tone={aud.tone} className="ps-fill-well overflow-hidden p-4 sm:p-5" rotate={i === 1 ? 1.2 : -1}>
                 <div className="overflow-hidden rounded-[18px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={aud.image} alt="" className="h-48 w-full object-cover" />
+                  <img src={aud.image} alt="" loading="lazy" decoding="async" className="h-48 w-full object-cover" />
                 </div>
                 <h3 className="ps-display mt-5 text-2xl font-black uppercase text-[#1B2C4F]">{aud.title}</h3>
                 <ul className="mt-3 space-y-3">
@@ -338,7 +341,7 @@ export function AliveHome({
                 <PaperSheet className="h-full overflow-hidden p-3 sm:p-4" tone={program.tone} rotate={i ? 1 : -1}>
                   <div className="overflow-hidden rounded-[18px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={program.cover} alt="" className="h-40 w-full object-cover sm:h-48" />
+                    <img src={program.cover} alt="" loading="lazy" decoding="async" className="h-40 w-full object-cover sm:h-48" />
                   </div>
                   <div className="p-3 sm:p-4">
                     <h3 className="ps-h2">{program.title}</h3>
@@ -404,7 +407,7 @@ export function AliveHome({
           </div>
           <div className="mx-auto flex w-full max-w-[16rem] justify-center overflow-visible">
             <div className="ps-mate-well">
-              <PrepMate mood="cheer" size={256} onDarkBackground />
+              <LandingMate scene="celebrate" size={256} locale={locale} />
             </div>
           </div>
         </div>

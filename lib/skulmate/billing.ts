@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 export type SkulmatePricingConfig = {
   creditsPerManualTextGame: number
@@ -18,7 +18,7 @@ export function getServiceSupabaseAdmin() {
 }
 
 export async function getSkulmatePricingConfig(
-  admin: ReturnType<typeof createClient>
+  admin: SupabaseClient
 ): Promise<SkulmatePricingConfig> {
   const defaults: SkulmatePricingConfig = {
     creditsPerManualTextGame: 2,
@@ -33,17 +33,7 @@ export async function getSkulmatePricingConfig(
   try {
     const { data, error } = await admin
       .from('skulmate_pricing')
-      .select(
-        [
-          'credits_per_manual_text_game',
-          'credits_per_doc_text_game',
-          'credits_per_image_game_base',
-          'free_doc_text_games_per_day',
-          'free_image_games_per_day',
-          'max_images_per_prompt_free',
-          'max_images_per_prompt_paid',
-        ].join(',')
-      )
+      .select('credits_per_manual_text_game,credits_per_doc_text_game,credits_per_image_game_base,free_doc_text_games_per_day,free_image_games_per_day,max_images_per_prompt_free,max_images_per_prompt_paid')
       .eq('id', 1)
       .maybeSingle()
 
@@ -78,7 +68,7 @@ export async function getSkulmatePricingConfig(
 }
 
 export async function ensureUserCreditsRow(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseClient,
   userId: string
 ) {
   const { data: existing, error: fetchError } = await admin
@@ -106,7 +96,7 @@ export async function ensureUserCreditsRow(
 }
 
 export async function getUserCreditsBalance(
-  admin: ReturnType<typeof createClient>,
+  admin: SupabaseClient,
   userId: string
 ): Promise<number> {
   const { data, error } = await admin
@@ -119,7 +109,7 @@ export async function getUserCreditsBalance(
 }
 
 export async function chargeSkulmateCredits(params: {
-  admin: ReturnType<typeof createClient>
+  admin: SupabaseClient
   userId: string
   credits: number
   description: string

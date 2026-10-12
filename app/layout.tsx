@@ -1,18 +1,23 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Fredoka, Poppins } from "next/font/google"
+import localFont from "next/font/local"
 import "./globals.css"
 
-const fredoka = Fredoka({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+const fredoka = localFont({
+  src: "../public/fonts/Fredoka.ttf",
+  weight: "300 700",
   variable: "--font-fredoka",
   display: "swap",
 })
 
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const poppins = localFont({
+  src: [
+    { path: "../public/fonts/Poppins-Regular.ttf", weight: "400" },
+    { path: "../public/fonts/Poppins-Medium.ttf", weight: "500" },
+    { path: "../public/fonts/Poppins-SemiBold.ttf", weight: "600" },
+    { path: "../public/fonts/Poppins-Bold.ttf", weight: "700" },
+    { path: "../public/fonts/Poppins-ExtraBold.ttf", weight: "800" },
+  ],
   variable: "--font-poppins",
   display: "swap",
 })

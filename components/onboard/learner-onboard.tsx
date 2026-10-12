@@ -1,31 +1,35 @@
 "use client"
 
 import { Children, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { Fredoka, Nunito } from "next/font/google"
+import localFont from "next/font/local"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Volume2 } from "lucide-react"
 import {
   REGION_PACKS,
   packById,
+  subjectOptionsFor,
   systemById,
   t,
   type RegionPack,
 } from "@/lib/skulmate/region-packs"
 import { PrepMate, type PrepMateMood } from "@/components/onboard/prep-mate"
 import { Glyph } from "@/components/onboard/glyphs"
-import { prefetchMateLine, speakMateLine, speakMateText, stopMateVoice } from "@/components/onboard/mate-voice"
+import { prefetchMateLine, speakMateLine, speakMateText, stopMateVoice, unlockMateVoice } from "@/components/onboard/mate-voice"
 import { mateVoiceText, type MateVoicePhrase } from "@/lib/skulmate/mate-voice-lines"
 import { APP_ORIGIN } from "@/lib/get-started-url"
 
-const display = Fredoka({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+const display = localFont({
+  src: "../../public/fonts/Fredoka.ttf",
+  weight: "300 700",
   display: "swap",
 })
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800", "900"],
+const nunito = localFont({
+  src: [
+    { path: "../../public/fonts/Nunito-Regular.ttf", weight: "400" },
+    { path: "../../public/fonts/Nunito-SemiBold.ttf", weight: "500 600" },
+    { path: "../../public/fonts/Nunito-Bold.ttf", weight: "700 900" },
+  ],
   display: "swap",
 })
 
@@ -51,6 +55,7 @@ type Answers = {
   subjectOther?: string
   learningGoalId?: "lessons" | "catch-up" | "exam-prep"
   examId?: string
+  wantsTutor?: boolean
   tutorModeId?: "online" | "in-person" | "flexible"
   super?: "try" | "skip"
   voiceOut?: boolean
@@ -68,6 +73,7 @@ type Step =
   | "subject"
   | "goal"
   | "exam"
+  | "tutor"
   | "mode"
   | "city"
   | "ready"
@@ -102,7 +108,8 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   const pack = packById(answers.countryId)
   const system = systemById(pack, answers.systemId)
   const level = system.levels.find((item) => item.id === answers.levelId)
-  const subject = system.subjects.find((item) => item.id === answers.subjectId)
+  const availableSubjects = subjectOptionsFor(pack, system, answers.levelId)
+  const subject = availableSubjects.find((item) => item.id === answers.subjectId)
 
   useEffect(() => {
     try {
@@ -135,11 +142,14 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
       level?.educationLevel !== "Primary School" &&
       system.exams.length > 1
     ) list.push("exam")
-    list.push("mode")
-    if (answers.tutorModeId !== "online") list.push("city")
+    list.push("tutor")
+    if (answers.wantsTutor) {
+      list.push("mode")
+      if (answers.tutorModeId !== "online") list.push("city")
+    }
     list.push("ready", "paywall")
     return list
-  }, [pack.id, system.id, answers.learningGoalId, answers.tutorModeId, level?.educationLevel, system.exams.length])
+  }, [pack.id, system.id, answers.learningGoalId, answers.wantsTutor, answers.tutorModeId, level?.educationLevel, system.exams.length])
 
   const step = steps[Math.min(index, steps.length - 1)]
 
@@ -171,10 +181,13 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
     country: mateVoiceText("country", answers.locale) || "",
     system: mateVoiceText("system", answers.locale) || "",
     level: mateVoiceText("level", answers.locale) || "",
-    subject: mateVoiceText("subject", answers.locale) || "",
+    subject: `${mateVoiceText("subject", answers.locale) || ""} ${t(system.label, answers.locale)}${level ? ` · ${t(level.label, answers.locale)}` : ""}`,
     goal: mateVoiceText("goal", answers.locale) || "",
     exam: mateVoiceText("exam", answers.locale) || "",
-    mode: mateVoiceText("mode", answers.locale) || "",
+    tutor: fr
+      ? `Veux-tu aussi réserver un tuteur pour ${subject?.id === "other" ? answers.subjectOther || "cette matière" : t(subject?.label ?? { en: "this subject", fr: "cette matière" }, answers.locale)} ?`
+      : `Would you also like to book a tutor for ${subject?.id === "other" ? answers.subjectOther || "this subject" : t(subject?.label ?? { en: "this subject", fr: "cette matière" }, answers.locale)}?`,
+    mode: fr ? "Où aimerais-tu apprendre avec ce tuteur ?" : "Where would you love to learn with your tutor?",
     city: mateVoiceText("city", answers.locale) || "",
     ready: answers.role === "parent"
       ? fr ? `Merci, ${answers.name}. J’ai une bonne idée du soutien recherché.` : `Thanks, ${answers.name}. I have a good picture of the support your learner needs.`
@@ -182,9 +195,9 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
     readyNote: [
       subject?.id === "other" ? answers.subjectOther : t(subject?.label ?? { en: "your subject", fr: "ta matière" }, answers.locale),
       level?.label ? t(level.label, answers.locale) : undefined,
-    ].filter(Boolean).join(" · ") + (fr
-      ? ". Mate t’aidera dans tes leçons. Si tu veux une personne, on cherchera un tuteur selon ta matière et ta ville."
-      : ". Mate can help with lessons. If you want a person, we’ll look for a tutor based on your subject and location."),
+    ].filter(Boolean).join(" · ") + (answers.wantsTutor
+      ? (fr ? ". Mate t’aidera dans tes leçons, et on cherchera un tuteur selon ta matière et ta ville." : ". Mate can help with lessons, and we’ll look for a tutor based on your subject and location.")
+      : (fr ? ". Mate t’aidera dans tes leçons, à ton rythme." : ". Mate can help with lessons at your pace.")),
     start: fr ? "Continuer" : "Continue",
     next: fr ? "Continuer" : "Continue",
     skip: fr ? "Pas maintenant" : "Not now",
@@ -214,6 +227,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
       subject: copy.subject,
       goal: copy.goal,
       exam: copy.exam,
+      tutor: copy.tutor,
       mode: copy.mode,
       city: copy.city,
       ready: copy.ready,
@@ -296,6 +310,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
       examId: next.examId,
       learningGoalId: next.learningGoalId,
       tutorModeId: next.tutorModeId,
+      wantsTutor: next.wantsTutor,
       channelId: "mix",
       paceId: "balanced",
       voiceOut: next.voiceOut !== false,
@@ -336,6 +351,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
     (step === "subject" && !!answers.subjectId && (answers.subjectId !== "other" || !!answers.subjectOther?.trim())) ||
     (step === "goal" && !!answers.learningGoalId) ||
     (step === "exam" && !!answers.examId) ||
+    (step === "tutor" && answers.wantsTutor !== undefined) ||
     (step === "mode" && !!answers.tutorModeId) ||
     (step === "city" && (answers.cityId === "other" || !pack.cities.length ? !!answers.cityOther?.trim() : !!answers.cityId))
 
@@ -496,7 +512,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                     {step === "subject" &&
                       <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-2">
-                          {system.subjects.map((s) => (
+                          {availableSubjects.map((s) => (
                             <Choice
                               key={s.id}
                               glyph={s.id}
@@ -536,11 +552,17 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                         </button>
                       </div>
                     )}
+                    {step === "tutor" && (
+                      <div className="flex flex-col gap-2">
+                        <Choice glyph="student" label={fr ? "Oui, aide-moi à trouver un tuteur" : "Yes, help me find a tutor"} selected={answers.wantsTutor === true} onClick={() => select({ wantsTutor: true }, "tutor-yes")} />
+                        <Choice glyph="book" label={fr ? "Pas maintenant, je continue avec Mate" : "Not now, I’ll continue with Mate"} selected={answers.wantsTutor === false} onClick={() => select({ wantsTutor: false, tutorModeId: undefined, cityId: undefined, cityOther: "" }, "tutor-no")} />
+                      </div>
+                    )}
                     {step === "mode" && (
                       <div className="flex flex-col gap-2">
-                        <Choice glyph="online" label={fr ? "En ligne" : "Online"} selected={answers.tutorModeId === "online"} onClick={() => select({ tutorModeId: "online", cityId: undefined }, "mode-online")} />
-                        <Choice glyph="home" label={fr ? "En personne" : "In person"} selected={answers.tutorModeId === "in-person"} onClick={() => select({ tutorModeId: "in-person" }, "mode-person")} />
-                        <Choice glyph="globe" label={fr ? "Les deux me conviennent" : "I’m open to either"} selected={answers.tutorModeId === "flexible"} onClick={() => select({ tutorModeId: "flexible" }, "mode-any")} />
+                        <Choice glyph="online" label={fr ? "En ligne" : "Online"} selected={answers.tutorModeId === "online"} onClick={() => select({ tutorModeId: "online", cityId: undefined, cityOther: "" }, "mode-online")} />
+                        <Choice glyph="home" label={fr ? "À la maison ou à l’école" : "At home or school"} selected={answers.tutorModeId === "in-person"} onClick={() => select({ tutorModeId: "in-person" }, "mode-person")} />
+                        <Choice glyph="globe" label={fr ? "En ligne ou en personne" : "Online or in person"} selected={answers.tutorModeId === "flexible"} onClick={() => select({ tutorModeId: "flexible" }, "mode-any")} />
                       </div>
                     )}
                     {step === "city" && (
@@ -548,7 +570,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                         {pack.cities.length > 0 && (
                           <div className="flex flex-col gap-2">
                             {pack.cities.map((item) => (
-                              <Choice key={item.id} glyph="globe" label={t(item.label, answers.locale)} selected={answers.cityId === item.id} onClick={() => select({ cityId: item.id, cityOther: "" }, item.id)} />
+                              <Choice key={item.id} glyph={`city-${item.id}`} label={t(item.label, answers.locale)} selected={answers.cityId === item.id} onClick={() => select({ cityId: item.id, cityOther: "" }, item.id)} />
                             ))}
                           </div>
                         )}
@@ -640,8 +662,9 @@ function Welcome({
   const playingRef = useRef(false)
 
   useEffect(() => {
-    setWelcomeTitleProgress(undefined)
-    setWelcomeNoteProgress(undefined)
+    setTyped(false)
+    setWelcomeTitleProgress(voiceOut ? 0 : undefined)
+    setWelcomeNoteProgress(voiceOut ? 0 : undefined)
     setArmed(true)
     if (!voiceOut) {
       stopMateVoice()
@@ -655,12 +678,11 @@ function Welcome({
         await speakMateLine("welcome", locale, {
           onStart: () => {
             if (cancelled) return
-            setWelcomeTitleProgress(0)
-            setWelcomeNoteProgress(0)
             setTalking(true)
             setArmed(true)
           },
-          onProgress: setWelcomeTitleProgress,
+          onPause: () => { if (!cancelled) setTalking(false) },
+          onProgress: value => { if (!cancelled) setWelcomeTitleProgress(value) },
         })
         if (cancelled) return
         await speakMateLine("welcome_note", locale, {
@@ -669,7 +691,8 @@ function Welcome({
             setTalking(true)
             setArmed(true)
           },
-          onProgress: setWelcomeNoteProgress,
+          onPause: () => { if (!cancelled) setTalking(false) },
+          onProgress: value => { if (!cancelled) setWelcomeNoteProgress(value) },
         })
         if (!cancelled) setTalking(false)
       } catch {
@@ -699,30 +722,35 @@ function Welcome({
           animate={{ scale: 1, y: 0, rotate: 0 }}
           transition={{ type: "spring", stiffness: 260, damping: 16 }}
         >
-          <PrepMate mood={mood} size={248} variant="hero" />
+          <PrepMate mood={mood} size={248} variant="hero" priority />
         </motion.div>
         <Speech
           className="mt-5 w-full"
           title={copy.welcome}
           note={copy.welcomeNote}
+          titleProgress={welcomeTitleProgress}
+          noteProgress={welcomeNoteProgress}
           armed={armed}
           onReplay={() => {
+            void unlockMateVoice()
             stopMateVoice()
             setArmed(true)
             setTalking(false)
+            setWelcomeTitleProgress(0)
+            setWelcomeNoteProgress(0)
             void speakMateLine("welcome", locale, {
               onStart: () => {
                 setTalking(true)
-                setWelcomeTitleProgress(0)
-                setWelcomeNoteProgress(0)
                 setArmed(true)
               },
+              onPause: () => setTalking(false),
               onProgress: setWelcomeTitleProgress,
             })
-              .then(() => speakMateLine("welcome_note", locale, {
-                onStart: () => setWelcomeNoteProgress(0),
+              .then(completed => completed ? speakMateLine("welcome_note", locale, {
+                onStart: () => setTalking(true),
+                onPause: () => setTalking(false),
                 onProgress: setWelcomeNoteProgress,
-              }))
+              }) : undefined)
               .finally(() => setTalking(false))
           }}
           replayLabel={locale === "fr" ? "Écouter" : "Listen"}
@@ -773,16 +801,16 @@ function Paywall({
     }
     let cancelled = false
     setArmed(true)
-    setProgress(undefined)
+    setProgress(0)
     void speakMateText(`${copy.payTitle}. ${copy.payNote}`, locale, {
       onStart: () => {
         if (!cancelled) {
-          setProgress(0)
           setTalking(true)
           setArmed(true)
         }
       },
-      onProgress: setProgress,
+      onPause: () => setTalking(false),
+          onProgress: setProgress,
     }).finally(() => {
       if (!cancelled) { setArmed(true); setTalking(false) }
     })
@@ -805,13 +833,16 @@ function Paywall({
           className="mt-4 w-full"
           title={copy.payTitle}
           note={copy.payNote}
+          progress={progress}
           armed={armed}
           onReplay={() => {
+            void unlockMateVoice()
             setProgress(0)
             setArmed(true)
             void speakMateText(`${copy.payTitle}. ${copy.payNote}`, locale, {
               onStart: () => { setArmed(true); setTalking(true) },
-              onProgress: setProgress,
+              onPause: () => setTalking(false),
+          onProgress: setProgress,
             }).finally(() => { setArmed(true); setTalking(false) })
           }}
           replayLabel={locale === "fr" ? "Écouter" : "Listen"}
@@ -868,6 +899,7 @@ function Ask({
   const [typed, setTyped] = useState(false)
   const [armed, setArmed] = useState(!voiceOut)
   const [talking, setTalking] = useState(false)
+  const [writing, setWriting] = useState(false)
   const [phase, setPhase] = useState<PrepMateMood>(intro ?? "idle")
   const [progress, setProgress] = useState<number | undefined>()
 
@@ -875,6 +907,7 @@ function Ask({
     setTyped(false)
     setArmed(true)
     setTalking(false)
+    setWriting(false)
     setPhase(intro ?? "idle")
     setProgress(undefined)
   }, [title, intro, voiceOut])
@@ -888,24 +921,24 @@ function Ask({
       return
     }
     let cancelled = false
-    setProgress(undefined)
+    setProgress(0)
     const startSpeech = spokenText
       ? speakMateText(spokenText, locale, {
           onStart: () => {
             if (cancelled) return
-            setProgress(0)
             setTalking(true)
             setArmed(true)
           },
+          onPause: () => setTalking(false),
           onProgress: setProgress,
         })
       : speakMateLine(phrase, locale, {
           onStart: () => {
             if (cancelled) return
-            setProgress(0)
             setTalking(true)
             setArmed(true)
           },
+          onPause: () => setTalking(false),
           onProgress: setProgress,
         })
     void startSpeech.finally(() => {
@@ -921,6 +954,7 @@ function Ask({
   }, [voiceId, spokenText, locale, voiceOut])
 
   const replay = () => {
+    void unlockMateVoice()
     stopMateVoice()
     setProgress(0)
     const opts = {
@@ -928,7 +962,8 @@ function Ask({
         setTalking(true)
         setArmed(true)
       },
-      onProgress: setProgress,
+      onPause: () => setTalking(false),
+          onProgress: setProgress,
     }
     const speech = spokenText
       ? speakMateText(spokenText, locale, opts)
@@ -953,11 +988,14 @@ function Ask({
           animate={{ scale: 1, rotate: 0, y: 0 }}
           transition={{ type: "spring", stiffness: 280, damping: 16 }}
         >
-          <PrepMate mood={mood} state={talking ? undefined : restMood === "encourage" ? "success" : questionPose} size={108} variant="ask" />
+          <PrepMate mood={mood} state={talking ? undefined : restMood === "encourage" ? "success" : writing ? "studying" : questionPose} size={108} variant="ask" />
         </motion.div>
-        <Speech title={title} note={note} tail armed={armed} onReplay={replay} replayLabel={locale === "fr" ? "Écouter" : "Listen"} onTyped={() => setTyped(true)} />
+        <Speech title={title} note={note} progress={progress} tail armed={armed} onReplay={replay} replayLabel={locale === "fr" ? "Écouter" : "Listen"} onTyped={() => setTyped(true)} />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto pb-4">
+      <div className="min-h-0 flex-1 overflow-y-auto pb-4"
+        onFocusCapture={event => { if (event.target instanceof HTMLInputElement) setWriting(true) }}
+        onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setWriting(false) }}
+      >
         <Stagger ready={typed}>{children}</Stagger>
       </div>
     </div>
@@ -992,12 +1030,12 @@ function Speech({
   const reduce = useReducedMotion()
   const [shown, setShown] = useState(reduce && armed ? title.length : 0)
   const combinedLength = title.length + (note?.length ?? 0)
-  const titleShown = titleProgress !== undefined
+  const titleShown = reduce ? title.length : titleProgress !== undefined
     ? Math.floor(titleProgress * title.length)
     : progress !== undefined
       ? Math.min(title.length, Math.floor(progress * combinedLength))
       : shown
-  const noteShown = noteProgress !== undefined
+  const noteShown = reduce ? (note?.length ?? 0) : noteProgress !== undefined
     ? Math.floor(noteProgress * (note?.length ?? 0))
     : progress !== undefined && note
       ? Math.max(0, Math.min(note.length, Math.floor(progress * combinedLength) - title.length))
@@ -1081,29 +1119,33 @@ function Speech({
           onClick={onReplay}
           aria-label={replayLabel || "Listen"}
           title={replayLabel || "Listen"}
-          className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full text-[#1B2C4F] transition hover:bg-[#E0F2FE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0EA5E9]"
+          className="absolute right-2 top-2 flex h-9 items-center gap-1 rounded-full px-2 text-xs font-extrabold text-[#1B2C4F] transition hover:bg-[#E0F2FE] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0EA5E9]"
         >
           <Volume2 aria-hidden="true" size={19} />
+          <span>{replayLabel || "Listen"}</span>
         </button>
       )}
-      <p className={`${display.className} pr-9 text-[22px] font-semibold leading-snug`} style={{ color: NAVY }}>
-        {title.slice(0, titleShown)}
+      <p aria-label={title} className={`${display.className} relative pr-9 text-[22px] font-semibold leading-snug`} style={{ color: NAVY }}>
+        <span aria-hidden className="invisible">{title}</span>
+        <span aria-hidden className="absolute inset-0 pr-9">{title.slice(0, titleShown)}
         {!done ? (
           <span
             aria-hidden
             className="ml-0.5 inline-block h-[0.9em] w-[2px] align-[-0.1em]"
             style={{ background: NAVY, animation: "pulse 0.9s ease-in-out infinite" }}
           />
-        ) : null}
+        ) : null}</span>
       </p>
-      {done && note ? (
+      {note ? (
         <motion.p
-          className="mt-1 text-[13px] font-semibold leading-snug"
+          aria-label={note}
+          className="relative mt-1 text-[13px] font-semibold leading-snug"
           style={{ color: "#5B6B86" }}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          {note.slice(0, noteShown)}
+          <span aria-hidden className="invisible">{note}</span>
+          <span aria-hidden className="absolute inset-0">{note.slice(0, noteShown)}</span>
         </motion.p>
       ) : null}
     </motion.div>

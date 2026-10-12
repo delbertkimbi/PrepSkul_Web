@@ -4,6 +4,14 @@
  */
 
 export type LearnerContextInput = {
+  country?: string
+  city?: string
+  school_system?: string
+  exam_when?: string
+  pace?: string
+  channel?: string
+  interests?: string | string[]
+  accountRole?: 'learner' | 'parent'
   enrichmentMode?: string
   language?: string
   preferred_language?: string

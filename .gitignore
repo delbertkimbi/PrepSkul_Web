@@ -47,3 +47,8 @@ secrets.txt
 .next-preview/
 .next-release/
 .next-oct8/
+.next-verify/
+
+# Local security verification build and Supabase CLI cache
+.next-security-release/
+supabase/.temp/

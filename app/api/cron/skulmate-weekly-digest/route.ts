@@ -25,17 +25,8 @@ export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret) {
-      const isVercelCron =
-        request.headers.get('user-agent')?.includes('vercel-cron') ||
-        request.headers.get('x-vercel-cron') === '1';
-      if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
-        runError = 'Unauthorized cron request';
-        return NextResponse.json(
-          { error: 'Unauthorized. Provide Authorization: Bearer YOUR_CRON_SECRET.' },
-          { status: 401 },
-        );
-      }
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const supabaseAdmin = getSupabaseAdmin();

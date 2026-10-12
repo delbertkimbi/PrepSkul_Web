@@ -1,3 +1,5 @@
+import { guardApi } from '@/lib/skulmate/api-input'
+import { clientLimitKey, rateLimited } from '@/lib/skulmate/rate-limit'
 import { NextRequest, NextResponse } from "next/server"
 import { MATE_VOICE_LINES, mateVoiceText } from "@/lib/skulmate/mate-voice-lines"
 
@@ -35,6 +37,8 @@ async function elevenLabsSpeech(text: string, locale: string) {
     `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}?output_format=mp3_44100_128`,
     {
       method: "POST",
+      signal: AbortSignal.timeout(20000),
+      redirect: "error",
       headers: {
         "xi-api-key": apiKey,
         "Content-Type": "application/json",
@@ -56,7 +60,9 @@ function pickVoice(params: URLSearchParams, locale: string) {
   return VOICES[locale]
 }
 
-export async function GET(request: NextRequest) {
+async function handleGET(request: NextRequest) {
+  const limited = await rateLimited(request, `onboard-voice:${clientLimitKey(request)}`, 40, 60000)
+  if (limited) return limited
   const params = request.nextUrl.searchParams
   const locale = params.get("locale") === "fr" ? "fr" : "en"
   const phrase = params.get("phrase") || ""
@@ -92,6 +98,8 @@ export async function GET(request: NextRequest) {
   try {
     let upstream = await fetch("https://openrouter.ai/api/v1/audio/speech", {
       method: "POST",
+      signal: AbortSignal.timeout(20000),
+      redirect: "error",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
@@ -109,6 +117,8 @@ export async function GET(request: NextRequest) {
       }
       upstream = await fetch("https://openrouter.ai/api/v1/audio/speech", {
         method: "POST",
+      signal: AbortSignal.timeout(20000),
+      redirect: "error",
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
@@ -123,7 +133,7 @@ export async function GET(request: NextRequest) {
         : null
       if (eleven) {
         const audio = await eleven.arrayBuffer()
-        return new NextResponse(audio, { status: 200, headers: { "Content-Type": "audio/mpeg", "Cache-Control": "public, max-age=31536000, immutable", "Content-Length": String(audio.byteLength) } })
+        return new NextResponse(audio, { status: 200, headers: { "Content-Type": "audio/mpeg", "Cache-Control": customText ? "private, no-store" : "public, max-age=3600", "Content-Length": String(audio.byteLength) } })
       }
       const detail = await upstream.text().catch(() => "")
       console.error("[skulmate/voice] upstream failed", upstream.status, detail.slice(0, 300))
@@ -136,7 +146,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         "Content-Type": format === "pcm" ? "audio/wav" : "audio/mpeg",
-        "Cache-Control": "public, max-age=3600",
+        "Cache-Control": customText ? "private, no-store" : "public, max-age=3600",
         "Content-Length": String(audio.byteLength),
       },
     })
@@ -145,3 +155,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Synthesis failed", text }, { status: 502 })
   }
 }
+
+export const GET = guardApi(handleGET)

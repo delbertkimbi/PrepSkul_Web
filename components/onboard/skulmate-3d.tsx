@@ -1,6 +1,7 @@
 "use client"
 
 import { createElement, useEffect, useRef, useState } from "react"
+import { MATE_SPEECH_FRAME, type MateSpeechFrame } from "@/lib/mate-speech-motion"
 import type { MascotState } from "@/lib/mascot-states"
 
 type Viewer = HTMLElement & {
@@ -8,6 +9,7 @@ type Viewer = HTMLElement & {
   timeScale: number; play: () => void; pause: () => void; loaded: boolean
   updateComplete: Promise<boolean>
 }
+const MODEL_URL = "/3d/skulmate.glb?v=soft-mate-7"
 let loader: Promise<void> | null = null
 function speedFor(state: string) {
   if (state === "wave" || state === "celebrate" || state === "success") return 1.55
@@ -28,10 +30,11 @@ function loadViewer() {
   return loader
 }
 
-export function SkulMate3D({ state = "idle", size = 168, className = "" }: {
-  state?: MascotState | "talk"; size?: number; className?: string
+export function SkulMate3D({ state = "idle", size = 168, className = "", priority = false }: {
+  state?: MascotState | "talk"; size?: number; className?: string; priority?: boolean
 }) {
   const host = useRef<Viewer | null>(null)
+  const [active, setActive] = useState(priority)
   const [error, setError] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [loaded, setLoaded] = useState(false)
@@ -64,24 +67,39 @@ export function SkulMate3D({ state = "idle", size = 168, className = "" }: {
         setLoaded(true); setError(false); playback()
       }))
     }
+    const onSpeechFrame = (event: Event) => {
+      if (!viewer.loaded || desired.current !== "talk" || !visible || document.hidden || reduced.matches) return
+      const { mouthOpen } = (event as CustomEvent<MateSpeechFrame>).detail
+      if (mouthOpen === null) { playback(); return }
+      viewer.pause()
+      // First quarter-second spans the closed-to-open portion of 33_talk.
+      viewer.currentTime = Math.asin(Math.max(0, Math.min(1, mouthOpen))) / (2 * Math.PI)
+    }
+    window.addEventListener(MATE_SPEECH_FRAME, onSpeechFrame)
     const onError = () => { setError(true); setLoaded(false) }
     viewer.addEventListener("load", onLoad); viewer.addEventListener("error", onError)
     const observer = new IntersectionObserver(entries => {
       visible = entries[0].isIntersecting
       if (visible && !started) {
         started = true
+        setActive(true)
         loadViewer().then(() => { if (alive && viewer.loaded) onLoad() }).catch(() => { if (alive) onError() })
       }
       playback()
     }, { rootMargin: "120px" })
     observer.observe(viewer)
+    if (priority) {
+      started = true
+      loadViewer().then(() => { if (alive && viewer.loaded) onLoad() }).catch(() => { if (alive) onError() })
+    }
     document.addEventListener("visibilitychange", playback); reduced.addEventListener("change", playback)
     return () => {
       alive = false; observer.disconnect(); viewer.pause?.()
+      window.removeEventListener(MATE_SPEECH_FRAME, onSpeechFrame)
       viewer.removeEventListener("load", onLoad); viewer.removeEventListener("error", onError)
       document.removeEventListener("visibilitychange", playback); reduced.removeEventListener("change", playback)
     }
-  }, [attempt])
+  }, [attempt, priority])
   useEffect(() => {
     const viewer = host.current
     if (!loaded || !viewer) return
@@ -93,18 +111,23 @@ export function SkulMate3D({ state = "idle", size = 168, className = "" }: {
       viewer.animationName = clip
       void viewer.updateComplete.then(() => {
         if (!current) return
-        viewer.currentTime = .001
+        // Let model-viewer crossfade without seeking the new clip mid-blend.
         viewer.dataset.clip = clip
+        if (viewer.dataset.playing === "true") viewer.play()
       })
     }
     return () => { current = false }
   }, [state, loaded])
   return <span className={className} style={{ display: "inline-block", position: "relative", width: size, height: size }}>
+    {priority && <>
+      <link rel="preload" href={MODEL_URL} as="fetch" crossOrigin="anonymous" />
+      <link rel="modulepreload" href="/vendor/model-viewer-4.3.1.min.js" />
+    </>}
     {createElement("model-viewer", {
-      key: attempt, ref: host, src: "/3d/skulmate.glb?v=soft-limbs-5", alt: "Mate, your learning companion", loading: "lazy",
-      "camera-orbit": "0deg 85deg 7m", "camera-target": state === "teaching" ? "0.25m 1.7m 0m" : "0m 1.7m 0m", "field-of-view": "30deg",
+      key: attempt, ref: host, src: active ? MODEL_URL : undefined, alt: "Mate, your learning companion", loading: "eager",
+      "camera-orbit": "0deg 85deg 7.7m", "camera-target": state === "teaching" ? "0.25m 1.7m 0m" : "0m 1.7m 0m", "field-of-view": "30deg",
       "interaction-prompt": "none", "shadow-intensity": size < 128 ? "0" : "0.35", exposure: "1",
-      "animation-crossfade-duration": state === "talk" || state === "idle" ? "80" : "220",
+      "animation-crossfade-duration": state === "talk" || state === "idle" ? "120" : "280",
       className: "ps-mate-viewer",
       style: { width: "100%", height: "100%", background: "transparent", pointerEvents: "none", opacity: loaded ? 1 : 0, transition: "opacity 160ms ease-out" },
     })}

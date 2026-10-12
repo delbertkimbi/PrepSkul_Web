@@ -37,6 +37,30 @@ export function t(label: Bilingual, locale = 'en'): string {
   return locale.toLowerCase().startsWith('fr') ? label.fr : label.en
 }
 
+/** The chosen country, school system and level decide what appears here.
+ * These are suggestions, never a limit on what a learner can bring to Mate. */
+export function subjectOptionsFor(pack: RegionPack, system: RegionSystem, levelId?: string): RegionOption[] {
+  const level = system.levels.find(item => item.id === levelId)
+  if (level?.educationLevel === 'Primary School') {
+    return [
+      { id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } },
+      { id: 'language', label: { en: 'Reading, writing and language', fr: 'Lecture, écriture et langue' } },
+      { id: 'science', label: { en: 'Discovering science', fr: 'Découverte des sciences' } },
+      { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } },
+    ]
+  }
+  const local: Record<string, RegionOption[]> = {
+    ng: [{ id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } }, { id: 'english', label: { en: 'English language', fr: 'Anglais' } }, { id: 'basic-science', label: { en: 'Basic / integrated science', fr: 'Sciences intégrées' } }, { id: 'social-studies', label: { en: 'Social studies', fr: 'Sciences sociales' } }, { id: 'economics', label: { en: 'Economics', fr: 'Économie' } }, { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } }],
+    gh: [{ id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } }, { id: 'english', label: { en: 'English language', fr: 'Anglais' } }, { id: 'integrated-science', label: { en: 'Integrated science', fr: 'Sciences intégrées' } }, { id: 'social-studies', label: { en: 'Social studies', fr: 'Sciences sociales' } }, { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } }],
+    ke: [{ id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } }, { id: 'english', label: { en: 'English', fr: 'Anglais' } }, { id: 'kiswahili', label: { en: 'Kiswahili', fr: 'Kiswahili' } }, { id: 'integrated-science', label: { en: 'Integrated science', fr: 'Sciences intégrées' } }, { id: 'social-studies', label: { en: 'Social studies', fr: 'Sciences sociales' } }, { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } }],
+    za: [{ id: 'maths', label: { en: 'Mathematics / mathematical literacy', fr: 'Mathématiques' } }, { id: 'english', label: { en: 'English', fr: 'Anglais' } }, { id: 'physical-sciences', label: { en: 'Physical sciences', fr: 'Sciences physiques' } }, { id: 'life-sciences', label: { en: 'Life sciences', fr: 'Sciences de la vie' } }, { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } }],
+    gb: [{ id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } }, { id: 'english', label: { en: 'English language / literature', fr: 'Anglais' } }, { id: 'combined-science', label: { en: 'Combined science', fr: 'Sciences combinées' } }, { id: 'history', label: { en: 'History', fr: 'Histoire' } }, { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } }],
+    us: [{ id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } }, { id: 'ela', label: { en: 'English language arts', fr: 'Langue anglaise' } }, { id: 'biology', label: { en: 'Biology', fr: 'Biologie' } }, { id: 'us-history', label: { en: 'US history', fr: 'Histoire des États-Unis' } }, { id: 'other', label: { en: 'Something else', fr: 'Autre chose' } }],
+  }
+  const choices = local[pack.id] ?? system.subjects
+  return level?.educationLevel === 'High School' ? choices : choices.filter(item => item.id !== 'philo')
+}
+
 const CM_FR_SUBJECTS: RegionOption[] = [
   { id: 'maths', label: { en: 'Mathematics', fr: 'Mathématiques' } },
   { id: 'french', label: { en: 'French', fr: 'Français' } },

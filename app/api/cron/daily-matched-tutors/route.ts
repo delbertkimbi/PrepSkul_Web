@@ -44,18 +44,10 @@ async function hasActiveRecurring(supabase: any, userId: string): Promise<boolea
 
 export async function GET(request: NextRequest) {
   try {
+    const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
-    if (cronSecret) {
-      const authHeader = request.headers.get('authorization');
-      const isVercelCron =
-        request.headers.get('user-agent')?.includes('vercel-cron') ||
-        request.headers.get('x-vercel-cron') === '1';
-      if (!isVercelCron && authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json(
-          { error: 'Unauthorized. Please provide Authorization: Bearer YOUR_CRON_SECRET header.' },
-          { status: 401 }
-        );
-      }
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     if (String(process.env.ENABLE_DAILY_MATCHED_TUTORS || '').toLowerCase() !== 'true') {

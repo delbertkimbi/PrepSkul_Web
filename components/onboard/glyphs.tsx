@@ -36,6 +36,21 @@ const SUBJECT: Record<string, { src: string; bg: string }> = {
   "global-open": { src: "tile-globe.png", bg: "#F3E8FF" },
 }
 
+const CITY: Record<string, { symbol: string; bg: string }> = {
+  "city-yaounde": { symbol: "Y", bg: "#DBEAFE" },
+  "city-douala": { symbol: "D", bg: "#D1FAE5" },
+  "city-bamenda": { symbol: "B", bg: "#FEE2E2" },
+  "city-bafoussam": { symbol: "B", bg: "#F3E8FF" },
+  "city-buea": { symbol: "B", bg: "#FEF3C7" },
+  "city-garoua": { symbol: "G", bg: "#FFEDD5" },
+  "city-lagos": { symbol: "L", bg: "#D1FAE5" },
+  "city-abuja": { symbol: "A", bg: "#DBEAFE" },
+  "city-ph": { symbol: "P", bg: "#FCE7F3" },
+  "city-accra": { symbol: "A", bg: "#FEF3C7" },
+  "city-kumasi": { symbol: "K", bg: "#F3E8FF" },
+  "city-other": { symbol: "+", bg: "#E0F2FE" },
+}
+
 export function Glyph({
   kind,
   selected = false,
@@ -45,17 +60,20 @@ export function Glyph({
 }) {
   const flag = flagFor(kind)
   const subject = SUBJECT[kind]
+  const city = CITY[kind]
   return (
     <span
       className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[14px]"
       style={{
-        background: flag ? "#fff" : subject?.bg ?? "#E0F2FE",
+        background: flag ? "#fff" : city?.bg ?? subject?.bg ?? "#E0F2FE",
         boxShadow: selected ? "0 4px 0 #1B2C4F" : "0 3px 0 rgba(27,44,79,0.18)",
         border: "2px solid #1B2C4F",
       }}
     >
       {flag ? (
         flag
+      ) : city ? (
+        <span className="grid h-full w-full place-items-center font-black text-[#1B2C4F]" aria-hidden>{city.symbol}</span>
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
