@@ -1,3 +1,6 @@
+import type { LearnerContextInput } from './learner-context'
+import { curriculumScope } from './curriculum-scope'
+import { lookupCurriculum } from './curriculum-lookup'
 import { getServiceSupabaseAdmin } from './billing'
 import { embedTexts } from './embed'
 import { retrieveCurriculum } from './curriculum-corpus'
@@ -217,6 +220,7 @@ export function lexicalScore(query: string, content: string): number {
  * Curriculum first. Optional uploads from pgvector are extra, never a gate.
  */
 export async function retrieveTeachingContext(params: {
+  learnerContext?: LearnerContextInput | null
   query: string
   subjectId?: string | null
   userId?: string
@@ -224,13 +228,22 @@ export async function retrieveTeachingContext(params: {
   extraNotes?: string
   limit?: number
 }): Promise<RetrievedChunk[]> {
+  const scope = curriculumScope(params.learnerContext)
+  const official = await lookupCurriculum(params.query, params.learnerContext)
   const curriculum = retrieveCurriculum({
     query: params.query,
     subjectId: params.subjectId,
     limit: 4,
-  })
+  }).map(chunk => ({ ...chunk, content: 'General concept reference. Not verified against this learner syllabus.\n' + chunk.content }))
   const harvest: RetrievedChunk[] = HARVEST_PACKS.flatMap((pack, packIndex) =>
-    flattenHarvestCorpus(pack).map((content, i) => ({
+    flattenHarvestCorpus({ ...pack, units: pack.units.filter(unit =>
+      Boolean(scope.countryId && scope.systemId && scope.levelId) &&
+      unit.regionId === scope.countryId && unit.systemId === scope.systemId &&
+      unit.levelIds.includes(scope.levelId!) &&
+      (!scope.subjectId || unit.subjectId === scope.subjectId) &&
+      (!scope.pathwayId || unit.pathwayId === scope.pathwayId) &&
+      (!scope.streamId || scope.streamId === 'mixed' || unit.streamId === scope.streamId)
+    ) }).map((content, i) => ({
       id: `harvest:${pack.regionId}:${packIndex}:${i}`,
       artifactId: 'harvest',
       content: content.slice(0, 1600),
@@ -266,7 +279,7 @@ export async function retrieveTeachingContext(params: {
   }
   const seen = new Set<string>()
   const merged: RetrievedChunk[] = []
-  for (const chunk of [...curriculum, ...harvest, ...extras]) {
+  for (const chunk of [...official, ...extras, ...harvest, ...curriculum]) {
     const key = chunk.id
     if (seen.has(key)) continue
     seen.add(key)

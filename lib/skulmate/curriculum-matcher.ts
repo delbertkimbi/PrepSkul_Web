@@ -1,3 +1,4 @@
+import { curriculumScope } from './curriculum-scope'
 /**
  * Background curriculum matcher — silent enrichment only.
  * Uses bundled seed corpus; optional DB sync via migration 099.
@@ -86,6 +87,10 @@ export function matchCurriculumNodes(params: {
   const preferredFrameworks = learnerFrameworkIds(params.learnerContext)
   const limit = params.limit ?? 3
 
+  const scope = curriculumScope(params.learnerContext)
+  // Seed nodes have no pathway/specialty or edition provenance. They cannot
+  // establish alignment for a scoped learner, regardless of keyword score.
+  if (Object.keys(scope).length) return []
   const scored = NODES.map((node) => {
     let score = scoreNode(text, node)
     if (preferredFrameworks.includes(node.framework_id)) score += 2

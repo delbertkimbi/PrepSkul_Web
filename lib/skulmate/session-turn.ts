@@ -1,3 +1,4 @@
+import { curriculumScope } from './curriculum-scope'
 import { getServiceSupabaseAdmin } from './billing'
 import { loadAccountRole, assertOwnedChild, type SkulMateAccountRole } from './auth'
 import { compileTurnContext } from './compile-turn-context'
@@ -217,6 +218,7 @@ export async function runTutorTurn(params: {
     loadLearnerState(params.userId, params.childId),
     loadRecentOutcomes(params.userId, params.childId),
     retrieveTeachingContext({
+      learnerContext: params.learnerContext,
       userId: params.userId,
       childId: params.childId,
       query: params.message,
@@ -258,13 +260,14 @@ export async function runTutorTurn(params: {
   let policy = await runPolicy(compiled.full, params.message, suggestedMove, {
     retrieveNotes: async (query) => {
       const more = await retrieveTeachingContext({
+      learnerContext: params.learnerContext,
         userId: params.userId,
         childId: params.childId,
         query,
         subjectId: subjectFrom(params.learnerContext),
         limit: 4,
       })
-      if (!more.length) return '(curriculum available, no extra files)'
+      if (!more.length) return '(No matching source evidence found; curriculum alignment remains unverified)'
       return more.map((c) => c.content).join('\n')
     },
     language: params.language,
@@ -438,6 +441,7 @@ export async function runTutorTurnDemo(params: {
   const notes = (params.notes || '').trim()
   const subjectId = subjectFrom(params.learnerContext)
   const chunks = await retrieveTeachingContext({
+      learnerContext: params.learnerContext,
     query: params.message,
     subjectId,
     extraNotes: notes,
@@ -460,12 +464,13 @@ export async function runTutorTurnDemo(params: {
     memory: params.learnerMemory,
     retrieveNotes: async (query) => {
       const more = await retrieveTeachingContext({
+      learnerContext: params.learnerContext,
         query,
         subjectId,
         extraNotes: notes,
         limit: 4,
       })
-      return more.map((c) => c.content).join('\n') || '(curriculum available)'
+      return more.map((c) => c.content).join('\n') || '(No matching source evidence found; curriculum alignment remains unverified)'
     },
   })
   const verdict = await verifyTutorTurnWithEngine({
@@ -588,6 +593,8 @@ async function loadRecentOutcomes(userId: string, childId?: string | null) {
 
 function subjectFrom(ctx?: LearnerContextInput | null): string | null {
   if (!ctx) return null
+  const scope = curriculumScope(ctx)
+  if (scope.subjectId) return scope.subjectId === 'other' ? scope.subjectOther || null : scope.subjectId
   const subjects = ctx.subjects || ctx.subject_preferences
   if (Array.isArray(subjects)) return subjects[0] || null
   return subjects ? String(subjects) : null

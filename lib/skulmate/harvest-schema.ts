@@ -7,6 +7,8 @@
 export type HarvestLanguage = 'en' | 'fr' | 'both'
 
 export type HarvestUnit = {
+  pathwayId?: string
+  streamId?: string
   id: string
   /** Region pack id, e.g. cm, ng, gh. Never a gate on what the learner may ask. */
   regionId: string

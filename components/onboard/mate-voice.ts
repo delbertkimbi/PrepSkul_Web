@@ -19,7 +19,7 @@ export type SpeakMateOpts = {
   onProgress?: (progress: number) => void
 }
 
-const CLIP_TONE = "algieba-v3"
+const CLIP_TONE = "puck-v1"
 
 function revision(text: string) {
   let hash = 2166136261
@@ -172,7 +172,7 @@ function speakBrowser(text: string, locale: string, opts: SpeakMateOpts) {
   const line = new SpeechSynthesisUtterance(text)
   line.lang = locale.startsWith("fr") ? "fr-FR" : "en-GB"
   line.rate = 0.98
-  line.pitch = 1.03
+  line.pitch = 1.12
   line.volume = 1
   const chosen = pickBrowserVoice(locale)
   if (chosen) line.voice = chosen

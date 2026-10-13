@@ -147,7 +147,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
       list.push("mode")
       if (answers.tutorModeId !== "online") list.push("city")
     }
-    list.push("ready", "paywall")
+    list.push("ready")
     return list
   }, [pack.id, system.id, answers.learningGoalId, answers.wantsTutor, answers.tutorModeId, level?.educationLevel, system.exams.length])
 
@@ -181,7 +181,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
     country: mateVoiceText("country", answers.locale) || "",
     system: mateVoiceText("system", answers.locale) || "",
     level: mateVoiceText("level", answers.locale) || "",
-    subject: `${mateVoiceText("subject", answers.locale) || ""} ${t(system.label, answers.locale)}${level ? ` · ${t(level.label, answers.locale)}` : ""}`,
+    subject: mateVoiceText("subject", answers.locale) || "",
     goal: mateVoiceText("goal", answers.locale) || "",
     exam: mateVoiceText("exam", answers.locale) || "",
     tutor: fr
@@ -290,10 +290,11 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
   }
 
   function continueOn() {
+    if (step === "ready") { finish(); return }
     go(Math.min(index + 1, steps.length - 1), true)
   }
 
-  function finish(choice: "try" | "skip") {
+  function finish(choice?: "try" | "skip") {
     const next = { ...answers, super: choice }
     const appDraft = {
       locale: next.locale,
@@ -319,7 +320,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
     try {
       window.localStorage.setItem("skulmate.onboard", JSON.stringify(next))
       window.localStorage.setItem("skulmate.webOnboard.draft", JSON.stringify({ answers: next, index }))
-      window.localStorage.setItem("skulmate.super", choice)
+      if (choice) window.localStorage.setItem("skulmate.super", choice)
       window.localStorage.setItem("skulmate.voiceOut", next.voiceOut === false ? "off" : "on")
     } catch {
       // Storage may be unavailable; the URL still carries the answers.
@@ -491,9 +492,9 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                           <Choice
                             key={s.id}
                             glyph={s.id}
-                            label={t(s.label, answers.locale)}
+                            label={`${pack.id === "cm" ? (s.id === "cm-francophone" ? "📘 " : "📗 ") : ""}${t(s.label, answers.locale)}`}
                             selected={answers.systemId === s.id}
-                            onClick={() => select({ systemId: s.id, levelId: undefined }, s.id)}
+                            onClick={() => select({ systemId: s.id, levelId: undefined, subjectId: undefined, subjectOther: undefined, examId: undefined }, s.id)}
                           />
                         ))}
                       </div>}
@@ -504,7 +505,7 @@ export function LearnerOnboard({ initialLocale = "en" }: { initialLocale?: strin
                             key={l.id}
                             label={t(l.label, answers.locale)}
                             selected={answers.levelId === l.id}
-                            onClick={() => select({ levelId: l.id }, l.id)}
+                            onClick={() => select({ levelId: l.id, subjectId: undefined, subjectOther: undefined, examId: undefined }, l.id)}
                           />
                         ))}
                       </div>

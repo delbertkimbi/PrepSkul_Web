@@ -1,3 +1,4 @@
+import { curriculumScope, scopePrompt } from './curriculum-scope'
 import type { LearnerContextInput } from './learner-context'
 import type { RetrievedChunk } from './retrieve'
 import type { SkulMateAccountRole } from './auth'
@@ -118,18 +119,20 @@ function buildIdentity(input: CompileTurnInput): string {
   if (ctx?.channel) block += `\nThey prefer to work by: ${ctx.channel}.`
   block +=
     '\nPrimary: their curriculum, what they want to study, and diagnosed challenges. Optional uploads are extra context, never a requirement. Never refuse off-syllabus content. Use the region pack for examples only. Do not mention exams unless they asked this turn. Do not ask for notes.'
-  return block
+  return block + '\n' + scopePrompt(ctx)
 }
 
 function buildRegion(input: CompileTurnInput): string {
   const ctx = input.learnerContext
+  const scope = curriculumScope(ctx)
+  if (!scope.countryId && !ctx?.country) return 'REGION: unknown. Do not assume a country or school system.'
   return compileRegionContext(
     {
-      countryId: ctx?.country,
+      countryId: scope.countryId || ctx?.country,
       cityId: ctx?.city,
-      systemId: ctx?.school_system || ctx?.curriculum,
-      levelId: ctx?.class_level,
-      examId: ctx?.exam || ctx?.target_exam || ctx?.exam_type,
+      systemId: scope.systemId || ctx?.school_system || ctx?.curriculum,
+      levelId: scope.levelId || ctx?.class_level,
+      examId: scope.examId || ctx?.specific_exam || ctx?.exam || ctx?.target_exam || ctx?.exam_type,
       examWhen: ctx?.exam_when,
       subjectId: Array.isArray(ctx?.subjects)
         ? ctx?.subjects[0]

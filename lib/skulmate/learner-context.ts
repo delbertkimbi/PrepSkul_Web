@@ -3,7 +3,13 @@
  * Curriculum/profile hints adjust tone and difficulty only — never block open topics.
  */
 
+import type { CurriculumScope } from './curriculum-scope'
+
 export type LearnerContextInput = {
+  curriculumScope?: CurriculumScope
+  onboarding_context?: CurriculumScope
+  country_code?: string
+  specific_exam?: string
   country?: string
   city?: string
   school_system?: string

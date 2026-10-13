@@ -25,7 +25,10 @@ export type ChatTool = {
   }
 }
 
+export type SourceCitation = { url: string; title?: string; content?: string }
+
 export type ChatResult = {
+  citations?: SourceCitation[]
   content: string
   model: string
   toolCalls: ToolCall[]
@@ -35,6 +38,7 @@ export type SkulMateChatArgs = {
   model: string
   messages: ChatMessage[]
   timeoutMs: number
+  webSearchDomains?: string[]
   json?: boolean
   tools?: ChatTool[]
   temperature?: number
@@ -74,6 +78,7 @@ async function chatWithKey(apiKey: string, args: SkulMateChatArgs): Promise<Chat
         max_tokens: args.maxTokens ?? 900,
         temperature: args.temperature ?? 0.4,
         ...(args.json ? { response_format: { type: 'json_object' } } : {}),
+        ...(args.webSearchDomains?.length ? { tools: [{ type: 'openrouter:web_search', parameters: { engine: 'exa', allowed_domains: args.webSearchDomains, max_results: 3, max_total_results: 3, max_uses: 1, max_characters: 1800 } }] } : {}),
         ...(args.tools?.length ? { tools: args.tools, tool_choice: 'auto' } : {}),
         ...(args.model.includes('gpt-6-astra')
           ? { reasoning: { effort: args.reasoningEffort || 'medium' } }
@@ -88,6 +93,7 @@ async function chatWithKey(apiKey: string, args: SkulMateChatArgs): Promise<Chat
       model?: string
       choices?: Array<{
         message?: {
+          annotations?: Array<{ type: string; url_citation?: SourceCitation }>
           content?: string | null
           tool_calls?: ToolCall[]
         }
@@ -95,6 +101,7 @@ async function chatWithKey(apiKey: string, args: SkulMateChatArgs): Promise<Chat
     }
     const message = payload.choices?.[0]?.message
     return {
+      citations: message?.annotations?.filter(a => a.type === 'url_citation' && a.url_citation).map(a => a.url_citation!) || [],
       content: String(message?.content || ''),
       model: payload.model || args.model,
       toolCalls: Array.isArray(message?.tool_calls) ? message.tool_calls : [],
